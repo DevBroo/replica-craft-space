@@ -302,11 +302,6 @@ const Properties: React.FC = () => {
               <a href="/locations" className="text-foreground hover:text-brand-orange font-medium transition-colors duration-200 cursor-pointer">Locations</a>
               <a href="/about" className="text-foreground hover:text-brand-orange font-medium transition-colors duration-200 cursor-pointer">About</a>
               <a href="/contact" className="text-foreground hover:text-brand-orange font-medium transition-colors duration-200 cursor-pointer">Contact</a>
-              <div className="h-6 w-px bg-border mx-4"></div>
-              <a href="/host" className="text-foreground hover:text-brand-orange font-medium transition-colors duration-200 cursor-pointer flex items-center gap-2">
-                <i className="fas fa-plus-circle"></i>
-                Become a Host
-              </a>
             </nav>
             <div className="flex items-center space-x-4">
               <button className="bg-secondary text-secondary-foreground hover:bg-secondary/80 font-medium transition-all duration-200 cursor-pointer whitespace-nowrap rounded-button px-6 py-3">
