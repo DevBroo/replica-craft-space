@@ -33,7 +33,7 @@ import lakesideRetreat from '@/assets/lakeside-retreat.jpg';
 import farmHouseBliss from '@/assets/farm-house-bliss.jpg';
 import heroBackground from '@/assets/hero-background.jpg';
 import successfulHost from '@/assets/successful-host.jpg';
-import picnifyLogo from '@/assets/picnify-logo.png';
+import picnifyLogo from '/lovable-uploads/f7960b1f-407a-4738-b8f6-067ea4600889.png';
 
 const Index: React.FC = () => {
 const [searchLocation, setSearchLocation] = useState('');
