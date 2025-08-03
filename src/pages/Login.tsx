@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { Link } from 'react-router-dom';
 
 const Login: React.FC = () => {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
@@ -304,12 +305,12 @@ const Login: React.FC = () => {
               <div className="mt-6 text-center">
                 <p className="text-sm text-gray-600">
                   Don't have an account?{' '}
-                  <a
-                    href="#"
+                  <Link
+                    to="/signup"
                     className="font-medium text-indigo-600 hover:text-indigo-500 cursor-pointer"
                   >
                     Sign up now
-                  </a>
+                  </Link>
                 </p>
               </div>
             </div>
