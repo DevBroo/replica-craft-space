@@ -94,7 +94,7 @@ const Login: React.FC = () => {
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="flex justify-center items-center h-16">
               <div className="flex items-center space-x-2">
-                <img src="/src/assets/picnify-logo.png" alt="Picnify Logo" className="h-8" />
+                <img src="/lovable-uploads/4a6c26a9-df9d-4bbe-a6d2-acb1b3d99100.png" alt="Picnify Logo" className="h-8" />
                 <span className="text-2xl font-bold text-red-600">Picnify</span>
               </div>
             </div>
