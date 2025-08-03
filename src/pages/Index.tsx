@@ -365,7 +365,7 @@ View Details
 <div className="p-6">
 <h3 className="text-lg font-bold text-foreground mb-3 group-hover:text-brand-red transition-colors duration-300">{property.name}</h3>
 <div className="flex items-center justify-between">
-                <div className="text-2xl font-black text-foreground">
+                <div className="text-xl font-black text-foreground">
 ₹{property.price.toLocaleString()}
 <span className="text-sm font-normal text-muted-foreground ml-1">per day</span>
 </div>
@@ -481,7 +481,7 @@ Quick View
 </div>
 </div>
 <div className="text-right">
-<div className="text-2xl font-black text-foreground">₹{property.price.toLocaleString()}</div>
+<div className="text-xl font-black text-foreground">₹{property.price.toLocaleString()}</div>
 <div className="text-sm text-muted-foreground">per day</div>
 </div>
 </div>
