@@ -111,10 +111,10 @@ Become a Host
 </a>
 </nav>
 <div className="flex items-center space-x-4">
-<button className="bg-secondary text-secondary-foreground hover:bg-secondary/80 font-medium transition-all duration-200 cursor-pointer whitespace-nowrap !rounded-button px-6 py-3">
+<button className="bg-secondary text-secondary-foreground hover:bg-secondary/80 font-medium transition-all duration-200 cursor-pointer whitespace-nowrap rounded-button px-6 py-3">
 <i className="fas fa-user mr-2"></i>Login
 </button>
-<button className="bg-gradient-to-r from-brand-orange to-brand-red text-white px-6 py-3 hover:from-orange-600 hover:to-red-600 transition-all duration-300 cursor-pointer whitespace-nowrap !rounded-button font-medium shadow-lg hover:shadow-xl transform hover:scale-105">
+<button className="bg-gradient-to-r from-brand-orange to-brand-red text-white px-6 py-3 hover:from-orange-600 hover:to-red-600 transition-all duration-300 cursor-pointer whitespace-nowrap rounded-button font-medium shadow-lg hover:shadow-xl transform hover:scale-105">
 <i className="fas fa-arrow-right-to-bracket mr-2"></i>Sign Up
 </button>
 </div>
@@ -270,7 +270,7 @@ style={{ minWidth: '240px' }}
 </div>
 </div>
 <div className="flex justify-center mt-6">
-<button className="bg-gradient-to-r from-red-600 to-orange-600 text-white px-8 py-4 rounded-xl hover:from-red-700 hover:to-orange-700 transition-all duration-300 cursor-pointer whitespace-nowrap !rounded-button font-bold text-lg shadow-xl hover:shadow-2xl transform hover:scale-105 flex items-center justify-center gap-3 h-[56px] w-full max-w-md">
+<button className="bg-gradient-to-r from-red-600 to-orange-600 text-white px-8 py-4 rounded-xl hover:from-red-700 hover:to-orange-700 transition-all duration-300 cursor-pointer whitespace-nowrap rounded-button font-bold text-lg shadow-xl hover:shadow-2xl transform hover:scale-105 flex items-center justify-center gap-3 h-[56px] w-full max-w-md">
 <i className="fas fa-search text-xl"></i>
 <span>Search</span>
 </button>
@@ -331,7 +331,7 @@ className="w-full h-64 object-cover transition-transform duration-700 group-hove
 </div>
 </div>
 <div className="absolute bottom-4 left-4 right-4 transform translate-y-8 group-hover:translate-y-0 opacity-0 group-hover:opacity-100 transition-all duration-500">
-<button className="w-full bg-white text-gray-900 py-3 rounded-lg font-bold hover:bg-gray-100 transition-colors duration-200 !rounded-button">
+<button className="w-full bg-white text-gray-900 py-3 rounded-lg font-bold hover:bg-gray-100 transition-colors duration-200 rounded-button">
 View Details
 </button>
 </div>
@@ -356,7 +356,7 @@ View Details
 ))}
 </div>
 <div className="text-center mt-16">
-<button className="bg-gradient-to-r from-red-600 to-orange-500 text-white px-10 py-4 rounded-xl hover:from-red-700 hover:to-orange-600 transition-all duration-300 cursor-pointer whitespace-nowrap !rounded-button font-bold text-lg shadow-xl hover:shadow-2xl transform hover:scale-105">
+<button className="bg-gradient-to-r from-red-600 to-orange-500 text-white px-10 py-4 rounded-xl hover:from-red-700 hover:to-orange-600 transition-all duration-300 cursor-pointer whitespace-nowrap rounded-button font-bold text-lg shadow-xl hover:shadow-2xl transform hover:scale-105">
 Explore All Properties
 <i className="fas fa-arrow-right ml-3"></i>
 </button>
@@ -440,7 +440,7 @@ className="w-full h-72 object-cover transition-transform duration-700 group-hove
 </button>
 </div>
 <div className="absolute bottom-4 left-4 opacity-0 group-hover:opacity-100 transition-all duration-500 transform translate-y-4 group-hover:translate-y-0">
-<button className="bg-white text-gray-900 px-6 py-2 rounded-full font-bold hover:bg-gray-100 transition-colors duration-200 !rounded-button shadow-lg">
+<button className="bg-white text-gray-900 px-6 py-2 rounded-full font-bold hover:bg-gray-100 transition-colors duration-200 rounded-button shadow-lg">
 Quick View
 </button>
 </div>
@@ -466,7 +466,7 @@ Quick View
 </span>
 ))}
 </div>
-<button className="w-full bg-gradient-to-r from-red-600 to-orange-500 text-white py-4 rounded-xl hover:from-red-700 hover:to-orange-600 transition-all duration-300 cursor-pointer whitespace-nowrap !rounded-button font-bold text-lg shadow-lg hover:shadow-xl transform hover:scale-105">
+<button className="w-full bg-gradient-to-r from-red-600 to-orange-500 text-white py-4 rounded-xl hover:from-red-700 hover:to-orange-600 transition-all duration-300 cursor-pointer whitespace-nowrap rounded-button font-bold text-lg shadow-lg hover:shadow-xl transform hover:scale-105">
 Book Now
 <i className="fas fa-arrow-right ml-2"></i>
 </button>
@@ -545,11 +545,11 @@ Join thousands of successful hosts who are earning premium income by listing the
 </div>
 </div>
 <div className="flex flex-col sm:flex-row gap-4">
-<button className="bg-white text-gray-900 px-8 py-4 rounded-xl font-bold text-lg hover:bg-gray-100 transition-all duration-300 cursor-pointer whitespace-nowrap !rounded-button shadow-xl hover:shadow-2xl transform hover:scale-105 flex items-center justify-center gap-3">
+<button className="bg-white text-gray-900 px-8 py-4 rounded-xl font-bold text-lg hover:bg-gray-100 transition-all duration-300 cursor-pointer whitespace-nowrap rounded-button shadow-xl hover:shadow-2xl transform hover:scale-105 flex items-center justify-center gap-3">
 <i className="fas fa-plus-circle"></i>
 List Your Property
 </button>
-<button className="border-2 border-white text-white px-8 py-4 rounded-xl font-bold text-lg hover:bg-white hover:text-gray-900 transition-all duration-300 cursor-pointer whitespace-nowrap !rounded-button flex items-center justify-center gap-3">
+<button className="border-2 border-white text-white px-8 py-4 rounded-xl font-bold text-lg hover:bg-white hover:text-gray-900 transition-all duration-300 cursor-pointer whitespace-nowrap rounded-button flex items-center justify-center gap-3">
 <i className="fas fa-play-circle"></i>
 Watch Demo
 </button>
