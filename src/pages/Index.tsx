@@ -1,4 +1,27 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+
+// Scroll animation hook
+const useScrollAnimation = () => {
+  useEffect(() => {
+    const observerOptions = {
+      threshold: 0.1,
+      rootMargin: '0px 0px -50px 0px'
+    };
+
+    const observer = new IntersectionObserver((entries) => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting) {
+          entry.target.classList.add('animate');
+        }
+      });
+    }, observerOptions);
+
+    const elements = document.querySelectorAll('.fade-in-up, .fade-in');
+    elements.forEach(el => observer.observe(el));
+
+    return () => observer.disconnect();
+  }, []);
+};
 
 // Import all the generated images
 import sunsetVillaResort from '@/assets/sunset-villa-resort.jpg';
@@ -16,6 +39,9 @@ const Index: React.FC = () => {
 const [searchLocation, setSearchLocation] = useState('');
 const [searchDate, setSearchDate] = useState('');
 const [groupSize, setGroupSize] = useState('');
+
+// Initialize scroll animations
+useScrollAnimation();
 
 const topPicks = [
 {
@@ -141,23 +167,23 @@ backgroundImage: `linear-gradient(135deg, hsl(var(--brand-red) / 0.8) 0%, hsl(va
 ✨ India's Premier Vacation Rental Platform
 </span>
 </div>
-<h1 className="text-6xl md:text-7xl font-black mb-8 font-poppins tracking-tight text-shadow leading-tight">
+<h1 className="text-5xl md:text-6xl font-black mb-8 font-poppins tracking-tight text-shadow leading-tight">
 Discover Perfect <br />
 <span className="bg-gradient-to-r from-yellow-300 via-orange-400 to-red-500 bg-clip-text text-transparent animate-pulse">Getaways</span> Near You
 </h1>
-<p className="text-xl md:text-3xl mb-12 opacity-95 font-light max-w-4xl mx-auto leading-relaxed">
+<p className="text-lg md:text-2xl mb-12 opacity-95 font-light max-w-4xl mx-auto leading-relaxed">
 Where you create beautiful memories with your loved ones
 </p>
 <div className="flex flex-wrap items-center justify-center gap-6 mb-16">
 <div className="flex items-center gap-3 bg-white/10 backdrop-blur-md px-6 py-3 rounded-full border border-white/20">
 <div className="w-3 h-3 bg-green-400 rounded-full animate-pulse"></div>
 <i className="fas fa-map-marked-alt text-green-400"></i>
-<span className="text-lg font-medium">500+ Premium Locations</span>
+<span className="text-base font-medium">500+ Premium Locations</span>
 </div>
 <div className="flex items-center gap-3 bg-white/10 backdrop-blur-md px-6 py-3 rounded-full border border-white/20">
 <div className="w-3 h-3 bg-yellow-400 rounded-full animate-pulse"></div>
 <i className="fas fa-star text-yellow-400"></i>
-<span className="text-lg font-medium">4.9/5 Customer Rating</span>
+<span className="text-base font-medium">4.9/5 Customer Rating</span>
 </div>
 </div>
 
@@ -294,21 +320,21 @@ style={{ minWidth: '240px' }}
 <div className="absolute top-0 left-0 w-72 h-72 bg-gradient-to-r from-brand-orange/20 to-brand-red/20 rounded-full mix-blend-multiply filter blur-3xl opacity-70 animate-blob"></div>
 <div className="absolute bottom-0 right-0 w-80 h-80 bg-gradient-to-r from-brand-red/20 to-pink-200/20 rounded-full mix-blend-multiply filter blur-3xl opacity-70 animate-blob animation-delay-2000"></div>
 <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative">
-<div className="text-center mb-20">
+<div className="text-center mb-20 fade-in-up">
 <div className="inline-block">
 <span className="text-brand-orange font-bold text-lg mb-4 block uppercase tracking-wider">Handpicked Excellence</span>
-<h2 className="text-5xl md:text-6xl font-black text-gray-900 font-poppins mb-6 text-shadow">
+<h2 className="text-4xl md:text-5xl font-black text-gray-900 font-poppins mb-6 text-shadow">
 Top Picks for You
 </h2>
 <div className="w-24 h-1 bg-gradient-to-r from-brand-red to-brand-orange mx-auto rounded-full"></div>
 </div>
-<p className="text-xl text-muted-foreground max-w-3xl mx-auto mt-6 leading-relaxed">
+<p className="text-lg text-muted-foreground max-w-3xl mx-auto mt-6 leading-relaxed">
 Curated collection of the most stunning and luxurious properties that promise unforgettable experiences
 </p>
 </div>
 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
 {topPicks.map((property, index) => (
-<div key={property.id} className="group cursor-pointer">
+<div key={property.id} className="group cursor-pointer fade-in-up" style={{animationDelay: `${index * 0.1}s`}}>
 <div className="bg-gradient-to-br from-brand-orange to-brand-red p-0.5 rounded-2xl hover-lift">
 <div className="bg-background rounded-2xl overflow-hidden">
 <div className="relative">
@@ -372,19 +398,19 @@ Explore All Properties
 <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-56 h-56 bg-gradient-to-r from-pink-300/30 to-brand-red/30 rounded-full mix-blend-multiply filter blur-3xl animate-blob animation-delay-4000"></div>
 </div>
 <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative">
-<div className="text-center max-w-4xl mx-auto mb-20">
+<div className="text-center max-w-4xl mx-auto mb-20 fade-in-up">
 <span className="bg-gradient-to-r from-brand-red to-brand-orange bg-clip-text text-transparent font-bold text-lg mb-4 block uppercase tracking-wider">Find Your Perfect Match</span>
-<h2 className="text-5xl md:text-6xl font-black text-gray-900 font-poppins mb-6 text-shadow">
+<h2 className="text-4xl md:text-5xl font-black text-gray-900 font-poppins mb-6 text-shadow">
 Explore by Category
 </h2>
 <div className="w-24 h-1 bg-gradient-to-r from-brand-red to-brand-orange mx-auto rounded-full mb-6"></div>
-<p className="text-xl text-muted-foreground leading-relaxed">
+<p className="text-lg text-muted-foreground leading-relaxed">
 Choose from our meticulously curated categories to discover destinations that match your dream getaway perfectly
 </p>
 </div>
 <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-8">
 {categories.map((category, index) => (
-<div key={index} className="group cursor-pointer text-center">
+<div key={index} className="group cursor-pointer text-center fade-in-up" style={{animationDelay: `${index * 0.1}s`}}>
 <div className="relative mb-6">
 <div className="w-32 h-32 mx-auto bg-gradient-to-br from-background via-brand-orange/10 to-brand-red/10 rounded-3xl flex items-center justify-center shadow-xl group-hover:shadow-2xl transition-all duration-500 transform group-hover:scale-110 group-hover:-rotate-3 border-2 border-background">
 <div className="absolute inset-0 bg-gradient-to-br from-brand-red to-brand-orange rounded-3xl opacity-0 group-hover:opacity-90 transition-opacity duration-500"></div>
@@ -416,16 +442,16 @@ View All Categories
 <div className="absolute top-0 right-0 w-96 h-96 bg-gradient-to-l from-brand-orange/10 to-transparent rounded-full filter blur-3xl opacity-50"></div>
 <div className="absolute bottom-0 left-0 w-96 h-96 bg-gradient-to-r from-brand-red/10 to-transparent rounded-full filter blur-3xl opacity-50"></div>
 <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative">
-<div className="text-center mb-20">
+<div className="text-center mb-20 fade-in-up">
 <span className="bg-gradient-to-r from-brand-red to-brand-orange bg-clip-text text-transparent font-bold text-lg mb-4 block uppercase tracking-wider">Premium Collection</span>
-<h2 className="text-5xl md:text-6xl font-black text-gray-900 font-poppins mb-6 text-shadow">
+<h2 className="text-4xl md:text-5xl font-black text-gray-900 font-poppins mb-6 text-shadow">
 Featured Properties
 </h2>
 <div className="w-24 h-1 bg-gradient-to-r from-brand-red to-brand-orange mx-auto rounded-full"></div>
 </div>
 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-10">
 {featuredProperties.map((property, index) => (
-<div key={property.id} className="group cursor-pointer">
+<div key={property.id} className="group cursor-pointer fade-in-up" style={{animationDelay: `${index * 0.2}s`}}>
 <div className="bg-background rounded-3xl shadow-xl hover:shadow-2xl transition-all duration-500 overflow-hidden transform hover:scale-105 hover:-rotate-1 border border-border">
 <div className="relative overflow-hidden">
 <img
@@ -494,15 +520,15 @@ View All Featured Properties
 </div>
 <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative">
 <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
-<div className="text-white">
+<div className="text-white fade-in-up">
 <div className="mb-8">
 <span className="inline-block bg-white/20 backdrop-blur-md px-6 py-2 rounded-full text-sm font-bold border border-white/30 mb-6">
 🏡 Become a Host
 </span>
-<h2 className="text-5xl md:text-6xl font-black mb-6 font-poppins text-shadow leading-tight">
+<h2 className="text-4xl md:text-5xl font-black mb-6 font-poppins text-shadow leading-tight">
 Turn Your Property Into Gold
 </h2>
-<p className="text-xl opacity-90 leading-relaxed mb-8">
+<p className="text-lg opacity-90 leading-relaxed mb-8">
 Join thousands of successful hosts who are earning premium income by listing their properties on India's fastest-growing vacation rental platform
 </p>
 </div>
@@ -569,7 +595,7 @@ Watch Demo
 </div>
 </div>
 </div>
-<div className="relative">
+<div className="relative fade-in-up" style={{animationDelay: '0.3s'}}>
 <div className="bg-gradient-to-br from-brand-orange to-brand-red p-0.5 rounded-2xl">
 <div className="bg-white p-2 rounded-2xl">
 <img
