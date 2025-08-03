@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import picnifyLogo from '/lovable-uploads/f7960b1f-407a-4738-b8f6-067ea4600889.png';
 
 // Scroll animation hook
 const useScrollAnimation = () => {
@@ -177,54 +178,35 @@ const Locations: React.FC = () => {
   const trendingDestinations = destinations.filter(dest => dest.trending);
 
   return (
-    <div className="min-h-screen bg-white">
-      <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800;900&display=swap');
-        .font-poppins {
-          font-family: 'Poppins', sans-serif;
-        }
-        .!rounded-button {
-          border-radius: 12px;
-        }
-        .hover-lift {
-          transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-        }
-        .hover-lift:hover {
-          transform: translateY(-8px);
-        }
-        .gradient-border {
-          background: linear-gradient(45deg, #f97316, #dc2626);
-          padding: 2px;
-          border-radius: 16px;
-        }
-        .gradient-border-inner {
-          background: white;
-          border-radius: 14px;
-        }
-        .text-shadow {
-          text-shadow: 0 2px 4px rgba(0,0,0,0.1);
-        }
-      `}</style>
-
+    <div className="min-h-screen bg-background font-poppins">
       {/* Header */}
-      <header className="sticky top-0 z-50 bg-white shadow-sm border-b border-gray-100">
+      <header className="sticky top-0 z-50 bg-background shadow-lg">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-20">
             <div className="flex items-center">
-              <div className="text-3xl font-bold text-gray-900 font-poppins cursor-pointer">
-                Picknify<span className="text-orange-500">.in</span>
-              </div>
+              <a href="/" className="flex items-center">
+                <img src={picnifyLogo} alt="Picnify.in Logo" className="h-12" />
+              </a>
             </div>
-            <nav className="hidden md:flex space-x-10">
-              <a href="/" className="text-gray-700 hover:text-red-600 font-medium transition-colors duration-200 cursor-pointer">Home</a>
-              <a href="/properties" className="text-gray-700 hover:text-red-600 font-medium transition-colors duration-200 cursor-pointer">Properties</a>
-              <a href="/locations" className="text-red-600 font-medium cursor-pointer">Locations</a>
-              <a href="#" className="text-gray-700 hover:text-red-600 font-medium transition-colors duration-200 cursor-pointer">About</a>
-              <a href="#" className="text-gray-700 hover:text-red-600 font-medium transition-colors duration-200 cursor-pointer">Contact</a>
+            <nav className="hidden md:flex items-center space-x-8">
+              <a href="/" className="text-foreground hover:text-brand-orange font-medium transition-colors duration-200 cursor-pointer">Home</a>
+              <a href="/properties" className="text-foreground hover:text-brand-orange font-medium transition-colors duration-200 cursor-pointer">Properties</a>
+              <a href="/locations" className="text-brand-orange font-medium cursor-pointer">Locations</a>
+              <a href="/about" className="text-foreground hover:text-brand-orange font-medium transition-colors duration-200 cursor-pointer">About</a>
+              <a href="/contact" className="text-foreground hover:text-brand-orange font-medium transition-colors duration-200 cursor-pointer">Contact</a>
+              <div className="h-6 w-px bg-border mx-4"></div>
+              <a href="/host" className="text-foreground hover:text-brand-orange font-medium transition-colors duration-200 cursor-pointer flex items-center gap-2">
+                <i className="fas fa-plus-circle"></i>
+                Become a Host
+              </a>
             </nav>
             <div className="flex items-center space-x-4">
-              <button className="text-gray-700 hover:text-red-600 font-medium transition-colors duration-200 cursor-pointer whitespace-nowrap !rounded-button px-4 py-2">Login</button>
-              <button className="bg-orange-500 text-white px-6 py-3 hover:bg-orange-600 transition-all duration-300 cursor-pointer whitespace-nowrap !rounded-button font-medium shadow-lg hover:shadow-xl transform hover:scale-105">Sign Up</button>
+              <button className="bg-secondary text-secondary-foreground hover:bg-secondary/80 font-medium transition-all duration-200 cursor-pointer whitespace-nowrap rounded-button px-6 py-3">
+                <i className="fas fa-user mr-2"></i>Login
+              </button>
+              <button className="bg-gradient-to-r from-brand-orange to-brand-red text-white px-6 py-3 hover:from-orange-600 hover:to-red-600 transition-all duration-300 cursor-pointer whitespace-nowrap rounded-button font-medium shadow-lg hover:shadow-xl transform hover:scale-105">
+                <i className="fas fa-arrow-right-to-bracket mr-2"></i>Sign Up
+              </button>
             </div>
           </div>
         </div>
@@ -602,9 +584,7 @@ const Locations: React.FC = () => {
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-12 mb-16">
             <div className="lg:col-span-2">
               <div className="mb-6">
-                <div className="text-4xl font-bold bg-gradient-to-r from-red-400 to-orange-400 bg-clip-text text-transparent font-poppins cursor-pointer">
-                  Picknify<span className="text-orange-400">.in</span>
-                </div>
+                <img src={picnifyLogo} alt="Picnify.in Logo" className="h-12" />
               </div>
               <p className="text-gray-300 text-lg mb-8 leading-relaxed max-w-md">
                 Picnify is your one-stop platform to discover and book day picnic spots, villas, farmhouses, and unique getaways, making your time with loved ones hassle-free and memorable
