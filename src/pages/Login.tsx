@@ -341,7 +341,7 @@ const Login: React.FC = () => {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
             <div className="flex items-center space-x-2">
-              <img src="/src/assets/picnify-logo.png" alt="Picnify Logo" className="h-8" />
+              <img src="/lovable-uploads/e228e944-68b4-44be-b2e6-34da27786e7b.png" alt="Picnify Logo" className="h-8" />
               <span className="text-2xl font-bold text-red-600">Picnify</span>
             </div>
             <nav className="flex space-x-8">
