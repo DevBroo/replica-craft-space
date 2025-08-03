@@ -592,10 +592,12 @@ const Login: React.FC = () => {
                     </div>
                   </div>
                   <div className="mt-6 flex flex-col sm:flex-row space-y-3 sm:space-y-0 sm:space-x-3">
-                    <button className="flex-1 bg-red-600 text-white py-2 px-4 rounded-lg hover:bg-red-700">
-                      <i className="fas fa-eye mr-2"></i>
-                      View Details
-                    </button>
+                    <Link to="/booking-details" className="flex-1">
+                      <button className="w-full bg-red-600 text-white py-2 px-4 rounded-lg hover:bg-red-700">
+                        <i className="fas fa-eye mr-2"></i>
+                        View Details
+                      </button>
+                    </Link>
                     <button className="flex-1 bg-gray-100 text-gray-700 py-2 px-4 rounded-lg hover:bg-gray-200">
                       <i className="fas fa-times mr-2"></i>
                       Cancel Booking
