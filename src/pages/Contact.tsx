@@ -164,9 +164,12 @@ const Contact: React.FC = () => {
               <a href="/contact" className="text-brand-orange font-medium cursor-pointer">Contact</a>
             </nav>
             <div className="flex items-center space-x-4">
-              <button className="bg-secondary text-secondary-foreground hover:bg-secondary/80 font-medium transition-all duration-200 cursor-pointer whitespace-nowrap rounded-button px-6 py-3">
+              <Link 
+                to="/login"
+                className="bg-secondary text-secondary-foreground hover:bg-secondary/80 font-medium transition-all duration-200 cursor-pointer whitespace-nowrap rounded-button px-6 py-3 inline-flex items-center"
+              >
                 <i className="fas fa-user mr-2"></i>Login
-              </button>
+              </Link>
               <Link 
                 to="/signup"
                 className="bg-gradient-to-r from-brand-orange to-brand-red text-white px-6 py-3 hover:from-orange-600 hover:to-red-600 transition-all duration-300 cursor-pointer whitespace-nowrap rounded-button font-medium shadow-lg hover:shadow-xl transform hover:scale-105 inline-flex items-center"
