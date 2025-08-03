@@ -93,7 +93,11 @@ const Login: React.FC = () => {
         {/* Header */}
         <header className="bg-white shadow-sm border-b border-gray-200">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="flex justify-center items-center h-16">
+            <div className="flex justify-between items-center h-16">
+              <Link to="/" className="flex items-center text-gray-600 hover:text-gray-900 cursor-pointer">
+                <i className="fas fa-arrow-left mr-2"></i>
+                <span className="text-sm font-medium">Back to Website</span>
+              </Link>
               <div className="flex items-center space-x-2">
                 <img src="/lovable-uploads/4a6c26a9-df9d-4bbe-a6d2-acb1b3d99100.png" alt="Picnify Logo" className="h-8" />
               </div>
