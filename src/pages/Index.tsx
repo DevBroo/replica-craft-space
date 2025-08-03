@@ -132,9 +132,9 @@ return (
               <a href="/contact" className="text-foreground hover:text-brand-orange font-medium transition-colors duration-200 cursor-pointer">Contact</a>
             </nav>
 <div className="flex items-center space-x-4">
-<button className="bg-secondary text-secondary-foreground hover:bg-secondary/80 font-medium transition-all duration-200 cursor-pointer whitespace-nowrap rounded-button px-6 py-3">
-<i className="fas fa-user mr-2"></i>Login
-</button>
+              <a href="/login" className="bg-secondary text-secondary-foreground hover:bg-secondary/80 font-medium transition-all duration-200 cursor-pointer whitespace-nowrap rounded-button px-6 py-3 inline-flex items-center">
+                <i className="fas fa-user mr-2"></i>Login
+              </a>
 <button className="bg-gradient-to-r from-brand-orange to-brand-red text-white px-6 py-3 hover:from-orange-600 hover:to-red-600 transition-all duration-300 cursor-pointer whitespace-nowrap rounded-button font-medium shadow-lg hover:shadow-xl transform hover:scale-105">
 <i className="fas fa-arrow-right-to-bracket mr-2"></i>Sign Up
 </button>
