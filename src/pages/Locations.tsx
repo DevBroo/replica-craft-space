@@ -570,51 +570,59 @@ const Locations: React.FC = () => {
       {/* Footer */}
       <footer className="bg-gray-900 text-white py-20 relative overflow-hidden">
         <div className="absolute inset-0 opacity-10">
-          <div className="absolute top-0 left-0 w-64 h-64 bg-gradient-to-r from-red-500 to-orange-500 rounded-full filter blur-3xl"></div>
-          <div className="absolute bottom-0 right-0 w-80 h-80 bg-gradient-to-r from-orange-500 to-yellow-500 rounded-full filter blur-3xl"></div>
+          <div className="absolute top-0 left-0 w-64 h-64 bg-gradient-to-r from-brand-red to-brand-orange rounded-full filter blur-3xl"></div>
+          <div className="absolute bottom-0 right-0 w-80 h-80 bg-gradient-to-r from-brand-orange to-yellow-500 rounded-full filter blur-3xl"></div>
         </div>
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative">
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-12 mb-16">
             <div className="lg:col-span-2">
-              <div className="text-4xl font-bold bg-gradient-to-r from-red-400 to-orange-400 bg-clip-text text-transparent mb-6 font-poppins cursor-pointer">
-                Picknify<span className="text-orange-400">.in</span>
+              <div className="mb-6">
+                <div className="text-4xl font-bold bg-gradient-to-r from-red-400 to-orange-400 bg-clip-text text-transparent font-poppins cursor-pointer">
+                  Picknify<span className="text-orange-400">.in</span>
+                </div>
               </div>
               <p className="text-gray-300 text-lg mb-8 leading-relaxed max-w-md">
-                India's most trusted vacation rental platform, connecting travelers with extraordinary experiences and helping property owners maximize their earnings.
+                Picnify is your one-stop platform to discover and book day picnic spots, villas, farmhouses, and unique getaways, making your time with loved ones hassle-free and memorable
               </p>
-              <div className="flex space-x-4">
-                <div className="w-12 h-12 bg-gradient-to-r from-red-600 to-orange-500 rounded-full flex items-center justify-center hover:scale-110 transition-transform duration-300 cursor-pointer">
-                  <i className="fab fa-facebook text-xl"></i>
-                </div>
-                <div className="w-12 h-12 bg-gradient-to-r from-red-600 to-orange-500 rounded-full flex items-center justify-center hover:scale-110 transition-transform duration-300 cursor-pointer">
-                  <i className="fab fa-twitter text-xl"></i>
-                </div>
-                <div className="w-12 h-12 bg-gradient-to-r from-red-600 to-orange-500 rounded-full flex items-center justify-center hover:scale-110 transition-transform duration-300 cursor-pointer">
-                  <i className="fab fa-instagram text-xl"></i>
-                </div>
-                <div className="w-12 h-12 bg-gradient-to-r from-red-600 to-orange-500 rounded-full flex items-center justify-center hover:scale-110 transition-transform duration-300 cursor-pointer">
-                  <i className="fab fa-youtube text-xl"></i>
-                </div>
+              <div className="flex flex-wrap gap-4">
+                <a href="https://facebook.com/picnify" target="_blank" rel="noopener noreferrer" className="w-12 h-12 bg-gradient-to-r from-brand-red to-brand-orange rounded-full flex items-center justify-center hover:scale-110 transition-transform duration-300 group">
+                  <i className="fab fa-facebook-f text-xl group-hover:animate-bounce"></i>
+                </a>
+                <a href="https://instagram.com/picnify" target="_blank" rel="noopener noreferrer" className="w-12 h-12 bg-gradient-to-r from-brand-red to-brand-orange rounded-full flex items-center justify-center hover:scale-110 transition-transform duration-300 group">
+                  <i className="fab fa-instagram text-xl group-hover:animate-bounce"></i>
+                </a>
+                <a href="https://twitter.com/picnify" target="_blank" rel="noopener noreferrer" className="w-12 h-12 bg-gradient-to-r from-brand-red to-brand-orange rounded-full flex items-center justify-center hover:scale-110 transition-transform duration-300 group">
+                  <i className="fab fa-twitter text-xl group-hover:animate-bounce"></i>
+                </a>
+                <a href="https://youtube.com/picnify" target="_blank" rel="noopener noreferrer" className="w-12 h-12 bg-gradient-to-r from-brand-red to-brand-orange rounded-full flex items-center justify-center hover:scale-110 transition-transform duration-300 group">
+                  <i className="fab fa-youtube text-xl group-hover:animate-bounce"></i>
+                </a>
+                <a href="https://linkedin.com/company/picnify" target="_blank" rel="noopener noreferrer" className="w-12 h-12 bg-gradient-to-r from-brand-red to-brand-orange rounded-full flex items-center justify-center hover:scale-110 transition-transform duration-300 group">
+                  <i className="fab fa-linkedin-in text-xl group-hover:animate-bounce"></i>
+                </a>
+                <a href="https://wa.me/+919876543210" target="_blank" rel="noopener noreferrer" className="w-12 h-12 bg-gradient-to-r from-brand-red to-brand-orange rounded-full flex items-center justify-center hover:scale-110 transition-transform duration-300 group">
+                  <i className="fab fa-whatsapp text-xl group-hover:animate-bounce"></i>
+                </a>
               </div>
-            </div>
-            <div>
-              <h3 className="text-xl font-bold mb-6 text-white">Popular Destinations</h3>
-              <ul className="space-y-4">
-                <li><a href="#" className="text-gray-300 hover:text-white transition-colors duration-200 cursor-pointer flex items-center gap-2"><i className="fas fa-chevron-right text-xs text-red-400"></i>Goa Beaches</a></li>
-                <li><a href="#" className="text-gray-300 hover:text-white transition-colors duration-200 cursor-pointer flex items-center gap-2"><i className="fas fa-chevron-right text-xs text-red-400"></i>Himachal Hills</a></li>
-                <li><a href="#" className="text-gray-300 hover:text-white transition-colors duration-200 cursor-pointer flex items-center gap-2"><i className="fas fa-chevron-right text-xs text-red-400"></i>Rajasthan Heritage</a></li>
-                <li><a href="#" className="text-gray-300 hover:text-white transition-colors duration-200 cursor-pointer flex items-center gap-2"><i className="fas fa-chevron-right text-xs text-red-400"></i>Kerala Backwaters</a></li>
-                <li><a href="#" className="text-gray-300 hover:text-white transition-colors duration-200 cursor-pointer flex items-center gap-2"><i className="fas fa-chevron-right text-xs text-red-400"></i>Spiritual Retreats</a></li>
-              </ul>
             </div>
             <div>
               <h3 className="text-xl font-bold mb-6 text-white">Quick Links</h3>
               <ul className="space-y-4">
-                <li><a href="#" className="text-gray-300 hover:text-white transition-colors duration-200 cursor-pointer flex items-center gap-2"><i className="fas fa-chevron-right text-xs text-red-400"></i>About Picknify</a></li>
-                <li><a href="#" className="text-gray-300 hover:text-white transition-colors duration-200 cursor-pointer flex items-center gap-2"><i className="fas fa-chevron-right text-xs text-red-400"></i>How It Works</a></li>
-                <li><a href="#" className="text-gray-300 hover:text-white transition-colors duration-200 cursor-pointer flex items-center gap-2"><i className="fas fa-chevron-right text-xs text-red-400"></i>Safety Guidelines</a></li>
-                <li><a href="#" className="text-gray-300 hover:text-white transition-colors duration-200 cursor-pointer flex items-center gap-2"><i className="fas fa-chevron-right text-xs text-red-400"></i>Privacy Policy</a></li>
-                <li><a href="#" className="text-gray-300 hover:text-white transition-colors duration-200 cursor-pointer flex items-center gap-2"><i className="fas fa-chevron-right text-xs text-red-400"></i>Terms of Service</a></li>
+                <li><a href="#" className="text-gray-300 hover:text-white transition-colors duration-200 cursor-pointer flex items-center gap-2"><i className="fas fa-chevron-right text-xs text-brand-red"></i>About Picknify</a></li>
+                <li><a href="#" className="text-gray-300 hover:text-white transition-colors duration-200 cursor-pointer flex items-center gap-2"><i className="fas fa-chevron-right text-xs text-brand-red"></i>How It Works</a></li>
+                <li><a href="#" className="text-gray-300 hover:text-white transition-colors duration-200 cursor-pointer flex items-center gap-2"><i className="fas fa-chevron-right text-xs text-brand-red"></i>Safety Guidelines</a></li>
+                <li><a href="#" className="text-gray-300 hover:text-white transition-colors duration-200 cursor-pointer flex items-center gap-2"><i className="fas fa-chevron-right text-xs text-brand-red"></i>Privacy Policy</a></li>
+                <li><a href="#" className="text-gray-300 hover:text-white transition-colors duration-200 cursor-pointer flex items-center gap-2"><i className="fas fa-chevron-right text-xs text-brand-red"></i>Terms of Service</a></li>
+              </ul>
+            </div>
+            <div>
+              <h3 className="text-xl font-bold mb-6 text-white">Support & Help</h3>
+              <ul className="space-y-4">
+                <li><a href="#" className="text-gray-300 hover:text-white transition-colors duration-200 cursor-pointer flex items-center gap-2"><i className="fas fa-chevron-right text-xs text-brand-red"></i>24/7 Help Center</a></li>
+                <li><a href="#" className="text-gray-300 hover:text-white transition-colors duration-200 cursor-pointer flex items-center gap-2"><i className="fas fa-chevron-right text-xs text-brand-red"></i>Contact Support</a></li>
+                <li><a href="#" className="text-gray-300 hover:text-white transition-colors duration-200 cursor-pointer flex items-center gap-2"><i className="fas fa-chevron-right text-xs text-brand-red"></i>Booking Assistance</a></li>
+                <li><a href="#" className="text-gray-300 hover:text-white transition-colors duration-200 cursor-pointer flex items-center gap-2"><i className="fas fa-chevron-right text-xs text-brand-red"></i>Host Resources</a></li>
+                <li><a href="#" className="text-gray-300 hover:text-white transition-colors duration-200 cursor-pointer flex items-center gap-2"><i className="fas fa-chevron-right text-xs text-brand-red"></i>Trust & Safety</a></li>
               </ul>
             </div>
           </div>
@@ -622,7 +630,7 @@ const Locations: React.FC = () => {
             <div className="flex flex-col lg:flex-row justify-between items-center gap-8">
               <div className="text-center lg:text-left">
                 <p className="text-gray-400 text-lg">
-                  © 2024 Picknify.in - Crafted with ❤️ in India. All rights reserved.
+                  © 2025 Picknify.in - Crafted with ❤️ in India. All rights reserved.
                 </p>
                 <p className="text-gray-500 text-sm mt-2">
                   Connecting travelers with extraordinary experiences since 2024
@@ -632,20 +640,6 @@ const Locations: React.FC = () => {
                 <div className="text-center">
                   <div className="text-2xl font-bold text-white">4.9★</div>
                   <div className="text-xs text-gray-400">App Rating</div>
-                </div>
-                <div className="flex items-center gap-4">
-                  <div className="w-10 h-10 bg-gray-700 rounded-lg flex items-center justify-center">
-                    <i className="fab fa-cc-visa text-xl text-blue-400"></i>
-                  </div>
-                  <div className="w-10 h-10 bg-gray-700 rounded-lg flex items-center justify-center">
-                    <i className="fab fa-cc-mastercard text-xl text-red-400"></i>
-                  </div>
-                  <div className="w-10 h-10 bg-gray-700 rounded-lg flex items-center justify-center">
-                    <i className="fab fa-paypal text-xl text-blue-400"></i>
-                  </div>
-                  <div className="w-10 h-10 bg-gray-700 rounded-lg flex items-center justify-center">
-                    <i className="fas fa-university text-lg text-green-400"></i>
-                  </div>
                 </div>
               </div>
             </div>
