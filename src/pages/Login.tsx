@@ -773,6 +773,107 @@ const Login: React.FC = () => {
           </div>
         )}
 
+        {currentPage === 'settings' && (
+          <div className="w-full">
+            <h1 className="text-xl sm:text-2xl font-bold text-gray-900 mb-8">Settings</h1>
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              {/* Notification Settings */}
+              <div className="bg-white rounded-xl shadow-sm border border-gray-200">
+                <div className="px-4 sm:px-6 py-4 border-b border-gray-200">
+                  <h3 className="text-base sm:text-lg font-medium text-gray-900">Notification Preferences</h3>
+                </div>
+                <div className="p-4 sm:p-6 space-y-4">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-sm font-medium text-gray-900">Email Notifications</p>
+                      <p className="text-xs sm:text-sm text-gray-500">Receive booking confirmations and updates</p>
+                    </div>
+                    <label className="relative inline-flex items-center cursor-pointer">
+                      <input type="checkbox" className="sr-only peer" defaultChecked />
+                      <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-red-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-red-600"></div>
+                    </label>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-sm font-medium text-gray-900">SMS Notifications</p>
+                      <p className="text-xs sm:text-sm text-gray-500">Receive important updates via text message</p>
+                    </div>
+                    <label className="relative inline-flex items-center cursor-pointer">
+                      <input type="checkbox" className="sr-only peer" />
+                      <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-red-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-red-600"></div>
+                    </label>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-sm font-medium text-gray-900">Push Notifications</p>
+                      <p className="text-xs sm:text-sm text-gray-500">Get notified about special offers and deals</p>
+                    </div>
+                    <label className="relative inline-flex items-center cursor-pointer">
+                      <input type="checkbox" className="sr-only peer" defaultChecked />
+                      <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-red-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-red-600"></div>
+                    </label>
+                  </div>
+                </div>
+              </div>
+
+              {/* Privacy Settings */}
+              <div className="bg-white rounded-xl shadow-sm border border-gray-200">
+                <div className="px-4 sm:px-6 py-4 border-b border-gray-200">
+                  <h3 className="text-base sm:text-lg font-medium text-gray-900">Privacy & Security</h3>
+                </div>
+                <div className="p-4 sm:p-6 space-y-4">
+                  <button className="w-full flex items-center justify-between p-4 border border-gray-200 rounded-lg hover:bg-gray-50">
+                    <div className="text-left">
+                      <p className="text-sm font-medium text-gray-900">Change Password</p>
+                      <p className="text-xs sm:text-sm text-gray-500">Update your account password</p>
+                    </div>
+                    <i className="fas fa-chevron-right text-gray-400"></i>
+                  </button>
+                  <button className="w-full flex items-center justify-between p-4 border border-gray-200 rounded-lg hover:bg-gray-50">
+                    <div className="text-left">
+                      <p className="text-sm font-medium text-gray-900">Two-Factor Authentication</p>
+                      <p className="text-xs sm:text-sm text-gray-500">Add an extra layer of security</p>
+                    </div>
+                    <i className="fas fa-chevron-right text-gray-400"></i>
+                  </button>
+                  <button className="w-full flex items-center justify-between p-4 border border-gray-200 rounded-lg hover:bg-gray-50">
+                    <div className="text-left">
+                      <p className="text-sm font-medium text-gray-900">Privacy Settings</p>
+                      <p className="text-xs sm:text-sm text-gray-500">Control who can see your information</p>
+                    </div>
+                    <i className="fas fa-chevron-right text-gray-400"></i>
+                  </button>
+                </div>
+              </div>
+
+              {/* Account Actions */}
+              <div className="bg-white rounded-xl shadow-sm border border-gray-200 lg:col-span-2">
+                <div className="px-4 sm:px-6 py-4 border-b border-gray-200">
+                  <h3 className="text-base sm:text-lg font-medium text-gray-900">Account Actions</h3>
+                </div>
+                <div className="p-4 sm:p-6">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <button className="w-full flex items-center justify-between p-4 border border-gray-200 rounded-lg hover:bg-gray-50">
+                      <div className="text-left">
+                        <p className="text-sm font-medium text-gray-900">Export Data</p>
+                        <p className="text-xs sm:text-sm text-gray-500">Download a copy of your data</p>
+                      </div>
+                      <i className="fas fa-download text-gray-400"></i>
+                    </button>
+                    <button className="w-full flex items-center justify-between p-4 border border-red-200 rounded-lg hover:bg-red-50">
+                      <div className="text-left">
+                        <p className="text-sm font-medium text-red-600">Delete Account</p>
+                        <p className="text-xs sm:text-sm text-red-500">Permanently delete your account and data</p>
+                      </div>
+                      <i className="fas fa-trash text-red-400"></i>
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* Add other page content here as needed */}
       </main>
     </div>
