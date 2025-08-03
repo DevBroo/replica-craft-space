@@ -1,0 +1,752 @@
+import React, { useState } from 'react';
+import picnifyLogo from '/lovable-uploads/f7960b1f-407a-4738-b8f6-067ea4600889.png';
+
+// Import all the generated images
+import sunsetVillaResort from '@/assets/sunset-villa-resort.jpg';
+import mountainCottage from '@/assets/mountain-cottage.jpg';
+import beachsideParadise from '@/assets/beachside-paradise.jpg';
+import gardenEstate from '@/assets/garden-estate.jpg';
+import royalHeritageVilla from '@/assets/royal-heritage-villa.jpg';
+import lakesideRetreat from '@/assets/lakeside-retreat.jpg';
+import farmHouseBliss from '@/assets/farm-house-bliss.jpg';
+
+const Properties: React.FC = () => {
+  const [searchLocation, setSearchLocation] = useState('');
+  const [searchDate, setSearchDate] = useState('');
+  const [groupSize, setGroupSize] = useState('');
+  const [priceRange, setPriceRange] = useState('');
+  const [propertyType, setPropertyType] = useState('');
+  const [amenities, setAmenities] = useState<string[]>([]);
+  const [sortBy, setSortBy] = useState('popularity');
+  const [viewMode, setViewMode] = useState('grid');
+  const [currentPage, setCurrentPage] = useState(1);
+  const [showFilters, setShowFilters] = useState(false);
+
+  const properties = [
+    {
+      id: 1,
+      name: 'Sunset Villa Resort',
+      location: 'Goa',
+      rating: 4.8,
+      reviews: 245,
+      price: 2500,
+      originalPrice: 3200,
+      image: sunsetVillaResort,
+      amenities: ['Pool', 'WiFi', 'Parking', 'Kitchen', 'AC'],
+      type: 'Villa',
+      guests: 8,
+      bedrooms: 3,
+      bathrooms: 2,
+      featured: true
+    },
+    {
+      id: 2,
+      name: 'Mountain View Cottage',
+      location: 'Manali',
+      rating: 4.6,
+      reviews: 182,
+      price: 1800,
+      originalPrice: 2200,
+      image: mountainCottage,
+      amenities: ['Fireplace', 'WiFi', 'Kitchen', 'Garden', 'Heating'],
+      type: 'Cottage',
+      guests: 6,
+      bedrooms: 2,
+      bathrooms: 1,
+      featured: false
+    },
+    {
+      id: 3,
+      name: 'Beachside Paradise',
+      location: 'Kerala',
+      rating: 4.9,
+      reviews: 398,
+      price: 3200,
+      originalPrice: 3800,
+      image: beachsideParadise,
+      amenities: ['Beach Access', 'Pool', 'WiFi', 'Restaurant', 'Spa'],
+      type: 'Resort',
+      guests: 12,
+      bedrooms: 4,
+      bathrooms: 3,
+      featured: true
+    },
+    {
+      id: 4,
+      name: 'Garden Estate',
+      location: 'Udaipur',
+      rating: 4.7,
+      reviews: 156,
+      price: 2200,
+      originalPrice: 2700,
+      image: gardenEstate,
+      amenities: ['Garden', 'Pool', 'WiFi', 'Parking', 'Kitchen'],
+      type: 'Estate',
+      guests: 10,
+      bedrooms: 4,
+      bathrooms: 2,
+      featured: false
+    },
+    {
+      id: 5,
+      name: 'Royal Heritage Villa',
+      location: 'Jaipur',
+      rating: 4.8,
+      reviews: 289,
+      price: 4500,
+      originalPrice: 5200,
+      image: royalHeritageVilla,
+      amenities: ['Pool', 'Garden', 'WiFi', 'Parking', 'Heritage'],
+      type: 'Heritage',
+      guests: 14,
+      bedrooms: 5,
+      bathrooms: 4,
+      featured: true
+    },
+    {
+      id: 6,
+      name: 'Lakeside Retreat',
+      location: 'Nainital',
+      rating: 4.6,
+      reviews: 134,
+      price: 2800,
+      originalPrice: 3300,
+      image: lakesideRetreat,
+      amenities: ['Lake View', 'Fireplace', 'Kitchen', 'Balcony', 'WiFi'],
+      type: 'Retreat',
+      guests: 8,
+      bedrooms: 3,
+      bathrooms: 2,
+      featured: false
+    },
+    {
+      id: 7,
+      name: 'Farm House Bliss',
+      location: 'Lonavala',
+      rating: 4.5,
+      reviews: 98,
+      price: 1900,
+      originalPrice: 2400,
+      image: farmHouseBliss,
+      amenities: ['Farm', 'BBQ', 'Games', 'Nature', 'WiFi'],
+      type: 'Farm House',
+      guests: 10,
+      bedrooms: 3,
+      bathrooms: 2,
+      featured: false
+    },
+    {
+      id: 8,
+      name: 'Desert Oasis Camp',
+      location: 'Rajasthan',
+      rating: 4.7,
+      reviews: 167,
+      price: 3500,
+      originalPrice: 4000,
+      image: sunsetVillaResort,
+      amenities: ['Desert View', 'Camp Fire', 'Traditional', 'Camel Safari'],
+      type: 'Camp',
+      guests: 6,
+      bedrooms: 2,
+      bathrooms: 1,
+      featured: true
+    },
+    {
+      id: 9,
+      name: 'Hill Station Bungalow',
+      location: 'Shimla',
+      rating: 4.4,
+      reviews: 203,
+      price: 2100,
+      originalPrice: 2600,
+      image: mountainCottage,
+      amenities: ['Mountain View', 'Fireplace', 'Garden', 'WiFi', 'Parking'],
+      type: 'Bungalow',
+      guests: 8,
+      bedrooms: 3,
+      bathrooms: 2,
+      featured: false
+    },
+    {
+      id: 10,
+      name: 'Urban Loft Studio',
+      location: 'Mumbai',
+      rating: 4.3,
+      reviews: 89,
+      price: 3800,
+      originalPrice: 4200,
+      image: gardenEstate,
+      amenities: ['City View', 'WiFi', 'AC', 'Modern', 'Parking'],
+      type: 'Loft',
+      guests: 4,
+      bedrooms: 1,
+      bathrooms: 1,
+      featured: false
+    },
+    {
+      id: 11,
+      name: 'Riverside Cabin',
+      location: 'Rishikesh',
+      rating: 4.8,
+      reviews: 312,
+      price: 2600,
+      originalPrice: 3100,
+      image: lakesideRetreat,
+      amenities: ['River View', 'Yoga', 'Nature', 'WiFi', 'Adventure'],
+      type: 'Cabin',
+      guests: 6,
+      bedrooms: 2,
+      bathrooms: 1,
+      featured: true
+    },
+    {
+      id: 12,
+      name: 'Palace Suite',
+      location: 'Jodhpur',
+      rating: 4.9,
+      reviews: 445,
+      price: 5500,
+      originalPrice: 6200,
+      image: royalHeritageVilla,
+      amenities: ['Heritage', 'Pool', 'Spa', 'Royal', 'WiFi'],
+      type: 'Palace',
+      guests: 16,
+      bedrooms: 6,
+      bathrooms: 5,
+      featured: true
+    }
+  ];
+
+  const filterOptions = {
+    priceRanges: [
+      { label: 'Under ₹2,000', value: '0-2000' },
+      { label: '₹2,000 - ₹3,000', value: '2000-3000' },
+      { label: '₹3,000 - ₹4,000', value: '3000-4000' },
+      { label: 'Above ₹4,000', value: '4000+' }
+    ],
+    propertyTypes: [
+      'Villa', 'Cottage', 'Resort', 'Estate', 'Heritage', 'Retreat', 'Farm House', 'Camp', 'Bungalow', 'Loft', 'Cabin', 'Palace'
+    ],
+    amenitiesList: [
+      'Pool', 'WiFi', 'Parking', 'Kitchen', 'AC', 'Fireplace', 'Garden', 'Beach Access', 'Restaurant', 'Spa', 'Heritage', 'Lake View', 'Balcony', 'Farm', 'BBQ', 'Games', 'Nature', 'Desert View', 'Camp Fire', 'Traditional', 'Camel Safari', 'Mountain View', 'Heating', 'City View', 'Modern', 'River View', 'Yoga', 'Adventure', 'Royal'
+    ],
+    sortOptions: [
+      { label: 'Popularity', value: 'popularity' },
+      { label: 'Price: Low to High', value: 'price-asc' },
+      { label: 'Price: High to Low', value: 'price-desc' },
+      { label: 'Rating: High to Low', value: 'rating-desc' },
+      { label: 'Newest First', value: 'newest' }
+    ]
+  };
+
+  const toggleAmenity = (amenity: string) => {
+    setAmenities(prev =>
+      prev.includes(amenity)
+        ? prev.filter(a => a !== amenity)
+        : [...prev, amenity]
+    );
+  };
+
+  const clearAllFilters = () => {
+    setPriceRange('');
+    setPropertyType('');
+    setAmenities([]);
+  };
+
+  const propertiesPerPage = 9;
+  const totalPages = Math.ceil(properties.length / propertiesPerPage);
+  const currentProperties = properties.slice(
+    (currentPage - 1) * propertiesPerPage,
+    currentPage * propertiesPerPage
+  );
+
+  return (
+    <div className="min-h-screen bg-background font-poppins">
+      {/* Header */}
+      <header className="sticky top-0 z-50 bg-background shadow-lg">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex justify-between items-center h-20">
+            <div className="flex items-center">
+              <a href="/" className="flex items-center">
+                <img src={picnifyLogo} alt="Picnify.in Logo" className="h-12" />
+              </a>
+            </div>
+            <nav className="hidden md:flex items-center space-x-8">
+              <a href="/" className="text-foreground hover:text-brand-orange font-medium transition-colors duration-200 cursor-pointer">Home</a>
+              <a href="/properties" className="text-brand-red hover:text-brand-orange font-medium transition-colors duration-200 cursor-pointer">Properties</a>
+              <a href="/locations" className="text-foreground hover:text-brand-orange font-medium transition-colors duration-200 cursor-pointer">Locations</a>
+              <a href="/about" className="text-foreground hover:text-brand-orange font-medium transition-colors duration-200 cursor-pointer">About</a>
+              <a href="/contact" className="text-foreground hover:text-brand-orange font-medium transition-colors duration-200 cursor-pointer">Contact</a>
+              <div className="h-6 w-px bg-border mx-4"></div>
+              <a href="/host" className="text-foreground hover:text-brand-orange font-medium transition-colors duration-200 cursor-pointer flex items-center gap-2">
+                <i className="fas fa-plus-circle"></i>
+                Become a Host
+              </a>
+            </nav>
+            <div className="flex items-center space-x-4">
+              <button className="bg-secondary text-secondary-foreground hover:bg-secondary/80 font-medium transition-all duration-200 cursor-pointer whitespace-nowrap rounded-button px-6 py-3">
+                <i className="fas fa-user mr-2"></i>Login
+              </button>
+              <button className="bg-gradient-to-r from-brand-orange to-brand-red text-white px-6 py-3 hover:from-orange-600 hover:to-red-600 transition-all duration-300 cursor-pointer whitespace-nowrap rounded-button font-medium shadow-lg hover:shadow-xl transform hover:scale-105">
+                <i className="fas fa-arrow-right-to-bracket mr-2"></i>Sign Up
+              </button>
+            </div>
+          </div>
+        </div>
+      </header>
+
+      {/* Hero Section with Search */}
+      <section className="bg-gradient-to-br from-secondary/30 to-brand-orange/10 py-16">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center mb-12">
+            <h1 className="text-5xl md:text-6xl font-black text-foreground font-poppins mb-6 text-shadow">
+              Discover Amazing <span className="bg-gradient-to-r from-brand-red to-brand-orange bg-clip-text text-transparent">Properties</span>
+            </h1>
+            <p className="text-xl text-muted-foreground max-w-3xl mx-auto">
+              Browse through our curated collection of premium vacation rentals across India
+            </p>
+          </div>
+
+          {/* Enhanced Search Bar */}
+          <div className="bg-background rounded-3xl p-8 shadow-xl max-w-6xl mx-auto border">
+            <div className="grid grid-cols-1 md:grid-cols-5 gap-6 items-end">
+              <div className="space-y-2">
+                <label className="text-foreground font-semibold text-sm uppercase tracking-wide">Destination</label>
+                <div className="relative">
+                  <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                    <i className="fas fa-map-marker-alt text-brand-red text-lg"></i>
+                  </div>
+                  <input
+                    type="text"
+                    placeholder="Search destination..."
+                    value={searchLocation}
+                    onChange={(e) => setSearchLocation(e.target.value)}
+                    className="w-full pl-12 pr-4 py-4 text-foreground placeholder-muted-foreground border-2 border-border rounded-xl outline-none focus:border-brand-red focus:ring-4 focus:ring-brand-red/20 transition-all duration-300 text-sm font-medium"
+                  />
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <label className="text-foreground font-semibold text-sm uppercase tracking-wide">Check-in</label>
+                <div className="relative">
+                  <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                    <i className="fas fa-calendar-alt text-brand-orange text-lg"></i>
+                  </div>
+                  <input
+                    type="date"
+                    value={searchDate}
+                    onChange={(e) => setSearchDate(e.target.value)}
+                    className="w-full pl-12 pr-4 py-4 text-foreground border-2 border-border rounded-xl outline-none focus:border-brand-orange focus:ring-4 focus:ring-brand-orange/20 transition-all duration-300 text-sm font-medium"
+                  />
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <label className="text-foreground font-semibold text-sm uppercase tracking-wide">Guests</label>
+                <div className="relative">
+                  <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                    <i className="fas fa-users text-blue-500 text-lg"></i>
+                  </div>
+                  <div className="absolute inset-y-0 right-0 pr-4 flex items-center pointer-events-none">
+                    <i className="fas fa-chevron-down text-muted-foreground"></i>
+                  </div>
+                  <button className="w-full pl-12 pr-12 py-4 text-left text-foreground border-2 border-border rounded-xl outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-500/20 transition-all duration-300 text-sm font-medium cursor-pointer">
+                    {groupSize || 'Select guests'}
+                  </button>
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <label className="text-foreground font-semibold text-sm uppercase tracking-wide">Price Range</label>
+                <div className="relative">
+                  <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                    <i className="fas fa-rupee-sign text-green-500 text-lg"></i>
+                  </div>
+                  <div className="absolute inset-y-0 right-0 pr-4 flex items-center pointer-events-none">
+                    <i className="fas fa-chevron-down text-muted-foreground"></i>
+                  </div>
+                  <button className="w-full pl-12 pr-12 py-4 text-left text-foreground border-2 border-border rounded-xl outline-none focus:border-green-500 focus:ring-4 focus:ring-green-500/20 transition-all duration-300 text-sm font-medium cursor-pointer">
+                    {priceRange || 'Any price'}
+                  </button>
+                </div>
+              </div>
+
+              <button className="bg-gradient-to-r from-brand-red to-brand-orange text-white px-8 py-4 rounded-xl hover:from-red-700 hover:to-orange-700 transition-all duration-300 cursor-pointer whitespace-nowrap rounded-button font-bold text-lg shadow-xl hover:shadow-2xl transform hover:scale-105 flex items-center justify-center gap-3">
+                <i className="fas fa-search text-xl"></i>
+                <span>Search</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Filter and Sort Section */}
+      <section className="bg-background border-b border-border sticky top-20 z-40">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+          <div className="flex flex-wrap items-center justify-between gap-4">
+            <div className="flex items-center gap-6">
+              <div className="flex items-center gap-4">
+                <span className="text-foreground font-semibold">Sort by:</span>
+                <div className="relative">
+                  <select
+                    value={sortBy}
+                    onChange={(e) => setSortBy(e.target.value)}
+                    className="appearance-none bg-background border border-border rounded-lg px-4 py-2 pr-8 text-foreground focus:outline-none focus:border-brand-red cursor-pointer"
+                  >
+                    {filterOptions.sortOptions.map((option) => (
+                      <option key={option.value} value={option.value}>{option.label}</option>
+                    ))}
+                  </select>
+                  <div className="absolute inset-y-0 right-0 flex items-center px-2 pointer-events-none">
+                    <i className="fas fa-chevron-down text-muted-foreground"></i>
+                  </div>
+                </div>
+              </div>
+
+              <div className="flex items-center gap-2">
+                <span className="text-foreground font-semibold">View:</span>
+                <button
+                  className={`p-2 rounded-lg transition-colors duration-200 cursor-pointer ${viewMode === 'grid' ? 'bg-brand-red/10 text-brand-red' : 'text-muted-foreground hover:text-foreground'}`}
+                  onClick={() => setViewMode('grid')}
+                >
+                  <i className="fas fa-th-large"></i>
+                </button>
+                <button
+                  className={`p-2 rounded-lg transition-colors duration-200 cursor-pointer ${viewMode === 'list' ? 'bg-brand-red/10 text-brand-red' : 'text-muted-foreground hover:text-foreground'}`}
+                  onClick={() => setViewMode('list')}
+                >
+                  <i className="fas fa-list"></i>
+                </button>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-4">
+              <span className="text-muted-foreground">Showing {properties.length} properties</span>
+              <button
+                className="flex items-center gap-2 px-4 py-2 border border-border rounded-lg hover:border-muted-foreground transition-colors duration-200 cursor-pointer lg:hidden"
+                onClick={() => setShowFilters(!showFilters)}
+              >
+                <i className="fas fa-filter text-muted-foreground"></i>
+                <span className="text-foreground">Filters</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Main Content */}
+      <section className="py-12 bg-secondary/10 min-h-screen">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
+            {/* Filters Sidebar */}
+            <div className={`lg:col-span-1 ${showFilters ? 'block' : 'hidden lg:block'}`}>
+              <div className="bg-background rounded-2xl shadow-lg p-6 sticky top-32">
+                <div className="flex items-center justify-between mb-6">
+                  <h3 className="text-xl font-bold text-foreground">Filters</h3>
+                  <button
+                    className="lg:hidden text-muted-foreground hover:text-foreground"
+                    onClick={() => setShowFilters(false)}
+                  >
+                    <i className="fas fa-times"></i>
+                  </button>
+                </div>
+
+                {/* Price Range Filter */}
+                <div className="mb-8">
+                  <h4 className="font-semibold text-foreground mb-4">Price Range</h4>
+                  <div className="space-y-3">
+                    {filterOptions.priceRanges.map((range, index) => (
+                      <label key={index} className="flex items-center cursor-pointer">
+                        <input
+                          type="radio"
+                          name="priceRange"
+                          value={range.value}
+                          checked={priceRange === range.value}
+                          onChange={(e) => setPriceRange(e.target.value)}
+                          className="w-4 h-4 text-brand-red border-border focus:ring-brand-red"
+                        />
+                        <span className="ml-3 text-foreground">{range.label}</span>
+                      </label>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Property Type Filter */}
+                <div className="mb-8">
+                  <h4 className="font-semibold text-foreground mb-4">Property Type</h4>
+                  <div className="space-y-3 max-h-48 overflow-y-auto">
+                    {filterOptions.propertyTypes.map((type, index) => (
+                      <label key={index} className="flex items-center cursor-pointer">
+                        <input
+                          type="radio"
+                          name="propertyType"
+                          value={type}
+                          checked={propertyType === type}
+                          onChange={(e) => setPropertyType(e.target.value)}
+                          className="w-4 h-4 text-brand-red border-border focus:ring-brand-red"
+                        />
+                        <span className="ml-3 text-foreground">{type}</span>
+                      </label>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Amenities Filter */}
+                <div className="mb-8">
+                  <h4 className="font-semibold text-foreground mb-4">Amenities</h4>
+                  <div className="space-y-3 max-h-64 overflow-y-auto">
+                    {filterOptions.amenitiesList.map((amenity, index) => (
+                      <label key={index} className="flex items-center cursor-pointer">
+                        <input
+                          type="checkbox"
+                          checked={amenities.includes(amenity)}
+                          onChange={() => toggleAmenity(amenity)}
+                          className="w-4 h-4 text-brand-red border-border rounded focus:ring-brand-red"
+                        />
+                        <span className="ml-3 text-foreground">{amenity}</span>
+                      </label>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Clear Filters */}
+                <button
+                  onClick={clearAllFilters}
+                  className="w-full bg-secondary text-secondary-foreground py-3 rounded-lg hover:bg-secondary/80 transition-colors duration-200 cursor-pointer whitespace-nowrap rounded-button font-medium"
+                >
+                  Clear All Filters
+                </button>
+              </div>
+            </div>
+
+            {/* Properties Grid */}
+            <div className="lg:col-span-3">
+              <div className={`grid gap-8 ${viewMode === 'grid' ? 'grid-cols-1 md:grid-cols-2 xl:grid-cols-3' : 'grid-cols-1'}`}>
+                {currentProperties.map((property) => (
+                  <div key={property.id} className="group cursor-pointer">
+                    <div className="bg-background rounded-2xl shadow-lg hover:shadow-2xl transition-all duration-500 overflow-hidden transform hover:scale-105 border border-border hover-lift">
+                      <div className="relative overflow-hidden">
+                        {property.featured && (
+                          <div className="absolute top-4 left-4 z-10">
+                            <span className="bg-gradient-to-r from-brand-red to-brand-orange text-white px-3 py-1 rounded-full text-xs font-bold shadow-lg">
+                              <i className="fas fa-star mr-1"></i>
+                              Featured
+                            </span>
+                          </div>
+                        )}
+                        <div className="absolute top-4 right-4 z-10">
+                          <button className="w-10 h-10 bg-background/90 backdrop-blur-sm rounded-full flex items-center justify-center shadow-lg hover:bg-brand-red hover:text-white transition-all duration-300 group cursor-pointer">
+                            <i className="fas fa-heart text-muted-foreground group-hover:text-white"></i>
+                          </button>
+                        </div>
+                        <img
+                          src={property.image}
+                          alt={property.name}
+                          className="w-full h-64 object-cover object-top transition-transform duration-700 group-hover:scale-110"
+                        />
+                        <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
+                        <div className="absolute bottom-4 left-4 right-4 transform translate-y-8 group-hover:translate-y-0 opacity-0 group-hover:opacity-100 transition-all duration-500">
+                          <button className="w-full bg-background text-foreground py-3 rounded-lg font-bold hover:bg-secondary transition-colors duration-200 rounded-button cursor-pointer whitespace-nowrap">
+                            View Details
+                          </button>
+                        </div>
+                      </div>
+                      <div className="p-6">
+                        <div className="flex items-start justify-between mb-3">
+                          <div>
+                            <h3 className="text-lg font-bold text-foreground mb-1 group-hover:text-brand-red transition-colors duration-300">{property.name}</h3>
+                            <div className="flex items-center text-muted-foreground mb-2">
+                              <i className="fas fa-map-marker-alt text-brand-red mr-2"></i>
+                              <span className="font-medium">{property.location}</span>
+                            </div>
+                            <div className="flex items-center gap-1 mb-3">
+                              <div className="flex items-center">
+                                {[...Array(5)].map((_, i) => (
+                                  <i key={i} className={`fas fa-star text-sm ${i < Math.floor(property.rating) ? 'text-yellow-400' : 'text-gray-300'}`}></i>
+                                ))}
+                              </div>
+                              <span className="text-sm font-semibold text-foreground ml-2">{property.rating}</span>
+                              <span className="text-sm text-muted-foreground">({property.reviews} reviews)</span>
+                            </div>
+                          </div>
+                        </div>
+                        <div className="flex items-center justify-between mb-4">
+                          <div className="flex items-center gap-4 text-sm text-muted-foreground">
+                            <div className="flex items-center gap-1">
+                              <i className="fas fa-users"></i>
+                              <span>{property.guests}</span>
+                            </div>
+                            <div className="flex items-center gap-1">
+                              <i className="fas fa-bed"></i>
+                              <span>{property.bedrooms}</span>
+                            </div>
+                            <div className="flex items-center gap-1">
+                              <i className="fas fa-bath"></i>
+                              <span>{property.bathrooms}</span>
+                            </div>
+                          </div>
+                          <span className="bg-blue-100 text-blue-800 px-2 py-1 rounded-full text-xs font-semibold">
+                            {property.type}
+                          </span>
+                        </div>
+                        <div className="flex flex-wrap gap-2 mb-4">
+                          {property.amenities.slice(0, 4).map((amenity, index) => (
+                            <span key={index} className="bg-secondary text-secondary-foreground px-3 py-1 rounded-full text-xs font-medium">
+                              {amenity}
+                            </span>
+                          ))}
+                          {property.amenities.length > 4 && (
+                            <span className="bg-secondary text-secondary-foreground px-3 py-1 rounded-full text-xs font-medium">
+                              +{property.amenities.length - 4} more
+                            </span>
+                          )}
+                        </div>
+                        <div className="flex items-center justify-between">
+                          <div>
+                            <div className="flex items-center gap-2">
+                              <span className="text-xl font-black text-foreground">₹{property.price.toLocaleString()}</span>
+                              {property.originalPrice > property.price && (
+                                <span className="text-sm text-muted-foreground line-through">₹{property.originalPrice.toLocaleString()}</span>
+                              )}
+                            </div>
+                            <span className="text-sm text-muted-foreground">per day</span>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            {property.originalPrice > property.price && (
+                              <span className="bg-green-100 text-green-800 px-2 py-1 rounded-full text-xs font-bold">
+                                {Math.round(((property.originalPrice - property.price) / property.originalPrice) * 100)}% OFF
+                              </span>
+                            )}
+                          </div>
+                        </div>
+                        <button className="w-full bg-gradient-to-r from-brand-red to-brand-orange text-white py-3 rounded-xl hover:from-red-700 hover:to-orange-600 transition-all duration-300 cursor-pointer whitespace-nowrap rounded-button font-bold mt-4 shadow-lg hover:shadow-xl transform hover:scale-105">
+                          Book Now
+                          <i className="fas fa-arrow-right ml-2"></i>
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              {/* Pagination */}
+              <div className="flex justify-center items-center mt-12 gap-4">
+                <button
+                  onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+                  disabled={currentPage === 1}
+                  className="px-4 py-2 border border-border rounded-lg hover:bg-secondary disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer whitespace-nowrap rounded-button"
+                >
+                  <i className="fas fa-chevron-left mr-2"></i>
+                  Previous
+                </button>
+                <div className="flex gap-2">
+                  {[...Array(totalPages)].map((_, index) => (
+                    <button
+                      key={index}
+                      onClick={() => setCurrentPage(index + 1)}
+                      className={`px-4 py-2 rounded-lg cursor-pointer whitespace-nowrap rounded-button ${
+                        currentPage === index + 1
+                          ? 'bg-brand-red text-white'
+                          : 'border border-border hover:bg-secondary'
+                      }`}
+                    >
+                      {index + 1}
+                    </button>
+                  ))}
+                </div>
+                <button
+                  onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
+                  disabled={currentPage === totalPages}
+                  className="px-4 py-2 border border-border rounded-lg hover:bg-secondary disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer whitespace-nowrap rounded-button"
+                >
+                  Next
+                  <i className="fas fa-chevron-right ml-2"></i>
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Footer */}
+      <footer className="bg-gray-900 text-white py-20 relative overflow-hidden">
+        <div className="absolute inset-0 opacity-10">
+          <div className="absolute top-0 left-0 w-64 h-64 bg-gradient-to-r from-brand-red to-brand-orange rounded-full filter blur-3xl"></div>
+          <div className="absolute bottom-0 right-0 w-80 h-80 bg-gradient-to-r from-brand-orange to-yellow-500 rounded-full filter blur-3xl"></div>
+        </div>
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-12 mb-16">
+            <div className="lg:col-span-2">
+              <div className="mb-6">
+                <img src={picnifyLogo} alt="Picnify.in Logo" className="h-12" />
+              </div>
+              <p className="text-gray-300 text-lg mb-8 leading-relaxed max-w-md">
+                Picnify is your one-stop platform to discover and book day picnic spots, villas, farmhouses, and unique getaways, making your time with loved ones hassle-free and memorable
+              </p>
+              <div className="flex flex-wrap gap-4">
+                <a href="https://facebook.com/picnify" target="_blank" rel="noopener noreferrer" className="w-12 h-12 bg-gradient-to-r from-brand-red to-brand-orange rounded-full flex items-center justify-center hover:scale-110 transition-transform duration-300 group">
+                  <i className="fab fa-facebook-f text-xl group-hover:animate-bounce"></i>
+                </a>
+                <a href="https://instagram.com/picnify" target="_blank" rel="noopener noreferrer" className="w-12 h-12 bg-gradient-to-r from-brand-red to-brand-orange rounded-full flex items-center justify-center hover:scale-110 transition-transform duration-300 group">
+                  <i className="fab fa-instagram text-xl group-hover:animate-bounce"></i>
+                </a>
+                <a href="https://twitter.com/picnify" target="_blank" rel="noopener noreferrer" className="w-12 h-12 bg-gradient-to-r from-brand-red to-brand-orange rounded-full flex items-center justify-center hover:scale-110 transition-transform duration-300 group">
+                  <i className="fab fa-twitter text-xl group-hover:animate-bounce"></i>
+                </a>
+                <a href="https://youtube.com/picnify" target="_blank" rel="noopener noreferrer" className="w-12 h-12 bg-gradient-to-r from-brand-red to-brand-orange rounded-full flex items-center justify-center hover:scale-110 transition-transform duration-300 group">
+                  <i className="fab fa-youtube text-xl group-hover:animate-bounce"></i>
+                </a>
+                <a href="https://linkedin.com/company/picnify" target="_blank" rel="noopener noreferrer" className="w-12 h-12 bg-gradient-to-r from-brand-red to-brand-orange rounded-full flex items-center justify-center hover:scale-110 transition-transform duration-300 group">
+                  <i className="fab fa-linkedin-in text-xl group-hover:animate-bounce"></i>
+                </a>
+                <a href="https://wa.me/+919876543210" target="_blank" rel="noopener noreferrer" className="w-12 h-12 bg-gradient-to-r from-brand-red to-brand-orange rounded-full flex items-center justify-center hover:scale-110 transition-transform duration-300 group">
+                  <i className="fab fa-whatsapp text-xl group-hover:animate-bounce"></i>
+                </a>
+              </div>
+            </div>
+            <div>
+              <h3 className="text-xl font-bold mb-6 text-white">Quick Links</h3>
+              <ul className="space-y-4">
+                <li><a href="#" className="text-gray-300 hover:text-white transition-colors duration-200 cursor-pointer flex items-center gap-2"><i className="fas fa-chevron-right text-xs text-brand-red"></i>About Picknify</a></li>
+                <li><a href="#" className="text-gray-300 hover:text-white transition-colors duration-200 cursor-pointer flex items-center gap-2"><i className="fas fa-chevron-right text-xs text-brand-red"></i>How It Works</a></li>
+                <li><a href="#" className="text-gray-300 hover:text-white transition-colors duration-200 cursor-pointer flex items-center gap-2"><i className="fas fa-chevron-right text-xs text-brand-red"></i>Safety Guidelines</a></li>
+                <li><a href="#" className="text-gray-300 hover:text-white transition-colors duration-200 cursor-pointer flex items-center gap-2"><i className="fas fa-chevron-right text-xs text-brand-red"></i>Privacy Policy</a></li>
+                <li><a href="#" className="text-gray-300 hover:text-white transition-colors duration-200 cursor-pointer flex items-center gap-2"><i className="fas fa-chevron-right text-xs text-brand-red"></i>Terms of Service</a></li>
+              </ul>
+            </div>
+            <div>
+              <h3 className="text-xl font-bold mb-6 text-white">Support & Help</h3>
+              <ul className="space-y-4">
+                <li><a href="#" className="text-gray-300 hover:text-white transition-colors duration-200 cursor-pointer flex items-center gap-2"><i className="fas fa-chevron-right text-xs text-brand-red"></i>24/7 Help Center</a></li>
+                <li><a href="#" className="text-gray-300 hover:text-white transition-colors duration-200 cursor-pointer flex items-center gap-2"><i className="fas fa-chevron-right text-xs text-brand-red"></i>Contact Support</a></li>
+                <li><a href="#" className="text-gray-300 hover:text-white transition-colors duration-200 cursor-pointer flex items-center gap-2"><i className="fas fa-chevron-right text-xs text-brand-red"></i>Booking Assistance</a></li>
+                <li><a href="#" className="text-gray-300 hover:text-white transition-colors duration-200 cursor-pointer flex items-center gap-2"><i className="fas fa-chevron-right text-xs text-brand-red"></i>Host Resources</a></li>
+                <li><a href="#" className="text-gray-300 hover:text-white transition-colors duration-200 cursor-pointer flex items-center gap-2"><i className="fas fa-chevron-right text-xs text-brand-red"></i>Trust & Safety</a></li>
+              </ul>
+            </div>
+          </div>
+          <div className="border-t border-gray-700 pt-12">
+            <div className="flex flex-col lg:flex-row justify-between items-center gap-8">
+              <div className="text-center lg:text-left">
+                <p className="text-gray-400 text-lg">
+                  © 2025 Picnify.in - Crafted with ❤️ in India. All rights reserved.
+                </p>
+                <p className="text-gray-500 text-sm mt-2">
+                  Connecting travelers with extraordinary experiences since 2024
+                </p>
+              </div>
+              <div className="flex items-center gap-8">
+                <div className="text-center">
+                  <div className="text-2xl font-bold text-white">4.9★</div>
+                  <div className="text-xs text-gray-400">App Rating</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </footer>
+    </div>
+  );
+};
+
+export default Properties;
