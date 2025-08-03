@@ -699,6 +699,80 @@ const Login: React.FC = () => {
           </div>
         )}
 
+        {currentPage === 'profile' && (
+          <div className="w-full">
+            <h1 className="text-xl sm:text-2xl font-bold text-gray-900 mb-8">Profile Settings</h1>
+            <div className="bg-white rounded-xl shadow-sm border border-gray-200">
+              <div className="px-4 sm:px-6 py-4 border-b border-gray-200">
+                <h3 className="text-base sm:text-lg font-medium text-gray-900">Personal Information</h3>
+              </div>
+              <div className="p-4 sm:p-6 space-y-6">
+                <div className="flex flex-col sm:flex-row items-center space-y-4 sm:space-y-0 sm:space-x-6">
+                  <img
+                    src={currentUser?.avatar}
+                    alt="Profile"
+                    className="h-20 w-20 sm:h-24 sm:w-24 rounded-full object-cover"
+                  />
+                  <div>
+                    <button className="bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 whitespace-nowrap">
+                      <i className="fas fa-camera mr-2"></i>
+                      Change Photo
+                    </button>
+                  </div>
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">First Name</label>
+                    <input
+                      type="text"
+                      defaultValue="John"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500 text-sm"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Last Name</label>
+                    <input
+                      type="text"
+                      defaultValue="Doe"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500 text-sm"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Email Address</label>
+                    <input
+                      type="email"
+                      defaultValue={currentUser?.email}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500 text-sm"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Phone Number</label>
+                    <input
+                      type="tel"
+                      defaultValue="+1 (555) 123-4567"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500 text-sm"
+                    />
+                  </div>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Address</label>
+                  <textarea
+                    rows={3}
+                    defaultValue="123 Main Street, New York, NY 10001"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500 text-sm"
+                  />
+                </div>
+                <div className="pt-4">
+                  <button className="bg-red-600 text-white px-6 py-2 rounded-lg hover:bg-red-700 whitespace-nowrap">
+                    <i className="fas fa-save mr-2"></i>
+                    Save Changes
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* Add other page content here as needed */}
       </main>
     </div>
