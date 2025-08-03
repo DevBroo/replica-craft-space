@@ -1,7 +1,32 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import picnifyLogo from '/lovable-uploads/f7960b1f-407a-4738-b8f6-067ea4600889.png';
 
+// Scroll animation hook
+const useScrollAnimation = () => {
+  useEffect(() => {
+    const observerOptions = {
+      threshold: 0.1,
+      rootMargin: '0px 0px -50px 0px'
+    };
+
+    const observer = new IntersectionObserver((entries) => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting) {
+          entry.target.classList.add('animate');
+        }
+      });
+    }, observerOptions);
+
+    const elements = document.querySelectorAll('.fade-in-up, .fade-in');
+    elements.forEach(el => observer.observe(el));
+
+    return () => observer.disconnect();
+  }, []);
+};
+
 const Contact: React.FC = () => {
+  // Initialize scroll animations
+  useScrollAnimation();
   const [formData, setFormData] = useState({
     name: '',
     email: '',
@@ -185,7 +210,7 @@ const Contact: React.FC = () => {
       </section>
 
       {/* Contact Methods */}
-      <section className="py-20 bg-white">
+      <section className="py-20 bg-white fade-in-up">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-16">
             <h2 className="text-4xl font-bold text-gray-900 font-poppins mb-4">Get In Touch</h2>
@@ -193,7 +218,7 @@ const Contact: React.FC = () => {
           </div>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-16">
             {contactMethods.map((method, index) => (
-              <div key={index} className="relative group cursor-pointer">
+              <div key={index} className="relative group cursor-pointer fade-in" style={{animationDelay: `${index * 0.1}s`}}>
                 <div className="bg-gradient-to-br from-white to-gray-50 p-8 rounded-2xl shadow-lg hover:shadow-2xl transition-all duration-300 hover-lift border border-gray-100">
                   <div className="w-16 h-16 bg-gradient-to-r from-red-600 to-orange-500 rounded-full flex items-center justify-center mx-auto mb-6 group-hover:scale-110 transition-transform duration-300">
                     <i className={`${method.icon} text-white text-2xl`}></i>
@@ -367,7 +392,7 @@ const Contact: React.FC = () => {
       </section>
 
       {/* FAQ Section */}
-      <section className="py-20 bg-white">
+      <section className="py-20 bg-white fade-in-up">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-16">
             <h2 className="text-4xl font-bold text-gray-900 font-poppins mb-4">Frequently Asked Questions</h2>

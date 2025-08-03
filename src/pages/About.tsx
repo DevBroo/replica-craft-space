@@ -1,8 +1,33 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+
+// Scroll animation hook
+const useScrollAnimation = () => {
+  useEffect(() => {
+    const observerOptions = {
+      threshold: 0.1,
+      rootMargin: '0px 0px -50px 0px'
+    };
+
+    const observer = new IntersectionObserver((entries) => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting) {
+          entry.target.classList.add('animate');
+        }
+      });
+    }, observerOptions);
+
+    const elements = document.querySelectorAll('.fade-in-up, .fade-in');
+    elements.forEach(el => observer.observe(el));
+
+    return () => observer.disconnect();
+  }, []);
+};
 
 const picnifyLogo = '/lovable-uploads/f7960b1f-407a-4738-b8f6-067ea4600889.png';
 
 const About: React.FC = () => {
+  // Initialize scroll animations
+  useScrollAnimation();
   const [activeSection, setActiveSection] = useState('');
   const [formData, setFormData] = useState({
     name: '',
@@ -222,7 +247,7 @@ const About: React.FC = () => {
       </section>
 
       {/* Mission & Values Section */}
-      <section className="py-20 bg-white">
+      <section className="py-20 bg-white fade-in-up">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 items-center mb-20">
             <div>
@@ -256,7 +281,7 @@ const About: React.FC = () => {
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
             {values.map((value, index) => (
-              <div key={index} className="text-center group cursor-pointer">
+              <div key={index} className="text-center group cursor-pointer fade-in" style={{animationDelay: `${index * 0.1}s`}}>
                 <div className="w-20 h-20 bg-gradient-to-r from-red-600 to-orange-500 rounded-full flex items-center justify-center mx-auto mb-6 group-hover:scale-110 transition-transform duration-300 shadow-lg">
                   <i className={`${value.icon} text-white text-2xl`}></i>
                 </div>
@@ -269,7 +294,7 @@ const About: React.FC = () => {
       </section>
 
       {/* Our Story Section */}
-      <section className="py-20 bg-gray-50">
+      <section className="py-20 bg-gray-50 fade-in-up">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-16">
             <h2 className="text-4xl font-bold text-gray-900 font-poppins mb-4">Our Story</h2>
@@ -297,7 +322,7 @@ const About: React.FC = () => {
       </section>
 
       {/* Team Section */}
-      <section className="py-20 bg-white">
+      <section className="py-20 bg-white fade-in-up">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-16">
             <h2 className="text-4xl font-bold text-gray-900 font-poppins mb-4">Meet Our Team</h2>

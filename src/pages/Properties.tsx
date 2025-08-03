@@ -1,5 +1,28 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import picnifyLogo from '/lovable-uploads/f7960b1f-407a-4738-b8f6-067ea4600889.png';
+
+// Scroll animation hook
+const useScrollAnimation = () => {
+  useEffect(() => {
+    const observerOptions = {
+      threshold: 0.1,
+      rootMargin: '0px 0px -50px 0px'
+    };
+
+    const observer = new IntersectionObserver((entries) => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting) {
+          entry.target.classList.add('animate');
+        }
+      });
+    }, observerOptions);
+
+    const elements = document.querySelectorAll('.fade-in-up, .fade-in');
+    elements.forEach(el => observer.observe(el));
+
+    return () => observer.disconnect();
+  }, []);
+};
 
 // Import all the generated images
 import sunsetVillaResort from '@/assets/sunset-villa-resort.jpg';
@@ -11,6 +34,8 @@ import lakesideRetreat from '@/assets/lakeside-retreat.jpg';
 import farmHouseBliss from '@/assets/farm-house-bliss.jpg';
 
 const Properties: React.FC = () => {
+  // Initialize scroll animations
+  useScrollAnimation();
   const [searchLocation, setSearchLocation] = useState('');
   const [searchDate, setSearchDate] = useState('');
   const [groupSize, setGroupSize] = useState('');
@@ -522,8 +547,8 @@ const Properties: React.FC = () => {
             {/* Properties Grid */}
             <div className="lg:col-span-3">
               <div className={`grid gap-8 ${viewMode === 'grid' ? 'grid-cols-1 md:grid-cols-2 xl:grid-cols-3' : 'grid-cols-1'}`}>
-                {currentProperties.map((property) => (
-                  <div key={property.id} className="group cursor-pointer">
+                {currentProperties.map((property, index) => (
+                  <div key={property.id} className="group cursor-pointer fade-in" style={{animationDelay: `${index * 0.1}s`}}>
                     <div className="bg-background rounded-2xl shadow-lg hover:shadow-2xl transition-all duration-500 overflow-hidden transform hover:scale-105 border border-border hover-lift">
                       <div className="relative overflow-hidden">
                         {property.featured && (

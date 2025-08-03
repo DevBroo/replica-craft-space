@@ -1,6 +1,31 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+
+// Scroll animation hook
+const useScrollAnimation = () => {
+  useEffect(() => {
+    const observerOptions = {
+      threshold: 0.1,
+      rootMargin: '0px 0px -50px 0px'
+    };
+
+    const observer = new IntersectionObserver((entries) => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting) {
+          entry.target.classList.add('animate');
+        }
+      });
+    }, observerOptions);
+
+    const elements = document.querySelectorAll('.fade-in-up, .fade-in');
+    elements.forEach(el => observer.observe(el));
+
+    return () => observer.disconnect();
+  }, []);
+};
 
 const Locations: React.FC = () => {
+  // Initialize scroll animations
+  useScrollAnimation();
   const [searchLocation, setSearchLocation] = useState('');
   const [selectedRegion, setSelectedRegion] = useState('');
   const [selectedState, setSelectedState] = useState('');
@@ -357,15 +382,15 @@ const Locations: React.FC = () => {
       </section>
 
       {/* Featured Destinations */}
-      <section className="py-16 bg-gray-50">
+      <section className="py-16 bg-gray-50 fade-in-up">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-12">
             <h2 className="text-4xl font-bold text-gray-900 font-poppins mb-4">Featured Destinations</h2>
             <p className="text-xl text-gray-600">Handpicked locations for unforgettable experiences</p>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-            {featuredDestinations.slice(0, 6).map((destination) => (
-              <div key={destination.id} className="group cursor-pointer">
+            {featuredDestinations.slice(0, 6).map((destination, index) => (
+              <div key={destination.id} className="group cursor-pointer fade-in" style={{animationDelay: `${index * 0.1}s`}}>
                 <div className="gradient-border hover-lift">
                   <div className="gradient-border-inner overflow-hidden">
                     <div className="relative overflow-hidden">
@@ -427,7 +452,7 @@ const Locations: React.FC = () => {
       </section>
 
       {/* Trending Destinations */}
-      <section className="py-16 bg-white">
+      <section className="py-16 bg-white fade-in-up">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between mb-12">
             <div>
