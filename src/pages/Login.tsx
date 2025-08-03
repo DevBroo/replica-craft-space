@@ -534,6 +534,171 @@ const Login: React.FC = () => {
           </div>
         )}
 
+        {currentPage === 'bookings' && (
+          <div className="space-y-6">
+            <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
+              <h1 className="text-xl sm:text-2xl font-bold text-gray-900">My Bookings</h1>
+              <div className="flex flex-col sm:flex-row space-y-3 sm:space-y-0 sm:space-x-3">
+                <div className="relative">
+                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                    <i className="fas fa-search text-gray-400 text-sm"></i>
+                  </div>
+                  <input
+                    type="text"
+                    className="pl-10 pr-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-red-500 w-full sm:w-auto"
+                    placeholder="Search bookings..."
+                  />
+                </div>
+                <button className="bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 whitespace-nowrap">
+                  <i className="fas fa-plus mr-2"></i>
+                  New Booking
+                </button>
+              </div>
+            </div>
+
+            {/* Booking Cards */}
+            <div className="grid gap-6">
+              <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+                <div className="p-4 sm:p-6">
+                  <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
+                    <div className="flex flex-col sm:flex-row space-y-4 sm:space-y-0 sm:space-x-4">
+                      <img
+                        src="https://images.unsplash.com/photo-1566073771259-6a8506099945?w=96&h=96&fit=crop&crop=center"
+                        alt="Hotel Room"
+                        className="h-20 w-20 sm:h-24 sm:w-24 rounded-lg object-cover mx-auto sm:mx-0"
+                      />
+                      <div className="text-center sm:text-left">
+                        <h3 className="text-base sm:text-lg font-semibold text-gray-900">Grand Palace Hotel - Deluxe Suite</h3>
+                        <p className="text-xs sm:text-sm text-gray-500 mt-1">
+                          <i className="fas fa-map-marker-alt mr-1"></i>
+                          Downtown, New York
+                        </p>
+                        <p className="text-xs sm:text-sm text-gray-500 mt-1">
+                          <i className="fas fa-calendar mr-1"></i>
+                          Dec 25 - Dec 27, 2024 • 2 nights
+                        </p>
+                        <p className="text-xs sm:text-sm text-gray-500 mt-1">
+                          <i className="fas fa-users mr-1"></i>
+                          2 guests
+                        </p>
+                      </div>
+                    </div>
+                    <div className="text-center sm:text-right">
+                      <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                        Confirmed
+                      </span>
+                      <p className="text-lg font-semibold text-gray-900 mt-2">$489</p>
+                      <p className="text-xs sm:text-sm text-gray-500">total</p>
+                    </div>
+                  </div>
+                  <div className="mt-6 flex flex-col sm:flex-row space-y-3 sm:space-y-0 sm:space-x-3">
+                    <button className="flex-1 bg-red-600 text-white py-2 px-4 rounded-lg hover:bg-red-700">
+                      <i className="fas fa-eye mr-2"></i>
+                      View Details
+                    </button>
+                    <button className="flex-1 bg-gray-100 text-gray-700 py-2 px-4 rounded-lg hover:bg-gray-200">
+                      <i className="fas fa-times mr-2"></i>
+                      Cancel Booking
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+                <div className="p-4 sm:p-6">
+                  <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
+                    <div className="flex flex-col sm:flex-row space-y-4 sm:space-y-0 sm:space-x-4">
+                      <img
+                        src="https://images.unsplash.com/photo-1551882547-ff40c63fe5fa?w=96&h=96&fit=crop&crop=center"
+                        alt="Hotel Room"
+                        className="h-20 w-20 sm:h-24 sm:w-24 rounded-lg object-cover mx-auto sm:mx-0"
+                      />
+                      <div className="text-center sm:text-left">
+                        <h3 className="text-base sm:text-lg font-semibold text-gray-900">Boutique Inn - Premium Room</h3>
+                        <p className="text-xs sm:text-sm text-gray-500 mt-1">
+                          <i className="fas fa-map-marker-alt mr-1"></i>
+                          SoHo, New York
+                        </p>
+                        <p className="text-xs sm:text-sm text-gray-500 mt-1">
+                          <i className="fas fa-calendar mr-1"></i>
+                          Jan 10 - Jan 12, 2025 • 2 nights
+                        </p>
+                        <p className="text-xs sm:text-sm text-gray-500 mt-1">
+                          <i className="fas fa-users mr-1"></i>
+                          1 guest
+                        </p>
+                      </div>
+                    </div>
+                    <div className="text-center sm:text-right">
+                      <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
+                        Pending Payment
+                      </span>
+                      <p className="text-lg font-semibold text-gray-900 mt-2">$325</p>
+                      <p className="text-xs sm:text-sm text-gray-500">total</p>
+                    </div>
+                  </div>
+                  <div className="mt-6 flex flex-col sm:flex-row space-y-3 sm:space-y-0 sm:space-x-3">
+                    <button className="flex-1 bg-red-600 text-white py-2 px-4 rounded-lg hover:bg-red-700">
+                      <i className="fas fa-credit-card mr-2"></i>
+                      Pay Now
+                    </button>
+                    <button className="flex-1 bg-gray-100 text-gray-700 py-2 px-4 rounded-lg hover:bg-gray-200">
+                      <i className="fas fa-times mr-2"></i>
+                      Cancel Booking
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+                <div className="p-4 sm:p-6">
+                  <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
+                    <div className="flex flex-col sm:flex-row space-y-4 sm:space-y-0 sm:space-x-4">
+                      <img
+                        src="https://images.unsplash.com/photo-1582719478250-c89cae4dc85b?w=96&h=96&fit=crop&crop=center"
+                        alt="Hotel Room"
+                        className="h-20 w-20 sm:h-24 sm:w-24 rounded-lg object-cover mx-auto sm:mx-0"
+                      />
+                      <div className="text-center sm:text-left">
+                        <h3 className="text-base sm:text-lg font-semibold text-gray-900">Ocean View Resort - Villa Suite</h3>
+                        <p className="text-xs sm:text-sm text-gray-500 mt-1">
+                          <i className="fas fa-map-marker-alt mr-1"></i>
+                          Malibu, California
+                        </p>
+                        <p className="text-xs sm:text-sm text-gray-500 mt-1">
+                          <i className="fas fa-calendar mr-1"></i>
+                          Nov 15 - Nov 18, 2024 • 3 nights
+                        </p>
+                        <p className="text-xs sm:text-sm text-gray-500 mt-1">
+                          <i className="fas fa-users mr-1"></i>
+                          4 guests
+                        </p>
+                      </div>
+                    </div>
+                    <div className="text-center sm:text-right">
+                      <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-red-100 text-red-800">
+                        Cancelled
+                      </span>
+                      <p className="text-lg font-semibold text-gray-900 mt-2">$750</p>
+                      <p className="text-xs sm:text-sm text-gray-500">refunded</p>
+                    </div>
+                  </div>
+                  <div className="mt-6 flex flex-col sm:flex-row space-y-3 sm:space-y-0 sm:space-x-3">
+                    <button className="flex-1 bg-gray-100 text-gray-700 py-2 px-4 rounded-lg hover:bg-gray-200">
+                      <i className="fas fa-receipt mr-2"></i>
+                      View Receipt
+                    </button>
+                    <button className="flex-1 bg-red-600 text-white py-2 px-4 rounded-lg hover:bg-red-700">
+                      <i className="fas fa-redo mr-2"></i>
+                      Book Again
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* Add other page content here as needed */}
       </main>
     </div>
