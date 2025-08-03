@@ -234,10 +234,10 @@ const About: React.FC = () => {
         </div>
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative">
           <div className="text-center mb-12">
-            <h1 className="text-5xl md:text-6xl font-black text-gray-900 font-poppins mb-6 text-shadow">
+            <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-black text-gray-900 font-poppins mb-6 text-shadow">
               About <span className="bg-gradient-to-r from-red-600 to-orange-500 bg-clip-text text-transparent">Picknify.in</span>
             </h1>
-            <p className="text-xl text-gray-600 max-w-3xl mx-auto mb-8 leading-relaxed">
+            <p className="text-base sm:text-lg md:text-xl text-gray-600 max-w-3xl mx-auto mb-8 leading-relaxed">
               We're revolutionizing vacation rentals in India by connecting travelers with authentic experiences and empowering property owners to maximize their potential.
             </p>
             <a href="/" className="inline-flex items-center gap-3 bg-gradient-to-r from-red-600 to-orange-500 text-white px-8 py-4 rounded-xl hover:from-red-700 hover:to-orange-600 transition-all duration-300 cursor-pointer whitespace-nowrap !rounded-button font-bold text-lg shadow-xl hover:shadow-2xl transform hover:scale-105">
@@ -257,7 +257,7 @@ const About: React.FC = () => {
                 <div className="w-16 h-16 bg-gradient-to-r from-red-600 to-orange-500 rounded-full flex items-center justify-center">
                   <i className="fas fa-bullseye text-white text-2xl"></i>
                 </div>
-                <h2 className="text-4xl font-bold text-gray-900 font-poppins">Our Mission</h2>
+                <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold text-gray-900 font-poppins">Our Mission</h2>
               </div>
               <p className="text-lg text-gray-600 leading-relaxed mb-6">
                 To democratize travel in India by making authentic, safe, and affordable vacation rentals accessible to everyone while empowering local property owners to build sustainable businesses.
@@ -278,7 +278,7 @@ const About: React.FC = () => {
 
           {/* Core Values */}
           <div className="text-center mb-16">
-            <h2 className="text-4xl font-bold text-gray-900 font-poppins mb-4">Our Core Values</h2>
+            <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold text-gray-900 font-poppins mb-4">Our Core Values</h2>
             <p className="text-xl text-gray-600">The principles that guide everything we do</p>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
@@ -299,7 +299,7 @@ const About: React.FC = () => {
       <section className="py-20 bg-gray-50 fade-in-up">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-16">
-            <h2 className="text-4xl font-bold text-gray-900 font-poppins mb-4">Our Story</h2>
+            <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold text-gray-900 font-poppins mb-4">Our Story</h2>
             <p className="text-xl text-gray-600">The journey that brought us here</p>
           </div>
           <div className="relative">
@@ -327,7 +327,7 @@ const About: React.FC = () => {
       <section className="py-20 bg-white fade-in-up">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-16">
-            <h2 className="text-4xl font-bold text-gray-900 font-poppins mb-4">Meet Our Team</h2>
+            <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold text-gray-900 font-poppins mb-4">Meet Our Team</h2>
             <p className="text-xl text-gray-600">The passionate people behind Picknify.in</p>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
@@ -363,7 +363,7 @@ const About: React.FC = () => {
       <section className="py-20 bg-gray-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-16">
-            <h2 className="text-4xl font-bold text-gray-900 font-poppins mb-4">How Picknify Works</h2>
+            <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold text-gray-900 font-poppins mb-4">How Picknify Works</h2>
             <p className="text-xl text-gray-600">Simple steps to your perfect vacation rental</p>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-12">
@@ -413,7 +413,7 @@ const About: React.FC = () => {
       <section className="py-20 bg-white">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-16">
-            <h2 className="text-4xl font-bold text-gray-900 font-poppins mb-4">Our Partners</h2>
+            <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold text-gray-900 font-poppins mb-4">Our Partners</h2>
             <p className="text-xl text-gray-600">Working together to enhance your travel experience</p>
           </div>
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-8 mb-12">

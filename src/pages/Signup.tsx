@@ -141,7 +141,7 @@ const Signup: React.FC = () => {
           {/* Registration Form Container */}
           <div className="bg-white rounded-xl shadow-lg p-8 border border-gray-100">
             <div className="text-center mb-8">
-              <h2 className="text-3xl font-bold text-gray-900 mb-2">Create Account</h2>
+              <h2 className="text-xl sm:text-2xl md:text-3xl font-bold text-gray-900 mb-2">Create Account</h2>
               <p className="text-gray-600">Join Picnify to start booking amazing experiences</p>
             </div>
 

@@ -326,10 +326,10 @@ const Properties: React.FC = () => {
       <section className="bg-gradient-to-br from-secondary/30 to-brand-orange/10 py-16">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-12">
-            <h1 className="text-5xl md:text-6xl font-black text-foreground font-poppins mb-6 text-shadow">
+            <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-black text-foreground font-poppins mb-6 text-shadow">
               Discover Amazing <span className="bg-gradient-to-r from-brand-red to-brand-orange bg-clip-text text-transparent">Properties</span>
             </h1>
-            <p className="text-xl text-muted-foreground max-w-3xl mx-auto">
+            <p className="text-base sm:text-lg md:text-xl text-muted-foreground max-w-3xl mx-auto">
               Browse through our curated collection of premium vacation rentals across India
             </p>
           </div>

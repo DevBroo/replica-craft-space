@@ -191,10 +191,10 @@ const Contact: React.FC = () => {
         </div>
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative">
           <div className="text-center mb-12">
-            <h1 className="text-5xl md:text-6xl font-black text-gray-900 font-poppins mb-6 text-shadow">
+            <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-black text-gray-900 font-poppins mb-6 text-shadow">
               Contact <span className="bg-gradient-to-r from-red-600 to-orange-500 bg-clip-text text-transparent">Picnify</span>
             </h1>
-            <p className="text-xl text-gray-600 max-w-3xl mx-auto mb-8 leading-relaxed">
+            <p className="text-base sm:text-lg md:text-xl text-gray-600 max-w-3xl mx-auto mb-8 leading-relaxed">
               We're here to help you with any questions, concerns, or support you need. Our dedicated team is ready to assist you 24/7.
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
@@ -215,7 +215,7 @@ const Contact: React.FC = () => {
       <section className="py-20 bg-white fade-in-up">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-16">
-            <h2 className="text-4xl font-bold text-gray-900 font-poppins mb-4">Get In Touch</h2>
+            <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold text-gray-900 font-poppins mb-4">Get In Touch</h2>
             <p className="text-xl text-gray-600">Choose your preferred way to reach us</p>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-16">
@@ -247,7 +247,7 @@ const Contact: React.FC = () => {
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-16">
             {/* Contact Form */}
             <div>
-              <h2 className="text-3xl font-bold text-gray-900 font-poppins mb-8">Send us a Message</h2>
+              <h2 className="text-xl sm:text-2xl md:text-3xl font-bold text-gray-900 font-poppins mb-8">Send us a Message</h2>
               <form onSubmit={handleSubmit} className="space-y-6">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div>
@@ -347,7 +347,7 @@ const Contact: React.FC = () => {
 
             {/* Office Locations */}
             <div>
-              <h2 className="text-3xl font-bold text-gray-900 font-poppins mb-8">Our Offices</h2>
+              <h2 className="text-xl sm:text-2xl md:text-3xl font-bold text-gray-900 font-poppins mb-8">Our Offices</h2>
               <div className="space-y-6 mb-8">
                 {officeLocations.map((office, index) => (
                   <div key={index} className="bg-white p-6 rounded-2xl shadow-lg hover:shadow-xl transition-shadow duration-300">
@@ -397,7 +397,7 @@ const Contact: React.FC = () => {
       <section className="py-20 bg-white fade-in-up">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-16">
-            <h2 className="text-4xl font-bold text-gray-900 font-poppins mb-4">Frequently Asked Questions</h2>
+            <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold text-gray-900 font-poppins mb-4">Frequently Asked Questions</h2>
             <p className="text-xl text-gray-600">Find quick answers to common questions</p>
           </div>
           <div className="space-y-4">

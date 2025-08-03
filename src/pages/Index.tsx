@@ -166,7 +166,7 @@ backgroundImage: `linear-gradient(135deg, hsl(var(--brand-red) / 0.8) 0%, hsl(va
 ✨ India's Premier Vacation Rental Platform
 </span>
 </div>
-<h1 className="text-5xl md:text-6xl font-black mb-8 font-poppins tracking-tight text-shadow leading-tight">
+<h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-black mb-8 font-poppins tracking-tight text-shadow leading-tight">
 Discover Perfect <br />
 <span className="bg-gradient-to-r from-yellow-300 via-orange-400 to-red-500 bg-clip-text text-transparent animate-pulse">Getaways</span> Near You
 </h1>
@@ -322,7 +322,7 @@ style={{ minWidth: '240px' }}
 <div className="text-center mb-20 fade-in-up">
 <div className="inline-block">
 <span className="text-brand-orange font-bold text-lg mb-4 block uppercase tracking-wider">Handpicked Excellence</span>
-<h2 className="text-4xl md:text-5xl font-black text-gray-900 font-poppins mb-6 text-shadow">
+<h2 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-black text-gray-900 font-poppins mb-6 text-shadow">
 Top Picks for You
 </h2>
 <div className="w-24 h-1 bg-gradient-to-r from-brand-red to-brand-orange mx-auto rounded-full"></div>
@@ -399,7 +399,7 @@ Explore All Properties
 <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative">
 <div className="text-center max-w-4xl mx-auto mb-20 fade-in-up">
 <span className="bg-gradient-to-r from-brand-red to-brand-orange bg-clip-text text-transparent font-bold text-lg mb-4 block uppercase tracking-wider">Find Your Perfect Match</span>
-<h2 className="text-4xl md:text-5xl font-black text-gray-900 font-poppins mb-6 text-shadow">
+<h2 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-black text-gray-900 font-poppins mb-6 text-shadow">
 Explore by Category
 </h2>
 <div className="w-24 h-1 bg-gradient-to-r from-brand-red to-brand-orange mx-auto rounded-full mb-6"></div>
@@ -443,7 +443,7 @@ View All Categories
 <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative">
 <div className="text-center mb-20 fade-in-up">
 <span className="bg-gradient-to-r from-brand-red to-brand-orange bg-clip-text text-transparent font-bold text-lg mb-4 block uppercase tracking-wider">Premium Collection</span>
-<h2 className="text-4xl md:text-5xl font-black text-gray-900 font-poppins mb-6 text-shadow">
+<h2 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-black text-gray-900 font-poppins mb-6 text-shadow">
 Featured Properties
 </h2>
 <div className="w-24 h-1 bg-gradient-to-r from-brand-red to-brand-orange mx-auto rounded-full"></div>
@@ -524,7 +524,7 @@ View All Featured Properties
 <span className="inline-block bg-white/20 backdrop-blur-md px-6 py-2 rounded-full text-sm font-bold border border-white/30 mb-6">
 🏡 Become a Host
 </span>
-<h2 className="text-4xl md:text-5xl font-black mb-6 font-poppins text-shadow leading-tight">
+<h2 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-black mb-6 font-poppins text-shadow leading-tight">
 Turn Your Property Into Gold
 </h2>
 <p className="text-lg opacity-90 leading-relaxed mb-8">
