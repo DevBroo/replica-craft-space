@@ -492,7 +492,7 @@ Quick View
 </span>
 ))}
 </div>
-<button className="w-full bg-gradient-to-r from-red-600 to-orange-500 text-white py-4 rounded-xl hover:from-red-700 hover:to-orange-600 transition-all duration-300 cursor-pointer whitespace-nowrap rounded-button font-bold text-lg shadow-lg hover:shadow-xl transform hover:scale-105">
+<button className="w-full bg-gradient-to-r from-red-600 to-orange-500 text-white py-4 rounded-xl hover:from-red-700 hover:to-orange-600 transition-all duration-300 cursor-pointer whitespace-nowrap rounded-button font-bold text-base shadow-lg hover:shadow-xl transform hover:scale-105">
 Book Now
 <i className="fas fa-arrow-right ml-2"></i>
 </button>
