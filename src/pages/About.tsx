@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
-import picnifyLogo from '@/assets/picnify-logo.png';
+
+const picnifyLogo = '/lovable-uploads/f7960b1f-407a-4738-b8f6-067ea4600889.png';
 
 const About: React.FC = () => {
   const [activeSection, setActiveSection] = useState('');
