@@ -363,7 +363,7 @@ View Details
 </div>
 </div>
 <div className="p-6">
-<h3 className="text-xl font-bold text-foreground mb-3 group-hover:text-brand-red transition-colors duration-300">{property.name}</h3>
+<h3 className="text-lg font-bold text-foreground mb-3 group-hover:text-brand-red transition-colors duration-300">{property.name}</h3>
 <div className="flex items-center justify-between">
 <div className="text-3xl font-black text-foreground">
 ₹{property.price.toLocaleString()}
@@ -474,7 +474,7 @@ Quick View
 <div className="p-8">
 <div className="flex items-start justify-between mb-4">
 <div>
-<h3 className="text-2xl font-bold text-foreground mb-2 group-hover:text-brand-red transition-colors duration-300">{property.name}</h3>
+<h3 className="text-xl font-bold text-foreground mb-2 group-hover:text-brand-red transition-colors duration-300">{property.name}</h3>
 <div className="flex items-center text-muted-foreground">
 <i className="fas fa-map-marker-alt text-brand-red mr-2"></i>
 <span className="font-medium">{property.location}</span>
