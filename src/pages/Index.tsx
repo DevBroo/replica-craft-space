@@ -125,12 +125,36 @@ return (
 <img src={picnifyLogo} alt="Picnify.in Logo" className="h-12" />
 </a>
 </div>
-<nav className="hidden md:flex items-center space-x-8">
-<a href="/" className="text-foreground hover:text-brand-orange font-medium transition-colors duration-200 cursor-pointer">Home</a>
-<a href="/properties" className="text-foreground hover:text-brand-orange font-medium transition-colors duration-200 cursor-pointer">Properties</a>
-<a href="/locations" className="text-foreground hover:text-brand-orange font-medium transition-colors duration-200 cursor-pointer">Locations</a>
-<a href="/about" className="text-foreground hover:text-brand-orange font-medium transition-colors duration-200 cursor-pointer">About</a>
+            <nav className="hidden md:flex items-center space-x-8">
+              <a href="/" className="text-foreground hover:text-brand-orange font-medium transition-colors duration-200 cursor-pointer">Home</a>
+              <a href="/properties" className="text-foreground hover:text-brand-orange font-medium transition-colors duration-200 cursor-pointer">Properties</a>
+              <a href="/locations" className="text-foreground hover:text-brand-orange font-medium transition-colors duration-200 cursor-pointer">Locations</a>
+              <a href="/about" className="text-foreground hover:text-brand-orange font-medium transition-colors duration-200 cursor-pointer">About</a>
               <a href="/contact" className="text-foreground hover:text-brand-orange font-medium transition-colors duration-200 cursor-pointer">Contact</a>
+              
+              {/* Portals Dropdown */}
+              <div className="relative group">
+                <button className="text-foreground hover:text-brand-orange font-medium transition-colors duration-200 cursor-pointer flex items-center">
+                  Portals
+                  <i className="fas fa-chevron-down ml-1 text-xs transition-transform duration-200 group-hover:rotate-180"></i>
+                </button>
+                <div className="absolute top-full left-0 mt-2 w-56 bg-white rounded-lg shadow-xl border border-gray-200 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50">
+                  <div className="py-2">
+                    <a href="/owner" className="block px-4 py-3 text-sm text-gray-700 hover:bg-gray-50 hover:text-brand-orange transition-colors duration-200 border-b border-gray-100">
+                      <i className="fas fa-home mr-3 text-brand-orange"></i>
+                      Property Owner Portal
+                    </a>
+                    <a href="/agent" className="block px-4 py-3 text-sm text-gray-700 hover:bg-gray-50 hover:text-brand-orange transition-colors duration-200 border-b border-gray-100">
+                      <i className="fas fa-handshake mr-3 text-brand-orange"></i>
+                      Travel Agent Portal
+                    </a>
+                    <a href="/admin/login" className="block px-4 py-3 text-sm text-gray-700 hover:bg-gray-50 hover:text-brand-orange transition-colors duration-200">
+                      <i className="fas fa-cog mr-3 text-brand-orange"></i>
+                      Admin Panel
+                    </a>
+                  </div>
+                </div>
+              </div>
             </nav>
 <div className="flex items-center space-x-4">
               <a href="/login" className="bg-secondary text-secondary-foreground hover:bg-secondary/80 font-medium transition-all duration-200 cursor-pointer whitespace-nowrap rounded-button px-6 py-3 inline-flex items-center">

@@ -6,7 +6,7 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Shield, Building, Users, Mail, Lock, ArrowRight, ChevronDown } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import { ImageCarousel } from "@/components/ImageCarousel";
+import { ImageCarousel } from "@/components/admin/ImageCarousel";
 import { useNavigate } from "react-router-dom";
 
 type UserRole = "super-admin" | "property-owner" | "agent";
@@ -225,8 +225,7 @@ export const LoginPage = () => {
 
                 <Button 
                   type="submit" 
-                  variant="gradient" 
-                  className="w-full h-12 text-base font-semibold group mt-6" 
+                  className="w-full h-12 text-base font-semibold group mt-6 bg-gradient-to-r from-red-600 to-orange-600 text-white hover:from-red-700 hover:to-orange-700 transition-all duration-300" 
                   disabled={!form.role}
                 >
                   {form.role ? (
