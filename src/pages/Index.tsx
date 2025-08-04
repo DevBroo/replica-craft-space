@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 // Scroll animation hook
 const useScrollAnimation = () => {
@@ -40,6 +41,8 @@ const Index: React.FC = () => {
 const [searchLocation, setSearchLocation] = useState('');
 const [searchDate, setSearchDate] = useState('');
 const [groupSize, setGroupSize] = useState('');
+const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+const isMobile = useIsMobile();
 
 // Initialize scroll animations
 useScrollAnimation();
@@ -156,7 +159,22 @@ return (
                 </div>
               </div>
             </nav>
-<div className="flex items-center space-x-4">
+
+            {/* Mobile Menu Button */}
+            <button
+              className="md:hidden flex items-center justify-center w-10 h-10 text-foreground hover:text-brand-orange transition-colors duration-200"
+              onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+              aria-label="Toggle mobile menu"
+            >
+              <div className="flex flex-col justify-center items-center w-6 h-6">
+                <span className={`block w-6 h-0.5 bg-current transition-all duration-300 ${isMobileMenuOpen ? 'rotate-45 translate-y-1.5' : 'mb-1'}`}></span>
+                <span className={`block w-6 h-0.5 bg-current transition-all duration-300 ${isMobileMenuOpen ? 'opacity-0' : 'mb-1'}`}></span>
+                <span className={`block w-6 h-0.5 bg-current transition-all duration-300 ${isMobileMenuOpen ? '-rotate-45 -translate-y-1.5' : ''}`}></span>
+              </div>
+            </button>
+
+            {/* Desktop Auth Buttons */}
+            <div className="hidden md:flex items-center space-x-4">
               <a href="/login" className="bg-secondary text-secondary-foreground hover:bg-secondary/80 font-medium transition-all duration-200 cursor-pointer whitespace-nowrap rounded-button px-6 py-3 inline-flex items-center">
                 <i className="fas fa-user mr-2"></i>Login
               </a>
@@ -166,10 +184,128 @@ return (
               >
                 <i className="fas fa-arrow-right-to-bracket mr-2"></i>Sign Up
               </Link>
-</div>
-</div>
-</div>
-</header>
+            </div>
+        </div>
+      </div>
+    </header>
+
+    {/* Mobile Menu Overlay */}
+    {isMobileMenuOpen && (
+      <div className="fixed inset-0 z-50 md:hidden">
+        <div 
+          className="fixed inset-0 bg-black/50 backdrop-blur-sm"
+          onClick={() => setIsMobileMenuOpen(false)}
+        ></div>
+        <div className="fixed top-0 left-0 right-0 bg-background shadow-xl transform transition-transform duration-300 ease-out">
+          <div className="flex justify-between items-center h-20 px-4 border-b border-border">
+            <img src={picnifyLogo} alt="Picnify.in Logo" className="h-12" />
+            <button
+              onClick={() => setIsMobileMenuOpen(false)}
+              className="flex items-center justify-center w-10 h-10 text-foreground hover:text-brand-orange transition-colors duration-200"
+              aria-label="Close mobile menu"
+            >
+              <i className="fas fa-times text-xl"></i>
+            </button>
+          </div>
+          <div className="px-4 py-6 space-y-6">
+            <a 
+              href="/" 
+              className="block text-lg font-medium text-foreground hover:text-brand-orange transition-colors duration-200 py-3 border-b border-border/50"
+              onClick={() => setIsMobileMenuOpen(false)}
+            >
+              <i className="fas fa-home mr-3 text-brand-orange w-5"></i>
+              Home
+            </a>
+            <a 
+              href="/properties" 
+              className="block text-lg font-medium text-foreground hover:text-brand-orange transition-colors duration-200 py-3 border-b border-border/50"
+              onClick={() => setIsMobileMenuOpen(false)}
+            >
+              <i className="fas fa-building mr-3 text-brand-orange w-5"></i>
+              Properties
+            </a>
+            <a 
+              href="/locations" 
+              className="block text-lg font-medium text-foreground hover:text-brand-orange transition-colors duration-200 py-3 border-b border-border/50"
+              onClick={() => setIsMobileMenuOpen(false)}
+            >
+              <i className="fas fa-map-marker-alt mr-3 text-brand-orange w-5"></i>
+              Locations
+            </a>
+            <a 
+              href="/about" 
+              className="block text-lg font-medium text-foreground hover:text-brand-orange transition-colors duration-200 py-3 border-b border-border/50"
+              onClick={() => setIsMobileMenuOpen(false)}
+            >
+              <i className="fas fa-info-circle mr-3 text-brand-orange w-5"></i>
+              About
+            </a>
+            <a 
+              href="/contact" 
+              className="block text-lg font-medium text-foreground hover:text-brand-orange transition-colors duration-200 py-3 border-b border-border/50"
+              onClick={() => setIsMobileMenuOpen(false)}
+            >
+              <i className="fas fa-envelope mr-3 text-brand-orange w-5"></i>
+              Contact
+            </a>
+            
+            {/* Mobile Portals Section */}
+            <div className="border-b border-border/50 pb-6">
+              <div className="text-lg font-bold text-foreground mb-4 flex items-center">
+                <i className="fas fa-door-open mr-3 text-brand-orange w-5"></i>
+                Portals
+              </div>
+              <div className="pl-8 space-y-4">
+                <a 
+                  href="/owner" 
+                  className="block text-base text-muted-foreground hover:text-brand-orange transition-colors duration-200"
+                  onClick={() => setIsMobileMenuOpen(false)}
+                >
+                  <i className="fas fa-home mr-3 text-brand-orange w-4"></i>
+                  Property Owner Portal
+                </a>
+                <a 
+                  href="/agent" 
+                  className="block text-base text-muted-foreground hover:text-brand-orange transition-colors duration-200"
+                  onClick={() => setIsMobileMenuOpen(false)}
+                >
+                  <i className="fas fa-handshake mr-3 text-brand-orange w-4"></i>
+                  Travel Agent Portal
+                </a>
+                <a 
+                  href="/admin/login" 
+                  className="block text-base text-muted-foreground hover:text-brand-orange transition-colors duration-200"
+                  onClick={() => setIsMobileMenuOpen(false)}
+                >
+                  <i className="fas fa-cog mr-3 text-brand-orange w-4"></i>
+                  Admin Panel
+                </a>
+              </div>
+            </div>
+
+            {/* Mobile Auth Buttons */}
+            <div className="space-y-4 pt-4">
+              <a 
+                href="/login" 
+                className="block w-full bg-secondary text-secondary-foreground hover:bg-secondary/80 font-medium transition-all duration-200 rounded-lg px-6 py-4 text-center"
+                onClick={() => setIsMobileMenuOpen(false)}
+              >
+                <i className="fas fa-user mr-2"></i>
+                Login
+              </a>
+              <Link
+                to="/signup"
+                className="block w-full bg-gradient-to-r from-brand-orange to-brand-red text-white px-6 py-4 hover:from-orange-600 hover:to-red-600 transition-all duration-300 rounded-lg font-medium shadow-lg text-center"
+                onClick={() => setIsMobileMenuOpen(false)}
+              >
+                <i className="fas fa-arrow-right-to-bracket mr-2"></i>
+                Sign Up
+              </Link>
+            </div>
+          </div>
+        </div>
+      </div>
+    )}
 
 {/* Hero Section */}
 <section
