@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { useIsMobile } from '@/hooks/use-mobile';
 
 // Scroll animation hook
@@ -43,6 +43,7 @@ const [searchDate, setSearchDate] = useState('');
 const [groupSize, setGroupSize] = useState('');
 const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 const isMobile = useIsMobile();
+const navigate = useNavigate();
 
 // Initialize scroll animations
 useScrollAnimation();
@@ -515,11 +516,14 @@ className="w-full h-64 object-cover transition-transform duration-700 group-hove
 {property.rating}
 </div>
 </div>
-<div className="absolute bottom-4 left-4 right-4 transform translate-y-8 group-hover:translate-y-0 opacity-0 group-hover:opacity-100 transition-all duration-500">
-<button className="w-full bg-white text-gray-900 py-3 rounded-lg font-bold hover:bg-gray-100 transition-colors duration-200 rounded-button">
-View Details
-</button>
-</div>
+                <div className="absolute bottom-4 left-4 right-4 transform translate-y-8 group-hover:translate-y-0 opacity-0 group-hover:opacity-100 transition-all duration-500">
+                  <button 
+                    onClick={() => navigate(`/property/${property.id}`)}
+                    className="w-full bg-white text-gray-900 py-3 rounded-lg font-bold hover:bg-gray-100 transition-colors duration-200 rounded-button"
+                  >
+                    View Details
+                  </button>
+                </div>
 </div>
 <div className="p-6">
 <h3 className="text-lg font-bold text-foreground mb-3 group-hover:text-brand-red transition-colors duration-300">{property.name}</h3>
@@ -624,11 +628,14 @@ className="w-full h-72 object-cover transition-transform duration-700 group-hove
 <i className="fas fa-heart text-gray-600 group-hover:text-white"></i>
 </button>
 </div>
-<div className="absolute bottom-4 left-4 opacity-0 group-hover:opacity-100 transition-all duration-500 transform translate-y-4 group-hover:translate-y-0">
-<button className="bg-white text-gray-900 px-6 py-2 rounded-full font-bold hover:bg-gray-100 transition-colors duration-200 rounded-button shadow-lg">
-Quick View
-</button>
-</div>
+              <div className="absolute bottom-4 left-4 opacity-0 group-hover:opacity-100 transition-all duration-500 transform translate-y-4 group-hover:translate-y-0">
+                <button 
+                  onClick={() => navigate(`/property/${property.id}`)}
+                  className="bg-white text-gray-900 px-6 py-2 rounded-full font-bold hover:bg-gray-100 transition-colors duration-200 rounded-button shadow-lg"
+                >
+                  View Details
+                </button>
+              </div>
 </div>
 <div className="p-8">
 <div className="flex items-start justify-between mb-4">
