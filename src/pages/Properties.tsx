@@ -68,6 +68,14 @@ const Properties: React.FC = () => {
   };
 
   const venteskraftProperties = getVenteskraftProperties();
+  console.log('🔍 Venteskraft properties loaded:', venteskraftProperties.length);
+  venteskraftProperties.forEach((prop: any) => {
+    console.log(`📸 Property "${prop.name}":`, {
+      id: prop.id,
+      images: prop.images ? prop.images.length : 0,
+      firstImage: prop.images && prop.images.length > 0 ? prop.images[0].substring(0, 50) + '...' : 'No images'
+    });
+  });
 
   const properties = [
     // Venteskraft Properties (Featured) - Load from localStorage
@@ -79,7 +87,7 @@ const Properties: React.FC = () => {
       reviews: property.totalBookings,
       price: property.price,
       originalPrice: property.price * 1.1, // 10% markup for original price
-      image: beachsideParadise, // Use default image for now
+      image: property.images && property.images.length > 0 ? property.images[0] : beachsideParadise, // Use uploaded image or default
       amenities: property.amenities.map((a: string) => a.charAt(0).toUpperCase() + a.slice(1)),
       type: property.type.charAt(0).toUpperCase() + property.type.slice(1),
       guests: property.capacity,
@@ -649,6 +657,10 @@ const Properties: React.FC = () => {
                           src={property.image}
                           alt={property.name}
                           className="w-full h-64 object-cover object-top transition-transform duration-700 group-hover:scale-110"
+                          onError={(e) => {
+                            console.log('Image failed to load:', property.image);
+                            e.currentTarget.src = '/placeholder.svg';
+                          }}
                         />
                         <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
                         <div className="absolute bottom-4 left-4 right-4 transform translate-y-8 group-hover:translate-y-0 opacity-0 group-hover:opacity-100 transition-all duration-500">
