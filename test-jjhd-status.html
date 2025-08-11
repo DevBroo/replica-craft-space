@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test jjhd Property Status</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .test-card {
+            background: white;
+            border-radius: 8px;
+            padding: 20px;
+            margin: 20px 0;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .test-button {
+            background: #2196f3;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            margin: 5px;
+            text-decoration: none;
+            display: inline-block;
+        }
+        .test-button:hover {
+            background: #1976d2;
+        }
+        .success {
+            color: #4caf50;
+            font-weight: bold;
+        }
+        .warning {
+            color: #ff9800;
+            font-weight: bold;
+        }
+        .error {
+            color: #f44336;
+            font-weight: bold;
+        }
+        .info {
+            background: #e3f2fd;
+            border-left: 4px solid #2196f3;
+            padding: 15px;
+            margin: 15px 0;
+        }
+        .step {
+            background: #f3e5f5;
+            border-left: 4px solid #9c27b0;
+            padding: 15px;
+            margin: 15px 0;
+        }
+    </style>
+</head>
+<body>
+    <h1>🔍 Test jjhd Property Status</h1>
+    
+    <div class="test-card">
+        <h2>📋 Problem Analysis</h2>
+        
+        <div class="error">
+            <strong>❌ Issue:</strong> "jjhd" property is not showing on public website
+        </div>
+        
+        <div class="info">
+            <strong>Possible Causes:</strong>
+            <ul>
+                <li>Property status is still "Pending" (not "Active")</li>
+                <li>Property was not saved properly</li>
+                <li>localStorage data is corrupted</li>
+                <li>Public website is not loading from localStorage</li>
+                <li>Syntax error preventing page from loading</li>
+            </ul>
+        </div>
+    </div>
+
+    <div class="test-card">
+        <h2>🚀 Test Steps</h2>
+        
+        <div class="step">
+            <h3>Step 1: Check Owner Dashboard</h3>
+            <a href="http://localhost:8082/owner/view" class="test-button" target="_blank">Open Owner Dashboard</a>
+            <p>Check if the page loads without errors</p>
+        </div>
+        
+        <div class="step">
+            <h3>Step 2: Find jjhd Property</h3>
+            <p>Look for "jjhd" property in the property list:</p>
+            <ul>
+                <li>Name: "jjhd"</li>
+                <li>Location: "ddd, dd"</li>
+                <li>Price: ₹22</li>
+                <li>Check the status dropdown</li>
+            </ul>
+        </div>
+        
+        <div class="step">
+            <h3>Step 3: Check Property Status</h3>
+            <p>On the "jjhd" property card:</p>
+            <ol>
+                <li>Look at the status dropdown</li>
+                <li>If it shows "Pending" (yellow), change it to "Active" (green)</li>
+                <li>If it shows "Active" but still not public, there's another issue</li>
+            </ol>
+        </div>
+        
+        <div class="step">
+            <h3>Step 4: Check Public Website</h3>
+            <a href="http://localhost:8082/properties" class="test-button" target="_blank">Open Properties Page</a>
+            <p>Look for "jjhd" property in the listings</p>
+        </div>
+        
+        <div class="step">
+            <h3>Step 5: Check localStorage</h3>
+            <p>Open browser console (F12) and type:</p>
+            <code>localStorage.getItem('properties_venteskraft@gmail.com')</code>
+            <p>Look for the "jjhd" property and check its status field.</p>
+        </div>
+    </div>
+
+    <div class="test-card">
+        <h2>✅ Expected Results</h2>
+        
+        <h3>✅ If Status is "Pending":</h3>
+        <ul>
+            <li class="warning">Property will NOT show on public website</li>
+            <li class="warning">Change status to "Active" to make it public</li>
+            <li class="success">After changing to "Active", it should appear on public website</li>
+        </ul>
+        
+        <h3>✅ If Status is "Active":</h3>
+        <ul>
+            <li class="success">Property should be visible on public Properties page</li>
+            <li class="success">Property should appear in search results</li>
+            <li class="success">Property detail page should be accessible</li>
+        </ul>
+        
+        <h3>❌ If Still Not Working:</h3>
+        <ul>
+            <li class="error">Check if owner dashboard loads without errors</li>
+            <li class="error">Check browser console for JavaScript errors</li>
+            <li class="error">Verify localStorage contains the property data</li>
+        </ul>
+    </div>
+
+    <div class="test-card">
+        <h2>🔧 Debug Information</h2>
+        
+        <h3>Console Commands to Run:</h3>
+        <ul>
+            <li><code>localStorage.getItem('properties_venteskraft@gmail.com')</code> - Check all properties</li>
+            <li><code>JSON.parse(localStorage.getItem('properties_venteskraft@gmail.com'))</code> - Parse and view data</li>
+            <li><code>localStorage.clear()</code> - Clear all data (use with caution)</li>
+        </ul>
+        
+        <h3>Status Values:</h3>
+        <ul>
+            <li><strong>Pending:</strong> Only visible in owner dashboard</li>
+            <li><strong>Active:</strong> Visible on public website</li>
+            <li><strong>Inactive:</strong> Only visible in owner dashboard</li>
+            <li><strong>Maintenance:</strong> Only visible in owner dashboard</li>
+        </ul>
+        
+        <h3>If Dashboard Doesn't Load:</h3>
+        <ul>
+            <li class="error">There's a syntax error in the code</li>
+            <li class="error">Check browser console for error messages</li>
+            <li class="error">The page needs to be fixed before testing</li>
+        </ul>
+    </div>
+
+    <div class="test-card">
+        <h2>🎯 Quick Fix Steps</h2>
+        
+        <h3>If jjhd Status is "Pending":</h3>
+        <ol>
+            <li>Go to Owner Dashboard</li>
+            <li>Find "jjhd" property</li>
+            <li>Change status dropdown from "Pending" to "Active"</li>
+            <li>Check public Properties page</li>
+            <li>"jjhd" should now be visible</li>
+        </ol>
+        
+        <h3>If Dashboard Has Errors:</h3>
+        <ol>
+            <li>Check browser console for syntax errors</li>
+            <li>Report the error messages</li>
+            <li>Wait for code fix</li>
+            <li>Refresh page after fix</li>
+        </ol>
+    </div>
+
+    <div class="test-card">
+        <h2>📞 Report Results</h2>
+        <p>After testing, report:</p>
+        <ul>
+            <li>✅ Whether owner dashboard loads without errors</li>
+            <li>✅ Whether "jjhd" property is visible in owner dashboard</li>
+            <li>✅ What status "jjhd" property currently has</li>
+            <li>✅ Whether "jjhd" appears on public Properties page</li>
+            <li>❌ Any error messages in browser console</li>
+            <li>❌ Any issues with status change</li>
+        </ul>
+    </div>
+
+    <script>
+        console.log('🔍 jjhd Property Status Test Page Loaded');
+        console.log('📋 Testing why jjhd property is not showing on public website');
+        console.log('🎯 Key checks: Status, localStorage, public visibility');
+        console.log('🚀 Ready to test! Open http://localhost:8082/owner/view');
+    </script>
+</body>
+</html>
