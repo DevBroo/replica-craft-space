@@ -122,7 +122,57 @@ const PropertyDetails = () => {
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [guests, setGuests] = useState(2);
   
-  const property = propertyData[id as keyof typeof propertyData];
+  // Load venteskraft properties from localStorage
+  const getVenteskraftProperties = () => {
+    try {
+      const storageKey = 'properties_venteskraft@gmail.com';
+      const savedProperties = localStorage.getItem(storageKey);
+      if (savedProperties) {
+        const parsedProperties = JSON.parse(savedProperties);
+        return parsedProperties.filter((property: any) => property.status === 'active');
+      }
+    } catch (error) {
+      console.log('Error loading venteskraft properties:', error);
+    }
+    return [];
+  };
+
+  const venteskraftProperties = getVenteskraftProperties();
+  
+  // Check if it's a venteskraft property first
+  const venteskraftProperty = venteskraftProperties.find((p: any) => p.id === id);
+  
+  // If not found in venteskraft properties, check the dummy data
+  const property = venteskraftProperty ? {
+    id: venteskraftProperty.id,
+    title: venteskraftProperty.name,
+    location: `${venteskraftProperty.city}, ${venteskraftProperty.state}`,
+    price: venteskraftProperty.price,
+    rating: venteskraftProperty.rating,
+    reviews: venteskraftProperty.totalBookings,
+    images: venteskraftProperty.images && venteskraftProperty.images.length > 0 
+      ? venteskraftProperty.images 
+      : ['/placeholder.svg'],
+    description: venteskraftProperty.description || 'No description available.',
+    amenities: venteskraftProperty.amenities.map((a: string) => ({ 
+      icon: Wifi, 
+      name: a.charAt(0).toUpperCase() + a.slice(1) 
+    })),
+    roomTypes: [
+      {
+        name: `${venteskraftProperty.type.charAt(0).toUpperCase() + venteskraftProperty.type.slice(1)} Room`,
+        price: venteskraftProperty.price,
+        features: [`${venteskraftProperty.bedrooms} Bedrooms`, `${venteskraftProperty.bathrooms} Bathrooms`, `Capacity: ${venteskraftProperty.capacity} guests`]
+      }
+    ],
+    highlights: [
+      `${venteskraftProperty.bedrooms} Bedrooms`,
+      `${venteskraftProperty.bathrooms} Bathrooms`,
+      `Capacity: ${venteskraftProperty.capacity} guests`,
+      `${venteskraftProperty.type.charAt(0).toUpperCase() + venteskraftProperty.type.slice(1)} Type`,
+      'Active Property'
+    ]
+  } : propertyData[id as keyof typeof propertyData];
   
   if (!property) {
     return (
