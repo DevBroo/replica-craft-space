@@ -7,300 +7,231 @@ export type Json =
   | Json[]
 
 export type Database = {
+  // Allows to automatically instanciate createClient with right options
+  // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
+  __InternalSupabase: {
+    PostgrestVersion: "12.2.12 (cd3cf9e)"
+  }
   public: {
     Tables: {
-      users: {
+      bookings: {
         Row: {
-          id: string
-          email: string
-          phone: string | null
-          first_name: string | null
-          last_name: string | null
-          role: 'admin' | 'owner' | 'agent' | 'customer'
-          avatar_url: string | null
-          is_verified: boolean
-          is_active: boolean
-          profile_data: Json
+          booking_details: Json | null
+          check_in_date: string
+          check_out_date: string
           created_at: string
+          guests: number
+          id: string
+          property_id: string
+          status: string | null
+          total_amount: number
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          booking_details?: Json | null
+          check_in_date: string
+          check_out_date: string
+          created_at?: string
+          guests?: number
+          id?: string
+          property_id: string
+          status?: string | null
+          total_amount: number
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          booking_details?: Json | null
+          check_in_date?: string
+          check_out_date?: string
+          created_at?: string
+          guests?: number
+          id?: string
+          property_id?: string
+          status?: string | null
+          total_amount?: number
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "bookings_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: false
+            referencedRelation: "properties"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "bookings_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      profiles: {
+        Row: {
+          avatar_url: string | null
+          created_at: string
+          email: string | null
+          full_name: string | null
+          id: string
+          phone: string | null
+          role: string | null
           updated_at: string
         }
         Insert: {
-          id?: string
-          email: string
-          phone?: string | null
-          first_name?: string | null
-          last_name?: string | null
-          role?: 'admin' | 'owner' | 'agent' | 'customer'
           avatar_url?: string | null
-          is_verified?: boolean
-          is_active?: boolean
-          profile_data?: Json
           created_at?: string
+          email?: string | null
+          full_name?: string | null
+          id: string
+          phone?: string | null
+          role?: string | null
           updated_at?: string
         }
         Update: {
-          id?: string
-          email?: string
-          phone?: string | null
-          first_name?: string | null
-          last_name?: string | null
-          role?: 'admin' | 'owner' | 'agent' | 'customer'
           avatar_url?: string | null
-          is_verified?: boolean
-          is_active?: boolean
-          profile_data?: Json
           created_at?: string
+          email?: string | null
+          full_name?: string | null
+          id?: string
+          phone?: string | null
+          role?: string | null
           updated_at?: string
         }
+        Relationships: []
       }
       properties: {
         Row: {
-          id: string
-          owner_id: string
-          title: string
-          description: string | null
-          location: Json
-          address: string | null
-          property_type: string
-          amenities: string[]
-          pricing: Json
-          images: string[]
-          max_guests: number
-          bedrooms: number | null
+          address: string
+          amenities: string[] | null
           bathrooms: number | null
-          status: 'pending' | 'approved' | 'rejected' | 'inactive'
-          is_featured: boolean
-          rating: number
-          review_count: number
+          bedrooms: number | null
           created_at: string
-          updated_at: string
-        }
-        Insert: {
-          id?: string
-          owner_id: string
-          title: string
-          description?: string | null
-          location: Json
-          address?: string | null
-          property_type: string
-          amenities?: string[]
-          pricing: Json
-          images?: string[]
-          max_guests: number
-          bedrooms?: number | null
-          bathrooms?: number | null
-          status?: 'pending' | 'approved' | 'rejected' | 'inactive'
-          is_featured?: boolean
-          rating?: number
-          review_count?: number
-          created_at?: string
-          updated_at?: string
-        }
-        Update: {
-          id?: string
-          owner_id?: string
-          title?: string
-          description?: string | null
-          location?: Json
-          address?: string | null
-          property_type?: string
-          amenities?: string[]
-          pricing?: Json
-          images?: string[]
-          max_guests?: number
-          bedrooms?: number | null
-          bathrooms?: number | null
-          status?: 'pending' | 'approved' | 'rejected' | 'inactive'
-          is_featured?: boolean
-          rating?: number
-          review_count?: number
-          created_at?: string
-          updated_at?: string
-        }
-      }
-      bookings: {
-        Row: {
+          description: string | null
           id: string
-          property_id: string
-          customer_id: string
-          agent_id: string | null
-          check_in: string
-          check_out: string
-          guests: number
-          total_amount: number
-          commission_amount: number
-          commission_rate: number
-          status: 'pending' | 'confirmed' | 'cancelled' | 'completed'
-          payment_status: 'pending' | 'paid' | 'failed' | 'refunded'
-          special_requests: string | null
-          created_at: string
+          images: string[] | null
+          is_featured: boolean | null
+          location: Json | null
+          max_guests: number
+          owner_id: string
+          pricing: Json
+          property_type: string
+          rating: number | null
+          review_count: number | null
+          status: string | null
+          title: string
           updated_at: string
         }
         Insert: {
-          id?: string
-          property_id: string
-          customer_id: string
-          agent_id?: string | null
-          check_in: string
-          check_out: string
-          guests: number
-          total_amount: number
-          commission_amount?: number
-          commission_rate?: number
-          status?: 'pending' | 'confirmed' | 'cancelled' | 'completed'
-          payment_status?: 'pending' | 'paid' | 'failed' | 'refunded'
-          special_requests?: string | null
+          address: string
+          amenities?: string[] | null
+          bathrooms?: number | null
+          bedrooms?: number | null
           created_at?: string
+          description?: string | null
+          id?: string
+          images?: string[] | null
+          is_featured?: boolean | null
+          location?: Json | null
+          max_guests?: number
+          owner_id: string
+          pricing?: Json
+          property_type: string
+          rating?: number | null
+          review_count?: number | null
+          status?: string | null
+          title: string
           updated_at?: string
         }
         Update: {
-          id?: string
-          property_id?: string
-          customer_id?: string
-          agent_id?: string | null
-          check_in?: string
-          check_out?: string
-          guests?: number
-          total_amount?: number
-          commission_amount?: number
-          commission_rate?: number
-          status?: 'pending' | 'confirmed' | 'cancelled' | 'completed'
-          payment_status?: 'pending' | 'paid' | 'failed' | 'refunded'
-          special_requests?: string | null
+          address?: string
+          amenities?: string[] | null
+          bathrooms?: number | null
+          bedrooms?: number | null
           created_at?: string
+          description?: string | null
+          id?: string
+          images?: string[] | null
+          is_featured?: boolean | null
+          location?: Json | null
+          max_guests?: number
+          owner_id?: string
+          pricing?: Json
+          property_type?: string
+          rating?: number | null
+          review_count?: number | null
+          status?: string | null
+          title?: string
           updated_at?: string
         }
+        Relationships: [
+          {
+            foreignKeyName: "properties_owner_id_fkey"
+            columns: ["owner_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       reviews: {
         Row: {
-          id: string
-          booking_id: string
-          property_id: string
-          customer_id: string
-          rating: number
+          booking_id: string | null
           comment: string | null
-          is_public: boolean
           created_at: string
-        }
-        Insert: {
-          id?: string
-          booking_id: string
+          id: string
           property_id: string
-          customer_id: string
           rating: number
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          booking_id?: string | null
           comment?: string | null
-          is_public?: boolean
           created_at?: string
+          id?: string
+          property_id: string
+          rating: number
+          updated_at?: string
+          user_id: string
         }
         Update: {
+          booking_id?: string | null
+          comment?: string | null
+          created_at?: string
           id?: string
-          booking_id?: string
           property_id?: string
-          customer_id?: string
           rating?: number
-          comment?: string | null
-          is_public?: boolean
-          created_at?: string
-        }
-      }
-      payments: {
-        Row: {
-          id: string
-          booking_id: string
-          amount: number
-          currency: string
-          payment_method: string
-          transaction_id: string | null
-          status: 'pending' | 'paid' | 'failed' | 'refunded'
-          gateway_response: Json | null
-          created_at: string
-        }
-        Insert: {
-          id?: string
-          booking_id: string
-          amount: number
-          currency?: string
-          payment_method: string
-          transaction_id?: string | null
-          status?: 'pending' | 'paid' | 'failed' | 'refunded'
-          gateway_response?: Json | null
-          created_at?: string
-        }
-        Update: {
-          id?: string
-          booking_id?: string
-          amount?: number
-          currency?: string
-          payment_method?: string
-          transaction_id?: string | null
-          status?: 'pending' | 'paid' | 'failed' | 'refunded'
-          gateway_response?: Json | null
-          created_at?: string
-        }
-      }
-      commissions: {
-        Row: {
-          id: string
-          booking_id: string
-          agent_id: string
-          amount: number
-          rate: number
-          status: 'pending' | 'paid' | 'failed' | 'refunded'
-          paid_at: string | null
-          created_at: string
-        }
-        Insert: {
-          id?: string
-          booking_id: string
-          agent_id: string
-          amount: number
-          rate: number
-          status?: 'pending' | 'paid' | 'failed' | 'refunded'
-          paid_at?: string | null
-          created_at?: string
-        }
-        Update: {
-          id?: string
-          booking_id?: string
-          agent_id?: string
-          amount?: number
-          rate?: number
-          status?: 'pending' | 'paid' | 'failed' | 'refunded'
-          paid_at?: string | null
-          created_at?: string
-        }
-      }
-      notifications: {
-        Row: {
-          id: string
-          user_id: string
-          title: string
-          message: string
-          type: string
-          is_read: boolean
-          data: Json
-          created_at: string
-        }
-        Insert: {
-          id?: string
-          user_id: string
-          title: string
-          message: string
-          type: string
-          is_read?: boolean
-          data?: Json
-          created_at?: string
-        }
-        Update: {
-          id?: string
+          updated_at?: string
           user_id?: string
-          title?: string
-          message?: string
-          type?: string
-          is_read?: boolean
-          data?: Json
-          created_at?: string
         }
+        Relationships: [
+          {
+            foreignKeyName: "reviews_booking_id_fkey"
+            columns: ["booking_id"]
+            isOneToOne: false
+            referencedRelation: "bookings"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "reviews_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: false
+            referencedRelation: "properties"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "reviews_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
       }
     }
     Views: {
@@ -310,10 +241,7 @@ export type Database = {
       [_ in never]: never
     }
     Enums: {
-      user_role: 'admin' | 'owner' | 'agent' | 'customer'
-      booking_status: 'pending' | 'confirmed' | 'cancelled' | 'completed'
-      property_status: 'pending' | 'approved' | 'rejected' | 'inactive'
-      payment_status: 'pending' | 'paid' | 'failed' | 'refunded'
+      [_ in never]: never
     }
     CompositeTypes: {
       [_ in never]: never
@@ -321,55 +249,125 @@ export type Database = {
   }
 }
 
-// Helper types for easier usage
-export type User = Database['public']['Tables']['users']['Row']
-export type UserInsert = Database['public']['Tables']['users']['Insert']
-export type UserUpdate = Database['public']['Tables']['users']['Update']
+type DatabaseWithoutInternals = Omit<Database, "__InternalSupabase">
 
-export type Property = Database['public']['Tables']['properties']['Row']
-export type PropertyInsert = Database['public']['Tables']['properties']['Insert']
-export type PropertyUpdate = Database['public']['Tables']['properties']['Update']
+type DefaultSchema = DatabaseWithoutInternals[Extract<keyof Database, "public">]
 
-export type Booking = Database['public']['Tables']['bookings']['Row']
-export type BookingInsert = Database['public']['Tables']['bookings']['Insert']
-export type BookingUpdate = Database['public']['Tables']['bookings']['Update']
-
-export type Review = Database['public']['Tables']['reviews']['Row']
-export type ReviewInsert = Database['public']['Tables']['reviews']['Insert']
-export type ReviewUpdate = Database['public']['Tables']['reviews']['Update']
-
-export type Payment = Database['public']['Tables']['payments']['Row']
-export type PaymentInsert = Database['public']['Tables']['payments']['Insert']
-export type PaymentUpdate = Database['public']['Tables']['payments']['Update']
-
-export type Commission = Database['public']['Tables']['commissions']['Row']
-export type CommissionInsert = Database['public']['Tables']['commissions']['Insert']
-export type CommissionUpdate = Database['public']['Tables']['commissions']['Update']
-
-export type Notification = Database['public']['Tables']['notifications']['Row']
-export type NotificationInsert = Database['public']['Tables']['notifications']['Insert']
-export type NotificationUpdate = Database['public']['Tables']['notifications']['Update']
-
-// Extended types with relationships
-export type UserWithProfile = User & {
-  properties?: Property[]
-  bookings?: Booking[]
-  reviews?: Review[]
-  commissions?: Commission[]
-  notifications?: Notification[]
+export type Tables<
+  DefaultSchemaTableNameOrOptions extends
+    | keyof (DefaultSchema["Tables"] & DefaultSchema["Views"])
+    | { schema: keyof DatabaseWithoutInternals },
+  TableName extends DefaultSchemaTableNameOrOptions extends {
+    schema: keyof DatabaseWithoutInternals
+  }
+    ? keyof (DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"] &
+        DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Views"])
+    : never = never,
+> = DefaultSchemaTableNameOrOptions extends {
+  schema: keyof DatabaseWithoutInternals
 }
+  ? (DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"] &
+      DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Views"])[TableName] extends {
+      Row: infer R
+    }
+    ? R
+    : never
+  : DefaultSchemaTableNameOrOptions extends keyof (DefaultSchema["Tables"] &
+        DefaultSchema["Views"])
+    ? (DefaultSchema["Tables"] &
+        DefaultSchema["Views"])[DefaultSchemaTableNameOrOptions] extends {
+        Row: infer R
+      }
+      ? R
+      : never
+    : never
 
-export type PropertyWithDetails = Property & {
-  owner?: User
-  bookings?: Booking[]
-  reviews?: Review[]
+export type TablesInsert<
+  DefaultSchemaTableNameOrOptions extends
+    | keyof DefaultSchema["Tables"]
+    | { schema: keyof DatabaseWithoutInternals },
+  TableName extends DefaultSchemaTableNameOrOptions extends {
+    schema: keyof DatabaseWithoutInternals
+  }
+    ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
+    : never = never,
+> = DefaultSchemaTableNameOrOptions extends {
+  schema: keyof DatabaseWithoutInternals
 }
+  ? DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"][TableName] extends {
+      Insert: infer I
+    }
+    ? I
+    : never
+  : DefaultSchemaTableNameOrOptions extends keyof DefaultSchema["Tables"]
+    ? DefaultSchema["Tables"][DefaultSchemaTableNameOrOptions] extends {
+        Insert: infer I
+      }
+      ? I
+      : never
+    : never
 
-export type BookingWithDetails = Booking & {
-  property?: Property
-  customer?: User
-  agent?: User
-  payments?: Payment[]
-  commissions?: Commission[]
-  reviews?: Review[]
+export type TablesUpdate<
+  DefaultSchemaTableNameOrOptions extends
+    | keyof DefaultSchema["Tables"]
+    | { schema: keyof DatabaseWithoutInternals },
+  TableName extends DefaultSchemaTableNameOrOptions extends {
+    schema: keyof DatabaseWithoutInternals
+  }
+    ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
+    : never = never,
+> = DefaultSchemaTableNameOrOptions extends {
+  schema: keyof DatabaseWithoutInternals
 }
+  ? DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"][TableName] extends {
+      Update: infer U
+    }
+    ? U
+    : never
+  : DefaultSchemaTableNameOrOptions extends keyof DefaultSchema["Tables"]
+    ? DefaultSchema["Tables"][DefaultSchemaTableNameOrOptions] extends {
+        Update: infer U
+      }
+      ? U
+      : never
+    : never
+
+export type Enums<
+  DefaultSchemaEnumNameOrOptions extends
+    | keyof DefaultSchema["Enums"]
+    | { schema: keyof DatabaseWithoutInternals },
+  EnumName extends DefaultSchemaEnumNameOrOptions extends {
+    schema: keyof DatabaseWithoutInternals
+  }
+    ? keyof DatabaseWithoutInternals[DefaultSchemaEnumNameOrOptions["schema"]]["Enums"]
+    : never = never,
+> = DefaultSchemaEnumNameOrOptions extends {
+  schema: keyof DatabaseWithoutInternals
+}
+  ? DatabaseWithoutInternals[DefaultSchemaEnumNameOrOptions["schema"]]["Enums"][EnumName]
+  : DefaultSchemaEnumNameOrOptions extends keyof DefaultSchema["Enums"]
+    ? DefaultSchema["Enums"][DefaultSchemaEnumNameOrOptions]
+    : never
+
+export type CompositeTypes<
+  PublicCompositeTypeNameOrOptions extends
+    | keyof DefaultSchema["CompositeTypes"]
+    | { schema: keyof DatabaseWithoutInternals },
+  CompositeTypeName extends PublicCompositeTypeNameOrOptions extends {
+    schema: keyof DatabaseWithoutInternals
+  }
+    ? keyof DatabaseWithoutInternals[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"]
+    : never = never,
+> = PublicCompositeTypeNameOrOptions extends {
+  schema: keyof DatabaseWithoutInternals
+}
+  ? DatabaseWithoutInternals[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"][CompositeTypeName]
+  : PublicCompositeTypeNameOrOptions extends keyof DefaultSchema["CompositeTypes"]
+    ? DefaultSchema["CompositeTypes"][PublicCompositeTypeNameOrOptions]
+    : never
+
+export const Constants = {
+  public: {
+    Enums: {},
+  },
+} as const
