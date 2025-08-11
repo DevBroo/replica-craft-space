@@ -1,0 +1,294 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Public Properties - Venteskraft</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .test-card {
+            background: white;
+            border-radius: 8px;
+            padding: 20px;
+            margin: 20px 0;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .property-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+            margin: 20px 0;
+        }
+        .property-card {
+            background: white;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            transition: transform 0.2s;
+        }
+        .property-card:hover {
+            transform: translateY(-5px);
+        }
+        .property-image {
+            width: 100%;
+            height: 200px;
+            background: linear-gradient(45deg, #ff6b6b, #4ecdc4);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: bold;
+        }
+        .property-content {
+            padding: 15px;
+        }
+        .property-name {
+            font-size: 18px;
+            font-weight: bold;
+            margin-bottom: 8px;
+            color: #333;
+        }
+        .property-location {
+            color: #666;
+            margin-bottom: 8px;
+        }
+        .property-price {
+            font-size: 20px;
+            font-weight: bold;
+            color: #2196f3;
+            margin-bottom: 8px;
+        }
+        .property-rating {
+            color: #ff9800;
+            font-weight: bold;
+        }
+        .test-button {
+            background: #2196f3;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            margin: 5px;
+            text-decoration: none;
+            display: inline-block;
+        }
+        .test-button:hover {
+            background: #1976d2;
+        }
+        .success {
+            color: #4caf50;
+            font-weight: bold;
+        }
+        .warning {
+            color: #ff9800;
+            font-weight: bold;
+        }
+        .featured-badge {
+            background: linear-gradient(45deg, #ff6b6b, #4ecdc4);
+            color: white;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 12px;
+            font-weight: bold;
+            display: inline-block;
+            margin-bottom: 8px;
+        }
+    </style>
+</head>
+<body>
+    <h1>🏠 Test Public Properties - Venteskraft</h1>
+    
+    <div class="test-card">
+        <h2>📋 Test Overview</h2>
+        <p>This test verifies that the venteskraft@gmail.com properties are showing on the public website for all visitors to see.</p>
+        
+        <h3>🎯 What to Test:</h3>
+        <ol>
+            <li>Check homepage "Top Picks" section</li>
+            <li>Check Properties page listing</li>
+            <li>Verify property details pages</li>
+            <li>Test search and filtering</li>
+        </ol>
+    </div>
+
+    <div class="test-card">
+        <h2>🏆 Expected Properties on Public Website</h2>
+        
+        <div class="property-grid">
+            <div class="property-card">
+                <div class="property-image">Luxury Beach Villa</div>
+                <div class="property-content">
+                    <div class="featured-badge">FEATURED</div>
+                    <div class="property-name">Luxury Beach Villa - Goa</div>
+                    <div class="property-location">📍 Goa</div>
+                    <div class="property-price">₹18,000/day</div>
+                    <div class="property-rating">⭐ 4.9/5</div>
+                </div>
+            </div>
+            
+            <div class="property-card">
+                <div class="property-image">Mountain Resort</div>
+                <div class="property-content">
+                    <div class="featured-badge">FEATURED</div>
+                    <div class="property-name">Mountain View Resort - Manali</div>
+                    <div class="property-location">📍 Manali</div>
+                    <div class="property-price">₹12,000/day</div>
+                    <div class="property-rating">⭐ 4.7/5</div>
+                </div>
+            </div>
+            
+            <div class="property-card">
+                <div class="property-image">Heritage Palace</div>
+                <div class="property-content">
+                    <div class="featured-badge">FEATURED</div>
+                    <div class="property-name">Heritage Palace - Jaipur</div>
+                    <div class="property-location">📍 Jaipur</div>
+                    <div class="property-price">₹35,000/day</div>
+                    <div class="property-rating">⭐ New Property</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="test-card">
+        <h2>🚀 Test Steps</h2>
+        
+        <h3>Step 1: Check Homepage</h3>
+        <a href="http://localhost:8082/" class="test-button" target="_blank">Open Homepage</a>
+        <p>Look for "Top Picks for You" section - should show the 3 venteskraft properties first</p>
+        
+        <h3>Step 2: Check Properties Page</h3>
+        <a href="http://localhost:8082/properties" class="test-button" target="_blank">Open Properties Page</a>
+        <p>Should see all properties including the 3 venteskraft properties at the top</p>
+        
+        <h3>Step 3: Test Property Details</h3>
+        <p>Click on any venteskraft property to view details:</p>
+        <ul>
+            <li><a href="http://localhost:8082/property/1" target="_blank">Luxury Beach Villa - Goa</a></li>
+            <li><a href="http://localhost:8082/property/2" target="_blank">Mountain View Resort - Manali</a></li>
+            <li><a href="http://localhost:8082/property/3" target="_blank">Heritage Palace - Jaipur</a></li>
+        </ul>
+        
+        <h3>Step 4: Test Search & Filters</h3>
+        <p>On the Properties page, try:</p>
+        <ul>
+            <li>Search for "Goa" - should show Luxury Beach Villa</li>
+            <li>Search for "Manali" - should show Mountain View Resort</li>
+            <li>Search for "Jaipur" - should show Heritage Palace</li>
+            <li>Filter by "Villa" type - should show Luxury Beach Villa</li>
+            <li>Filter by "Resort" type - should show Mountain View Resort</li>
+            <li>Filter by "Heritage" type - should show Heritage Palace</li>
+        </ul>
+    </div>
+
+    <div class="test-card">
+        <h2>✅ Expected Results</h2>
+        
+        <h3>✅ Homepage Success Criteria:</h3>
+        <ul>
+            <li class="success">3 venteskraft properties should appear in "Top Picks" section</li>
+            <li class="success">Properties should be in order: Goa, Manali, Jaipur</li>
+            <li class="success">Prices should show: ₹18,000, ₹12,000, ₹35,000</li>
+            <li class="success">Ratings should show: 4.9, 4.7, 0 (new property)</li>
+        </ul>
+        
+        <h3>✅ Properties Page Success Criteria:</h3>
+        <ul>
+            <li class="success">All 3 venteskraft properties should be visible</li>
+            <li class="success">Properties should be marked as "Featured"</li>
+            <li class="success">Search functionality should work for property names</li>
+            <li class="success">Filtering by location should work</li>
+            <li class="success">Filtering by property type should work</li>
+        </ul>
+        
+        <h3>✅ Property Details Success Criteria:</h3>
+        <ul>
+            <li class="success">Property detail pages should load without errors</li>
+            <li class="success">All property information should be displayed correctly</li>
+            <li class="success">Amenities should be listed properly</li>
+            <li class="success">Booking functionality should be available</li>
+        </ul>
+    </div>
+
+    <div class="test-card">
+        <h2>🔧 Debug Information</h2>
+        
+        <h3>Property IDs to Check:</h3>
+        <ul>
+            <li><strong>ID 1:</strong> Luxury Beach Villa - Goa</li>
+            <li><strong>ID 2:</strong> Mountain View Resort - Manali</li>
+            <li><strong>ID 3:</strong> Heritage Palace - Jaipur</li>
+        </ul>
+        
+        <h3>Console Logs to Check:</h3>
+        <p>Open browser console (F12) and look for:</p>
+        <ul>
+            <li>Any JavaScript errors</li>
+            <li>Property loading messages</li>
+            <li>Search/filter functionality logs</li>
+        </ul>
+        
+        <h3>URLs to Test:</h3>
+        <ul>
+            <li><code>http://localhost:8082/</code> - Homepage with Top Picks</li>
+            <li><code>http://localhost:8082/properties</code> - All Properties</li>
+            <li><code>http://localhost:8082/property/1</code> - Goa Villa Details</li>
+            <li><code>http://localhost:8082/property/2</code> - Manali Resort Details</li>
+            <li><code>http://localhost:8082/property/3</code> - Jaipur Palace Details</li>
+        </ul>
+    </div>
+
+    <div class="test-card">
+        <h2>⚠️ Common Issues to Check</h2>
+        
+        <h3>If Properties Don't Show:</h3>
+        <ul>
+            <li class="warning">Check if the dev server is running on port 8082</li>
+            <li class="warning">Check browser console for JavaScript errors</li>
+            <li class="warning">Verify the properties array was updated correctly</li>
+            <li class="warning">Check if images are loading properly</li>
+        </ul>
+        
+        <h3>If Search/Filter Doesn't Work:</h3>
+        <ul>
+            <li class="warning">Check if the search functionality is implemented</li>
+            <li class="warning">Verify property names match exactly</li>
+            <li class="warning">Check if location names are correct</li>
+        </ul>
+        
+        <h3>If Property Details Don't Load:</h3>
+        <ul>
+            <li class="warning">Check if the PropertyDetails component exists</li>
+            <li class="warning">Verify the routing is set up correctly</li>
+            <li class="warning">Check if property IDs match the URLs</li>
+        </ul>
+    </div>
+
+    <div class="test-card">
+        <h2>📞 Report Results</h2>
+        <p>After testing, report:</p>
+        <ul>
+            <li>✅ Which features are working correctly</li>
+            <li>❌ Any issues or errors encountered</li>
+            <li>📸 Screenshots of the properties showing on the website</li>
+            <li>🔍 Any console errors or warnings</li>
+        </ul>
+    </div>
+
+    <script>
+        console.log('🏠 Public Properties Test Page Loaded');
+        console.log('📋 Testing venteskraft properties on public website:');
+        console.log('1. Luxury Beach Villa - Goa (₹18,000/day)');
+        console.log('2. Mountain View Resort - Manali (₹12,000/day)');
+        console.log('3. Heritage Palace - Jaipur (₹35,000/day)');
+        console.log('🚀 Ready to test! Open http://localhost:8082/');
+    </script>
+</body>
+</html>

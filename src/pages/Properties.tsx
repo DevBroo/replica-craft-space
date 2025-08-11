@@ -51,8 +51,64 @@ const Properties: React.FC = () => {
   const { user, isAuthenticated, logout } = useAuth();
 
   const properties = [
+    // Venteskraft Properties (Featured)
     {
       id: 1,
+      name: 'Luxury Beach Villa - Goa',
+      location: 'Goa',
+      rating: 4.9,
+      reviews: 67,
+      price: 18000,
+      originalPrice: 20000,
+      image: beachsideParadise,
+      amenities: ['Pool', 'WiFi', 'Parking', 'Kitchen', 'AC', 'Gym', 'TV', 'Spa'],
+      type: 'Villa',
+      guests: 10,
+      bedrooms: 5,
+      bathrooms: 4,
+      featured: true,
+      ownerEmail: 'venteskraft@gmail.com',
+      description: 'Exclusive beachfront villa with private pool, stunning ocean views, and luxury amenities. Perfect for family vacations and corporate retreats.'
+    },
+    {
+      id: 2,
+      name: 'Mountain View Resort - Manali',
+      location: 'Manali',
+      rating: 4.7,
+      reviews: 89,
+      price: 12000,
+      originalPrice: 14000,
+      image: mountainCottage,
+      amenities: ['Fireplace', 'WiFi', 'Kitchen', 'Heating', 'Parking', 'Gym', 'Spa'],
+      type: 'Resort',
+      guests: 15,
+      bedrooms: 8,
+      bathrooms: 6,
+      featured: true,
+      ownerEmail: 'venteskraft@gmail.com',
+      description: 'Premium mountain resort with panoramic views of snow-capped peaks. Features luxury accommodations, spa facilities, and adventure activities.'
+    },
+    {
+      id: 3,
+      name: 'Heritage Palace - Jaipur',
+      location: 'Jaipur',
+      rating: 0,
+      reviews: 0,
+      price: 35000,
+      originalPrice: 40000,
+      image: royalHeritageVilla,
+      amenities: ['Pool', 'Garden', 'WiFi', 'Parking', 'Heritage', 'Spa', 'TV', 'Fireplace'],
+      type: 'Heritage',
+      guests: 20,
+      bedrooms: 12,
+      bathrooms: 8,
+      featured: true,
+      ownerEmail: 'venteskraft@gmail.com',
+      description: 'Magnificent heritage palace with royal architecture, traditional Rajasthani design, and modern luxury amenities. Perfect for royal weddings and events.'
+    },
+    // Original Properties
+    {
+      id: 4,
       name: 'Sunset Villa Resort',
       location: 'Goa',
       rating: 4.8,
@@ -65,10 +121,10 @@ const Properties: React.FC = () => {
       guests: 8,
       bedrooms: 3,
       bathrooms: 2,
-      featured: true
+      featured: false
     },
     {
-      id: 2,
+      id: 5,
       name: 'Mountain View Cottage',
       location: 'Manali',
       rating: 4.6,
@@ -84,7 +140,7 @@ const Properties: React.FC = () => {
       featured: false
     },
     {
-      id: 3,
+      id: 6,
       name: 'Beachside Paradise',
       location: 'Kerala',
       rating: 4.9,
@@ -97,10 +153,10 @@ const Properties: React.FC = () => {
       guests: 12,
       bedrooms: 4,
       bathrooms: 3,
-      featured: true
+      featured: false
     },
     {
-      id: 4,
+      id: 7,
       name: 'Garden Estate',
       location: 'Udaipur',
       rating: 4.7,
@@ -116,7 +172,7 @@ const Properties: React.FC = () => {
       featured: false
     },
     {
-      id: 5,
+      id: 8,
       name: 'Royal Heritage Villa',
       location: 'Jaipur',
       rating: 4.8,
@@ -129,10 +185,10 @@ const Properties: React.FC = () => {
       guests: 14,
       bedrooms: 5,
       bathrooms: 4,
-      featured: true
+      featured: false
     },
     {
-      id: 6,
+      id: 9,
       name: 'Lakeside Retreat',
       location: 'Nainital',
       rating: 4.6,
@@ -148,7 +204,7 @@ const Properties: React.FC = () => {
       featured: false
     },
     {
-      id: 7,
+      id: 10,
       name: 'Farm House Bliss',
       location: 'Lonavala',
       rating: 4.5,

@@ -59,8 +59,34 @@ useEffect(() => {
 useScrollAnimation();
 
 const topPicks = [
+// Venteskraft Properties (Featured)
 {
 id: 1,
+name: 'Luxury Beach Villa - Goa',
+location: 'Goa',
+rating: 4.9,
+price: 18000,
+image: beachsideParadise
+},
+{
+id: 2,
+name: 'Mountain View Resort - Manali',
+location: 'Manali',
+rating: 4.7,
+price: 12000,
+image: mountainCottage
+},
+{
+id: 3,
+name: 'Heritage Palace - Jaipur',
+location: 'Jaipur',
+rating: 0,
+price: 35000,
+image: royalHeritageVilla
+},
+// Original Properties
+{
+id: 4,
 name: 'Sunset Villa Resort',
 location: 'Goa',
 rating: 4.8,
@@ -68,7 +94,7 @@ price: 2500,
 image: sunsetVillaResort
 },
 {
-id: 2,
+id: 5,
 name: 'Mountain View Cottage',
 location: 'Manali',
 rating: 4.6,
@@ -76,7 +102,7 @@ price: 1800,
 image: mountainCottage
 },
 {
-id: 3,
+id: 6,
 name: 'Beachside Paradise',
 location: 'Kerala',
 rating: 4.9,
@@ -84,7 +110,7 @@ price: 3200,
 image: beachsideParadise
 },
 {
-id: 4,
+id: 7,
 name: 'Garden Estate',
 location: 'Udaipur',
 rating: 4.7,
@@ -94,8 +120,34 @@ image: gardenEstate
 ];
 
 const featuredProperties = [
+// Venteskraft Properties (Featured)
 {
 id: 1,
+name: 'Luxury Beach Villa - Goa',
+location: 'Goa',
+amenities: ['Pool', 'WiFi', 'Parking', 'Kitchen', 'AC', 'Gym', 'TV', 'Spa'],
+price: 18000,
+image: beachsideParadise
+},
+{
+id: 2,
+name: 'Mountain View Resort - Manali',
+location: 'Manali',
+amenities: ['Fireplace', 'WiFi', 'Kitchen', 'Heating', 'Parking', 'Gym', 'Spa'],
+price: 12000,
+image: mountainCottage
+},
+{
+id: 3,
+name: 'Heritage Palace - Jaipur',
+location: 'Jaipur',
+amenities: ['Pool', 'Garden', 'WiFi', 'Parking', 'Heritage', 'Spa', 'TV', 'Fireplace'],
+price: 35000,
+image: royalHeritageVilla
+},
+// Original Properties
+{
+id: 4,
 name: 'Royal Heritage Villa',
 location: 'Jaipur',
 amenities: ['Pool', 'Garden', 'WiFi', 'Parking'],
@@ -103,7 +155,7 @@ price: 4500,
 image: royalHeritageVilla
 },
 {
-id: 2,
+id: 5,
 name: 'Lakeside Retreat',
 location: 'Nainital',
 amenities: ['Lake View', 'Fireplace', 'Kitchen', 'Balcony'],
@@ -111,7 +163,7 @@ price: 2800,
 image: lakesideRetreat
 },
 {
-id: 3,
+id: 6,
 name: 'Farm House Bliss',
 location: 'Lonavala',
 amenities: ['Farm', 'BBQ', 'Games', 'Nature'],
