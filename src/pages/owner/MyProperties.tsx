@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
+import { PropertyService } from '@/lib/propertyService';
 
 const MyProperties: React.FC<{
   sidebarCollapsed: boolean;
@@ -109,29 +110,59 @@ const MyProperties: React.FC<{
       return;
     }
     
-    // Load properties from localStorage or mock data
-    if (user && user.email) {
-      const storageKey = `properties_${user.email}`;
-      const savedProperties = localStorage.getItem(storageKey);
-      
-      if (savedProperties) {
-        // Load from localStorage
-        const parsedProperties = JSON.parse(savedProperties);
-        setProperties(parsedProperties);
-        console.log(`🏠 Loading saved properties for ${user.email}:`, parsedProperties.length, 'properties');
-      } else {
-        // Load from mock data for first time
-        const userProperties = mockProperties.filter(property => 
-          property.ownerEmail === user.email
-        );
-        setProperties(userProperties);
-        // Save to localStorage
-        localStorage.setItem(storageKey, JSON.stringify(userProperties));
-        console.log(`🏠 Loading initial properties for ${user.email}:`, userProperties.length, 'properties');
+    // Load properties from database
+    const loadProperties = async () => {
+      if (!user || !user.email) {
+        setProperties([]);
+        return;
       }
-    } else {
-      setProperties([]);
-    }
+
+      try {
+        console.log('🔍 Loading properties for user:', user.email);
+        
+        // Get user ID from auth context or use email as fallback
+        const ownerId = user.id || user.email;
+        
+        const dbProperties = await PropertyService.getOwnerProperties(ownerId);
+        
+        if (dbProperties.length > 0) {
+          // Convert database properties to frontend format
+          const frontendProperties = dbProperties.map(PropertyService.convertToFrontendFormat);
+          setProperties(frontendProperties);
+          console.log('✅ Properties loaded from database:', frontendProperties.length);
+        } else {
+          // Fallback to mock data for venteskraft@gmail.com
+          if (user.email === 'venteskraft@gmail.com') {
+            setProperties(mockProperties);
+            console.log('📋 Mock properties loaded for venteskraft@gmail.com');
+          } else {
+            setProperties([]);
+            console.log('📋 No properties found for user:', user.email);
+          }
+        }
+      } catch (error) {
+        console.error('❌ Error loading properties from database:', error);
+        
+        // Fallback to localStorage for existing data
+        try {
+          const storageKey = `properties_${user.email}`;
+          const savedProperties = localStorage.getItem(storageKey);
+          
+          if (savedProperties) {
+            const parsedProperties = JSON.parse(savedProperties);
+            setProperties(parsedProperties);
+            console.log('📋 Properties loaded from localStorage fallback:', parsedProperties.length);
+          } else {
+            setProperties([]);
+          }
+        } catch (localStorageError) {
+          console.error('❌ Error loading from localStorage fallback:', localStorageError);
+          setProperties([]);
+        }
+      }
+    };
+
+    loadProperties();
   }, [isAuthenticated, user, loading, navigate]);
 
   const getStatusColor = (status: string) => {
@@ -196,31 +227,33 @@ const MyProperties: React.FC<{
     setShowViewModal(true);
   };
 
-  const handleDeleteProperty = (propertyId: string) => {
+  const handleDeleteProperty = async (propertyId: string) => {
     if (confirm('Are you sure you want to delete this property?')) {
-      const updatedProperties = properties.filter(p => p.id !== propertyId);
-      setProperties(updatedProperties);
-      
-      // Save to localStorage
-      if (user && user.email) {
-        const storageKey = `properties_${user.email}`;
-        localStorage.setItem(storageKey, JSON.stringify(updatedProperties));
-        console.log('💾 Property deleted and saved to localStorage');
+      try {
+        await PropertyService.deleteProperty(propertyId);
+        
+        const updatedProperties = properties.filter(p => p.id !== propertyId);
+        setProperties(updatedProperties);
+        console.log('✅ Property deleted from database successfully');
+      } catch (error) {
+        console.error('❌ Error deleting property from database:', error);
+        alert('Failed to delete property. Please try again.');
       }
     }
   };
 
-  const handleStatusChange = (propertyId: string, newStatus: string) => {
-    const updatedProperties = properties.map(p => 
-      p.id === propertyId ? { ...p, status: newStatus } : p
-    );
-    setProperties(updatedProperties);
-    
-    // Save to localStorage
-    if (user && user.email) {
-      const storageKey = `properties_${user.email}`;
-      localStorage.setItem(storageKey, JSON.stringify(updatedProperties));
-      console.log(`💾 Property status changed to ${newStatus} and saved to localStorage`);
+  const handleStatusChange = async (propertyId: string, newStatus: string) => {
+    try {
+      await PropertyService.updatePropertyStatus(propertyId, newStatus as any);
+      
+      const updatedProperties = properties.map(p => 
+        p.id === propertyId ? { ...p, status: newStatus } : p
+      );
+      setProperties(updatedProperties);
+      console.log(`✅ Property status changed to ${newStatus} in database`);
+    } catch (error) {
+      console.error('❌ Error updating property status in database:', error);
+      alert('Failed to update property status. Please try again.');
     }
   };
 
@@ -296,81 +329,81 @@ const MyProperties: React.FC<{
     setImagePreviewUrls(prev => prev.filter((_, i) => i !== index));
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    if (!user) {
+      console.error('❌ No user found');
+      return;
+    }
     
     console.log('💾 Saving property with images:', imagePreviewUrls.length);
     console.log('🖼️ Image preview URLs:', imagePreviewUrls);
     
-    const newProperty = {
-      id: editingProperty ? editingProperty.id : Date.now().toString(),
-      name: formData.name,
-      type: formData.type,
-      location: formData.location,
-      city: formData.city,
-      state: formData.state,
-      price: parseInt(formData.price),
-      capacity: parseInt(formData.capacity),
-      bedrooms: parseInt(formData.bedrooms),
-      bathrooms: parseInt(formData.bathrooms),
-      status: editingProperty ? editingProperty.status : 'pending',
-      rating: editingProperty ? editingProperty.rating : 0,
-      totalBookings: editingProperty ? editingProperty.totalBookings : 0,
-      totalEarnings: editingProperty ? editingProperty.totalEarnings : 0,
-      images: imagePreviewUrls.length > 0 ? imagePreviewUrls : ['/placeholder.svg'],
-      amenities: formData.amenities,
-      description: formData.description,
-      createdAt: editingProperty ? editingProperty.createdAt : new Date().toISOString().split('T')[0],
-      lastUpdated: new Date().toISOString().split('T')[0],
-      ownerEmail: user?.email || 'venteskraft@gmail.com'
-    };
-    
-    console.log('✅ Property created with images:', newProperty.images.length);
+    try {
+      const propertyData = {
+        name: formData.name,
+        type: formData.type,
+        location: formData.location,
+        city: formData.city,
+        state: formData.state,
+        price: parseInt(formData.price),
+        capacity: parseInt(formData.capacity),
+        bedrooms: parseInt(formData.bedrooms),
+        bathrooms: parseInt(formData.bathrooms),
+        description: formData.description,
+        amenities: formData.amenities,
+        images: imagePreviewUrls.length > 0 ? imagePreviewUrls : ['/placeholder.svg']
+      };
 
-    if (editingProperty) {
-      // Update existing property
-      const updatedProperties = properties.map(p => p.id === editingProperty.id ? newProperty : p);
-      setProperties(updatedProperties);
-      
-      // Save to localStorage
-      if (user && user.email) {
-        const storageKey = `properties_${user.email}`;
-        localStorage.setItem(storageKey, JSON.stringify(updatedProperties));
-        console.log('💾 Updated property saved to localStorage');
+      if (editingProperty) {
+        // Update existing property in database
+        const updatedDbProperty = await PropertyService.updateProperty(editingProperty.id, propertyData);
+        
+        if (updatedDbProperty) {
+          const frontendProperty = PropertyService.convertToFrontendFormat(updatedDbProperty);
+          const updatedProperties = properties.map(p => p.id === editingProperty.id ? frontendProperty : p);
+          setProperties(updatedProperties);
+          console.log('✅ Property updated in database successfully');
+        }
+        
+        setShowEditModal(false);
+      } else {
+        // Add new property to database
+        const ownerId = user.id || user.email;
+        const newDbProperty = await PropertyService.addProperty(propertyData, ownerId);
+        
+        if (newDbProperty) {
+          const frontendProperty = PropertyService.convertToFrontendFormat(newDbProperty);
+          const updatedProperties = [...properties, frontendProperty];
+          setProperties(updatedProperties);
+          console.log('✅ Property added to database successfully');
+        }
+        
+        setShowAddModal(false);
       }
+
+      // Reset form
+      setFormData({
+        name: '',
+        type: 'villa',
+        location: '',
+        city: '',
+        state: '',
+        price: '',
+        capacity: '',
+        bedrooms: '',
+        bathrooms: '',
+        description: '',
+        amenities: []
+      });
+      setSelectedImages([]);
+      setImagePreviewUrls([]);
       
-      setShowEditModal(false);
-    } else {
-      // Add new property
-      const updatedProperties = [...properties, newProperty];
-      setProperties(updatedProperties);
-      
-      // Save to localStorage
-      if (user && user.email) {
-        const storageKey = `properties_${user.email}`;
-        localStorage.setItem(storageKey, JSON.stringify(updatedProperties));
-        console.log('💾 New property saved to localStorage');
-      }
-      
-      setShowAddModal(false);
+    } catch (error) {
+      console.error('❌ Error saving property to database:', error);
+      alert('Failed to save property. Please try again.');
     }
-
-    // Reset form
-    setFormData({
-      name: '',
-      type: 'villa',
-      location: '',
-      city: '',
-      state: '',
-      price: '',
-      capacity: '',
-      bedrooms: '',
-      bathrooms: '',
-      description: '',
-      amenities: []
-    });
-    setSelectedImages([]);
-    setImagePreviewUrls([]);
   };
 
 

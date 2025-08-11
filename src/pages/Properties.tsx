@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import picnifyLogo from '/lovable-uploads/f7960b1f-407a-4738-b8f6-067ea4600889.png';
 import { useAuth } from '@/contexts/AuthContext';
+import { PropertyService } from '@/lib/propertyService';
 
 // Scroll animation hook
 const useScrollAnimation = () => {
@@ -51,25 +52,47 @@ const Properties: React.FC = () => {
   const { user, isAuthenticated, logout } = useAuth();
   const navigate = useNavigate();
 
-  // Load properties from localStorage for venteskraft@gmail.com
-  const getVenteskraftProperties = () => {
-    try {
-      const storageKey = 'properties_venteskraft@gmail.com';
-      const savedProperties = localStorage.getItem(storageKey);
-      if (savedProperties) {
-        const parsedProperties = JSON.parse(savedProperties);
-        // Filter to show only active properties on public website
-        return parsedProperties.filter((property: any) => property.status === 'active');
-      }
-    } catch (error) {
-      console.log('Error loading venteskraft properties:', error);
-    }
-    return [];
-  };
+  // Load properties from database
+  const [dbProperties, setDbProperties] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  const venteskraftProperties = getVenteskraftProperties();
-  console.log('🔍 Venteskraft properties loaded:', venteskraftProperties.length);
-  venteskraftProperties.forEach((prop: any) => {
+  useEffect(() => {
+    const loadProperties = async () => {
+      try {
+        console.log('🔍 Loading properties from database...');
+        const activeProperties = await PropertyService.getActiveProperties();
+        
+        // Convert database properties to frontend format
+        const frontendProperties = activeProperties.map(PropertyService.convertToFrontendFormat);
+        setDbProperties(frontendProperties);
+        console.log('✅ Properties loaded from database:', frontendProperties.length);
+      } catch (error) {
+        console.error('❌ Error loading properties from database:', error);
+        
+        // Fallback to localStorage for existing data
+        try {
+          const storageKey = 'properties_venteskraft@gmail.com';
+          const savedProperties = localStorage.getItem(storageKey);
+          if (savedProperties) {
+            const parsedProperties = JSON.parse(savedProperties);
+            const activeProperties = parsedProperties.filter((property: any) => property.status === 'active');
+            setDbProperties(activeProperties);
+            console.log('📋 Properties loaded from localStorage fallback:', activeProperties.length);
+          }
+        } catch (localStorageError) {
+          console.error('❌ Error loading from localStorage fallback:', localStorageError);
+          setDbProperties([]);
+        }
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadProperties();
+  }, []);
+
+  console.log('🔍 Database properties loaded:', dbProperties.length);
+  dbProperties.forEach((prop: any) => {
     console.log(`📸 Property "${prop.name}":`, {
       id: prop.id,
       images: prop.images ? prop.images.length : 0,
@@ -78,8 +101,8 @@ const Properties: React.FC = () => {
   });
 
   const properties = [
-    // Venteskraft Properties (Featured) - Load from localStorage
-    ...venteskraftProperties.map((property: any, index: number) => ({
+    // Database Properties (Featured) - Load from database
+    ...dbProperties.map((property: any, index: number) => ({
       id: property.id,
       name: property.name,
       location: property.city,
