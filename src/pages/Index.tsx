@@ -168,7 +168,7 @@ return (
                         if (isAuthenticated && user) {
                           if (user.role === 'owner') {
                             console.log('✅ User is owner, navigating to dashboard');
-                            navigate('/owner/dashboard');
+                            navigate('/owner/view');
                           } else {
                             console.log('⚠️ User is not owner, navigating to signup');
                             navigate('/owner/signup');
@@ -351,7 +351,7 @@ return (
                     if (isAuthenticated && user) {
                       if (user.role === 'owner') {
                         console.log('✅ User is owner, navigating to dashboard');
-                        navigate('/owner/dashboard');
+                        navigate('/owner/view');
                       } else {
                         console.log('⚠️ User is not owner, navigating to signup');
                         navigate('/owner/signup');
@@ -598,6 +598,56 @@ style={{ minWidth: '240px' }}
 </button>
 ))}
 </div>
+</div>
+</div>
+</div>
+</section>
+
+{/* Property Owner CTA Section */}
+<section className="py-16 bg-gradient-to-r from-brand-orange to-brand-red relative overflow-hidden">
+<div className="absolute inset-0 bg-black/10"></div>
+<div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative">
+<div className="text-center text-white">
+<div className="mb-6">
+<span className="inline-block bg-white/20 backdrop-blur-md px-6 py-2 rounded-full text-sm font-bold border border-white/30 mb-4">
+🏠 Property Owners
+</span>
+<h2 className="text-2xl sm:text-3xl md:text-4xl font-black mb-4 font-poppins text-shadow">
+Ready to List Your Property?
+</h2>
+<p className="text-lg opacity-90 mb-8 max-w-2xl mx-auto">
+Join thousands of successful property owners earning premium income. Access your dashboard and start listing today!
+</p>
+</div>
+<div className="flex flex-col sm:flex-row gap-4 justify-center">
+<button 
+  onClick={() => {
+    console.log('🚀 Property Owner CTA clicked');
+    if (isAuthenticated && user) {
+      if (user.role === 'owner') {
+        console.log('✅ User is owner, navigating to dashboard');
+        navigate('/owner/view');
+      } else {
+        console.log('⚠️ User is not owner, navigating to signup');
+        navigate('/owner/signup');
+      }
+    } else {
+      console.log('❌ User not authenticated, navigating to login');
+      navigate('/owner/login');
+    }
+  }}
+  className="bg-white text-gray-900 px-8 py-4 rounded-xl font-bold text-lg hover:bg-gray-100 transition-all duration-300 cursor-pointer whitespace-nowrap rounded-button shadow-xl hover:shadow-2xl transform hover:scale-105 flex items-center justify-center gap-3"
+>
+<i className="fas fa-home"></i>
+Access Dashboard
+</button>
+<button 
+  onClick={() => navigate('/owner/signup')}
+  className="border-2 border-white text-white px-8 py-4 rounded-xl font-bold text-lg hover:bg-white hover:text-gray-900 transition-all duration-300 cursor-pointer whitespace-nowrap rounded-button flex items-center justify-center gap-3"
+>
+<i className="fas fa-user-plus"></i>
+Sign Up as Owner
+</button>
 </div>
 </div>
 </div>
@@ -865,7 +915,24 @@ Join thousands of successful hosts who are earning premium income by listing the
 </div>
 </div>
 <div className="flex flex-col sm:flex-row gap-4">
-<button className="bg-white text-gray-900 px-8 py-4 rounded-xl font-bold text-lg hover:bg-gray-100 transition-all duration-300 cursor-pointer whitespace-nowrap rounded-button shadow-xl hover:shadow-2xl transform hover:scale-105 flex items-center justify-center gap-3">
+<button 
+  onClick={() => {
+    console.log('🚀 List Your Property clicked');
+    if (isAuthenticated && user) {
+      if (user.role === 'owner') {
+        console.log('✅ User is owner, navigating to dashboard');
+        navigate('/owner/view');
+      } else {
+        console.log('⚠️ User is not owner, navigating to signup');
+        navigate('/owner/signup');
+      }
+    } else {
+      console.log('❌ User not authenticated, navigating to login');
+      navigate('/owner/login');
+    }
+  }}
+  className="bg-white text-gray-900 px-8 py-4 rounded-xl font-bold text-lg hover:bg-gray-100 transition-all duration-300 cursor-pointer whitespace-nowrap rounded-button shadow-xl hover:shadow-2xl transform hover:scale-105 flex items-center justify-center gap-3"
+>
 <i className="fas fa-plus-circle"></i>
 List Your Property
 </button>
