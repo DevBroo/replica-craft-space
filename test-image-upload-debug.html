@@ -1,0 +1,354 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Image Upload Debug</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .test-card {
+            background: white;
+            border-radius: 8px;
+            padding: 20px;
+            margin: 20px 0;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .test-button {
+            background: #2196f3;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            margin: 5px;
+            text-decoration: none;
+            display: inline-block;
+        }
+        .test-button:hover {
+            background: #1976d2;
+        }
+        .success {
+            color: #4caf50;
+            font-weight: bold;
+        }
+        .warning {
+            color: #ff9800;
+            font-weight: bold;
+        }
+        .error {
+            color: #f44336;
+            font-weight: bold;
+        }
+        .info {
+            background: #e3f2fd;
+            border-left: 4px solid #2196f3;
+            padding: 15px;
+            margin: 15px 0;
+        }
+        .step {
+            background: #f3e5f5;
+            border-left: 4px solid #9c27b0;
+            padding: 15px;
+            margin: 15px 0;
+        }
+        .image-preview {
+            max-width: 200px;
+            max-height: 200px;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            margin: 10px 0;
+        }
+        .file-input {
+            border: 2px dashed #ccc;
+            padding: 20px;
+            text-align: center;
+            border-radius: 8px;
+            margin: 10px 0;
+        }
+        .console-output {
+            background: #000;
+            color: #0f0;
+            padding: 15px;
+            border-radius: 8px;
+            font-family: monospace;
+            font-size: 12px;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+    </style>
+</head>
+<body>
+    <h1>🔍 Test Image Upload Debug</h1>
+    
+    <div class="test-card">
+        <h2>📋 Problem Analysis</h2>
+        
+        <div class="error">
+            <strong>❌ Issue:</strong> Uploaded images are not showing in property cards
+        </div>
+        
+        <div class="info">
+            <strong>Possible Causes:</strong>
+            <ul>
+                <li>Image file is too large (>10MB)</li>
+                <li>Image format not supported</li>
+                <li>Base64 data URL too long for localStorage</li>
+                <li>FileReader error during conversion</li>
+                <li>Image data not saved properly</li>
+                <li>Display logic issue</li>
+            </ul>
+        </div>
+    </div>
+
+    <div class="test-card">
+        <h2>🧪 Test Image Upload</h2>
+        
+        <div class="file-input">
+            <input type="file" id="testImageUpload" accept="image/*" multiple>
+            <p>Select one or more images to test</p>
+        </div>
+        
+        <div id="imagePreviews"></div>
+        
+        <div class="console-output" id="consoleOutput">
+            <div>Console output will appear here...</div>
+        </div>
+    </div>
+
+    <div class="test-card">
+        <h2>🚀 Debug Steps</h2>
+        
+        <div class="step">
+            <h3>Step 1: Check Current Property Images</h3>
+            <button onclick="checkCurrentImages()" class="test-button">Check localStorage Images</button>
+            <p>This will show what images are currently stored for your properties</p>
+        </div>
+        
+        <div class="step">
+            <h3>Step 2: Test Image Upload</h3>
+            <p>Use the file input above to test image upload functionality</p>
+            <ul>
+                <li>Try a small image (< 1MB)</li>
+                <li>Try a medium image (1-5MB)</li>
+                <li>Try a large image (> 5MB)</li>
+                <li>Check console for errors</li>
+            </ul>
+        </div>
+        
+        <div class="step">
+            <h3>Step 3: Check Property Data</h3>
+            <button onclick="checkPropertyData()" class="test-button">Check Property Data</button>
+            <p>This will show the complete property data including images array</p>
+        </div>
+        
+        <div class="step">
+            <h3>Step 4: Test Image Display</h3>
+            <button onclick="testImageDisplay()" class="test-button">Test Image Display</button>
+            <p>This will test if the stored images can be displayed</p>
+        </div>
+    </div>
+
+    <div class="test-card">
+        <h2>✅ Expected Results</h2>
+        
+        <h3>✅ If Working:</h3>
+        <ul>
+            <li class="success">Image preview should appear above</li>
+            <li class="success">Console should show "Image processed successfully"</li>
+            <li class="success">Base64 data should be generated</li>
+            <li class="success">Property should show uploaded image</li>
+        </ul>
+        
+        <h3>❌ If Not Working:</h3>
+        <ul>
+            <li class="error">Check console for error messages</li>
+            <li class="error">Image might be too large</li>
+            <li class="error">Format might not be supported</li>
+            <li class="error">localStorage might be full</li>
+        </ul>
+    </div>
+
+    <div class="test-card">
+        <h2>🔧 Quick Fixes</h2>
+        
+        <h3>If Image is Too Large:</h3>
+        <ul>
+            <li>Resize image to smaller dimensions</li>
+            <li>Use JPEG format instead of PNG</li>
+            <li>Compress image before uploading</li>
+        </ul>
+        
+        <h3>If localStorage is Full:</h3>
+        <ul>
+            <li>Clear browser data</li>
+            <li>Use smaller images</li>
+            <li>Limit number of images per property</li>
+        </ul>
+        
+        <h3>If Format Not Supported:</h3>
+        <ul>
+            <li>Use JPG, PNG, or GIF formats</li>
+            <li>Avoid WebP or other newer formats</li>
+            <li>Convert image to supported format</li>
+        </ul>
+    </div>
+
+    <script>
+        const consoleOutput = document.getElementById('consoleOutput');
+        const imagePreviews = document.getElementById('imagePreviews');
+        
+        function log(message, type = 'info') {
+            const timestamp = new Date().toLocaleTimeString();
+            const color = type === 'error' ? '#ff6b6b' : type === 'success' ? '#51cf66' : '#339af0';
+            consoleOutput.innerHTML += `<div style="color: ${color}">[${timestamp}] ${message}</div>`;
+            consoleOutput.scrollTop = consoleOutput.scrollHeight;
+            console.log(message);
+        }
+        
+        // Test image upload
+        document.getElementById('testImageUpload').addEventListener('change', function(e) {
+            const files = Array.from(e.target.files || []);
+            log(`Selected ${files.length} file(s)`);
+            
+            files.forEach((file, index) => {
+                log(`Processing file ${index + 1}: ${file.name} (${(file.size / 1024 / 1024).toFixed(2)}MB)`);
+                
+                // Check file size
+                if (file.size > 10 * 1024 * 1024) {
+                    log(`❌ File too large: ${file.name}`, 'error');
+                    return;
+                }
+                
+                // Check file type
+                if (!file.type.startsWith('image/')) {
+                    log(`❌ Not an image file: ${file.name}`, 'error');
+                    return;
+                }
+                
+                // Create preview
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    const dataUrl = e.target.result;
+                    log(`✅ Image processed successfully: ${file.name}`, 'success');
+                    log(`Base64 length: ${dataUrl.length} characters`);
+                    
+                    // Create preview
+                    const img = document.createElement('img');
+                    img.src = dataUrl;
+                    img.className = 'image-preview';
+                    img.alt = file.name;
+                    imagePreviews.appendChild(img);
+                    
+                    // Test if it can be stored
+                    try {
+                        const testData = { test: dataUrl };
+                        localStorage.setItem('test_image', JSON.stringify(testData));
+                        log(`✅ Image can be stored in localStorage`, 'success');
+                        localStorage.removeItem('test_image');
+                    } catch (error) {
+                        log(`❌ Image too large for localStorage: ${error.message}`, 'error');
+                    }
+                };
+                
+                reader.onerror = function() {
+                    log(`❌ Error reading file: ${file.name}`, 'error');
+                };
+                
+                reader.readAsDataURL(file);
+            });
+        });
+        
+        function checkCurrentImages() {
+            log('🔍 Checking current property images...');
+            try {
+                const storageKey = 'properties_venteskraft@gmail.com';
+                const savedProperties = localStorage.getItem(storageKey);
+                
+                if (savedProperties) {
+                    const properties = JSON.parse(savedProperties);
+                    log(`Found ${properties.length} properties`);
+                    
+                    properties.forEach((property, index) => {
+                        log(`Property ${index + 1}: ${property.name}`);
+                        log(`  - Images: ${property.images ? property.images.length : 0} images`);
+                        if (property.images && property.images.length > 0) {
+                            property.images.forEach((img, imgIndex) => {
+                                if (img.startsWith('data:')) {
+                                    log(`  - Image ${imgIndex + 1}: Base64 data (${img.length} chars)`);
+                                } else {
+                                    log(`  - Image ${imgIndex + 1}: ${img}`);
+                                }
+                            });
+                        }
+                    });
+                } else {
+                    log('❌ No properties found in localStorage', 'error');
+                }
+            } catch (error) {
+                log(`❌ Error checking images: ${error.message}`, 'error');
+            }
+        }
+        
+        function checkPropertyData() {
+            log('🔍 Checking complete property data...');
+            try {
+                const storageKey = 'properties_venteskraft@gmail.com';
+                const savedProperties = localStorage.getItem(storageKey);
+                
+                if (savedProperties) {
+                    const properties = JSON.parse(savedProperties);
+                    console.log('Complete property data:', properties);
+                    log('✅ Property data logged to browser console');
+                } else {
+                    log('❌ No property data found', 'error');
+                }
+            } catch (error) {
+                log(`❌ Error checking property data: ${error.message}`, 'error');
+            }
+        }
+        
+        function testImageDisplay() {
+            log('🔍 Testing image display...');
+            try {
+                const storageKey = 'properties_venteskraft@gmail.com';
+                const savedProperties = localStorage.getItem(storageKey);
+                
+                if (savedProperties) {
+                    const properties = JSON.parse(savedProperties);
+                    
+                    properties.forEach((property, index) => {
+                        if (property.images && property.images.length > 0) {
+                            log(`Testing images for: ${property.name}`);
+                            
+                            property.images.forEach((img, imgIndex) => {
+                                const testImg = document.createElement('img');
+                                testImg.onload = function() {
+                                    log(`✅ Image ${imgIndex + 1} for ${property.name} loads successfully`, 'success');
+                                };
+                                testImg.onerror = function() {
+                                    log(`❌ Image ${imgIndex + 1} for ${property.name} failed to load`, 'error');
+                                };
+                                testImg.src = img;
+                                testImg.style.display = 'none';
+                                document.body.appendChild(testImg);
+                            });
+                        }
+                    });
+                }
+            } catch (error) {
+                log(`❌ Error testing image display: ${error.message}`, 'error');
+            }
+        }
+        
+        log('🔍 Image Upload Debug Test Page Loaded');
+        log('📋 Testing why uploaded images are not showing in property cards');
+        log('🎯 Ready to test image upload functionality');
+    </script>
+</body>
+</html>

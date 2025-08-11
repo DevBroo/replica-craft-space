@@ -259,21 +259,35 @@ const MyProperties: React.FC<{
 
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files || []);
+    console.log('📁 Files selected:', files.length);
+    
     const validFiles = files.filter(file => 
       file.type.startsWith('image/') && file.size <= 10 * 1024 * 1024 // 10MB limit
     );
+    
+    console.log('✅ Valid files:', validFiles.length);
+    console.log('❌ Invalid files:', files.length - validFiles.length);
 
     if (validFiles.length > 0) {
       setSelectedImages(prev => [...prev, ...validFiles]);
       
       // Create preview URLs
-      validFiles.forEach(file => {
+      validFiles.forEach((file, index) => {
+        console.log(`🖼️ Processing file ${index + 1}: ${file.name} (${(file.size / 1024 / 1024).toFixed(2)}MB)`);
+        
         const reader = new FileReader();
         reader.onload = (e) => {
-          setImagePreviewUrls(prev => [...prev, e.target?.result as string]);
+          const dataUrl = e.target?.result as string;
+          console.log(`✅ File ${index + 1} converted to base64 (${dataUrl.length} chars)`);
+          setImagePreviewUrls(prev => [...prev, dataUrl]);
+        };
+        reader.onerror = (error) => {
+          console.error(`❌ Error reading file ${index + 1}:`, error);
         };
         reader.readAsDataURL(file);
       });
+    } else {
+      console.log('❌ No valid files to process');
     }
   };
 
@@ -284,6 +298,9 @@ const MyProperties: React.FC<{
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    
+    console.log('💾 Saving property with images:', imagePreviewUrls.length);
+    console.log('🖼️ Image preview URLs:', imagePreviewUrls);
     
     const newProperty = {
       id: editingProperty ? editingProperty.id : Date.now().toString(),
@@ -307,6 +324,8 @@ const MyProperties: React.FC<{
       lastUpdated: new Date().toISOString().split('T')[0],
       ownerEmail: user?.email || 'venteskraft@gmail.com'
     };
+    
+    console.log('✅ Property created with images:', newProperty.images.length);
 
     if (editingProperty) {
       // Update existing property
