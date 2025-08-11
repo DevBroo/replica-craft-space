@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Direct Supabase Test</title>
+</head>
+<body>
+    <h1>Direct Supabase Test</h1>
+    <div id="output"></div>
+    
+    <script>
+        const SUPABASE_URL = "https://riqsgtuzccwpplbodwbd.supabase.co";
+        const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJpcXNndHV6Y2N3cHBsYm9kd2JkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTQyOTY2NTUsImV4cCI6MjA2OTg3MjY1NX0.qkSVWoVi8cStB1WZdqtapc8O6jc_aAiYEm0Y5Lqp1-s";
+        
+        async function testDirectAccess() {
+            const output = document.getElementById('output');
+            
+            try {
+                output.innerHTML += '<p>🧪 Testing direct Supabase access...</p>';
+                
+                // Test 1: Direct fetch to Supabase
+                output.innerHTML += '<p>1️⃣ Testing direct fetch...</p>';
+                const response = await fetch(`${SUPABASE_URL}/auth/v1/user`, {
+                    method: 'GET',
+                    headers: {
+                        'apikey': SUPABASE_ANON_KEY,
+                        'Authorization': `Bearer ${SUPABASE_ANON_KEY}`
+                    }
+                });
+                
+                output.innerHTML += `<p>✅ Direct fetch response: ${response.status}</p>`;
+                
+                // Test 2: Try login with fetch
+                output.innerHTML += '<p>2️⃣ Testing login with fetch...</p>';
+                const loginResponse = await fetch(`${SUPABASE_URL}/auth/v1/token?grant_type=password`, {
+                    method: 'POST',
+                    headers: {
+                        'apikey': SUPABASE_ANON_KEY,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        email: 'mshimavarsha07@gmail.com',
+                        password: 'Alliance@8'
+                    })
+                });
+                
+                if (loginResponse.ok) {
+                    const data = await loginResponse.json();
+                    output.innerHTML += '<p>✅ Login successful!</p>';
+                    output.innerHTML += `<p>User: ${data.user?.email}</p>`;
+                } else {
+                    const error = await loginResponse.text();
+                    output.innerHTML += `<p>❌ Login failed: ${loginResponse.status}</p>`;
+                    output.innerHTML += `<p>Error: ${error}</p>`;
+                }
+                
+            } catch (err) {
+                output.innerHTML += `<p>💥 Test failed: ${err.message}</p>`;
+            }
+        }
+        
+        testDirectAccess();
+    </script>
+</body>
+</html>

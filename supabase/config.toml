@@ -1,1 +1,71 @@
 project_id = "riqsgtuzccwpplbodwbd"
+
+[api]
+port = 54321
+schemas = ["public", "storage", "graphql_public"]
+extra_search_path = ["public", "extensions"]
+max_rows = 1000
+
+[db]
+port = 54322
+shadow_port = 54320
+major_version = 15
+
+[db.pooler]
+port = 54329
+pool_mode = "transaction"
+default_pool_size = 15
+max_client_conn = 100
+
+[studio]
+port = 54323
+api_url = "http://127.0.0.1:54321"
+
+[inbucket]
+port = 54324
+
+[storage]
+file_size_limit = "50MiB"
+
+[auth]
+site_url = "http://localhost:8080"
+additional_redirect_urls = [
+  "http://localhost:8080/confirm-email",
+  "http://localhost:8080/login",
+  "http://localhost:8080/signup",
+  "https://50ac56cc-a185-4248-8582-cdaa674c26ce.lovableproject.com/**",
+  "https://fb674525-a14c-4f87-887d-6fd96fb224d5.lovableproject.com/**",
+  "https://getaway-gems.lovable.app/**",
+  "https://id-preview--50ac56cc-a185-4248-8582-cdaa674c26ce.lovable.app/**",
+  "https://id-preview--fb674525-a14c-4f87-887d-6fd96fb224d5.lovable.app/**",
+  "https://preview--getaway-gems.lovable.app/**",
+  "https://preview--websitepicnify.lovable.app/**",
+  "https://websitepicnify.lovable.app/**"
+]
+jwt_expiry = 3600
+enable_refresh_token_rotation = true
+refresh_token_reuse_interval = 10
+enable_signup = true
+
+[auth.email]
+enable_signup = true
+double_confirm_changes = true
+enable_confirmations = true
+secure_password_change = false
+max_frequency = "1m0s"
+
+[auth.sms]
+enable_signup = false
+enable_confirmations = false
+max_frequency = "1m0s"
+
+[auth.mfa]
+max_enrolled_factors = 10
+
+[auth.mfa.totp]
+enroll_enabled = true
+verify_enabled = true
+
+[auth.mfa.phone]
+enroll_enabled = false
+verify_enabled = false

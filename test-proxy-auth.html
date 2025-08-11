@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Proxy Auth Test</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 40px; }
+        .test-section { margin: 20px 0; padding: 20px; border: 1px solid #ccc; }
+        .success { color: green; }
+        .error { color: red; }
+        button { padding: 10px 20px; margin: 5px; }
+        input { padding: 8px; margin: 5px; width: 200px; }
+    </style>
+</head>
+<body>
+    <h1>🔄 Proxy Authentication Test</h1>
+    
+    <div class="test-section">
+        <h3>Test Proxy Sign In</h3>
+        <input type="email" id="email" placeholder="Email" value="mshimavarsha07@gmail.com">
+        <input type="password" id="password" placeholder="Password" value="Alliance@8">
+        <button onclick="testProxySignIn()">Test Proxy Sign In</button>
+        <div id="signin-result"></div>
+    </div>
+
+    <div class="test-section">
+        <h3>Test Direct vs Proxy</h3>
+        <button onclick="testDirect()">Test Direct</button>
+        <button onclick="testProxy()">Test Proxy</button>
+        <div id="comparison-result"></div>
+    </div>
+
+    <script>
+        async function testProxySignIn() {
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+            const resultDiv = document.getElementById('signin-result');
+            
+            resultDiv.innerHTML = '🔄 Testing proxy sign in...';
+            
+            try {
+                const response = await fetch('http://localhost:3002/supabase/auth/v1/token?grant_type=password', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        email,
+                        password
+                    })
+                });
+
+                if (!response.ok) {
+                    const errorData = await response.json();
+                    resultDiv.innerHTML = `<div class="error">❌ Proxy sign in failed: ${errorData.error_description || errorData.message}</div>`;
+                    return;
+                }
+
+                const data = await response.json();
+                resultDiv.innerHTML = `<div class="success">✅ Proxy sign in successful! User: ${data.user.email}</div>`;
+                
+            } catch (error) {
+                resultDiv.innerHTML = `<div class="error">💥 Proxy error: ${error.message}</div>`;
+            }
+        }
+
+        async function testDirect() {
+            const resultDiv = document.getElementById('comparison-result');
+            resultDiv.innerHTML = '🔄 Testing direct connection...';
+            
+            try {
+                const response = await fetch('https://riqsgtuzccwpplbodwbd.supabase.co/auth/v1/user', {
+                    headers: {
+                        'apikey': 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJpcXNndHV6Y2N3cHBsYm9kd2JkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTQyOTY2NTUsImV4cCI6MjA2OTg3MjY1NX0.qkSVWoVi8cStB1WZdqtapc8O6jc_aAiYEm0Y5Lqp1-s'
+                    }
+                });
+                
+                resultDiv.innerHTML += `<div>Direct: ${response.status} ${response.statusText}</div>`;
+            } catch (error) {
+                resultDiv.innerHTML += `<div class="error">Direct error: ${error.message}</div>`;
+            }
+        }
+
+        async function testProxy() {
+            const resultDiv = document.getElementById('comparison-result');
+            resultDiv.innerHTML += '<br>🔄 Testing proxy connection...';
+            
+            try {
+                const response = await fetch('http://localhost:3002/supabase/auth/v1/user');
+                resultDiv.innerHTML += `<div>Proxy: ${response.status} ${response.statusText}</div>`;
+            } catch (error) {
+                resultDiv.innerHTML += `<div class="error">Proxy error: ${error.message}</div>`;
+            }
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Debug User Role</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            line-height: 1.6;
+        }
+        .debug-section {
+            background: #f5f5f5;
+            padding: 15px;
+            margin: 15px 0;
+            border-radius: 8px;
+            border-left: 4px solid #007bff;
+        }
+        .code {
+            background: #f8f9fa;
+            padding: 10px;
+            border-radius: 4px;
+            font-family: monospace;
+            margin: 10px 0;
+            white-space: pre-wrap;
+        }
+        .button {
+            display: inline-block;
+            padding: 10px 20px;
+            background: #007bff;
+            color: white;
+            text-decoration: none;
+            border-radius: 4px;
+            margin: 5px;
+        }
+        .button:hover {
+            background: #0056b3;
+        }
+    </style>
+</head>
+<body>
+    <h1>🔍 Debug User Role</h1>
+    
+    <div class="debug-section">
+        <h2>Step 1: Check Current User Role</h2>
+        <p>Open browser console (F12) and run this code:</p>
+        <div class="code">
+// Check localStorage for user data
+const userData = localStorage.getItem('sb-user');
+console.log('User data from localStorage:', userData);
+
+if (userData) {
+    const user = JSON.parse(userData);
+    console.log('Parsed user object:', user);
+    console.log('User role:', user.role);
+    console.log('User email:', user.email);
+} else {
+    console.log('No user data found in localStorage');
+}
+
+// Check for tokens
+const accessToken = localStorage.getItem('sb-access-token');
+const refreshToken = localStorage.getItem('sb-refresh-token');
+console.log('Access token exists:', !!accessToken);
+console.log('Refresh token exists:', !!refreshToken);
+        </div>
+    </div>
+
+    <div class="debug-section">
+        <h2>Step 2: Test Login Flow</h2>
+        <p>Try these test scenarios:</p>
+        <ol>
+            <li><a href="http://localhost:8081/owner/login" class="button" target="_blank">Go to Owner Login</a></li>
+            <li>Login with your credentials</li>
+            <li>Check console for role information</li>
+            <li>See if you get redirected to dashboard or homepage</li>
+        </ol>
+    </div>
+
+    <div class="debug-section">
+        <h2>Step 3: Expected Console Output</h2>
+        <p>You should see logs like this:</p>
+        <div class="code">
+🔐 Login attempt for: your-email@example.com
+✅ Login successful, user role: owner
+🔐 OwnerDashboard: Auth state check: {loading: false, isAuthenticated: true, user: {...}}
+✅ User authenticated owner, showing dashboard
+        </div>
+        
+        <p><strong>If you see this instead:</strong></p>
+        <div class="code">
+🔐 Login attempt for: your-email@example.com
+✅ Login successful, user role: customer
+🔐 OwnerDashboard: Auth state check: {loading: false, isAuthenticated: true, user: {...}}
+⚠️ User not owner, redirecting to appropriate page
+❌ User role is customer, redirecting to homepage
+        </div>
+    </div>
+
+    <div class="debug-section">
+        <h2>Step 4: Database Check</h2>
+        <p>If the user role is showing as 'customer', the issue is in the database. The user's role in the database needs to be updated to 'owner'.</p>
+        
+        <p><strong>Quick Fix:</strong> If you have access to the database, run this SQL:</p>
+        <div class="code">
+-- Update user role to owner (replace 'your-email@example.com' with actual email)
+UPDATE users 
+SET role = 'owner' 
+WHERE email = 'your-email@example.com';
+        </div>
+    </div>
+
+    <div class="debug-section">
+        <h2>Step 5: Manual Role Override (Temporary)</h2>
+        <p>For testing, you can manually override the role in localStorage:</p>
+        <div class="code">
+// Run this in console to manually set role to owner
+const userData = localStorage.getItem('sb-user');
+if (userData) {
+    const user = JSON.parse(userData);
+    user.role = 'owner';
+    localStorage.setItem('sb-user', JSON.stringify(user));
+    console.log('Role manually set to owner');
+    // Refresh the page
+    window.location.reload();
+}
+        </div>
+    </div>
+
+    <div class="debug-section">
+        <h2>🔗 Test Links</h2>
+        <a href="http://localhost:8081/owner/login" class="button" target="_blank">Owner Login</a>
+        <a href="http://localhost:8081/owner/dashboard" class="button" target="_blank">Owner Dashboard</a>
+        <a href="http://localhost:8081/" class="button" target="_blank">Homepage</a>
+    </div>
+
+    <script>
+        // Add some helpful debugging
+        console.log('🔍 Debug page loaded');
+        console.log('Current URL:', window.location.href);
+        
+        // Check if user is logged in
+        const userData = localStorage.getItem('sb-user');
+        if (userData) {
+            const user = JSON.parse(userData);
+            console.log('👤 Current user:', user);
+            console.log('🎭 User role:', user.role);
+        } else {
+            console.log('❌ No user logged in');
+        }
+    </script>
+</body>
+</html>

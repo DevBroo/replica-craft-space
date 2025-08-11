@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Property Owner Signup Test - Fixed</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .test-section {
+            background: white;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .test-button {
+            background: #007bff;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            margin: 5px;
+            text-decoration: none;
+            display: inline-block;
+        }
+        .test-button:hover {
+            background: #0056b3;
+        }
+        .success { color: #28a745; }
+        .error { color: #dc3545; }
+        .warning { color: #ffc107; }
+        .info { color: #17a2b8; }
+        pre {
+            background: #f8f9fa;
+            padding: 10px;
+            border-radius: 4px;
+            overflow-x: auto;
+        }
+    </style>
+</head>
+<body>
+    <h1>🧪 Property Owner Signup Test - Fixed Version</h1>
+    
+    <div class="test-section">
+        <h2>✅ What Was Fixed</h2>
+        <ul>
+            <li><strong>Authentication Flow:</strong> Better handling of already authenticated users</li>
+            <li><strong>Role Detection:</strong> Improved role selection from URL paths</li>
+            <li><strong>Redirect Logic:</strong> Immediate redirect after successful signup</li>
+            <li><strong>Form Validation:</strong> Enhanced validation for property owner signup</li>
+            <li><strong>Error Handling:</strong> Better error messages and state management</li>
+        </ul>
+    </div>
+
+    <div class="test-section">
+        <h2>🔗 Test Links</h2>
+        <p><strong>Direct Navigation Tests:</strong></p>
+        <a href="http://localhost:8081/owner/signup" class="test-button" target="_blank">
+            🏠 Property Owner Signup
+        </a>
+        <a href="http://localhost:8081/owner/dashboard" class="test-button" target="_blank">
+            📊 Owner Dashboard
+        </a>
+        <a href="http://localhost:8081/signup?role=owner" class="test-button" target="_blank">
+            🔗 Signup with Role Param
+        </a>
+    </div>
+
+    <div class="test-section">
+        <h2>📋 Test Scenarios</h2>
+        
+        <h3>Scenario 1: New User Signup</h3>
+        <ol>
+            <li>Click "Property Owner Signup" link</li>
+            <li>Fill out the form with new email</li>
+            <li>Submit and verify redirect to dashboard</li>
+            <li><strong>Expected:</strong> Immediate redirect to `/owner/dashboard`</li>
+        </ol>
+
+        <h3>Scenario 2: Already Authenticated Owner</h3>
+        <ol>
+            <li>Login as an owner user</li>
+            <li>Navigate to `/owner/signup`</li>
+            <li><strong>Expected:</strong> Immediate redirect to `/owner/dashboard`</li>
+        </ol>
+
+        <h3>Scenario 3: Role Change</h3>
+        <ol>
+            <li>Login as a customer</li>
+            <li>Navigate to `/owner/signup`</li>
+            <li>Fill out form to change role</li>
+            <li><strong>Expected:</strong> Registration with new role, redirect to owner dashboard</li>
+        </ol>
+    </div>
+
+    <div class="test-section">
+        <h2>🔍 Console Debugging</h2>
+        <p>Open browser console (F12) and look for these logs:</p>
+        <pre>
+🏠 Signup component mounted at path: /owner/signup
+🔄 Role selection check: {pathname: "/owner/signup", roleParam: null, currentRole: "customer"}
+✅ Setting role to owner (from path)
+🔄 User already authenticated, checking role and redirecting
+🔍 User details: {email: "user@example.com", role: "owner"}
+✅ User is already owner, redirecting to dashboard
+        </pre>
+    </div>
+
+    <div class="test-section">
+        <h2>🐛 Known Issues Fixed</h2>
+        <ul>
+            <li class="success">✅ Authentication state conflicts resolved</li>
+            <li class="success">✅ Role detection from URL paths working</li>
+            <li class="success">✅ Immediate redirect after signup</li>
+            <li class="success">✅ Better error handling and validation</li>
+            <li class="success">✅ Proper handling of already authenticated users</li>
+        </ul>
+    </div>
+
+    <div class="test-section">
+        <h2>📝 Test Data</h2>
+        <p><strong>Test Email:</strong> testowner@example.com</p>
+        <p><strong>Test Password:</strong> TestPass123</p>
+        <p><strong>Test Phone:</strong> +91 9876543210</p>
+        <p><strong>Test Name:</strong> Test Owner</p>
+    </div>
+
+    <div class="test-section">
+        <h2>🚀 Quick Test</h2>
+        <p>Click the button below to test the property owner signup flow:</p>
+        <button onclick="testSignup()" class="test-button">🧪 Test Property Owner Signup</button>
+        <div id="test-result"></div>
+    </div>
+
+    <script>
+        function testSignup() {
+            const resultDiv = document.getElementById('test-result');
+            resultDiv.innerHTML = '<p class="info">🔄 Opening property owner signup page...</p>';
+            
+            // Open the signup page in a new tab
+            const signupUrl = 'http://localhost:8081/owner/signup';
+            window.open(signupUrl, '_blank');
+            
+            setTimeout(() => {
+                resultDiv.innerHTML = '<p class="success">✅ Property owner signup page opened!</p>' +
+                    '<p class="info">💡 Check the new tab and browser console for debugging information.</p>';
+            }, 1000);
+        }
+    </script>
+</body>
+</html>

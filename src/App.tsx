@@ -3,15 +3,19 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { AuthProvider } from "@/contexts/AuthContext";
 import Index from "./pages/Index";
 import Properties from "./pages/Properties";
 import PropertyDetails from "./pages/PropertyDetails";
 import Locations from "./pages/Locations";
 import About from "./pages/About";
 import Contact from "./pages/Contact";
-import Login from "./pages/Login";
+import OwnerLogin from "./pages/owner/OwnerLogin";
 import BookingDetails from "./pages/BookingDetails";
 import Signup from "./pages/Signup";
+import ForgotPassword from "./pages/ForgotPassword";
+import ResendVerification from "./pages/ResendVerification";
+import ResetPassword from "./pages/ResetPassword";
 import NotFound from "./pages/NotFound";
 
 // Admin Panel Imports
@@ -30,19 +34,25 @@ import AdminLoginPage from "./pages/admin/LoginPage";
 
 // Property Owner Portal Imports
 import OwnerDashboard from "./pages/owner/OwnerDashboard";
+import OwnerDashboardView from "./pages/owner/OwnerDashboardView";
 
 // Agent Portal Imports
 import AgentDashboard from "./pages/agent/AgentDashboard";
+import AgentLogin from "./pages/agent/AgentLogin";
+import AgentSignup from "./pages/agent/AgentSignup";
+import AddProperty from "./pages/agent/AddProperty";
+import TestAgentLogin from "./pages/agent/TestAgentLogin";
 
 const queryClient = new QueryClient();
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
-    <TooltipProvider>
-      <Toaster />
-      <Sonner />
-      <BrowserRouter>
-        <Routes>
+    <AuthProvider>
+      <TooltipProvider>
+        <Toaster />
+        <Sonner />
+        <BrowserRouter>
+          <Routes>
           {/* Main App Routes */}
           <Route path="/" element={<Index />} />
           <Route path="/properties" element={<Properties />} />
@@ -50,19 +60,27 @@ const App = () => (
           <Route path="/locations" element={<Locations />} />
           <Route path="/about" element={<About />} />
           <Route path="/contact" element={<Contact />} />
-          <Route path="/login" element={<Login />} />
+          <Route path="/login" element={<OwnerLogin />} />
           <Route path="/booking-details" element={<BookingDetails />} />
           <Route path="/signup" element={<Signup />} />
+          <Route path="/forgot-password" element={<ForgotPassword />} />
+          <Route path="/resend-verification" element={<ResendVerification />} />
+          <Route path="/reset-password" element={<ResetPassword />} />
           
           {/* Property Owner Portal Routes */}
           <Route path="/owner" element={<OwnerDashboard />} />
-          <Route path="/owner/login" element={<OwnerDashboard />} />
+          <Route path="/owner/login" element={<OwnerLogin />} />
+          <Route path="/owner/signup" element={<Signup />} />
           <Route path="/owner/dashboard" element={<OwnerDashboard />} />
+          <Route path="/owner/view" element={<OwnerDashboardView />} />
           
           {/* Agent Portal Routes */}
           <Route path="/agent" element={<AgentDashboard />} />
-          <Route path="/agent/login" element={<AgentDashboard />} />
+          <Route path="/agent/login" element={<AgentLogin />} />
+          <Route path="/agent/signup" element={<AgentSignup />} />
           <Route path="/agent/dashboard" element={<AgentDashboard />} />
+          <Route path="/agent/add-property" element={<AddProperty />} />
+          <Route path="/agent/test" element={<TestAgentLogin />} />
           
           {/* Admin Panel Routes */}
           <Route path="/admin/login" element={<AdminLoginPage />} />
@@ -127,6 +145,7 @@ const App = () => (
         </Routes>
       </BrowserRouter>
     </TooltipProvider>
+    </AuthProvider>
   </QueryClientProvider>
 );
 

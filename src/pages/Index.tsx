@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useIsMobile } from '@/hooks/use-mobile';
+import { useAuth } from '@/contexts/AuthContext';
 
 // Scroll animation hook
 const useScrollAnimation = () => {
@@ -44,6 +45,15 @@ const [groupSize, setGroupSize] = useState('');
 const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 const isMobile = useIsMobile();
 const navigate = useNavigate();
+const { user, isAuthenticated, logout } = useAuth();
+
+// Debug authentication state
+useEffect(() => {
+  console.log('🔍 Index page auth state:', { 
+    isAuthenticated, 
+    user: user ? { email: user.email, role: user.role, id: user.id } : null 
+  });
+}, [isAuthenticated, user]);
 
 // Initialize scroll animations
 useScrollAnimation();
@@ -144,14 +154,64 @@ return (
                 </button>
                 <div className="absolute top-full left-0 mt-2 w-56 bg-white rounded-lg shadow-xl border border-gray-200 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50">
                   <div className="py-2">
-                    <a href="/owner" className="block px-4 py-3 text-sm text-gray-700 hover:bg-gray-50 hover:text-brand-orange transition-colors duration-200 border-b border-gray-100">
-                      <i className="fas fa-home mr-3 text-brand-orange"></i>
-                      Property Owner Portal
-                    </a>
-                    <a href="/agent" className="block px-4 py-3 text-sm text-gray-700 hover:bg-gray-50 hover:text-brand-orange transition-colors duration-200 border-b border-gray-100">
+                    <button 
+                      onClick={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        console.log('🚀 Property Owner Portal clicked');
+                        console.log('🔍 Current user state:', { 
+                          isAuthenticated, 
+                          user: user ? { email: user.email, role: user.role } : null 
+                        });
+                        
+                        // Smart navigation based on user state
+                        if (isAuthenticated && user) {
+                          if (user.role === 'owner') {
+                            console.log('✅ User is owner, navigating to dashboard');
+                            navigate('/owner/dashboard');
+                          } else {
+                            console.log('⚠️ User is not owner, navigating to signup');
+                            navigate('/owner/signup');
+                          }
+                                     } else {
+               console.log('❌ User not authenticated, navigating to login');
+               navigate('/owner/login');
+             }
+           }}
+           className="w-full text-left px-4 py-3 text-sm text-gray-700 hover:bg-gray-50 hover:text-brand-orange transition-colors duration-200 border-b border-gray-100"
+         >
+           <i className="fas fa-home mr-3 text-brand-orange"></i>
+           Property Owner Portal
+         </button>
+                    <button 
+                      onClick={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        console.log('🚀 Travel Agent Portal clicked');
+                        console.log('🔍 Current user state:', { 
+                          isAuthenticated, 
+                          user: user ? { email: user.email, role: user.role } : null 
+                        });
+                        
+                        // Smart navigation based on user state
+                        if (isAuthenticated && user) {
+                          if (user.role === 'agent') {
+                            console.log('✅ User is agent, navigating to dashboard');
+                            navigate('/agent/dashboard');
+                          } else {
+                            console.log('⚠️ User is not agent, navigating to login');
+                            navigate('/agent/login');
+                          }
+                        } else {
+                          console.log('❌ User not authenticated, navigating to login');
+                          navigate('/agent/login');
+                        }
+                      }} 
+                      className="w-full text-left px-4 py-3 text-sm text-gray-700 hover:bg-gray-50 hover:text-brand-orange transition-colors duration-200 border-b border-gray-100"
+                    >
                       <i className="fas fa-handshake mr-3 text-brand-orange"></i>
                       Travel Agent Portal
-                    </a>
+                    </button>
                     <a href="/admin/login" className="block px-4 py-3 text-sm text-gray-700 hover:bg-gray-50 hover:text-brand-orange transition-colors duration-200">
                       <i className="fas fa-cog mr-3 text-brand-orange"></i>
                       Admin Panel
@@ -176,15 +236,36 @@ return (
 
             {/* Desktop Auth Buttons */}
             <div className="hidden md:flex items-center space-x-4">
-              <a href="/login" className="bg-secondary text-secondary-foreground hover:bg-secondary/80 font-medium transition-all duration-200 cursor-pointer whitespace-nowrap rounded-button px-6 py-3 inline-flex items-center">
-                <i className="fas fa-user mr-2"></i>Login
-              </a>
-              <Link
-                to="/signup"
-                className="bg-gradient-to-r from-brand-orange to-brand-red text-white px-6 py-3 hover:from-orange-600 hover:to-red-600 transition-all duration-300 cursor-pointer whitespace-nowrap rounded-button font-medium shadow-lg hover:shadow-xl transform hover:scale-105 inline-flex items-center"
-              >
-                <i className="fas fa-arrow-right-to-bracket mr-2"></i>Sign Up
-              </Link>
+              {isAuthenticated && user ? (
+                <div className="flex items-center space-x-4">
+                  <div className="flex items-center space-x-2">
+                    <div className="w-8 h-8 bg-gradient-to-r from-brand-orange to-brand-red rounded-full flex items-center justify-center text-white font-medium text-sm">
+                      {user.email.charAt(0).toUpperCase()}
+                    </div>
+                    <span className="text-sm font-medium text-foreground hidden lg:block">
+                      {user.email}
+                    </span>
+                  </div>
+                  <button
+                    onClick={() => logout()}
+                    className="bg-secondary text-secondary-foreground hover:bg-secondary/80 font-medium transition-all duration-200 cursor-pointer whitespace-nowrap rounded-button px-6 py-3 inline-flex items-center"
+                  >
+                    <i className="fas fa-sign-out-alt mr-2"></i>Logout
+                  </button>
+                </div>
+              ) : (
+                <>
+                  <a href="/login" className="bg-secondary text-secondary-foreground hover:bg-secondary/80 font-medium transition-all duration-200 cursor-pointer whitespace-nowrap rounded-button px-6 py-3 inline-flex items-center">
+                    <i className="fas fa-user mr-2"></i>Login
+                  </a>
+                  <Link
+                    to="/signup"
+                    className="bg-gradient-to-r from-brand-orange to-brand-red text-white px-6 py-3 hover:from-orange-600 hover:to-red-600 transition-all duration-300 cursor-pointer whitespace-nowrap rounded-button font-medium shadow-lg hover:shadow-xl transform hover:scale-105 inline-flex items-center"
+                  >
+                    <i className="fas fa-arrow-right-to-bracket mr-2"></i>Sign Up
+                  </Link>
+                </>
+              )}
             </div>
         </div>
       </div>
@@ -257,22 +338,43 @@ return (
                 Portals
               </div>
               <div className="pl-8 space-y-4">
-                <a 
-                  href="/owner" 
-                  className="block text-base text-muted-foreground hover:text-brand-orange transition-colors duration-200"
-                  onClick={() => setIsMobileMenuOpen(false)}
+                <button 
+                  onClick={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    console.log('🚀 Mobile: Property Owner Portal clicked');
+                    console.log('🔍 Current user state:', { 
+                      isAuthenticated, 
+                      user: user ? { email: user.email, role: user.role } : null 
+                    });
+                    
+                    if (isAuthenticated && user) {
+                      if (user.role === 'owner') {
+                        console.log('✅ User is owner, navigating to dashboard');
+                        navigate('/owner/dashboard');
+                      } else {
+                        console.log('⚠️ User is not owner, navigating to signup');
+                        navigate('/owner/signup');
+                      }
+                                 } else {
+               console.log('❌ User not authenticated, navigating to login');
+               navigate('/owner/login');
+             }
+                    setIsMobileMenuOpen(false);
+                  }}
+                  className="block w-full text-left text-base text-muted-foreground hover:text-brand-orange transition-colors duration-200"
                 >
                   <i className="fas fa-home mr-3 text-brand-orange w-4"></i>
                   Property Owner Portal
-                </a>
-                <a 
-                  href="/agent" 
+                </button>
+                <Link 
+                  to="/agent/login" 
                   className="block text-base text-muted-foreground hover:text-brand-orange transition-colors duration-200"
                   onClick={() => setIsMobileMenuOpen(false)}
                 >
                   <i className="fas fa-handshake mr-3 text-brand-orange w-4"></i>
                   Travel Agent Portal
-                </a>
+                </Link>
                 <a 
                   href="/admin/login" 
                   className="block text-base text-muted-foreground hover:text-brand-orange transition-colors duration-200"
@@ -286,22 +388,48 @@ return (
 
             {/* Mobile Auth Buttons */}
             <div className="space-y-4 pt-4">
-              <a 
-                href="/login" 
-                className="block w-full bg-secondary text-secondary-foreground hover:bg-secondary/80 font-medium transition-all duration-200 rounded-lg px-6 py-4 text-center"
-                onClick={() => setIsMobileMenuOpen(false)}
-              >
-                <i className="fas fa-user mr-2"></i>
-                Login
-              </a>
-              <Link
-                to="/signup"
-                className="block w-full bg-gradient-to-r from-brand-orange to-brand-red text-white px-6 py-4 hover:from-orange-600 hover:to-red-600 transition-all duration-300 rounded-lg font-medium shadow-lg text-center"
-                onClick={() => setIsMobileMenuOpen(false)}
-              >
-                <i className="fas fa-arrow-right-to-bracket mr-2"></i>
-                Sign Up
-              </Link>
+              {isAuthenticated && user ? (
+                <>
+                  <div className="flex items-center space-x-3 bg-gray-50 rounded-lg px-4 py-3">
+                    <div className="w-10 h-10 bg-gradient-to-r from-brand-orange to-brand-red rounded-full flex items-center justify-center text-white font-medium">
+                      {user.email.charAt(0).toUpperCase()}
+                    </div>
+                    <div className="flex-1">
+                      <div className="text-sm font-medium text-foreground">{user.email}</div>
+                      <div className="text-xs text-muted-foreground">Signed in</div>
+                    </div>
+                  </div>
+                  <button
+                    onClick={() => {
+                      logout();
+                      setIsMobileMenuOpen(false);
+                    }}
+                    className="block w-full bg-secondary text-secondary-foreground hover:bg-secondary/80 font-medium transition-all duration-200 rounded-lg px-6 py-4 text-center"
+                  >
+                    <i className="fas fa-sign-out-alt mr-2"></i>
+                    Logout
+                  </button>
+                </>
+              ) : (
+                <>
+                  <a 
+                    href="/login" 
+                    className="block w-full bg-secondary text-secondary-foreground hover:bg-secondary/80 font-medium transition-all duration-200 rounded-lg px-6 py-4 text-center"
+                    onClick={() => setIsMobileMenuOpen(false)}
+                  >
+                    <i className="fas fa-user mr-2"></i>
+                    Login
+                  </a>
+                  <Link
+                    to="/signup"
+                    className="block w-full bg-gradient-to-r from-brand-orange to-brand-red text-white px-6 py-4 hover:from-orange-600 hover:to-red-600 transition-all duration-300 rounded-lg font-medium shadow-lg text-center"
+                    onClick={() => setIsMobileMenuOpen(false)}
+                  >
+                    <i className="fas fa-arrow-right-to-bracket mr-2"></i>
+                    Sign Up
+                  </Link>
+                </>
+              )}
             </div>
           </div>
         </div>
@@ -321,7 +449,7 @@ backgroundImage: `linear-gradient(135deg, hsl(var(--brand-red) / 0.8) 0%, hsl(va
 <div className="absolute top-40 right-20 w-40 h-40 bg-gradient-to-r from-brand-red/50 to-pink-500/50 rounded-full mix-blend-multiply filter blur-3xl opacity-70 animate-blob animation-delay-2000"></div>
 <div className="absolute bottom-20 left-1/3 w-36 h-36 bg-gradient-to-r from-yellow-400/50 to-brand-orange/50 rounded-full mix-blend-multiply filter blur-3xl opacity-70 animate-blob animation-delay-4000"></div>
 
-<div className="text-center text-white max-w-6xl mx-auto px-4 relative z-10">
+            <div className="text-center text-white max-w-6xl mx-auto px-4 relative z-10">
 <div className="mb-8">
 <span className="inline-block px-6 py-2 bg-white/20 backdrop-blur-md rounded-full text-sm font-medium border border-white/30 mb-4">
 ✨ India's Premier Vacation Rental Platform

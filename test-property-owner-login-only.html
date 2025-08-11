@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Property Owner Login Only - Test Guide</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            line-height: 1.6;
+        }
+        .test-section {
+            background: #f5f5f5;
+            padding: 15px;
+            margin: 15px 0;
+            border-radius: 8px;
+            border-left: 4px solid #007bff;
+        }
+        .success {
+            border-left-color: #28a745;
+            background: #d4edda;
+        }
+        .warning {
+            border-left-color: #ffc107;
+            background: #fff3cd;
+        }
+        .error {
+            border-left-color: #dc3545;
+            background: #f8d7da;
+        }
+        .code {
+            background: #f8f9fa;
+            padding: 10px;
+            border-radius: 4px;
+            font-family: monospace;
+            margin: 10px 0;
+        }
+        .button {
+            display: inline-block;
+            padding: 10px 20px;
+            background: #007bff;
+            color: white;
+            text-decoration: none;
+            border-radius: 4px;
+            margin: 5px;
+        }
+        .button:hover {
+            background: #0056b3;
+        }
+        .step {
+            background: white;
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 4px;
+            border: 1px solid #ddd;
+        }
+    </style>
+</head>
+<body>
+    <h1>🏠 Property Owner Login Only - Test Guide</h1>
+    
+    <div class="test-section success">
+        <h2>✅ What We've Implemented</h2>
+        <ul>
+            <li><strong>Dedicated Property Owner Login</strong> at <code>/owner/login</code></li>
+            <li><strong>Removed General Login</strong> - now redirects to owner login</li>
+            <li><strong>Clean OwnerDashboard</strong> - no embedded login views</li>
+            <li><strong>Proper Authentication Flow</strong> - redirects to login if not authenticated</li>
+            <li><strong>Role Validation</strong> - only owners can access the dashboard</li>
+        </ul>
+    </div>
+
+    <div class="test-section">
+        <h2>🔗 Direct Test Links</h2>
+        <a href="http://localhost:8081/owner/login" class="button" target="_blank">Property Owner Login</a>
+        <a href="http://localhost:8081/owner/dashboard" class="button" target="_blank">Owner Dashboard (will redirect to login)</a>
+        <a href="http://localhost:8081/login" class="button" target="_blank">General Login (now owner login)</a>
+        <a href="http://localhost:8081/" class="button" target="_blank">Homepage</a>
+    </div>
+
+    <div class="test-section">
+        <h2>🧪 Test Scenarios</h2>
+        
+        <div class="step">
+            <h3>Test 1: New User Flow</h3>
+            <ol>
+                <li>Click "Property Owner Login" above</li>
+                <li>You should see the dedicated owner login page</li>
+                <li>Try logging in with non-existent credentials</li>
+                <li>Click "Sign up as Property Owner" link</li>
+                <li>Complete signup process</li>
+                <li>Should redirect to owner dashboard after signup</li>
+            </ol>
+        </div>
+
+        <div class="step">
+            <h3>Test 2: Existing Owner Login</h3>
+            <ol>
+                <li>Go to <code>/owner/login</code></li>
+                <li>Login with existing owner credentials</li>
+                <li>Should redirect to <code>/owner/dashboard</code></li>
+                <li>Dashboard should show real user data (not dummy)</li>
+                <li>Try accessing other tabs (Properties, Bookings, etc.)</li>
+            </ol>
+        </div>
+
+        <div class="step">
+            <h3>Test 3: Authentication Protection</h3>
+            <ol>
+                <li>Go directly to <code>/owner/dashboard</code> without login</li>
+                <li>Should redirect to <code>/owner/login</code></li>
+                <li>Try accessing <code>/login</code> (should show owner login)</li>
+                <li>Verify that non-owner users are redirected appropriately</li>
+            </ol>
+        </div>
+
+        <div class="step">
+            <h3>Test 4: Navigation from Homepage</h3>
+            <ol>
+                <li>Go to homepage <code>/</code></li>
+                <li>Click "Property Owner Portal" in header</li>
+                <li>If not logged in: should go to <code>/owner/login</code></li>
+                <li>If logged in as owner: should go to <code>/owner/dashboard</code></li>
+                <li>If logged in as different role: should redirect appropriately</li>
+            </ol>
+        </div>
+    </div>
+
+    <div class="test-section warning">
+        <h2>⚠️ Expected Console Output</h2>
+        <p>Open browser console (F12) and look for these logs:</p>
+        <div class="code">
+🔍 OwnerLogin - isAuthenticated: false, user: null
+🚀 Owner login attempt with email: [email]
+✅ User is owner, redirecting to dashboard
+🔐 OwnerDashboard: Auth state check: {loading: false, isAuthenticated: true, user: {...}}
+✅ User authenticated owner, showing dashboard
+        </div>
+    </div>
+
+    <div class="test-section">
+        <h2>🔧 Key Features to Verify</h2>
+        <ul>
+            <li><strong>Email + Password Login</strong>: Standard authentication</li>
+            <li><strong>Phone + OTP Login</strong>: Alternative authentication</li>
+            <li><strong>Role Validation</strong>: Only owners can access dashboard</li>
+            <li><strong>Automatic Redirects</strong>: Proper flow between login and dashboard</li>
+            <li><strong>Real User Data</strong>: Dashboard shows actual user email, not dummy data</li>
+            <li><strong>Logout Functionality</strong>: Proper session termination</li>
+            <li><strong>Responsive Design</strong>: Works on mobile and desktop</li>
+        </ul>
+    </div>
+
+    <div class="test-section error">
+        <h2>🚨 What Should NOT Happen</h2>
+        <ul>
+            <li>❌ General login page should not exist at <code>/login</code></li>
+            <li>❌ OwnerDashboard should not show embedded login forms</li>
+            <li>❌ Non-owner users should not access owner dashboard</li>
+            <li>❌ Dummy data should not appear in dashboard</li>
+            <li>❌ Authentication should not be bypassed</li>
+        </ul>
+    </div>
+
+    <div class="test-section">
+        <h2>📋 Test Data</h2>
+        <p><strong>For testing signup:</strong></p>
+        <div class="code">
+Email: testowner@example.com
+Password: TestPassword123!
+Phone: +1234567890
+        </div>
+        
+        <p><strong>For testing login (if you have existing owner account):</strong></p>
+        <div class="code">
+Use your existing owner credentials
+        </div>
+    </div>
+
+    <div class="test-section success">
+        <h2>✅ Success Criteria</h2>
+        <ul>
+            <li>✅ Property owner login works independently</li>
+            <li>✅ General login redirects to owner login</li>
+            <li>✅ OwnerDashboard shows real user data</li>
+            <li>✅ Proper authentication flow</li>
+            <li>✅ Role-based access control</li>
+            <li>✅ Clean, professional UI</li>
+            <li>✅ No dummy data or embedded forms</li>
+        </ul>
+    </div>
+
+    <div class="test-section">
+        <h2>🔍 Troubleshooting</h2>
+        <p><strong>If login doesn't work:</strong></p>
+        <ul>
+            <li>Check browser console for errors</li>
+            <li>Verify Supabase connection</li>
+            <li>Check network tab for API calls</li>
+            <li>Clear browser cache and try again</li>
+        </ul>
+        
+        <p><strong>If redirects don't work:</strong></p>
+        <ul>
+            <li>Check authentication state in console</li>
+            <li>Verify user role in database</li>
+            <li>Check route configuration in App.tsx</li>
+        </ul>
+    </div>
+
+    <script>
+        // Add some interactivity
+        document.querySelectorAll('.button').forEach(button => {
+            button.addEventListener('click', function() {
+                console.log('Testing:', this.textContent);
+            });
+        });
+    </script>
+</body>
+</html>

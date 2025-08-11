@@ -1,18 +1,151 @@
-import React, { useState } from 'react';
-import { Link } from 'react-router-dom';
+import React, { useState, useEffect, useCallback } from 'react';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
+import { useAuth } from '@/contexts/AuthContext';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Label } from '@/components/ui/label';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Eye, EyeOff, Mail, Phone, Lock, User, Loader2 } from 'lucide-react';
 
 const Signup: React.FC = () => {
+  const navigate = useNavigate();
+  const location = useLocation();
+  const { register, loading, error, isAuthenticated, user, clearError } = useAuth();
+  
+  // Debug logging (commented out for production)
+  // console.log('🔄 Signup component render:', { 
+  //   loading, 
+  //   error: error?.message, 
+  //   isAuthenticated, 
+  //   user: user ? { id: user.id, email: user.email, role: user.role } : null 
+  // });
+  
   const [firstName, setFirstName] = useState('');
   const [lastName, setLastName] = useState('');
   const [email, setEmail] = useState('');
   const [phone, setPhone] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
+  const [role, setRole] = useState<'customer' | 'owner' | 'agent'>('customer');
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [agreeToTerms, setAgreeToTerms] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
-  const [errors, setErrors] = useState<{ [key: string]: string }>({});
+  const [formErrors, setFormErrors] = useState<{ [key: string]: string }>({});
+  const [signupSuccess, setSignupSuccess] = useState(false);
+
+  const getDefaultRedirect = useCallback((userRole: string) => {
+    switch (userRole) {
+      case 'admin':
+        return '/admin/dashboard';
+      case 'owner':
+        return '/owner/dashboard';
+      case 'agent':
+        return '/agent/dashboard';
+      case 'customer':
+        return '/';
+      default:
+        return '/';
+    }
+  }, []);
+
+  // Show success message and redirect to appropriate dashboard after signup
+  useEffect(() => {
+    console.log('🔄 Success effect triggered:', { signupSuccess, loading, error: error?.message });
+    
+    if (signupSuccess && !loading && !error) {
+      console.log('✅ All conditions met, redirecting immediately');
+      
+      // Use the authenticated user's role instead of the form role state
+      const userRole = user?.role || role;
+      const dashboardPath = userRole === 'owner' ? '/owner/dashboard' : 
+                           userRole === 'agent' ? '/agent/dashboard' : '/';
+      
+      console.log('🚀 Redirecting to:', dashboardPath, 'for role:', userRole);
+      navigate(dashboardPath, { 
+        state: { 
+          message: 'Account created successfully! Welcome to Picnify!',
+          email: email 
+        },
+        replace: true 
+      });
+    }
+  }, [signupSuccess, loading, error, navigate, email, role, user]);
+
+  // Set success state when registration completes and user is authenticated
+  useEffect(() => {
+    console.log('🔄 Registration state check:', { 
+      loading, 
+      error: error?.message, 
+      signupSuccess, 
+      isAuthenticated, 
+      user: user ? { email: user.email, role: user.role } : null 
+    });
+    
+    if (!loading && !error && !signupSuccess && isAuthenticated && user) {
+      console.log('✅ Registration successful and user authenticated, setting success state');
+      setSignupSuccess(true);
+    } else if (error && signupSuccess) {
+      // If there's an error and we previously set success, clear it
+      console.log('❌ Error occurred, clearing success state');
+      setSignupSuccess(false);
+    }
+  }, [loading, error, signupSuccess, isAuthenticated, user]);
+
+  // Pre-select role from URL params or path
+  useEffect(() => {
+    const urlParams = new URLSearchParams(location.search);
+    const roleParam = urlParams.get('role') as 'customer' | 'owner' | 'agent';
+    
+    console.log('🔄 Role selection check:', { 
+      pathname: location.pathname, 
+      roleParam, 
+      currentRole: role 
+    });
+    
+    // Check if we're on the owner signup path
+    if (location.pathname === '/owner/signup') {
+      console.log('✅ Setting role to owner (from path)');
+      setRole('owner');
+    } else if (roleParam && ['customer', 'owner', 'agent'].includes(roleParam)) {
+      console.log('✅ Setting role to', roleParam, '(from URL param)');
+      setRole(roleParam);
+    } else if (location.pathname === '/agent/signup') {
+      console.log('✅ Setting role to agent (from path)');
+      setRole('agent');
+    } else if (location.pathname === '/signup') {
+      console.log('✅ Setting role to customer (default)');
+      setRole('customer');
+    }
+  }, [location.search, location.pathname]);
+
+  // Debug component mount
+  useEffect(() => {
+    console.log('🏠 Signup component mounted at path:', location.pathname);
+  }, [location.pathname]);
+
+  // Redirect if already authenticated
+  useEffect(() => {
+    if (isAuthenticated && user && !loading) {
+      console.log('🔄 User already authenticated, checking role and redirecting');
+      console.log('🔍 User details:', { email: user.email, role: user.role });
+      
+      // If user is already an owner and we're on owner signup, redirect to dashboard
+      if (user.role === 'owner' && location.pathname === '/owner/signup') {
+        console.log('✅ User is already owner, redirecting to dashboard');
+        navigate('/owner/dashboard', { replace: true });
+        return;
+      }
+      
+      // If user has a different role, redirect to appropriate dashboard
+      const dashboardPath = user.role === 'owner' ? '/owner/dashboard' : 
+                           user.role === 'agent' ? '/agent/dashboard' : '/';
+      console.log('🔄 Redirecting to:', dashboardPath);
+      navigate(dashboardPath, { replace: true });
+    }
+  }, [isAuthenticated, user, loading, navigate, location.pathname]);
 
   const validateForm = () => {
     const newErrors: { [key: string]: string } = {};
@@ -41,6 +174,8 @@ const Signup: React.FC = () => {
       newErrors.password = 'Password is required';
     } else if (password.length < 8) {
       newErrors.password = 'Password must be at least 8 characters long';
+    } else if (!/(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/.test(password)) {
+      newErrors.password = 'Password must contain at least one uppercase letter, one lowercase letter, and one number';
     }
     
     if (!confirmPassword) {
@@ -53,380 +188,412 @@ const Signup: React.FC = () => {
       newErrors.terms = 'You must agree to the Terms of Service and Privacy Policy';
     }
     
-    setErrors(newErrors);
+    setFormErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
+    console.log('📝 Form submitted, validating...');
+    
+    // Check if user is already authenticated
+    if (isAuthenticated && user) {
+      console.log('⚠️ User already authenticated, checking if role change is needed');
+      if (user.role === role) {
+        console.log('✅ User already has the correct role, redirecting to dashboard');
+        const dashboardPath = user.role === 'owner' ? '/owner/dashboard' : 
+                             user.role === 'agent' ? '/agent/dashboard' : '/';
+        navigate(dashboardPath, { replace: true });
+        return;
+      } else {
+        console.log('🔄 User role mismatch, proceeding with registration for new role');
+      }
+    }
+    
     if (!validateForm()) {
+      console.log('❌ Form validation failed');
       return;
     }
     
-    setIsLoading(true);
-    
-    const formData = new URLSearchParams();
-    formData.append('firstName', firstName);
-    formData.append('lastName', lastName);
-    formData.append('email', email);
-    formData.append('phone', phone);
-    formData.append('password', password);
-    formData.append('agreeToTerms', agreeToTerms.toString());
+    console.log('✅ Form validation passed, starting registration');
+    clearError();
+    console.log('🚀 Starting registration for:', { email, role });
     
     try {
-      const response = await fetch('https://readdy.ai/api/form/d23simbnpq37em5ubapg', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/x-www-form-urlencoded',
-        },
-        body: formData
+      await register({
+        email,
+        password,
+        first_name: firstName,
+        last_name: lastName,
+        phone,
+        role
       });
       
-      if (response.ok) {
-        const successMessage = document.createElement('div');
-        successMessage.className = 'fixed top-4 right-4 bg-green-500 text-white px-6 py-3 rounded-lg shadow-lg z-50';
-        successMessage.innerHTML = '<i class="fas fa-check-circle mr-2"></i>Account created successfully! Please check your email to verify your account.';
-        document.body.appendChild(successMessage);
-        setTimeout(() => {
-          successMessage.remove();
-        }, 5000);
-        
-        // Reset form
-        setFirstName('');
-        setLastName('');
-        setEmail('');
-        setPhone('');
-        setPassword('');
-        setConfirmPassword('');
-        setAgreeToTerms(false);
-      } else {
-        const errorMessage = document.createElement('div');
-        errorMessage.className = 'fixed top-4 right-4 bg-red-500 text-white px-6 py-3 rounded-lg shadow-lg z-50';
-        errorMessage.innerHTML = '<i class="fas fa-exclamation-circle mr-2"></i>Registration failed. Please try again.';
-        document.body.appendChild(errorMessage);
-        setTimeout(() => {
-          errorMessage.remove();
-        }, 3000);
-      }
-    } catch (error) {
-      const errorMessage = document.createElement('div');
-      errorMessage.className = 'fixed top-4 right-4 bg-red-500 text-white px-6 py-3 rounded-lg shadow-lg z-50';
-      errorMessage.innerHTML = '<i class="fas fa-exclamation-triangle mr-2"></i>Network error. Please check your connection.';
-      document.body.appendChild(errorMessage);
-      setTimeout(() => {
-        errorMessage.remove();
-      }, 3000);
-    } finally {
-      setIsLoading(false);
+      console.log('📝 Registration call completed');
+    } catch (err) {
+      console.error('💥 Registration error:', err);
     }
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-orange-50 to-red-100">
-      {/* Header */}
-      <header className="bg-white shadow-sm border-b border-gray-200">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-center items-center h-16">
-            <div className="flex items-center space-x-2">
-              <img src="/lovable-uploads/4a6c26a9-df9d-4bbe-a6d2-acb1b3d99100.png" alt="Picnify Logo" className="h-8" />
-            </div>
-          </div>
+    <div className="min-h-screen bg-gradient-to-br from-orange-50 to-red-100 flex items-center justify-center p-4">
+      <div className="w-full max-w-md">
+        {/* Header */}
+        <div className="text-center mb-8">
+          <Link to="/" className="inline-flex items-center text-gray-600 hover:text-gray-900 mb-4">
+            <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+            </svg>
+            Back to Website
+          </Link>
+          <img 
+            src="/lovable-uploads/f7960b1f-407a-4738-b8f6-067ea4600889.png" 
+            alt="Picnify Logo" 
+            className="h-12 mx-auto mb-4" 
+          />
+          <h1 className="text-2xl font-bold text-gray-900">
+            {location.pathname === '/owner/signup' ? 'Create Property Owner Account' : 'Create Your Account'}
+          </h1>
+          <p className="text-gray-600 mt-2">
+            {location.pathname === '/owner/signup' 
+              ? 'Join Picnify as a property owner and start listing your properties' 
+              : 'Join Picnify and start your journey'}
+          </p>
         </div>
-      </header>
 
-      {/* Main Content */}
-      <div className="flex items-center justify-center min-h-[calc(100vh-64px)] px-4 sm:px-6 lg:px-8 py-8">
-        <div className="max-w-md w-full space-y-8">
-          {/* Registration Form Container */}
-          <div className="bg-white rounded-xl shadow-lg p-8 border border-gray-100">
-            <div className="text-center mb-8">
-              <h2 className="text-xl sm:text-2xl md:text-3xl font-bold text-gray-900 mb-2">Create Account</h2>
-              <p className="text-gray-600">Join Picnify to start booking amazing experiences</p>
-            </div>
+        {/* Signup Card */}
+        <Card className="shadow-lg">
+          <CardHeader className="pb-4">
+            <CardTitle className="text-center">
+              {location.pathname === '/owner/signup' ? 'Property Owner Sign Up' : 'Sign Up'}
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <form onSubmit={handleSubmit} className="space-y-4">
+              {/* Error Alert */}
+              {error && (
+                <Alert className="mt-4" variant="destructive">
+                  <AlertDescription className="space-y-2">
+                    <div className="font-medium">{error.message}</div>
+                    {error.message.includes('already exists') && (
+                      <div className="text-sm opacity-90">
+                        💡 <strong>Already have an account?</strong>{' '}
+                        <Link to="/login" className="underline hover:no-underline">
+                          Sign in here
+                        </Link>
+                      </div>
+                    )}
+                    {error.message.includes('weak password') && (
+                      <div className="text-sm opacity-90">
+                        💡 <strong>Password requirements:</strong> At least 8 characters with uppercase, lowercase, and numbers.
+                      </div>
+                    )}
+                    {error.message.includes('invalid email') && (
+                      <div className="text-sm opacity-90">
+                        💡 <strong>Email format:</strong> Please enter a valid email address (e.g., user@example.com).
+                      </div>
+                    )}
+                    {error.message.includes('too many attempts') && (
+                      <div className="text-sm opacity-90">
+                        💡 <strong>Rate limited:</strong> Please wait a few minutes before trying again.
+                      </div>
+                    )}
+                    {error.message.includes('network error') && (
+                      <div className="text-sm opacity-90">
+                        💡 <strong>Connection issue:</strong> Please check your internet connection and try again.
+                      </div>
+                    )}
+                  </AlertDescription>
+                </Alert>
+              )}
 
-            {/* Registration Form */}
-            <form onSubmit={handleSubmit} className="space-y-6" data-readdy-form>
-              {/* First Name */}
-              <div>
-                <label htmlFor="firstName" className="block text-sm font-medium text-gray-700 mb-2">
-                  First Name
-                </label>
-                <div className="relative">
-                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                    <i className="fas fa-user text-gray-400 text-sm"></i>
-                  </div>
-                  <input
-                    id="firstName"
-                    name="firstName"
-                    type="text"
-                    required
-                    value={firstName}
-                    onChange={(e) => setFirstName(e.target.value)}
-                    className={`block w-full pl-10 pr-3 py-3 border rounded-lg focus:outline-none focus:ring-2 text-sm ${
-                      errors.firstName
-                        ? 'border-red-300 focus:ring-red-500 focus:border-red-500'
-                        : 'border-gray-300 focus:ring-red-500 focus:border-red-500'
-                    }`}
-                    placeholder="Enter your first name"
-                  />
-                </div>
-                {errors.firstName && (
-                  <p className="mt-1 text-sm text-red-600">{errors.firstName}</p>
-                )}
-              </div>
+              {/* Success Alert */}
+              {signupSuccess && !error && !loading && (
+                <Alert className="mt-4" variant="default">
+                  <AlertDescription className="space-y-2">
+                    <div className="font-semibold text-green-800">
+                      🎉 Account Created Successfully!
+                    </div>
+                    <div className="text-sm text-green-700">
+                      <p>✅ Your account has been created and a confirmation email has been sent to <strong>{email}</strong></p>
+                      <p className="mt-2">
+                        <strong>Next Steps:</strong>
+                      </p>
+                      <ol className="list-decimal list-inside space-y-1 mt-1">
+                        <li>Check your email and click the verification link</li>
+                        <li>You're automatically logged in and ready to go!</li>
+                        <li>{location.pathname === '/owner/signup' ? 'Start listing your properties!' : 'Start exploring amazing properties!'}</li>
+                      </ol>
+                      <p className="mt-2 text-blue-600">
+                        Redirecting to login page in 3 seconds...
+                      </p>
+                    </div>
+                  </AlertDescription>
+                </Alert>
+              )}
 
-              {/* Last Name */}
-              <div>
-                <label htmlFor="lastName" className="block text-sm font-medium text-gray-700 mb-2">
-                  Last Name
-                </label>
-                <div className="relative">
-                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                    <i className="fas fa-user text-gray-400 text-sm"></i>
-                  </div>
-                  <input
-                    id="lastName"
-                    name="lastName"
-                    type="text"
-                    required
-                    value={lastName}
-                    onChange={(e) => setLastName(e.target.value)}
-                    className={`block w-full pl-10 pr-3 py-3 border rounded-lg focus:outline-none focus:ring-2 text-sm ${
-                      errors.lastName
-                        ? 'border-red-300 focus:ring-red-500 focus:border-red-500'
-                        : 'border-gray-300 focus:ring-red-500 focus:border-red-500'
-                    }`}
-                    placeholder="Enter your last name"
-                  />
-                </div>
-                {errors.lastName && (
-                  <p className="mt-1 text-sm text-red-600">{errors.lastName}</p>
-                )}
-              </div>
-
-              {/* Email Address */}
-              <div>
-                <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-2">
-                  Email Address
-                </label>
-                <div className="relative">
-                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                    <i className="fas fa-envelope text-gray-400 text-sm"></i>
-                  </div>
-                  <input
-                    id="email"
-                    name="email"
-                    type="email"
-                    required
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    className={`block w-full pl-10 pr-3 py-3 border rounded-lg focus:outline-none focus:ring-2 text-sm ${
-                      errors.email
-                        ? 'border-red-300 focus:ring-red-500 focus:border-red-500'
-                        : 'border-gray-300 focus:ring-red-500 focus:border-red-500'
-                    }`}
-                    placeholder="Enter your email address"
-                  />
-                </div>
-                {errors.email && (
-                  <p className="mt-1 text-sm text-red-600">{errors.email}</p>
-                )}
-              </div>
-
-              {/* Phone Number */}
-              <div>
-                <label htmlFor="phone" className="block text-sm font-medium text-gray-700 mb-2">
-                  Phone Number
-                </label>
-                <div className="relative">
-                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                    <i className="fas fa-phone text-gray-400 text-sm"></i>
-                  </div>
-                  <input
-                    id="phone"
-                    name="phone"
-                    type="tel"
-                    required
-                    value={phone}
-                    onChange={(e) => setPhone(e.target.value)}
-                    className={`block w-full pl-10 pr-3 py-3 border rounded-lg focus:outline-none focus:ring-2 text-sm ${
-                      errors.phone
-                        ? 'border-red-300 focus:ring-red-500 focus:border-red-500'
-                        : 'border-gray-300 focus:ring-red-500 focus:border-red-500'
-                    }`}
-                    placeholder="Enter your phone number"
-                  />
-                </div>
-                {errors.phone && (
-                  <p className="mt-1 text-sm text-red-600">{errors.phone}</p>
-                )}
-              </div>
-
-              {/* Password */}
-              <div>
-                <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-2">
-                  Password
-                </label>
-                <div className="relative">
-                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                    <i className="fas fa-lock text-gray-400 text-sm"></i>
-                  </div>
-                  <input
-                    id="password"
-                    name="password"
-                    type={showPassword ? 'text' : 'password'}
-                    required
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    className={`block w-full pl-10 pr-10 py-3 border rounded-lg focus:outline-none focus:ring-2 text-sm ${
-                      errors.password
-                        ? 'border-red-300 focus:ring-red-500 focus:border-red-500'
-                        : 'border-gray-300 focus:ring-red-500 focus:border-red-500'
-                    }`}
-                    placeholder="Create a strong password"
-                  />
-                  <button
-                    type="button"
-                    onClick={() => setShowPassword(!showPassword)}
-                    className="absolute inset-y-0 right-0 pr-3 flex items-center cursor-pointer"
-                  >
-                    <i className={`fas ${showPassword ? 'fa-eye-slash' : 'fa-eye'} text-gray-400 text-sm`}></i>
-                  </button>
-                </div>
-                {errors.password && (
-                  <p className="mt-1 text-sm text-red-600">{errors.password}</p>
-                )}
-              </div>
-
-              {/* Confirm Password */}
-              <div>
-                <label htmlFor="confirmPassword" className="block text-sm font-medium text-gray-700 mb-2">
-                  Confirm Password
-                </label>
-                <div className="relative">
-                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                    <i className="fas fa-lock text-gray-400 text-sm"></i>
-                  </div>
-                  <input
-                    id="confirmPassword"
-                    name="confirmPassword"
-                    type={showConfirmPassword ? 'text' : 'password'}
-                    required
-                    value={confirmPassword}
-                    onChange={(e) => setConfirmPassword(e.target.value)}
-                    className={`block w-full pl-10 pr-10 py-3 border rounded-lg focus:outline-none focus:ring-2 text-sm ${
-                      errors.confirmPassword
-                        ? 'border-red-300 focus:ring-red-500 focus:border-red-500'
-                        : 'border-gray-300 focus:ring-red-500 focus:border-red-500'
-                    }`}
-                    placeholder="Confirm your password"
-                  />
-                  <button
-                    type="button"
-                    onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                    className="absolute inset-y-0 right-0 pr-3 flex items-center cursor-pointer"
-                  >
-                    <i className={`fas ${showConfirmPassword ? 'fa-eye-slash' : 'fa-eye'} text-gray-400 text-sm`}></i>
-                  </button>
-                </div>
-                {errors.confirmPassword && (
-                  <p className="mt-1 text-sm text-red-600">{errors.confirmPassword}</p>
-                )}
-              </div>
-
-              {/* Terms Agreement */}
-              <div>
-                <div className="flex items-start">
-                  <div className="flex items-center h-5">
-                    <input
-                      id="agreeToTerms"
-                      name="agreeToTerms"
-                      type="checkbox"
-                      checked={agreeToTerms}
-                      onChange={(e) => setAgreeToTerms(e.target.checked)}
-                      className="focus:ring-red-500 h-4 w-4 text-red-600 border-gray-300 rounded cursor-pointer"
+              {/* Name Fields */}
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="firstName">First Name</Label>
+                  <div className="relative">
+                    <User className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+                    <Input
+                      id="firstName"
+                      type="text"
+                      placeholder="First name"
+                      value={firstName}
+                      onChange={(e) => setFirstName(e.target.value)}
+                      className={`pl-10 ${formErrors.firstName ? 'border-red-500' : ''}`}
+                      required
                     />
                   </div>
-                  <div className="ml-3 text-sm">
-                    <label htmlFor="agreeToTerms" className="text-gray-600 cursor-pointer">
-                      I agree to the{' '}
-                      <a href="#" className="text-red-600 hover:text-red-500 cursor-pointer">
-                        Terms of Service
-                      </a>{' '}
-                      and{' '}
-                      <a href="#" className="text-red-600 hover:text-red-500 cursor-pointer">
-                        Privacy Policy
-                      </a>
-                    </label>
-                  </div>
+                  {formErrors.firstName && (
+                    <p className="text-sm text-red-500">{formErrors.firstName}</p>
+                  )}
                 </div>
-                {errors.terms && (
-                  <p className="mt-1 text-sm text-red-600">{errors.terms}</p>
+
+                <div className="space-y-2">
+                  <Label htmlFor="lastName">Last Name</Label>
+                  <div className="relative">
+                    <User className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+                    <Input
+                      id="lastName"
+                      type="text"
+                      placeholder="Last name"
+                      value={lastName}
+                      onChange={(e) => setLastName(e.target.value)}
+                      className={`pl-10 ${formErrors.lastName ? 'border-red-500' : ''}`}
+                      required
+                    />
+                  </div>
+                  {formErrors.lastName && (
+                    <p className="text-sm text-red-500">{formErrors.lastName}</p>
+                  )}
+                </div>
+              </div>
+
+              {/* Email Field */}
+              <div className="space-y-2">
+                <Label htmlFor="email">Email Address</Label>
+                <div className="relative">
+                  <Mail className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+                  <Input
+                    id="email"
+                    type="email"
+                    placeholder="Enter your email"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    className={`pl-10 ${formErrors.email ? 'border-red-500' : ''}`}
+                    required
+                  />
+                </div>
+                {formErrors.email ? (
+                  <p className="text-sm text-red-500">{formErrors.email}</p>
+                ) : (
+                  <p className="text-xs text-gray-500">
+                    We'll send a confirmation email to verify your account
+                  </p>
                 )}
+              </div>
+
+              {/* Phone Field */}
+              <div className="space-y-2">
+                <Label htmlFor="phone">Phone Number</Label>
+                <div className="relative">
+                  <Phone className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+                  <Input
+                    id="phone"
+                    type="tel"
+                    placeholder="Enter your phone number"
+                    value={phone}
+                    onChange={(e) => setPhone(e.target.value)}
+                    className={`pl-10 ${formErrors.phone ? 'border-red-500' : ''}`}
+                    required
+                  />
+                </div>
+                {formErrors.phone && (
+                  <p className="text-sm text-red-500">{formErrors.phone}</p>
+                )}
+              </div>
+
+              {/* Role Selection */}
+              <div className="space-y-2">
+                <Label htmlFor="role">Account Type</Label>
+                <Select value={role} onValueChange={(value: 'customer' | 'owner' | 'agent') => setRole(value)}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select your account type" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="customer">Customer - Book properties</SelectItem>
+                    <SelectItem value="owner">Property Owner - List your properties</SelectItem>
+                    <SelectItem value="agent">Travel Agent - Manage bookings</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {/* Password Fields */}
+              <div className="space-y-2">
+                <Label htmlFor="password">Password</Label>
+                <div className="relative">
+                  <Lock className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+                  <Input
+                    id="password"
+                    type={showPassword ? 'text' : 'password'}
+                    placeholder="Create a password"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    className={`pl-10 pr-10 ${formErrors.password ? 'border-red-500' : ''}`}
+                    required
+                  />
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
+                    onClick={() => setShowPassword(!showPassword)}
+                  >
+                    {showPassword ? (
+                      <EyeOff className="h-4 w-4" />
+                    ) : (
+                      <Eye className="h-4 w-4" />
+                    )}
+                  </Button>
+                </div>
+                {formErrors.password ? (
+                  <p className="text-sm text-red-500">{formErrors.password}</p>
+                ) : (
+                  <div className="text-xs text-gray-500 space-y-1">
+                    <p><strong>Password requirements:</strong></p>
+                    <ul className="list-disc list-inside space-y-0.5">
+                      <li className={password.length >= 8 ? 'text-green-600' : ''}>
+                        At least 8 characters
+                      </li>
+                      <li className={/[A-Z]/.test(password) ? 'text-green-600' : ''}>
+                        One uppercase letter
+                      </li>
+                      <li className={/[a-z]/.test(password) ? 'text-green-600' : ''}>
+                        One lowercase letter
+                      </li>
+                      <li className={/\d/.test(password) ? 'text-green-600' : ''}>
+                        One number
+                      </li>
+                    </ul>
+                  </div>
+                )}
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="confirmPassword">Confirm Password</Label>
+                <div className="relative">
+                  <Lock className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+                  <Input
+                    id="confirmPassword"
+                    type={showConfirmPassword ? 'text' : 'password'}
+                    placeholder="Confirm your password"
+                    value={confirmPassword}
+                    onChange={(e) => setConfirmPassword(e.target.value)}
+                    className={`pl-10 pr-10 ${formErrors.confirmPassword ? 'border-red-500' : ''}`}
+                    required
+                  />
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
+                    onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                  >
+                    {showConfirmPassword ? (
+                      <EyeOff className="h-4 w-4" />
+                    ) : (
+                      <Eye className="h-4 w-4" />
+                    )}
+                  </Button>
+                </div>
+                {formErrors.confirmPassword && (
+                  <p className="text-sm text-red-500">{formErrors.confirmPassword}</p>
+                )}
+              </div>
+
+              {/* Terms and Conditions */}
+              <div className="flex items-start space-x-2">
+                <Checkbox
+                  id="terms"
+                  checked={agreeToTerms}
+                  onCheckedChange={(checked) => setAgreeToTerms(checked as boolean)}
+                  className="mt-1"
+                />
+                <div className="grid gap-1.5 leading-none">
+                  <Label
+                    htmlFor="terms"
+                    className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                  >
+                    I agree to the{' '}
+                    <Link to="/terms" className="text-red-600 hover:text-red-500 underline">
+                      Terms of Service
+                    </Link>{' '}
+                    and{' '}
+                    <Link to="/privacy" className="text-red-600 hover:text-red-500 underline">
+                      Privacy Policy
+                    </Link>
+                  </Label>
+                  {formErrors.terms && (
+                    <p className="text-sm text-red-500">{formErrors.terms}</p>
+                  )}
+                </div>
               </div>
 
               {/* Submit Button */}
-              <div>
-                <button
-                  type="submit"
-                  disabled={isLoading}
-                  className="w-full flex justify-center py-3 px-4 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white bg-gradient-to-r from-orange-500 to-red-600 hover:from-orange-600 hover:to-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 transition-colors cursor-pointer whitespace-nowrap !rounded-button disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  {isLoading ? (
-                    <>
-                      <i className="fas fa-spinner fa-spin mr-2"></i>
-                      Creating Account...
-                    </>
-                  ) : (
-                    <>
-                      <i className="fas fa-user-plus mr-2"></i>
-                      Create Account
-                    </>
-                  )}
-                </button>
-              </div>
+              <Button type="submit" className="w-full" disabled={loading}>
+                {loading ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Creating Account...
+                  </>
+                ) : (
+                  'Create Account'
+                )}
+              </Button>
             </form>
 
             {/* Divider */}
-            <div className="mt-8">
-              <div className="relative">
-                <div className="absolute inset-0 flex items-center">
-                  <div className="w-full border-t border-gray-300" />
-                </div>
-                <div className="relative flex justify-center text-sm">
-                  <span className="px-2 bg-white text-gray-500">Already have an account?</span>
-                </div>
+            <div className="relative my-6">
+              <div className="absolute inset-0 flex items-center">
+                <div className="w-full border-t border-gray-300" />
+              </div>
+              <div className="relative flex justify-center text-sm">
+                <span className="px-2 bg-white text-gray-500">Already have an account?</span>
               </div>
             </div>
 
-            {/* Login Link */}
-            <div className="mt-6 text-center">
-              <p className="text-sm text-gray-600">
-                <Link
-                  to="/login"
-                  className="font-medium text-red-600 hover:text-red-500 cursor-pointer"
-                >
-                  <i className="fas fa-arrow-left mr-2"></i>
-                  Back to Sign In
-                </Link>
-              </p>
+            {/* Sign In Link */}
+            <div className="text-center">
+              <Link
+                to="/login"
+                className="text-sm text-gray-600 hover:text-gray-900"
+              >
+                Already have an account?{' '}
+                <span className="font-medium text-red-600 hover:text-red-500">
+                  Sign in here
+                </span>
+              </Link>
             </div>
-          </div>
+          </CardContent>
+        </Card>
 
-          {/* Additional Info */}
-          <div className="text-center">
-            <p className="text-xs text-gray-500">
-              By creating an account, you agree to our{' '}
-              <a href="#" className="text-red-600 hover:text-red-500 cursor-pointer">
-                Terms of Service
-              </a>{' '}
-              and{' '}
-              <a href="#" className="text-red-600 hover:text-red-500 cursor-pointer">
-                Privacy Policy
-              </a>
-            </p>
-          </div>
+        {/* Footer */}
+        <div className="mt-8 text-center">
+          <p className="text-xs text-gray-500">
+            By creating an account, you agree to our{' '}
+            <Link to="/terms" className="text-red-600 hover:text-red-500">
+              Terms of Service
+            </Link>{' '}
+            and{' '}
+            <Link to="/privacy" className="text-red-600 hover:text-red-500">
+              Privacy Policy
+            </Link>
+          </p>
         </div>
       </div>
     </div>

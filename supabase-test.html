@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Supabase Test</title>
+    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+</head>
+<body>
+    <h1>Supabase Connection Test</h1>
+    <div id="output"></div>
+    
+    <script>
+        const SUPABASE_URL = "https://riqsgtuzccwpplbodwbd.supabase.co";
+        const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJpcXNndHV6Y2N3cHBsYm9kd2JkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTQyOTY2NTUsImV4cCI6MjA2OTg3MjY1NX0.qkSVWoVi8cStB1WZdqtapc8O6jc_aAiYEm0Y5Lqp1-s";
+        
+        const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+        
+        async function testConnection() {
+            const output = document.getElementById('output');
+            
+            try {
+                output.innerHTML += '<p>🧪 Testing Supabase connection...</p>';
+                
+                // Test 1: Basic connection
+                output.innerHTML += '<p>1️⃣ Testing basic connection...</p>';
+                const { data, error } = await supabase.auth.getSession();
+                
+                if (error) {
+                    output.innerHTML += `<p>❌ Connection failed: ${error.message}</p>`;
+                    return;
+                }
+                
+                output.innerHTML += '<p>✅ Basic connection successful</p>';
+                
+                // Test 2: Try to sign in
+                output.innerHTML += '<p>2️⃣ Testing sign in...</p>';
+                const { data: signInData, error: signInError } = await supabase.auth.signInWithPassword({
+                    email: 'venteskraft@gmail.com',
+                    password: 'Alliance@8'
+                });
+                
+                if (signInError) {
+                    output.innerHTML += `<p>❌ Sign in failed: ${signInError.message}</p>`;
+                    output.innerHTML += `<p>Error status: ${signInError.status}</p>`;
+                } else {
+                    output.innerHTML += '<p>✅ Sign in successful</p>';
+                }
+                
+            } catch (err) {
+                output.innerHTML += `<p>💥 Test failed: ${err.message}</p>`;
+            }
+        }
+        
+        testConnection();
+    </script>
+</body>
+</html>

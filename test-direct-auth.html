@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Direct Auth Test</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 40px; }
+        .test-section { margin: 20px 0; padding: 20px; border: 1px solid #ccc; }
+        .success { color: green; }
+        .error { color: red; }
+        button { padding: 10px 20px; margin: 5px; }
+        input { padding: 8px; margin: 5px; width: 200px; }
+    </style>
+</head>
+<body>
+    <h1>🧪 Direct Authentication Test</h1>
+    
+    <div class="test-section">
+        <h3>Test Direct Sign In</h3>
+        <input type="email" id="email" placeholder="Email" value="mshimavarsha07@gmail.com">
+        <input type="password" id="password" placeholder="Password" value="Alliance@8">
+        <button onclick="testDirectSignIn()">Test Sign In</button>
+        <div id="signin-result"></div>
+    </div>
+
+    <div class="test-section">
+        <h3>Test Session</h3>
+        <button onclick="testGetSession()">Get Current Session</button>
+        <div id="session-result"></div>
+    </div>
+
+    <div class="test-section">
+        <h3>Test Sign Out</h3>
+        <button onclick="testSignOut()">Sign Out</button>
+        <div id="signout-result"></div>
+    </div>
+
+    <script>
+        const SUPABASE_URL = "https://riqsgtuzccwpplbodwbd.supabase.co";
+        const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJpcXNndHV6Y2N3cHBsYm9kd2JkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTQyOTY2NTUsImV4cCI6MjA2OTg3MjY1NX0.qkSVWoVi8cStB1WZdqtapc8O6jc_aAiYEm0Y5Lqp1-s";
+
+        async function testDirectSignIn() {
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+            const resultDiv = document.getElementById('signin-result');
+            
+            resultDiv.innerHTML = '🔄 Testing...';
+            
+            try {
+                const response = await fetch(`${SUPABASE_URL}/auth/v1/token?grant_type=password`, {
+                    method: 'POST',
+                    headers: {
+                        'apikey': SUPABASE_ANON_KEY,
+                        'Content-Type': 'application/json',
+                        'X-Client-Info': 'picnify-web'
+                    },
+                    body: JSON.stringify({
+                        email,
+                        password
+                    })
+                });
+
+                if (!response.ok) {
+                    const errorData = await response.json();
+                    resultDiv.innerHTML = `<div class="error">❌ Sign in failed: ${errorData.error_description || errorData.message}</div>`;
+                    return;
+                }
+
+                const data = await response.json();
+                resultDiv.innerHTML = `<div class="success">✅ Sign in successful! User: ${data.user.email}</div>`;
+                
+                // Store tokens
+                localStorage.setItem('sb-access-token', data.access_token);
+                localStorage.setItem('sb-refresh-token', data.refresh_token);
+                
+            } catch (error) {
+                resultDiv.innerHTML = `<div class="error">💥 Error: ${error.message}</div>`;
+            }
+        }
+
+        async function testGetSession() {
+            const resultDiv = document.getElementById('session-result');
+            const accessToken = localStorage.getItem('sb-access-token');
+            
+            if (!accessToken) {
+                resultDiv.innerHTML = '<div class="error">❌ No access token found</div>';
+                return;
+            }
+            
+            resultDiv.innerHTML = '🔄 Getting session...';
+            
+            try {
+                const response = await fetch(`${SUPABASE_URL}/auth/v1/user`, {
+                    headers: {
+                        'apikey': SUPABASE_ANON_KEY,
+                        'Authorization': `Bearer ${accessToken}`
+                    }
+                });
+
+                if (!response.ok) {
+                    resultDiv.innerHTML = '<div class="error">❌ Invalid session</div>';
+                    localStorage.removeItem('sb-access-token');
+                    return;
+                }
+
+                const data = await response.json();
+                resultDiv.innerHTML = `<div class="success">✅ Session valid! User: ${data.email}</div>`;
+                
+            } catch (error) {
+                resultDiv.innerHTML = `<div class="error">💥 Error: ${error.message}</div>`;
+            }
+        }
+
+        async function testSignOut() {
+            const resultDiv = document.getElementById('signout-result');
+            const accessToken = localStorage.getItem('sb-access-token');
+            
+            if (!accessToken) {
+                resultDiv.innerHTML = '<div class="error">❌ No session to sign out</div>';
+                return;
+            }
+            
+            resultDiv.innerHTML = '🔄 Signing out...';
+            
+            try {
+                await fetch(`${SUPABASE_URL}/auth/v1/logout`, {
+                    method: 'POST',
+                    headers: {
+                        'apikey': SUPABASE_ANON_KEY,
+                        'Authorization': `Bearer ${accessToken}`
+                    }
+                });
+                
+                localStorage.removeItem('sb-access-token');
+                localStorage.removeItem('sb-refresh-token');
+                
+                resultDiv.innerHTML = '<div class="success">✅ Signed out successfully</div>';
+                
+            } catch (error) {
+                resultDiv.innerHTML = `<div class="error">💥 Error: ${error.message}</div>`;
+            }
+        }
+    </script>
+</body>
+</html>

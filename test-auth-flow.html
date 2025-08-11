@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Auth Flow Test</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 40px; }
+        .test-section { margin: 20px 0; padding: 20px; border: 1px solid #ccc; }
+        .success { color: green; }
+        .error { color: red; }
+        button { padding: 10px 20px; margin: 5px; }
+        input { padding: 8px; margin: 5px; width: 200px; }
+    </style>
+</head>
+<body>
+    <h1>🔐 Authentication Flow Test</h1>
+    
+    <div class="test-section">
+        <h3>Test Complete Auth Flow</h3>
+        <input type="email" id="email" placeholder="Email" value="mshimavarsha07@gmail.com">
+        <input type="password" id="password" placeholder="Password" value="Alliance@8">
+        <button onclick="testCompleteFlow()">Test Complete Flow</button>
+        <div id="flow-result"></div>
+    </div>
+
+    <div class="test-section">
+        <h3>Check Stored Data</h3>
+        <button onclick="checkStoredData()">Check localStorage</button>
+        <div id="stored-data"></div>
+    </div>
+
+    <div class="test-section">
+        <h3>Simulate Redirect</h3>
+        <button onclick="simulateRedirect()">Simulate Redirect</button>
+        <div id="redirect-result"></div>
+    </div>
+
+    <script>
+        const SUPABASE_URL = "https://riqsgtuzccwpplbodwbd.supabase.co";
+        const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJpcXNndHV6Y2N3cHBsYm9kd2JkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTQyOTY2NTUsImV4cCI6MjA2OTg3MjY1NX0.qkSVWoVi8cStB1WZdqtapc8O6jc_aAiYEm0Y5Lqp1-s";
+
+        async function testCompleteFlow() {
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+            const resultDiv = document.getElementById('flow-result');
+            
+            resultDiv.innerHTML = '🔄 Testing complete auth flow...';
+            
+            try {
+                // Step 1: Sign in
+                resultDiv.innerHTML += '<br>1️⃣ Signing in...';
+                const signInResponse = await fetch(`${SUPABASE_URL}/auth/v1/token?grant_type=password`, {
+                    method: 'POST',
+                    headers: {
+                        'apikey': SUPABASE_ANON_KEY,
+                        'Content-Type': 'application/json',
+                        'X-Client-Info': 'picnify-web'
+                    },
+                    body: JSON.stringify({
+                        email,
+                        password
+                    })
+                });
+
+                if (!signInResponse.ok) {
+                    const errorData = await signInResponse.json();
+                    resultDiv.innerHTML += `<br>❌ Sign in failed: ${errorData.error_description || errorData.message}`;
+                    return;
+                }
+
+                const signInData = await signInResponse.json();
+                resultDiv.innerHTML += `<br>✅ Sign in successful! User: ${signInData.user.email}`;
+                
+                // Step 2: Store tokens
+                localStorage.setItem('sb-access-token', signInData.access_token);
+                localStorage.setItem('sb-refresh-token', signInData.refresh_token);
+                
+                // Step 3: Get user details
+                resultDiv.innerHTML += '<br>2️⃣ Getting user details...';
+                const userResponse = await fetch(`${SUPABASE_URL}/rest/v1/users?select=*&id=eq.${signInData.user.id}`, {
+                    headers: {
+                        'apikey': SUPABASE_ANON_KEY,
+                        'Authorization': `Bearer ${signInData.access_token}`
+                    }
+                });
+
+                let userData = null;
+                if (userResponse.ok) {
+                    const users = await userResponse.json();
+                    userData = users[0];
+                    resultDiv.innerHTML += '<br>✅ User details retrieved';
+                } else {
+                    resultDiv.innerHTML += '<br>⚠️ Could not get user details, using default';
+                }
+
+                // Step 4: Create user object
+                const user = {
+                    id: signInData.user.id,
+                    email: signInData.user.email,
+                    role: userData?.role || 'customer',
+                    created_at: signInData.user.created_at,
+                    updated_at: signInData.user.updated_at
+                };
+
+                // Step 5: Store user
+                localStorage.setItem('sb-user', JSON.stringify(user));
+                resultDiv.innerHTML += `<br>✅ User stored: ${user.email} (${user.role})`;
+                
+                // Step 6: Simulate redirect logic
+                resultDiv.innerHTML += '<br>3️⃣ Simulating redirect...';
+                const redirectPath = getDefaultRedirect(user.role);
+                resultDiv.innerHTML += `<br>🎯 Would redirect to: ${redirectPath}`;
+                
+                resultDiv.innerHTML += '<br><div class="success">✅ Complete flow successful!</div>';
+                
+            } catch (error) {
+                resultDiv.innerHTML += `<br><div class="error">💥 Error: ${error.message}</div>`;
+            }
+        }
+
+        function getDefaultRedirect(role) {
+            switch (role) {
+                case 'admin':
+                    return '/admin/dashboard';
+                case 'owner':
+                    return '/owner/dashboard';
+                case 'agent':
+                    return '/agent/dashboard';
+                case 'customer':
+                    return '/';
+                default:
+                    return '/';
+            }
+        }
+
+        function checkStoredData() {
+            const resultDiv = document.getElementById('stored-data');
+            const accessToken = localStorage.getItem('sb-access-token');
+            const refreshToken = localStorage.getItem('sb-refresh-token');
+            const user = localStorage.getItem('sb-user');
+            
+            resultDiv.innerHTML = '<h4>Stored Data:</h4>';
+            resultDiv.innerHTML += `<p><strong>Access Token:</strong> ${accessToken ? '✅ Present' : '❌ Missing'}</p>`;
+            resultDiv.innerHTML += `<p><strong>Refresh Token:</strong> ${refreshToken ? '✅ Present' : '❌ Missing'}</p>`;
+            resultDiv.innerHTML += `<p><strong>User:</strong> ${user ? '✅ Present' : '❌ Missing'}</p>`;
+            
+            if (user) {
+                try {
+                    const userObj = JSON.parse(user);
+                    resultDiv.innerHTML += `<p><strong>User Email:</strong> ${userObj.email}</p>`;
+                    resultDiv.innerHTML += `<p><strong>User Role:</strong> ${userObj.role}</p>`;
+                } catch (e) {
+                    resultDiv.innerHTML += `<p class="error">❌ Error parsing user data</p>`;
+                }
+            }
+        }
+
+        function simulateRedirect() {
+            const resultDiv = document.getElementById('redirect-result');
+            const user = localStorage.getItem('sb-user');
+            
+            if (!user) {
+                resultDiv.innerHTML = '<div class="error">❌ No user data found</div>';
+                return;
+            }
+            
+            try {
+                const userObj = JSON.parse(user);
+                const redirectPath = getDefaultRedirect(userObj.role);
+                resultDiv.innerHTML = `<div class="success">✅ Would redirect ${userObj.email} (${userObj.role}) to: ${redirectPath}</div>`;
+            } catch (e) {
+                resultDiv.innerHTML = '<div class="error">❌ Error parsing user data</div>';
+            }
+        }
+    </script>
+</body>
+</html>

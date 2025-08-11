@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Property Owner Portal Button Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .test-section {
+            background: white;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .test-button {
+            background: #007bff;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            margin: 5px;
+            text-decoration: none;
+            display: inline-block;
+        }
+        .test-button:hover {
+            background: #0056b3;
+        }
+        .success { color: #28a745; }
+        .error { color: #dc3545; }
+        .warning { color: #ffc107; }
+        .info { color: #17a2b8; }
+        .step {
+            background: #f8f9fa;
+            padding: 15px;
+            margin: 10px 0;
+            border-left: 4px solid #007bff;
+            border-radius: 4px;
+        }
+    </style>
+</head>
+<body>
+    <h1>🧪 Property Owner Portal Button Test</h1>
+    
+    <div class="test-section">
+        <h2>✅ Current Status</h2>
+        <p>The Property Owner Portal button should now be working correctly with smart navigation logic:</p>
+        <ul>
+            <li class="success">✅ <strong>If user is owner</strong> → Navigates to `/owner/dashboard`</li>
+            <li class="success">✅ <strong>If user is not owner</strong> → Navigates to `/owner/signup`</li>
+            <li class="success">✅ <strong>If user is not authenticated</strong> → Navigates to `/owner/signup`</li>
+        </ul>
+    </div>
+
+    <div class="test-section">
+        <h2>🔗 Test the Button</h2>
+        <p>Go to the main website and test the Property Owner Portal button:</p>
+        <a href="http://localhost:8081/" class="test-button" target="_blank">
+            🏠 Go to Main Website
+        </a>
+    </div>
+
+    <div class="test-section">
+        <h2>📋 Test Steps</h2>
+        
+        <div class="step">
+            <h3>Step 1: Open Main Website</h3>
+            <p>Click the link above to open the main website in a new tab.</p>
+        </div>
+
+        <div class="step">
+            <h3>Step 2: Find the Property Owner Portal Button</h3>
+            <p>Look for the "Portals" dropdown in the header navigation (top right area).</p>
+            <p><strong>Desktop:</strong> Hover over "Portals" to see the dropdown</p>
+            <p><strong>Mobile:</strong> Click the hamburger menu to see the mobile menu</p>
+        </div>
+
+        <div class="step">
+            <h3>Step 3: Click Property Owner Portal</h3>
+            <p>Click on "Property Owner Portal" in the dropdown/menu.</p>
+        </div>
+
+        <div class="step">
+            <h3>Step 4: Check Console Logs</h3>
+            <p>Open browser console (F12) and look for these logs:</p>
+            <pre>
+🚀 Property Owner Portal clicked
+🔍 Current user state: {isAuthenticated: true, user: {...}}
+✅ User is owner, navigating to dashboard
+            </pre>
+        </div>
+
+        <div class="step">
+            <h3>Step 5: Verify Navigation</h3>
+            <p>Check if you were redirected to the correct page:</p>
+            <ul>
+                <li><strong>If owner:</strong> Should go to `/owner/dashboard`</li>
+                <li><strong>If not owner:</strong> Should go to `/owner/signup`</li>
+            </ul>
+        </div>
+    </div>
+
+    <div class="test-section">
+        <h2>🔍 Expected Behavior</h2>
+        
+        <h3>For Current User (mshimavarsha07@gmail.com)</h3>
+        <p>Since you're already logged in, the button should:</p>
+        <ul>
+            <li>Check your current role</li>
+            <li>If you're an owner → Navigate to owner dashboard</li>
+            <li>If you're not an owner → Navigate to owner signup</li>
+        </ul>
+
+        <h3>Console Output Expected</h3>
+        <pre>
+🚀 Property Owner Portal clicked
+🔍 Current user state: {isAuthenticated: true, user: {email: "mshimavarsha07@gmail.com", role: "..."}}
+✅ User is owner, navigating to dashboard
+🏠 OwnerDashboard component mounted
+🔐 OwnerDashboard: Auth state check: {loading: false, isAuthenticated: true, user: {...}}
+✅ User authenticated owner, showing dashboard
+        </pre>
+    </div>
+
+    <div class="test-section">
+        <h2>🐛 Troubleshooting</h2>
+        
+        <h3>If Button Doesn't Work:</h3>
+        <ol>
+            <li><strong>Check Console:</strong> Look for JavaScript errors</li>
+            <li><strong>Check Network:</strong> Look for failed requests</li>
+            <li><strong>Try Hard Refresh:</strong> Ctrl+F5 or Cmd+Shift+R</li>
+            <li><strong>Check User Role:</strong> Verify your role in the console logs</li>
+        </ol>
+
+        <h3>If Navigation Fails:</h3>
+        <ol>
+            <li><strong>Check Routes:</strong> Verify `/owner/dashboard` route exists</li>
+            <li><strong>Check Authentication:</strong> Ensure user is properly authenticated</li>
+            <li><strong>Check Role:</strong> Verify user role is correctly set</li>
+        </ol>
+    </div>
+
+    <div class="test-section">
+        <h2>📊 Test Results</h2>
+        <p>After testing, please report:</p>
+        <ul>
+            <li>✅ Does the button click work?</li>
+            <li>✅ Does it navigate to the correct page?</li>
+            <li>✅ Are the console logs showing correctly?</li>
+            <li>❌ Any errors or issues encountered?</li>
+        </ul>
+    </div>
+
+    <script>
+        // Add some helpful debugging
+        console.log('🧪 Property Owner Portal Button Test Page Loaded');
+        console.log('💡 Instructions: Go to main website and test the Property Owner Portal button');
+    </script>
+</body>
+</html>
