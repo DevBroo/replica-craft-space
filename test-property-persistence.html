@@ -1,0 +1,263 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Property Persistence</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .test-card {
+            background: white;
+            border-radius: 8px;
+            padding: 20px;
+            margin: 20px 0;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .test-button {
+            background: #2196f3;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            margin: 5px;
+            text-decoration: none;
+            display: inline-block;
+        }
+        .test-button:hover {
+            background: #1976d2;
+        }
+        .success {
+            color: #4caf50;
+            font-weight: bold;
+        }
+        .warning {
+            color: #ff9800;
+            font-weight: bold;
+        }
+        .info {
+            background: #e3f2fd;
+            border-left: 4px solid #2196f3;
+            padding: 15px;
+            margin: 15px 0;
+        }
+        .step {
+            background: #f3e5f5;
+            border-left: 4px solid #9c27b0;
+            padding: 15px;
+            margin: 15px 0;
+        }
+    </style>
+</head>
+<body>
+    <h1>💾 Test Property Persistence</h1>
+    
+    <div class="test-card">
+        <h2>📋 Test Overview</h2>
+        <p>This test verifies that property edits are saved and persist after page refresh.</p>
+        
+        <div class="info">
+            <strong>Problem Fixed:</strong> Previously, when you edited properties and refreshed the page, all changes were lost because they were only stored in component state.
+        </div>
+        
+        <div class="info">
+            <strong>Solution:</strong> Now all property changes are automatically saved to localStorage and will persist across page refreshes.
+        </div>
+    </div>
+
+    <div class="test-card">
+        <h2>🚀 Test Steps</h2>
+        
+        <div class="step">
+            <h3>Step 1: Access My Properties</h3>
+            <a href="http://localhost:8082/owner/view" class="test-button" target="_blank">Open Owner Dashboard</a>
+            <p>Go to "My Properties" section</p>
+        </div>
+        
+        <div class="step">
+            <h3>Step 2: Edit a Property</h3>
+            <p>Click the edit (pencil) icon on any property and make changes:</p>
+            <ul>
+                <li>Change the property name</li>
+                <li>Update the price</li>
+                <li>Modify the description</li>
+                <li>Add or remove amenities</li>
+                <li>Click "Update Property" to save</li>
+            </ul>
+        </div>
+        
+        <div class="step">
+            <h3>Step 3: Test Persistence</h3>
+            <p>After saving your changes:</p>
+            <ul>
+                <li><strong>Refresh the page</strong> (F5 or Ctrl+R)</li>
+                <li>Check if your edits are still there</li>
+                <li>If they persist, the localStorage is working!</li>
+            </ul>
+        </div>
+        
+        <div class="step">
+            <h3>Step 4: Add New Property</h3>
+            <p>Test adding a new property:</p>
+            <ul>
+                <li>Click "Add Property"</li>
+                <li>Fill out the form completely</li>
+                <li>Click "Add Property" to save</li>
+                <li>Refresh the page and verify it's still there</li>
+            </ul>
+        </div>
+        
+        <div class="step">
+            <h3>Step 5: Delete Property</h3>
+            <p>Test deleting a property:</p>
+            <ul>
+                <li>Click the trash icon on a property</li>
+                <li>Confirm deletion</li>
+                <li>Refresh the page and verify it's gone</li>
+            </ul>
+        </div>
+        
+        <div class="step">
+            <h3>Step 6: Reset to Initial (Optional)</h3>
+            <p>If you want to reset to the original properties:</p>
+            <ul>
+                <li>Click the "Reset" button in the header</li>
+                <li>Confirm the reset</li>
+                <li>This will restore the original 3 properties</li>
+            </ul>
+        </div>
+    </div>
+
+    <div class="test-card">
+        <h2>✅ Expected Results</h2>
+        
+        <h3>✅ After Editing Properties:</h3>
+        <ul>
+            <li class="success">Changes should persist after page refresh</li>
+            <li class="success">Property names, prices, descriptions should be saved</li>
+            <li class="success">Amenities changes should be preserved</li>
+            <li class="success">Console should show "💾 Updated property saved to localStorage"</li>
+        </ul>
+        
+        <h3>✅ After Adding New Property:</h3>
+        <ul>
+            <li class="success">New property should appear in the list</li>
+            <li class="success">Property should persist after page refresh</li>
+            <li class="success">Console should show "💾 New property saved to localStorage"</li>
+        </ul>
+        
+        <h3>✅ After Deleting Property:</h3>
+        <ul>
+            <li class="success">Property should be removed from the list</li>
+            <li class="success">Property should stay deleted after page refresh</li>
+            <li class="success">Console should show "💾 Property deleted and saved to localStorage"</li>
+        </ul>
+        
+        <h3>✅ After Reset:</h3>
+        <ul>
+            <li class="success">Should return to original 3 properties</li>
+            <li class="success">All custom changes should be removed</li>
+            <li class="success">Console should show "🔄 Reset to initial properties"</li>
+        </ul>
+    </div>
+
+    <div class="test-card">
+        <h2>🔧 Debug Information</h2>
+        
+        <h3>Check localStorage:</h3>
+        <p>Open browser console (F12) and type:</p>
+        <code>localStorage.getItem('properties_venteskraft@gmail.com')</code>
+        <p>This will show the saved properties data.</p>
+        
+        <h3>Console Logs to Watch For:</h3>
+        <ul>
+            <li><code>🏠 Loading saved properties for venteskraft@gmail.com: X properties</code></li>
+            <li><code>💾 Updated property saved to localStorage</code></li>
+            <li><code>💾 New property saved to localStorage</code></li>
+            <li><code>💾 Property deleted and saved to localStorage</code></li>
+            <li><code>🔄 Reset to initial properties</code></li>
+        </ul>
+        
+        <h3>Storage Key Format:</h3>
+        <p>Properties are stored with the key: <code>properties_[user-email]</code></p>
+        <p>For example: <code>properties_venteskraft@gmail.com</code></p>
+    </div>
+
+    <div class="test-card">
+        <h2>⚠️ Common Issues</h2>
+        
+        <h3>If Changes Don't Persist:</h3>
+        <ul>
+            <li class="warning">Check if localStorage is enabled in your browser</li>
+            <li class="warning">Check browser console for JavaScript errors</li>
+            <li class="warning">Verify you're logged in with the correct email</li>
+            <li class="warning">Check if the storage key is correct</li>
+        </ul>
+        
+        <h3>If Reset Doesn't Work:</h3>
+        <ul>
+            <li class="warning">Check if the mock data is still available</li>
+            <li class="warning">Verify the user email matches the mock data</li>
+            <li class="warning">Check console for reset confirmation</li>
+        </ul>
+    </div>
+
+    <div class="test-card">
+        <h2>🎯 Test Scenarios</h2>
+        
+        <h3>Scenario 1: Edit and Refresh</h3>
+        <ol>
+            <li>Edit property name to "My Custom Villa"</li>
+            <li>Change price to ₹25,000</li>
+            <li>Save changes</li>
+            <li>Refresh page (F5)</li>
+            <li>Verify changes are still there</li>
+        </ol>
+        
+        <h3>Scenario 2: Add and Refresh</h3>
+        <ol>
+            <li>Add a new property called "Test Property"</li>
+            <li>Set price to ₹5,000</li>
+            <li>Save the property</li>
+            <li>Refresh page (F5)</li>
+            <li>Verify the new property is still there</li>
+        </ol>
+        
+        <h3>Scenario 3: Delete and Refresh</h3>
+        <ol>
+            <li>Delete one of the properties</li>
+            <li>Confirm deletion</li>
+            <li>Refresh page (F5)</li>
+            <li>Verify the property is still deleted</li>
+        </ol>
+    </div>
+
+    <div class="test-card">
+        <h2>📞 Report Results</h2>
+        <p>After testing, report:</p>
+        <ul>
+            <li>✅ Which persistence features are working</li>
+            <li>❌ Any issues with saving or loading</li>
+            <li>🔄 Whether reset functionality works</li>
+            <li>💾 Any localStorage errors in console</li>
+        </ul>
+    </div>
+
+    <script>
+        console.log('💾 Property Persistence Test Page Loaded');
+        console.log('🔧 Testing localStorage persistence for property edits');
+        console.log('📋 Key features to test:');
+        console.log('1. Edit properties and refresh');
+        console.log('2. Add new properties and refresh');
+        console.log('3. Delete properties and refresh');
+        console.log('4. Reset to initial properties');
+        console.log('🚀 Ready to test! Open http://localhost:8082/owner/view');
+    </script>
+</body>
+</html>

@@ -107,13 +107,26 @@ const MyProperties: React.FC<{
       return;
     }
     
-    // Load mock data filtered by owner email
+    // Load properties from localStorage or mock data
     if (user && user.email) {
-      const userProperties = mockProperties.filter(property => 
-        property.ownerEmail === user.email
-      );
-      setProperties(userProperties);
-      console.log(`🏠 Loading properties for ${user.email}:`, userProperties.length, 'properties');
+      const storageKey = `properties_${user.email}`;
+      const savedProperties = localStorage.getItem(storageKey);
+      
+      if (savedProperties) {
+        // Load from localStorage
+        const parsedProperties = JSON.parse(savedProperties);
+        setProperties(parsedProperties);
+        console.log(`🏠 Loading saved properties for ${user.email}:`, parsedProperties.length, 'properties');
+      } else {
+        // Load from mock data for first time
+        const userProperties = mockProperties.filter(property => 
+          property.ownerEmail === user.email
+        );
+        setProperties(userProperties);
+        // Save to localStorage
+        localStorage.setItem(storageKey, JSON.stringify(userProperties));
+        console.log(`🏠 Loading initial properties for ${user.email}:`, userProperties.length, 'properties');
+      }
     } else {
       setProperties([]);
     }
@@ -183,7 +196,31 @@ const MyProperties: React.FC<{
 
   const handleDeleteProperty = (propertyId: string) => {
     if (confirm('Are you sure you want to delete this property?')) {
-      setProperties(properties.filter(p => p.id !== propertyId));
+      const updatedProperties = properties.filter(p => p.id !== propertyId);
+      setProperties(updatedProperties);
+      
+      // Save to localStorage
+      if (user && user.email) {
+        const storageKey = `properties_${user.email}`;
+        localStorage.setItem(storageKey, JSON.stringify(updatedProperties));
+        console.log('💾 Property deleted and saved to localStorage');
+      }
+    }
+  };
+
+  const resetToInitialProperties = () => {
+    if (confirm('Are you sure you want to reset to initial properties? This will remove all your changes.')) {
+      if (user && user.email) {
+        const userProperties = mockProperties.filter(property => 
+          property.ownerEmail === user.email
+        );
+        setProperties(userProperties);
+        
+        // Save to localStorage
+        const storageKey = `properties_${user.email}`;
+        localStorage.setItem(storageKey, JSON.stringify(userProperties));
+        console.log('🔄 Reset to initial properties');
+      }
     }
   };
 
@@ -232,11 +269,29 @@ const MyProperties: React.FC<{
 
     if (editingProperty) {
       // Update existing property
-      setProperties(properties.map(p => p.id === editingProperty.id ? newProperty : p));
+      const updatedProperties = properties.map(p => p.id === editingProperty.id ? newProperty : p);
+      setProperties(updatedProperties);
+      
+      // Save to localStorage
+      if (user && user.email) {
+        const storageKey = `properties_${user.email}`;
+        localStorage.setItem(storageKey, JSON.stringify(updatedProperties));
+        console.log('💾 Updated property saved to localStorage');
+      }
+      
       setShowEditModal(false);
     } else {
       // Add new property
-      setProperties([...properties, newProperty]);
+      const updatedProperties = [...properties, newProperty];
+      setProperties(updatedProperties);
+      
+      // Save to localStorage
+      if (user && user.email) {
+        const storageKey = `properties_${user.email}`;
+        localStorage.setItem(storageKey, JSON.stringify(updatedProperties));
+        console.log('💾 New property saved to localStorage');
+      }
+      
       setShowAddModal(false);
     }
 
@@ -491,6 +546,14 @@ const MyProperties: React.FC<{
               >
                 <i className="fas fa-plus mr-2"></i>
                 Add Property
+              </button>
+              <button 
+                onClick={resetToInitialProperties}
+                className="bg-gray-500 hover:bg-gray-600 text-white px-4 py-2 rounded-lg flex items-center"
+                title="Reset to initial properties"
+              >
+                <i className="fas fa-undo mr-2"></i>
+                Reset
               </button>
             </div>
           </div>
