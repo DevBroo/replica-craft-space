@@ -12,6 +12,24 @@ const MyProperties: React.FC<{
   const { user, isAuthenticated, loading } = useAuth();
   
   const [properties, setProperties] = useState<any[]>([]);
+  const [showAddModal, setShowAddModal] = useState(false);
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [showViewModal, setShowViewModal] = useState(false);
+  const [selectedProperty, setSelectedProperty] = useState<any>(null);
+  const [editingProperty, setEditingProperty] = useState<any>(null);
+  const [formData, setFormData] = useState({
+    name: '',
+    type: 'villa',
+    location: '',
+    city: '',
+    state: '',
+    price: '',
+    capacity: '',
+    bedrooms: '',
+    bathrooms: '',
+    description: '',
+    amenities: [] as string[]
+  });
 
   // Mock data for demonstration
   const mockProperties = [
@@ -112,6 +130,280 @@ const MyProperties: React.FC<{
     }
   };
 
+  const handleAddProperty = () => {
+    setFormData({
+      name: '',
+      type: 'villa',
+      location: '',
+      city: '',
+      state: '',
+      price: '',
+      capacity: '',
+      bedrooms: '',
+      bathrooms: '',
+      description: '',
+      amenities: []
+    });
+    setShowAddModal(true);
+  };
+
+  const handleEditProperty = (property: any) => {
+    setEditingProperty(property);
+    setFormData({
+      name: property.name,
+      type: property.type,
+      location: property.location,
+      city: property.city,
+      state: property.state,
+      price: property.price.toString(),
+      capacity: property.capacity.toString(),
+      bedrooms: property.bedrooms.toString(),
+      bathrooms: property.bathrooms.toString(),
+      description: property.description,
+      amenities: property.amenities
+    });
+    setShowEditModal(true);
+  };
+
+  const handleViewProperty = (property: any) => {
+    setSelectedProperty(property);
+    setShowViewModal(true);
+  };
+
+  const handleDeleteProperty = (propertyId: string) => {
+    if (confirm('Are you sure you want to delete this property?')) {
+      setProperties(properties.filter(p => p.id !== propertyId));
+    }
+  };
+
+  const handleFormChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
+    const { name, value } = e.target;
+    setFormData(prev => ({
+      ...prev,
+      [name]: value
+    }));
+  };
+
+  const handleAmenityChange = (amenity: string) => {
+    setFormData(prev => ({
+      ...prev,
+      amenities: prev.amenities.includes(amenity)
+        ? prev.amenities.filter(a => a !== amenity)
+        : [...prev.amenities, amenity]
+    }));
+  };
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    const newProperty = {
+      id: editingProperty ? editingProperty.id : Date.now().toString(),
+      name: formData.name,
+      type: formData.type,
+      location: formData.location,
+      city: formData.city,
+      state: formData.state,
+      price: parseInt(formData.price),
+      capacity: parseInt(formData.capacity),
+      bedrooms: parseInt(formData.bedrooms),
+      bathrooms: parseInt(formData.bathrooms),
+      status: editingProperty ? editingProperty.status : 'pending',
+      rating: editingProperty ? editingProperty.rating : 0,
+      totalBookings: editingProperty ? editingProperty.totalBookings : 0,
+      totalEarnings: editingProperty ? editingProperty.totalEarnings : 0,
+      images: ['/placeholder.svg'],
+      amenities: formData.amenities,
+      description: formData.description,
+      createdAt: editingProperty ? editingProperty.createdAt : new Date().toISOString().split('T')[0],
+      lastUpdated: new Date().toISOString().split('T')[0]
+    };
+
+    if (editingProperty) {
+      // Update existing property
+      setProperties(properties.map(p => p.id === editingProperty.id ? newProperty : p));
+      setShowEditModal(false);
+    } else {
+      // Add new property
+      setProperties([...properties, newProperty]);
+      setShowAddModal(false);
+    }
+
+    // Reset form
+    setFormData({
+      name: '',
+      type: 'villa',
+      location: '',
+      city: '',
+      state: '',
+      price: '',
+      capacity: '',
+      bedrooms: '',
+      bathrooms: '',
+      description: '',
+      amenities: []
+    });
+  };
+
+  const PropertyForm = () => (
+    <form onSubmit={handleSubmit} className="space-y-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-2">Property Name</label>
+          <input
+            type="text"
+            name="name"
+            value={formData.name}
+            onChange={handleFormChange}
+            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+            placeholder="Enter property name"
+            required
+          />
+        </div>
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-2">Property Type</label>
+          <select
+            name="type"
+            value={formData.type}
+            onChange={handleFormChange}
+            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+            required
+          >
+            <option value="villa">Villa</option>
+            <option value="resort">Resort</option>
+            <option value="farmhouse">Farmhouse</option>
+            <option value="homestay">Homestay</option>
+            <option value="heritage">Heritage Palace</option>
+            <option value="day-picnic">Day Picnic</option>
+          </select>
+        </div>
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-2">Location</label>
+          <input
+            type="text"
+            name="location"
+            value={formData.location}
+            onChange={handleFormChange}
+            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+            placeholder="Enter location"
+            required
+          />
+        </div>
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-2">City</label>
+          <input
+            type="text"
+            name="city"
+            value={formData.city}
+            onChange={handleFormChange}
+            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+            placeholder="Enter city"
+            required
+          />
+        </div>
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-2">State</label>
+          <input
+            type="text"
+            name="state"
+            value={formData.state}
+            onChange={handleFormChange}
+            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+            placeholder="Enter state"
+            required
+          />
+        </div>
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-2">Price per Day (₹)</label>
+          <input
+            type="number"
+            name="price"
+            value={formData.price}
+            onChange={handleFormChange}
+            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+            placeholder="Enter price"
+            required
+          />
+        </div>
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-2">Capacity</label>
+          <input
+            type="number"
+            name="capacity"
+            value={formData.capacity}
+            onChange={handleFormChange}
+            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+            placeholder="Enter capacity"
+            required
+          />
+        </div>
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-2">Bedrooms</label>
+          <input
+            type="number"
+            name="bedrooms"
+            value={formData.bedrooms}
+            onChange={handleFormChange}
+            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+            placeholder="Enter number of bedrooms"
+            required
+          />
+        </div>
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-2">Bathrooms</label>
+          <input
+            type="number"
+            name="bathrooms"
+            value={formData.bathrooms}
+            onChange={handleFormChange}
+            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+            placeholder="Enter number of bathrooms"
+            required
+          />
+        </div>
+      </div>
+      
+      <div>
+        <label className="block text-sm font-medium text-gray-700 mb-2">Description</label>
+        <textarea
+          name="description"
+          value={formData.description}
+          onChange={handleFormChange}
+          rows={4}
+          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+          placeholder="Enter property description"
+          required
+        />
+      </div>
+
+      <div>
+        <label className="block text-sm font-medium text-gray-700 mb-2">Amenities</label>
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+          {['wifi', 'ac', 'parking', 'kitchen', 'pool', 'gym', 'tv', 'spa', 'heating', 'fireplace'].map(amenity => (
+            <div key={amenity} className="flex items-center space-x-2">
+              <input
+                type="checkbox"
+                id={amenity}
+                checked={formData.amenities.includes(amenity)}
+                onChange={() => handleAmenityChange(amenity)}
+                className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+              />
+              <label htmlFor={amenity} className="text-sm capitalize text-gray-700">{amenity}</label>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      <div>
+        <label className="block text-sm font-medium text-gray-700 mb-2">Property Images</label>
+        <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center">
+          <i className="fas fa-upload text-gray-400 text-2xl mb-2"></i>
+          <p className="text-sm text-gray-600">Click to upload images or drag and drop</p>
+          <p className="text-xs text-gray-500 mt-1">PNG, JPG up to 10MB</p>
+        </div>
+      </div>
+    </form>
+  );
+
   if (loading) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
@@ -181,7 +473,10 @@ const MyProperties: React.FC<{
               </span>
             </div>
             <div className="flex items-center space-x-4">
-              <button className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg flex items-center">
+              <button 
+                onClick={handleAddProperty}
+                className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg flex items-center"
+              >
                 <i className="fas fa-plus mr-2"></i>
                 Add Property
               </button>
@@ -262,14 +557,23 @@ const MyProperties: React.FC<{
                   </div>
 
                   <div className="flex items-center space-x-2">
-                    <button className="flex-1 bg-gray-100 hover:bg-gray-200 text-gray-700 px-3 py-2 rounded text-sm">
+                    <button 
+                      onClick={() => handleViewProperty(property)}
+                      className="flex-1 bg-gray-100 hover:bg-gray-200 text-gray-700 px-3 py-2 rounded text-sm"
+                    >
                       <i className="fas fa-eye mr-1"></i>
                       View
                     </button>
-                    <button className="bg-gray-100 hover:bg-gray-200 text-gray-700 px-3 py-2 rounded text-sm">
+                    <button 
+                      onClick={() => handleEditProperty(property)}
+                      className="bg-gray-100 hover:bg-gray-200 text-gray-700 px-3 py-2 rounded text-sm"
+                    >
                       <i className="fas fa-edit"></i>
                     </button>
-                    <button className="bg-gray-100 hover:bg-gray-200 text-red-600 px-3 py-2 rounded text-sm">
+                    <button 
+                      onClick={() => handleDeleteProperty(property.id)}
+                      className="bg-gray-100 hover:bg-gray-200 text-red-600 px-3 py-2 rounded text-sm"
+                    >
                       <i className="fas fa-trash"></i>
                     </button>
                   </div>
@@ -285,7 +589,10 @@ const MyProperties: React.FC<{
               </div>
               <h3 className="text-lg font-medium text-gray-800 mb-2">No properties found</h3>
               <p className="text-gray-600 mb-4">Try adjusting your search or filters</p>
-              <button className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg">
+              <button 
+                onClick={handleAddProperty}
+                className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg"
+              >
                 <i className="fas fa-plus mr-2"></i>
                 Add Your First Property
               </button>
@@ -293,6 +600,155 @@ const MyProperties: React.FC<{
           )}
         </main>
       </div>
+
+      {/* Add Property Modal */}
+      {showAddModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 w-full max-w-4xl max-h-[90vh] overflow-y-auto">
+            <div className="flex items-center justify-between mb-6">
+              <h2 className="text-2xl font-semibold text-gray-800">Add New Property</h2>
+              <button
+                onClick={() => setShowAddModal(false)}
+                className="text-gray-400 hover:text-gray-600"
+              >
+                <i className="fas fa-times text-xl"></i>
+              </button>
+            </div>
+            <PropertyForm />
+            <div className="flex justify-end space-x-3 mt-6">
+              <button
+                onClick={() => setShowAddModal(false)}
+                className="px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleSubmit}
+                className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+              >
+                Add Property
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Edit Property Modal */}
+      {showEditModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 w-full max-w-4xl max-h-[90vh] overflow-y-auto">
+            <div className="flex items-center justify-between mb-6">
+              <h2 className="text-2xl font-semibold text-gray-800">Edit Property</h2>
+              <button
+                onClick={() => setShowEditModal(false)}
+                className="text-gray-400 hover:text-gray-600"
+              >
+                <i className="fas fa-times text-xl"></i>
+              </button>
+            </div>
+            <PropertyForm />
+            <div className="flex justify-end space-x-3 mt-6">
+              <button
+                onClick={() => setShowEditModal(false)}
+                className="px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleSubmit}
+                className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+              >
+                Update Property
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* View Property Modal */}
+      {showViewModal && selectedProperty && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 w-full max-w-4xl max-h-[90vh] overflow-y-auto">
+            <div className="flex items-center justify-between mb-6">
+              <h2 className="text-2xl font-semibold text-gray-800">{selectedProperty.name}</h2>
+              <button
+                onClick={() => setShowViewModal(false)}
+                className="text-gray-400 hover:text-gray-600"
+              >
+                <i className="fas fa-times text-xl"></i>
+              </button>
+            </div>
+            <div className="space-y-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                  <img
+                    src={selectedProperty.images[0] || '/placeholder.svg'}
+                    alt={selectedProperty.name}
+                    className="w-full h-64 object-cover rounded-lg"
+                  />
+                </div>
+                <div className="space-y-4">
+                  <div>
+                    <h3 className="text-lg font-semibold">{selectedProperty.name}</h3>
+                    <p className="text-gray-600">{selectedProperty.location}, {selectedProperty.city}</p>
+                  </div>
+                  <div className="flex items-center space-x-4">
+                    <span className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(selectedProperty.status)}`}>
+                      {selectedProperty.status.charAt(0).toUpperCase() + selectedProperty.status.slice(1)}
+                    </span>
+                    <span className="bg-gray-100 text-gray-800 px-2 py-1 rounded-full text-xs font-medium">
+                      {getTypeLabel(selectedProperty.type)}
+                    </span>
+                  </div>
+                  <div className="grid grid-cols-2 gap-4 text-sm">
+                    <div>
+                      <span className="font-medium">Price:</span> ₹{selectedProperty.price.toLocaleString()}/day
+                    </div>
+                    <div>
+                      <span className="font-medium">Capacity:</span> {selectedProperty.capacity} guests
+                    </div>
+                    <div>
+                      <span className="font-medium">Bedrooms:</span> {selectedProperty.bedrooms}
+                    </div>
+                    <div>
+                      <span className="font-medium">Bathrooms:</span> {selectedProperty.bathrooms}
+                    </div>
+                  </div>
+                  <div className="text-sm">
+                    <span className="font-medium">Rating:</span> {selectedProperty.rating}/5
+                  </div>
+                </div>
+              </div>
+              <div>
+                <h4 className="font-medium mb-2">Description</h4>
+                <p className="text-gray-600">{selectedProperty.description}</p>
+              </div>
+              <div>
+                <h4 className="font-medium mb-2">Amenities</h4>
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
+                  {selectedProperty.amenities.map((amenity: string) => (
+                    <div key={amenity} className="flex items-center space-x-2 text-sm">
+                      <i className="fas fa-check text-green-500"></i>
+                      <span className="capitalize">{amenity}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
+                <div>
+                  <span className="font-medium">Total Bookings:</span> {selectedProperty.totalBookings}
+                </div>
+                <div>
+                  <span className="font-medium">Total Earnings:</span> ₹{selectedProperty.totalEarnings.toLocaleString()}
+                </div>
+                <div>
+                  <span className="font-medium">Created:</span> {new Date(selectedProperty.createdAt).toLocaleDateString()}
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
