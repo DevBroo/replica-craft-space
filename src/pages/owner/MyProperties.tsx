@@ -30,6 +30,8 @@ const MyProperties: React.FC<{
     description: '',
     amenities: [] as string[]
   });
+  const [selectedImages, setSelectedImages] = useState<File[]>([]);
+  const [imagePreviewUrls, setImagePreviewUrls] = useState<string[]>([]);
 
   // Mock data for venteskraft@gmail.com owner
   const mockProperties = [
@@ -255,6 +257,31 @@ const MyProperties: React.FC<{
     }));
   };
 
+  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(e.target.files || []);
+    const validFiles = files.filter(file => 
+      file.type.startsWith('image/') && file.size <= 10 * 1024 * 1024 // 10MB limit
+    );
+
+    if (validFiles.length > 0) {
+      setSelectedImages(prev => [...prev, ...validFiles]);
+      
+      // Create preview URLs
+      validFiles.forEach(file => {
+        const reader = new FileReader();
+        reader.onload = (e) => {
+          setImagePreviewUrls(prev => [...prev, e.target?.result as string]);
+        };
+        reader.readAsDataURL(file);
+      });
+    }
+  };
+
+  const removeImage = (index: number) => {
+    setSelectedImages(prev => prev.filter((_, i) => i !== index));
+    setImagePreviewUrls(prev => prev.filter((_, i) => i !== index));
+  };
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
@@ -273,7 +300,7 @@ const MyProperties: React.FC<{
       rating: editingProperty ? editingProperty.rating : 0,
       totalBookings: editingProperty ? editingProperty.totalBookings : 0,
       totalEarnings: editingProperty ? editingProperty.totalEarnings : 0,
-      images: ['/placeholder.svg'],
+      images: imagePreviewUrls.length > 0 ? imagePreviewUrls : ['/placeholder.svg'],
       amenities: formData.amenities,
       description: formData.description,
       createdAt: editingProperty ? editingProperty.createdAt : new Date().toISOString().split('T')[0],
@@ -323,6 +350,8 @@ const MyProperties: React.FC<{
       description: '',
       amenities: []
     });
+    setSelectedImages([]);
+    setImagePreviewUrls([]);
   };
 
 
@@ -707,10 +736,45 @@ const MyProperties: React.FC<{
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">Property Images</label>
                   <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center">
-                    <i className="fas fa-upload text-gray-400 text-2xl mb-2"></i>
-                    <p className="text-sm text-gray-600">Click to upload images or drag and drop</p>
-                    <p className="text-xs text-gray-500 mt-1">PNG, JPG up to 10MB</p>
+                    <input
+                      type="file"
+                      multiple
+                      accept="image/*"
+                      onChange={handleImageUpload}
+                      className="hidden"
+                      id="image-upload-add"
+                    />
+                    <label htmlFor="image-upload-add" className="cursor-pointer">
+                      <i className="fas fa-upload text-gray-400 text-2xl mb-2"></i>
+                      <p className="text-sm text-gray-600">Click to upload images or drag and drop</p>
+                      <p className="text-xs text-gray-500 mt-1">PNG, JPG up to 10MB</p>
+                    </label>
                   </div>
+                  
+                  {/* Image Previews */}
+                  {imagePreviewUrls.length > 0 && (
+                    <div className="mt-4">
+                      <h4 className="text-sm font-medium text-gray-700 mb-2">Uploaded Images:</h4>
+                      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                        {imagePreviewUrls.map((url, index) => (
+                          <div key={index} className="relative">
+                            <img
+                              src={url}
+                              alt={`Preview ${index + 1}`}
+                              className="w-full h-24 object-cover rounded-lg"
+                            />
+                            <button
+                              type="button"
+                              onClick={() => removeImage(index)}
+                              className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs hover:bg-red-600"
+                            >
+                              <i className="fas fa-times"></i>
+                            </button>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
                 </div>
               </form>
             <div className="flex justify-end space-x-3 mt-6">
@@ -894,10 +958,45 @@ const MyProperties: React.FC<{
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">Property Images</label>
                   <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center">
-                    <i className="fas fa-upload text-gray-400 text-2xl mb-2"></i>
-                    <p className="text-sm text-gray-600">Click to upload images or drag and drop</p>
-                    <p className="text-xs text-gray-500 mt-1">PNG, JPG up to 10MB</p>
+                    <input
+                      type="file"
+                      multiple
+                      accept="image/*"
+                      onChange={handleImageUpload}
+                      className="hidden"
+                      id="image-upload-edit"
+                    />
+                    <label htmlFor="image-upload-edit" className="cursor-pointer">
+                      <i className="fas fa-upload text-gray-400 text-2xl mb-2"></i>
+                      <p className="text-sm text-gray-600">Click to upload images or drag and drop</p>
+                      <p className="text-xs text-gray-500 mt-1">PNG, JPG up to 10MB</p>
+                    </label>
                   </div>
+                  
+                  {/* Image Previews */}
+                  {imagePreviewUrls.length > 0 && (
+                    <div className="mt-4">
+                      <h4 className="text-sm font-medium text-gray-700 mb-2">Uploaded Images:</h4>
+                      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                        {imagePreviewUrls.map((url, index) => (
+                          <div key={index} className="relative">
+                            <img
+                              src={url}
+                              alt={`Preview ${index + 1}`}
+                              className="w-full h-24 object-cover rounded-lg"
+                            />
+                            <button
+                              type="button"
+                              onClick={() => removeImage(index)}
+                              className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs hover:bg-red-600"
+                            >
+                              <i className="fas fa-times"></i>
+                            </button>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
                 </div>
               </form>
             <div className="flex justify-end space-x-3 mt-6">
