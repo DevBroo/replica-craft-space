@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Database Properties</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .test-card {
+            background: white;
+            border-radius: 8px;
+            padding: 20px;
+            margin: 20px 0;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .test-button {
+            background: #2196f3;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            margin: 5px;
+            text-decoration: none;
+            display: inline-block;
+        }
+        .test-button:hover {
+            background: #1976d2;
+        }
+        .success {
+            color: #4caf50;
+            font-weight: bold;
+        }
+        .warning {
+            color: #ff9800;
+            font-weight: bold;
+        }
+        .error {
+            color: #f44336;
+            font-weight: bold;
+        }
+        .info {
+            background: #e3f2fd;
+            border-left: 4px solid #2196f3;
+            padding: 15px;
+            margin: 15px 0;
+        }
+        .step {
+            background: #f3e5f5;
+            border-left: 4px solid #9c27b0;
+            padding: 15px;
+            margin: 15px 0;
+        }
+    </style>
+</head>
+<body>
+    <h1>🗄️ Test Database Properties</h1>
+    
+    <div class="test-card">
+        <h2>📋 Database Integration Status</h2>
+        
+        <div class="success">
+            <strong>✅ Completed:</strong> Database integration for properties
+        </div>
+        
+        <div class="info">
+            <strong>What's Changed:</strong>
+            <ul>
+                <li>✅ Removed all mock/dummy properties from MyProperties component</li>
+                <li>✅ Removed mock properties from public Properties page</li>
+                <li>✅ Properties now load only from Supabase database</li>
+                <li>✅ All CRUD operations use database instead of localStorage</li>
+                <li>✅ Fallback to localStorage only if database fails</li>
+            </ul>
+        </div>
+    </div>
+
+    <div class="test-card">
+        <h2>🚀 Test Steps</h2>
+        
+        <div class="step">
+            <h3>Step 1: Test Owner Dashboard</h3>
+            <a href="http://localhost:8082/owner/view" class="test-button" target="_blank">Open Owner Dashboard</a>
+            <p>Check if properties load from database (should be empty initially)</p>
+        </div>
+        
+        <div class="step">
+            <h3>Step 2: Add a Test Property</h3>
+            <p>In the owner dashboard:</p>
+            <ol>
+                <li>Click "Add Property"</li>
+                <li>Fill in property details</li>
+                <li>Upload an image</li>
+                <li>Click "Add Property"</li>
+                <li>Property should be saved to database</li>
+            </ol>
+        </div>
+        
+        <div class="step">
+            <h3>Step 3: Check Public Website</h3>
+            <a href="http://localhost:8082/properties" class="test-button" target="_blank">Open Properties Page</a>
+            <p>Check if the new property appears (if status is "Active")</p>
+        </div>
+        
+        <div class="step">
+            <h3>Step 4: Test Property Details</h3>
+            <p>Click "View Details" on any property to see the detail page</p>
+        </div>
+        
+        <div class="step">
+            <h3>Step 5: Test Property Management</h3>
+            <p>In owner dashboard:</p>
+            <ul>
+                <li>Edit property details</li>
+                <li>Change property status</li>
+                <li>Delete property</li>
+                <li>All changes should persist in database</li>
+            </ul>
+        </div>
+    </div>
+
+    <div class="test-card">
+        <h2>✅ Expected Results</h2>
+        
+        <h3>✅ Owner Dashboard:</h3>
+        <ul>
+            <li class="success">Should load properties from database</li>
+            <li class="success">No mock properties should appear</li>
+            <li class="success">Add/Edit/Delete should work with database</li>
+            <li class="success">No "Reset" button (removed)</li>
+        </ul>
+        
+        <h3>✅ Public Properties Page:</h3>
+        <ul>
+            <li class="success">Should show only database properties</li>
+            <li class="success">No dummy properties like "Sunset Villa Resort"</li>
+            <li class="success">Only "Active" status properties should show</li>
+            <li class="success">Images should display correctly</li>
+        </ul>
+        
+        <h3>✅ Property Details:</h3>
+        <ul>
+            <li class="success">Should load property data from database</li>
+            <li class="success">Should show uploaded images</li>
+            <li class="success">Should display all property information</li>
+        </ul>
+    </div>
+
+    <div class="test-card">
+        <h2>🔧 Database Schema</h2>
+        
+        <h3>Properties Table:</h3>
+        <ul>
+            <li><strong>id:</strong> Unique property identifier</li>
+            <li><strong>owner_id:</strong> User ID of property owner</li>
+            <li><strong>title:</strong> Property name</li>
+            <li><strong>description:</strong> Property description</li>
+            <li><strong>location:</strong> JSON with city, state, address</li>
+            <li><strong>property_type:</strong> villa, resort, etc.</li>
+            <li><strong>amenities:</strong> Array of amenities</li>
+            <li><strong>pricing:</strong> JSON with daily_rate and currency</li>
+            <li><strong>images:</strong> Array of image URLs</li>
+            <li><strong>max_guests:</strong> Guest capacity</li>
+            <li><strong>bedrooms:</strong> Number of bedrooms</li>
+            <li><strong>bathrooms:</strong> Number of bathrooms</li>
+            <li><strong>status:</strong> pending, approved, rejected, inactive</li>
+            <li><strong>rating:</strong> Property rating</li>
+            <li><strong>review_count:</strong> Number of reviews</li>
+        </ul>
+    </div>
+
+    <div class="test-card">
+        <h2>📞 Report Results</h2>
+        <p>After testing, report:</p>
+        <ul>
+            <li>✅ Whether owner dashboard loads without errors</li>
+            <li>✅ Whether you can add a new property</li>
+            <li>✅ Whether the property appears on public website</li>
+            <li>✅ Whether property details page works</li>
+            <li>✅ Whether edit/delete operations work</li>
+            <li>❌ Any error messages in browser console</li>
+            <li>❌ Any issues with image uploads</li>
+        </ul>
+    </div>
+
+    <script>
+        console.log('🗄️ Database Properties Test Page Loaded');
+        console.log('📋 Testing database integration for properties');
+        console.log('🎯 All dummy properties have been removed');
+        console.log('🚀 Ready to test real database functionality');
+    </script>
+</body>
+</html>
