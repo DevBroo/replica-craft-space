@@ -1,62 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Textarea } from '@/components/ui/textarea';
-import { Label } from '@/components/ui/label';
-import { 
-  Plus, 
-  Search, 
-  Filter, 
-  Edit, 
-  Trash2, 
-  Eye, 
-  Calendar, 
-  MapPin, 
-  Star, 
-  DollarSign,
-  Users,
-  Bed,
-  Bath,
-  Wifi,
-  Car,
-  Utensils,
-  Snowflake,
-  Tv,
-  Dumbbell,
-  Pool,
-  Camera,
-  Upload,
-  X
-} from 'lucide-react';
-
-interface Property {
-  id: string;
-  name: string;
-  type: 'villa' | 'resort' | 'farmhouse' | 'homestay' | 'heritage' | 'day-picnic';
-  location: string;
-  city: string;
-  state: string;
-  price: number;
-  capacity: number;
-  bedrooms: number;
-  bathrooms: number;
-  status: 'active' | 'inactive' | 'pending' | 'maintenance';
-  rating: number;
-  totalBookings: number;
-  totalEarnings: number;
-  images: string[];
-  amenities: string[];
-  description: string;
-  createdAt: string;
-  lastUpdated: string;
-}
 
 const MyProperties: React.FC<{
   sidebarCollapsed: boolean;
@@ -67,17 +11,10 @@ const MyProperties: React.FC<{
   const navigate = useNavigate();
   const { user, isAuthenticated, loading } = useAuth();
   
-  const [properties, setProperties] = useState<Property[]>([]);
-  const [filteredProperties, setFilteredProperties] = useState<Property[]>([]);
-  const [searchTerm, setSearchTerm] = useState('');
-  const [statusFilter, setStatusFilter] = useState<string>('all');
-  const [typeFilter, setTypeFilter] = useState<string>('all');
-  const [showAddProperty, setShowAddProperty] = useState(false);
-  const [editingProperty, setEditingProperty] = useState<Property | null>(null);
-  const [selectedProperty, setSelectedProperty] = useState<Property | null>(null);
+  const [properties, setProperties] = useState<any[]>([]);
 
   // Mock data for demonstration
-  const mockProperties: Property[] = [
+  const mockProperties = [
     {
       id: '1',
       name: 'Sunset Villa Paradise',
@@ -93,7 +30,7 @@ const MyProperties: React.FC<{
       rating: 4.8,
       totalBookings: 45,
       totalEarnings: 675000,
-      images: ['/lovable-uploads/beachside-paradise.jpg'],
+      images: ['/placeholder.svg'],
       amenities: ['wifi', 'ac', 'parking', 'kitchen', 'pool', 'gym'],
       description: 'Luxurious beachfront villa with stunning ocean views and modern amenities.',
       createdAt: '2024-01-15',
@@ -114,7 +51,7 @@ const MyProperties: React.FC<{
       rating: 4.6,
       totalBookings: 32,
       totalEarnings: 256000,
-      images: ['/lovable-uploads/mountain-cottage.jpg'],
+      images: ['/placeholder.svg'],
       amenities: ['wifi', 'heating', 'kitchen', 'fireplace'],
       description: 'Cozy mountain cottage with panoramic views of snow-capped peaks.',
       createdAt: '2024-02-20',
@@ -135,7 +72,7 @@ const MyProperties: React.FC<{
       rating: 0,
       totalBookings: 0,
       totalEarnings: 0,
-      images: ['/lovable-uploads/royal-heritage-villa.jpg'],
+      images: ['/placeholder.svg'],
       amenities: ['wifi', 'ac', 'parking', 'kitchen', 'pool', 'spa'],
       description: 'Magnificent heritage palace with royal architecture and luxury amenities.',
       createdAt: '2024-08-01',
@@ -151,33 +88,7 @@ const MyProperties: React.FC<{
     
     // Load mock data
     setProperties(mockProperties);
-    setFilteredProperties(mockProperties);
   }, [isAuthenticated, user, loading, navigate]);
-
-  useEffect(() => {
-    let filtered = properties;
-    
-    // Apply search filter
-    if (searchTerm) {
-      filtered = filtered.filter(property =>
-        property.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        property.location.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        property.city.toLowerCase().includes(searchTerm.toLowerCase())
-      );
-    }
-    
-    // Apply status filter
-    if (statusFilter !== 'all') {
-      filtered = filtered.filter(property => property.status === statusFilter);
-    }
-    
-    // Apply type filter
-    if (typeFilter !== 'all') {
-      filtered = filtered.filter(property => property.type === typeFilter);
-    }
-    
-    setFilteredProperties(filtered);
-  }, [properties, searchTerm, statusFilter, typeFilter]);
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -200,164 +111,6 @@ const MyProperties: React.FC<{
       default: return type;
     }
   };
-
-  const getAmenityIcon = (amenity: string) => {
-    switch (amenity) {
-      case 'wifi': return <Wifi className="w-4 h-4" />;
-      case 'ac': return <Snowflake className="w-4 h-4" />;
-      case 'parking': return <Car className="w-4 h-4" />;
-      case 'kitchen': return <Utensils className="w-4 h-4" />;
-      case 'pool': return <Pool className="w-4 h-4" />;
-      case 'gym': return <Dumbbell className="w-4 h-4" />;
-      case 'tv': return <Tv className="w-4 h-4" />;
-      case 'heating': return <Snowflake className="w-4 h-4" />;
-      case 'fireplace': return <Snowflake className="w-4 h-4" />;
-      case 'spa': return <Snowflake className="w-4 h-4" />;
-      default: return <Star className="w-4 h-4" />;
-    }
-  };
-
-  const handleAddProperty = () => {
-    setShowAddProperty(true);
-    setEditingProperty(null);
-  };
-
-  const handleEditProperty = (property: Property) => {
-    setEditingProperty(property);
-    setShowAddProperty(true);
-  };
-
-  const handleDeleteProperty = (propertyId: string) => {
-    if (confirm('Are you sure you want to delete this property?')) {
-      setProperties(properties.filter(p => p.id !== propertyId));
-    }
-  };
-
-  const handleViewProperty = (property: Property) => {
-    setSelectedProperty(property);
-  };
-
-  const PropertyForm = () => (
-    <div className="space-y-6">
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <div>
-          <Label htmlFor="name">Property Name</Label>
-          <Input 
-            id="name" 
-            placeholder="Enter property name"
-            defaultValue={editingProperty?.name || ''}
-          />
-        </div>
-        <div>
-          <Label htmlFor="type">Property Type</Label>
-          <Select defaultValue={editingProperty?.type || 'villa'}>
-            <SelectTrigger>
-              <SelectValue placeholder="Select property type" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="villa">Villa</SelectItem>
-              <SelectItem value="resort">Resort</SelectItem>
-              <SelectItem value="farmhouse">Farmhouse</SelectItem>
-              <SelectItem value="homestay">Homestay</SelectItem>
-              <SelectItem value="heritage">Heritage Palace</SelectItem>
-              <SelectItem value="day-picnic">Day Picnic</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
-        <div>
-          <Label htmlFor="location">Location</Label>
-          <Input 
-            id="location" 
-            placeholder="Enter location"
-            defaultValue={editingProperty?.location || ''}
-          />
-        </div>
-        <div>
-          <Label htmlFor="city">City</Label>
-          <Input 
-            id="city" 
-            placeholder="Enter city"
-            defaultValue={editingProperty?.city || ''}
-          />
-        </div>
-        <div>
-          <Label htmlFor="state">State</Label>
-          <Input 
-            id="state" 
-            placeholder="Enter state"
-            defaultValue={editingProperty?.state || ''}
-          />
-        </div>
-        <div>
-          <Label htmlFor="price">Price per Day (₹)</Label>
-          <Input 
-            id="price" 
-            type="number"
-            placeholder="Enter price"
-            defaultValue={editingProperty?.price || ''}
-          />
-        </div>
-        <div>
-          <Label htmlFor="capacity">Capacity</Label>
-          <Input 
-            id="capacity" 
-            type="number"
-            placeholder="Enter capacity"
-            defaultValue={editingProperty?.capacity || ''}
-          />
-        </div>
-        <div>
-          <Label htmlFor="bedrooms">Bedrooms</Label>
-          <Input 
-            id="bedrooms" 
-            type="number"
-            placeholder="Enter number of bedrooms"
-            defaultValue={editingProperty?.bedrooms || ''}
-          />
-        </div>
-        <div>
-          <Label htmlFor="bathrooms">Bathrooms</Label>
-          <Input 
-            id="bathrooms" 
-            type="number"
-            placeholder="Enter number of bathrooms"
-            defaultValue={editingProperty?.bathrooms || ''}
-          />
-        </div>
-      </div>
-      
-      <div>
-        <Label htmlFor="description">Description</Label>
-        <Textarea 
-          id="description" 
-          placeholder="Enter property description"
-          rows={4}
-          defaultValue={editingProperty?.description || ''}
-        />
-      </div>
-
-      <div>
-        <Label>Amenities</Label>
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-2">
-          {['wifi', 'ac', 'parking', 'kitchen', 'pool', 'gym', 'tv', 'spa'].map(amenity => (
-            <div key={amenity} className="flex items-center space-x-2">
-              <input type="checkbox" id={amenity} className="rounded" />
-              <Label htmlFor={amenity} className="text-sm capitalize">{amenity}</Label>
-            </div>
-          ))}
-        </div>
-      </div>
-
-      <div>
-        <Label>Property Images</Label>
-        <div className="mt-2 border-2 border-dashed border-gray-300 rounded-lg p-6 text-center">
-          <Upload className="w-8 h-8 mx-auto text-gray-400 mb-2" />
-          <p className="text-sm text-gray-600">Click to upload images or drag and drop</p>
-          <p className="text-xs text-gray-500 mt-1">PNG, JPG up to 10MB</p>
-        </div>
-      </div>
-    </div>
-  );
 
   if (loading) {
     return (
@@ -423,113 +176,68 @@ const MyProperties: React.FC<{
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-4">
               <h1 className="text-2xl font-semibold text-gray-800">My Properties</h1>
-              <Badge variant="secondary" className="bg-blue-100 text-blue-800">
-                {filteredProperties.length} Properties
-              </Badge>
+              <span className="bg-blue-100 text-blue-800 px-3 py-1 rounded-full text-sm font-medium">
+                {properties.length} Properties
+              </span>
             </div>
             <div className="flex items-center space-x-4">
-              <Button onClick={handleAddProperty} className="bg-blue-600 hover:bg-blue-700">
-                <Plus className="w-4 h-4 mr-2" />
+              <button className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg flex items-center">
+                <i className="fas fa-plus mr-2"></i>
                 Add Property
-              </Button>
+              </button>
             </div>
           </div>
         </header>
 
         {/* Content */}
         <main className="p-6">
-          {/* Filters and Search */}
-          <div className="bg-white rounded-lg shadow-sm p-6 mb-6">
-            <div className="flex flex-col md:flex-row gap-4">
-              <div className="flex-1">
-                <div className="relative">
-                  <Search className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
-                  <Input
-                    placeholder="Search properties..."
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                    className="pl-10"
-                  />
-                </div>
-              </div>
-              <Select value={statusFilter} onValueChange={setStatusFilter}>
-                <SelectTrigger className="w-full md:w-48">
-                  <SelectValue placeholder="Filter by status" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All Status</SelectItem>
-                  <SelectItem value="active">Active</SelectItem>
-                  <SelectItem value="inactive">Inactive</SelectItem>
-                  <SelectItem value="pending">Pending</SelectItem>
-                  <SelectItem value="maintenance">Maintenance</SelectItem>
-                </SelectContent>
-              </Select>
-              <Select value={typeFilter} onValueChange={setTypeFilter}>
-                <SelectTrigger className="w-full md:w-48">
-                  <SelectValue placeholder="Filter by type" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All Types</SelectItem>
-                  <SelectItem value="villa">Villa</SelectItem>
-                  <SelectItem value="resort">Resort</SelectItem>
-                  <SelectItem value="farmhouse">Farmhouse</SelectItem>
-                  <SelectItem value="homestay">Homestay</SelectItem>
-                  <SelectItem value="heritage">Heritage Palace</SelectItem>
-                  <SelectItem value="day-picnic">Day Picnic</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
-
           {/* Properties Grid */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {filteredProperties.map((property) => (
-              <Card key={property.id} className="hover:shadow-lg transition-shadow">
-                <CardHeader className="p-0">
-                  <div className="relative">
-                    <img
-                      src={property.images[0] || '/placeholder.svg'}
-                      alt={property.name}
-                      className="w-full h-48 object-cover rounded-t-lg"
-                    />
-                    <div className="absolute top-4 left-4">
-                      <Badge className={getStatusColor(property.status)}>
-                        {property.status.charAt(0).toUpperCase() + property.status.slice(1)}
-                      </Badge>
-                    </div>
-                    <div className="absolute top-4 right-4">
-                      <Badge variant="secondary" className="bg-white/90 text-gray-800">
-                        {getTypeLabel(property.type)}
-                      </Badge>
-                    </div>
+            {properties.map((property) => (
+              <div key={property.id} className="bg-white rounded-lg shadow-sm hover:shadow-lg transition-shadow">
+                <div className="relative">
+                  <img
+                    src={property.images[0] || '/placeholder.svg'}
+                    alt={property.name}
+                    className="w-full h-48 object-cover rounded-t-lg"
+                  />
+                  <div className="absolute top-4 left-4">
+                    <span className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(property.status)}`}>
+                      {property.status.charAt(0).toUpperCase() + property.status.slice(1)}
+                    </span>
                   </div>
-                </CardHeader>
-                <CardContent className="p-6">
+                  <div className="absolute top-4 right-4">
+                    <span className="bg-white/90 text-gray-800 px-2 py-1 rounded-full text-xs font-medium">
+                      {getTypeLabel(property.type)}
+                    </span>
+                  </div>
+                </div>
+                <div className="p-6">
                   <div className="flex items-start justify-between mb-3">
                     <h3 className="text-lg font-semibold text-gray-800">{property.name}</h3>
                     <div className="flex items-center space-x-1">
-                      <Star className="w-4 h-4 text-yellow-400 fill-current" />
+                      <i className="fas fa-star text-yellow-400"></i>
                       <span className="text-sm font-medium">{property.rating}</span>
                     </div>
                   </div>
                   
                   <div className="flex items-center text-gray-600 mb-3">
-                    <MapPin className="w-4 h-4 mr-1" />
+                    <i className="fas fa-map-marker-alt mr-1"></i>
                     <span className="text-sm">{property.location}, {property.city}</span>
                   </div>
 
                   <div className="flex items-center justify-between mb-4">
                     <div className="flex items-center space-x-4 text-sm text-gray-600">
                       <div className="flex items-center">
-                        <Users className="w-4 h-4 mr-1" />
+                        <i className="fas fa-users mr-1"></i>
                         {property.capacity}
                       </div>
                       <div className="flex items-center">
-                        <Bed className="w-4 h-4 mr-1" />
+                        <i className="fas fa-bed mr-1"></i>
                         {property.bedrooms}
                       </div>
                       <div className="flex items-center">
-                        <Bath className="w-4 h-4 mr-1" />
+                        <i className="fas fa-bath mr-1"></i>
                         {property.bathrooms}
                       </div>
                     </div>
@@ -541,174 +249,50 @@ const MyProperties: React.FC<{
                   <div className="flex items-center justify-between mb-4">
                     <div className="text-sm text-gray-600">
                       <div className="flex items-center">
-                        <Calendar className="w-4 h-4 mr-1" />
+                        <i className="fas fa-calendar mr-1"></i>
                         {property.totalBookings} bookings
                       </div>
                     </div>
                     <div className="text-sm text-gray-600">
                       <div className="flex items-center">
-                        <DollarSign className="w-4 h-4 mr-1" />
+                        <i className="fas fa-dollar-sign mr-1"></i>
                         ₹{property.totalEarnings.toLocaleString()}
                       </div>
                     </div>
                   </div>
 
-                  <div className="flex items-center space-x-2 mb-4">
-                    {property.amenities.slice(0, 4).map((amenity) => (
-                      <div key={amenity} className="p-1 bg-gray-100 rounded" title={amenity}>
-                        {getAmenityIcon(amenity)}
-                      </div>
-                    ))}
-                    {property.amenities.length > 4 && (
-                      <div className="text-xs text-gray-500">+{property.amenities.length - 4} more</div>
-                    )}
-                  </div>
-
                   <div className="flex items-center space-x-2">
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => handleViewProperty(property)}
-                      className="flex-1"
-                    >
-                      <Eye className="w-4 h-4 mr-1" />
+                    <button className="flex-1 bg-gray-100 hover:bg-gray-200 text-gray-700 px-3 py-2 rounded text-sm">
+                      <i className="fas fa-eye mr-1"></i>
                       View
-                    </Button>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => handleEditProperty(property)}
-                    >
-                      <Edit className="w-4 h-4" />
-                    </Button>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => handleDeleteProperty(property.id)}
-                      className="text-red-600 hover:text-red-700"
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </Button>
+                    </button>
+                    <button className="bg-gray-100 hover:bg-gray-200 text-gray-700 px-3 py-2 rounded text-sm">
+                      <i className="fas fa-edit"></i>
+                    </button>
+                    <button className="bg-gray-100 hover:bg-gray-200 text-red-600 px-3 py-2 rounded text-sm">
+                      <i className="fas fa-trash"></i>
+                    </button>
                   </div>
-                </CardContent>
-              </Card>
+                </div>
+              </div>
             ))}
           </div>
 
-          {filteredProperties.length === 0 && (
+          {properties.length === 0 && (
             <div className="text-center py-12">
               <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
                 <i className="fas fa-home text-gray-400 text-2xl"></i>
               </div>
               <h3 className="text-lg font-medium text-gray-800 mb-2">No properties found</h3>
               <p className="text-gray-600 mb-4">Try adjusting your search or filters</p>
-              <Button onClick={handleAddProperty} className="bg-blue-600 hover:bg-blue-700">
-                <Plus className="w-4 h-4 mr-2" />
+              <button className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg">
+                <i className="fas fa-plus mr-2"></i>
                 Add Your First Property
-              </Button>
+              </button>
             </div>
           )}
         </main>
       </div>
-
-      {/* Add/Edit Property Dialog */}
-      <Dialog open={showAddProperty} onOpenChange={setShowAddProperty}>
-        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle>
-              {editingProperty ? 'Edit Property' : 'Add New Property'}
-            </DialogTitle>
-          </DialogHeader>
-          <PropertyForm />
-          <div className="flex justify-end space-x-2 pt-6">
-            <Button variant="outline" onClick={() => setShowAddProperty(false)}>
-              Cancel
-            </Button>
-            <Button className="bg-blue-600 hover:bg-blue-700">
-              {editingProperty ? 'Update Property' : 'Add Property'}
-            </Button>
-          </div>
-        </DialogContent>
-      </Dialog>
-
-      {/* Property Details Dialog */}
-      <Dialog open={!!selectedProperty} onOpenChange={() => setSelectedProperty(null)}>
-        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
-          {selectedProperty && (
-            <>
-              <DialogHeader>
-                <DialogTitle>{selectedProperty.name}</DialogTitle>
-              </DialogHeader>
-              <div className="space-y-6">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <div>
-                    <img
-                      src={selectedProperty.images[0] || '/placeholder.svg'}
-                      alt={selectedProperty.name}
-                      className="w-full h-64 object-cover rounded-lg"
-                    />
-                  </div>
-                  <div className="space-y-4">
-                    <div>
-                      <h3 className="text-lg font-semibold">{selectedProperty.name}</h3>
-                      <p className="text-gray-600">{selectedProperty.location}, {selectedProperty.city}</p>
-                    </div>
-                    <div className="flex items-center space-x-4">
-                      <Badge className={getStatusColor(selectedProperty.status)}>
-                        {selectedProperty.status.charAt(0).toUpperCase() + selectedProperty.status.slice(1)}
-                      </Badge>
-                      <Badge variant="secondary">{getTypeLabel(selectedProperty.type)}</Badge>
-                    </div>
-                    <div className="grid grid-cols-2 gap-4 text-sm">
-                      <div>
-                        <span className="font-medium">Price:</span> ₹{selectedProperty.price.toLocaleString()}/day
-                      </div>
-                      <div>
-                        <span className="font-medium">Capacity:</span> {selectedProperty.capacity} guests
-                      </div>
-                      <div>
-                        <span className="font-medium">Bedrooms:</span> {selectedProperty.bedrooms}
-                      </div>
-                      <div>
-                        <span className="font-medium">Bathrooms:</span> {selectedProperty.bathrooms}
-                      </div>
-                    </div>
-                    <div className="text-sm">
-                      <span className="font-medium">Rating:</span> {selectedProperty.rating}/5
-                    </div>
-                  </div>
-                </div>
-                <div>
-                  <h4 className="font-medium mb-2">Description</h4>
-                  <p className="text-gray-600">{selectedProperty.description}</p>
-                </div>
-                <div>
-                  <h4 className="font-medium mb-2">Amenities</h4>
-                  <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
-                    {selectedProperty.amenities.map((amenity) => (
-                      <div key={amenity} className="flex items-center space-x-2 text-sm">
-                        {getAmenityIcon(amenity)}
-                        <span className="capitalize">{amenity}</span>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
-                  <div>
-                    <span className="font-medium">Total Bookings:</span> {selectedProperty.totalBookings}
-                  </div>
-                  <div>
-                    <span className="font-medium">Total Earnings:</span> ₹{selectedProperty.totalEarnings.toLocaleString()}
-                  </div>
-                  <div>
-                    <span className="font-medium">Created:</span> {new Date(selectedProperty.createdAt).toLocaleDateString()}
-                  </div>
-                </div>
-              </div>
-            </>
-          )}
-        </DialogContent>
-      </Dialog>
     </div>
   );
 };
