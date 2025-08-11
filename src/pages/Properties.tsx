@@ -50,61 +50,60 @@ const Properties: React.FC = () => {
   const [showFilters, setShowFilters] = useState(false);
   const { user, isAuthenticated, logout } = useAuth();
 
+  // Load properties from localStorage for venteskraft@gmail.com
+  const getVenteskraftProperties = () => {
+    try {
+      const storageKey = 'properties_venteskraft@gmail.com';
+      const savedProperties = localStorage.getItem(storageKey);
+      if (savedProperties) {
+        const parsedProperties = JSON.parse(savedProperties);
+        // Filter to show only active properties on public website
+        return parsedProperties.filter((property: any) => property.status === 'active');
+      }
+    } catch (error) {
+      console.log('Error loading venteskraft properties:', error);
+    }
+    return [];
+  };
+
+  const venteskraftProperties = getVenteskraftProperties();
+
   const properties = [
-    // Venteskraft Properties (Featured)
+    // Venteskraft Properties (Featured) - Load from localStorage
+    ...venteskraftProperties.map((property: any, index: number) => ({
+      id: property.id,
+      name: property.name,
+      location: property.city,
+      rating: property.rating,
+      reviews: property.totalBookings,
+      price: property.price,
+      originalPrice: property.price * 1.1, // 10% markup for original price
+      image: beachsideParadise, // Use default image for now
+      amenities: property.amenities.map((a: string) => a.charAt(0).toUpperCase() + a.slice(1)),
+      type: property.type.charAt(0).toUpperCase() + property.type.slice(1),
+      guests: property.capacity,
+      bedrooms: property.bedrooms,
+      bathrooms: property.bathrooms,
+      featured: true,
+      ownerEmail: property.ownerEmail,
+      description: property.description
+    })),
+    // Original Properties
     {
-      id: 1,
-      name: 'Luxury Beach Villa - Goa',
+      id: 4,
+      name: 'Sunset Villa Resort',
       location: 'Goa',
-      rating: 4.9,
-      reviews: 67,
-      price: 18000,
-      originalPrice: 20000,
-      image: beachsideParadise,
-      amenities: ['Pool', 'WiFi', 'Parking', 'Kitchen', 'AC', 'Gym', 'TV', 'Spa'],
+      rating: 4.8,
+      reviews: 245,
+      price: 2500,
+      originalPrice: 3200,
+      image: sunsetVillaResort,
+      amenities: ['Pool', 'WiFi', 'Parking', 'Kitchen', 'AC'],
       type: 'Villa',
-      guests: 10,
-      bedrooms: 5,
-      bathrooms: 4,
-      featured: true,
-      ownerEmail: 'venteskraft@gmail.com',
-      description: 'Exclusive beachfront villa with private pool, stunning ocean views, and luxury amenities. Perfect for family vacations and corporate retreats.'
-    },
-    {
-      id: 2,
-      name: 'Mountain View Resort - Manali',
-      location: 'Manali',
-      rating: 4.7,
-      reviews: 89,
-      price: 12000,
-      originalPrice: 14000,
-      image: mountainCottage,
-      amenities: ['Fireplace', 'WiFi', 'Kitchen', 'Heating', 'Parking', 'Gym', 'Spa'],
-      type: 'Resort',
-      guests: 15,
-      bedrooms: 8,
-      bathrooms: 6,
-      featured: true,
-      ownerEmail: 'venteskraft@gmail.com',
-      description: 'Premium mountain resort with panoramic views of snow-capped peaks. Features luxury accommodations, spa facilities, and adventure activities.'
-    },
-    {
-      id: 3,
-      name: 'Heritage Palace - Jaipur',
-      location: 'Jaipur',
-      rating: 0,
-      reviews: 0,
-      price: 35000,
-      originalPrice: 40000,
-      image: royalHeritageVilla,
-      amenities: ['Pool', 'Garden', 'WiFi', 'Parking', 'Heritage', 'Spa', 'TV', 'Fireplace'],
-      type: 'Heritage',
-      guests: 20,
-      bedrooms: 12,
-      bathrooms: 8,
-      featured: true,
-      ownerEmail: 'venteskraft@gmail.com',
-      description: 'Magnificent heritage palace with royal architecture, traditional Rajasthani design, and modern luxury amenities. Perfect for royal weddings and events.'
+      guests: 8,
+      bedrooms: 3,
+      bathrooms: 2,
+      featured: false
     },
     // Original Properties
     {

@@ -208,6 +208,20 @@ const MyProperties: React.FC<{
     }
   };
 
+  const handleStatusChange = (propertyId: string, newStatus: string) => {
+    const updatedProperties = properties.map(p => 
+      p.id === propertyId ? { ...p, status: newStatus } : p
+    );
+    setProperties(updatedProperties);
+    
+    // Save to localStorage
+    if (user && user.email) {
+      const storageKey = `properties_${user.email}`;
+      localStorage.setItem(storageKey, JSON.stringify(updatedProperties));
+      console.log(`💾 Property status changed to ${newStatus} and saved to localStorage`);
+    }
+  };
+
   const resetToInitialProperties = () => {
     if (confirm('Are you sure you want to reset to initial properties? This will remove all your changes.')) {
       if (user && user.email) {
@@ -631,6 +645,18 @@ const MyProperties: React.FC<{
                     </div>
                   </div>
 
+                  <div className="flex items-center space-x-2 mb-3">
+                    <select
+                      value={property.status}
+                      onChange={(e) => handleStatusChange(property.id, e.target.value)}
+                      className="text-xs px-2 py-1 border border-gray-300 rounded bg-white"
+                    >
+                      <option value="pending">Pending</option>
+                      <option value="active">Active</option>
+                      <option value="inactive">Inactive</option>
+                      <option value="maintenance">Maintenance</option>
+                    </select>
+                  </div>
                   <div className="flex items-center space-x-2">
                     <button 
                       onClick={() => handleViewProperty(property)}

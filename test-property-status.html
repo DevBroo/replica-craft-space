@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Property Status & Public Visibility</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .test-card {
+            background: white;
+            border-radius: 8px;
+            padding: 20px;
+            margin: 20px 0;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .test-button {
+            background: #2196f3;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            margin: 5px;
+            text-decoration: none;
+            display: inline-block;
+        }
+        .test-button:hover {
+            background: #1976d2;
+        }
+        .success {
+            color: #4caf50;
+            font-weight: bold;
+        }
+        .warning {
+            color: #ff9800;
+            font-weight: bold;
+        }
+        .info {
+            background: #e3f2fd;
+            border-left: 4px solid #2196f3;
+            padding: 15px;
+            margin: 15px 0;
+        }
+        .step {
+            background: #f3e5f5;
+            border-left: 4px solid #9c27b0;
+            padding: 15px;
+            margin: 15px 0;
+        }
+        .status-pending {
+            background: #fff3cd;
+            border-left: 4px solid #ffc107;
+            padding: 15px;
+            margin: 15px 0;
+        }
+        .status-active {
+            background: #d4edda;
+            border-left: 4px solid #28a745;
+            padding: 15px;
+            margin: 15px 0;
+        }
+    </style>
+</head>
+<body>
+    <h1>🔧 Test Property Status & Public Visibility</h1>
+    
+    <div class="test-card">
+        <h2>📋 Problem & Solution</h2>
+        
+        <div class="status-pending">
+            <strong>❌ Problem:</strong> Your "jjhd" property has "Pending" status, so it's not showing on the public website.
+        </div>
+        
+        <div class="status-active">
+            <strong>✅ Solution:</strong> Change the property status from "Pending" to "Active" to make it visible publicly.
+        </div>
+        
+        <div class="info">
+            <strong>How it works:</strong> Only properties with "Active" status are displayed on the public website. Properties with "Pending", "Inactive", or "Maintenance" status are only visible in your owner dashboard.
+        </div>
+    </div>
+
+    <div class="test-card">
+        <h2>🚀 Test Steps</h2>
+        
+        <div class="step">
+            <h3>Step 1: Access My Properties</h3>
+            <a href="http://localhost:8082/owner/view" class="test-button" target="_blank">Open Owner Dashboard</a>
+            <p>Go to "My Properties" section</p>
+        </div>
+        
+        <div class="step">
+            <h3>Step 2: Find Your "jjhd" Property</h3>
+            <p>Look for the property card with:</p>
+            <ul>
+                <li><strong>Name:</strong> "jjhd"</li>
+                <li><strong>Location:</strong> "ddd, dd"</li>
+                <li><strong>Price:</strong> ₹22</li>
+                <li><strong>Status:</strong> Yellow "Pending" tag</li>
+            </ul>
+        </div>
+        
+        <div class="step">
+            <h3>Step 3: Change Status to Active</h3>
+            <p>On the "jjhd" property card:</p>
+            <ol>
+                <li>Find the <strong>status dropdown</strong> (small select box)</li>
+                <li>Click on it and change from "Pending" to "Active"</li>
+                <li>The status should change immediately</li>
+                <li>Console should show: "💾 Property status changed to active and saved to localStorage"</li>
+            </ol>
+        </div>
+        
+        <div class="step">
+            <h3>Step 4: Check Public Website</h3>
+            <a href="http://localhost:8082/properties" class="test-button" target="_blank">Open Properties Page</a>
+            <p>Your "jjhd" property should now be visible on the public website!</p>
+        </div>
+        
+        <div class="step">
+            <h3>Step 5: Verify Public Visibility</h3>
+            <p>On the public Properties page:</p>
+            <ul>
+                <li>Look for "jjhd" property in the listings</li>
+                <li>It should appear with the correct details</li>
+                <li>It should be marked as "Featured"</li>
+                <li>Click on it to view details</li>
+            </ul>
+        </div>
+    </div>
+
+    <div class="test-card">
+        <h2>✅ Expected Results</h2>
+        
+        <h3>✅ After Changing Status to Active:</h3>
+        <ul>
+            <li class="success">Property status should change from "Pending" to "Active"</li>
+            <li class="success">Status badge should change from yellow to green</li>
+            <li class="success">Console should show status change confirmation</li>
+            <li class="success">Property should appear on public Properties page</li>
+            <li class="success">Property should be searchable and filterable</li>
+        </ul>
+        
+        <h3>✅ Public Website Changes:</h3>
+        <ul>
+            <li class="success">"jjhd" property should be visible in property listings</li>
+            <li class="success">Property should show correct name, price, and details</li>
+            <li class="success">Property should be marked as "Featured"</li>
+            <li class="success">Property detail page should be accessible</li>
+        </ul>
+    </div>
+
+    <div class="test-card">
+        <h2>🔧 Debug Information</h2>
+        
+        <h3>Check localStorage:</h3>
+        <p>Open browser console (F12) and type:</p>
+        <code>localStorage.getItem('properties_venteskraft@gmail.com')</code>
+        <p>Look for the "jjhd" property and check its status field.</p>
+        
+        <h3>Console Logs to Watch For:</h3>
+        <ul>
+            <li><code>💾 Property status changed to active and saved to localStorage</code></li>
+            <li><code>Loading saved properties for venteskraft@gmail.com: X properties</code></li>
+        </ul>
+        
+        <h3>Status Options:</h3>
+        <ul>
+            <li><strong>Pending:</strong> Only visible in owner dashboard</li>
+            <li><strong>Active:</strong> Visible on public website</li>
+            <li><strong>Inactive:</strong> Only visible in owner dashboard</li>
+            <li><strong>Maintenance:</strong> Only visible in owner dashboard</li>
+        </ul>
+    </div>
+
+    <div class="test-card">
+        <h2>🎯 Test Scenarios</h2>
+        
+        <h3>Scenario 1: Make Property Public</h3>
+        <ol>
+            <li>Change "jjhd" status from "Pending" to "Active"</li>
+            <li>Go to public Properties page</li>
+            <li>Verify "jjhd" is visible</li>
+            <li>Click on "jjhd" to view details</li>
+        </ol>
+        
+        <h3>Scenario 2: Hide Property from Public</h3>
+        <ol>
+            <li>Change "jjhd" status from "Active" to "Inactive"</li>
+            <li>Go to public Properties page</li>
+            <li>Verify "jjhd" is NOT visible</li>
+            <li>Check owner dashboard - should still be visible</li>
+        </ol>
+        
+        <h3>Scenario 3: Test All Status Options</h3>
+        <ol>
+            <li>Try changing "jjhd" to each status: Pending, Active, Inactive, Maintenance</li>
+            <li>Check public website after each change</li>
+            <li>Only "Active" status should show on public website</li>
+        </ol>
+    </div>
+
+    <div class="test-card">
+        <h2>⚠️ Common Issues</h2>
+        
+        <h3>If Status Change Doesn't Work:</h3>
+        <ul>
+            <li class="warning">Check if the dropdown is visible on the property card</li>
+            <li class="warning">Check browser console for JavaScript errors</li>
+            <li class="warning">Verify you're logged in with venteskraft@gmail.com</li>
+            <li class="warning">Check if localStorage is working</li>
+        </ul>
+        
+        <h3>If Property Still Not Public:</h3>
+        <ul>
+            <li class="warning">Verify status is set to "Active" (not "Pending")</li>
+            <li class="warning">Refresh the public Properties page</li>
+            <li class="warning">Check if the property has valid data (name, price, etc.)</li>
+            <li class="warning">Check console for any error messages</li>
+        </ul>
+    </div>
+
+    <div class="test-card">
+        <h2>📞 Report Results</h2>
+        <p>After testing, report:</p>
+        <ul>
+            <li>✅ Whether status change worked</li>
+            <li>✅ Whether "jjhd" property is now visible on public website</li>
+            <li>❌ Any issues with status dropdown or public visibility</li>
+            <li>🔍 Any console errors or warnings</li>
+        </ul>
+    </div>
+
+    <script>
+        console.log('🔧 Property Status Test Page Loaded');
+        console.log('📋 Testing property status changes and public visibility');
+        console.log('🎯 Key test: Change "jjhd" status from Pending to Active');
+        console.log('🌐 Then check if it appears on public Properties page');
+        console.log('🚀 Ready to test! Open http://localhost:8082/owner/view');
+    </script>
+</body>
+</html>
