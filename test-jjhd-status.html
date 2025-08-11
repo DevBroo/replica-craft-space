@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Test jjhd Property Status</title>
+    <title>Test JJHD Property Status</title>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -57,27 +57,54 @@
             padding: 15px;
             margin: 15px 0;
         }
+        .issue {
+            background: #ffebee;
+            border-left: 4px solid #f44336;
+            padding: 15px;
+            margin: 15px 0;
+        }
     </style>
 </head>
 <body>
-    <h1>🔍 Test jjhd Property Status</h1>
+    <h1>🔍 Test JJHD Property Status</h1>
     
     <div class="test-card">
-        <h2>📋 Problem Analysis</h2>
+        <h2>🚨 Issue Identified</h2>
         
-        <div class="error">
-            <strong>❌ Issue:</strong> "jjhd" property is not showing on public website
+        <div class="issue">
+            <strong>Problem:</strong> "jjhd" property is not showing on public website
         </div>
         
         <div class="info">
-            <strong>Possible Causes:</strong>
-            <ul>
-                <li>Property status is still "Pending" (not "Active")</li>
-                <li>Property was not saved properly</li>
-                <li>localStorage data is corrupted</li>
-                <li>Public website is not loading from localStorage</li>
-                <li>Syntax error preventing page from loading</li>
-            </ul>
+            <strong>Root Cause:</strong> The public Properties page only shows properties with status "approved", but "jjhd" likely has status "pending" or "active"
+        </div>
+        
+        <div class="info">
+            <strong>Database Query:</strong> Properties.tsx calls <code>PropertyService.getActiveProperties()</code> which only fetches properties with <code>status = 'approved'</code>
+        </div>
+    </div>
+
+    <div class="test-card">
+        <h2>🔧 Fix Options</h2>
+        
+        <div class="step">
+            <h3>Option 1: Change Property Status (Recommended)</h3>
+            <ol>
+                <li>Go to Owner Dashboard: <a href="http://localhost:8082/owner/view" class="test-button" target="_blank">Open Dashboard</a></li>
+                <li>Find the "jjhd" property</li>
+                <li>Change status from "Pending" to "Active" using the dropdown</li>
+                <li>Check if it appears on public website</li>
+            </ol>
+        </div>
+        
+        <div class="step">
+            <h3>Option 2: Update Database Query</h3>
+            <p>Modify <code>PropertyService.getActiveProperties()</code> to include properties with status "active" as well as "approved"</p>
+        </div>
+        
+        <div class="step">
+            <h3>Option 3: Check Current Status</h3>
+            <p>Open browser console and check what properties are being loaded from database</p>
         </div>
     </div>
 
@@ -87,134 +114,75 @@
         <div class="step">
             <h3>Step 1: Check Owner Dashboard</h3>
             <a href="http://localhost:8082/owner/view" class="test-button" target="_blank">Open Owner Dashboard</a>
-            <p>Check if the page loads without errors</p>
+            <p>Look for "jjhd" property and check its current status</p>
         </div>
         
         <div class="step">
-            <h3>Step 2: Find jjhd Property</h3>
-            <p>Look for "jjhd" property in the property list:</p>
+            <h3>Step 2: Change Status to Active</h3>
+            <p>If "jjhd" has status "Pending", change it to "Active" using the dropdown</p>
+        </div>
+        
+        <div class="step">
+            <h3>Step 3: Check Public Website</h3>
+            <a href="http://localhost:8082/properties" class="test-button" target="_blank">Open Properties Page</a>
+            <p>Check if "jjhd" property now appears</p>
+        </div>
+        
+        <div class="step">
+            <h3>Step 4: Check Browser Console</h3>
+            <p>Open Developer Tools → Console and look for:</p>
             <ul>
-                <li>Name: "jjhd"</li>
-                <li>Location: "ddd, dd"</li>
-                <li>Price: ₹22</li>
-                <li>Check the status dropdown</li>
+                <li>"🔍 Loading properties from database..."</li>
+                <li>"✅ Properties loaded from database: X"</li>
+                <li>"📸 Property 'jjhd': ..."</li>
+            </ul>
+        </div>
+    </div>
+
+    <div class="test-card">
+        <h2>🔍 Debug Information</h2>
+        
+        <div class="info">
+            <strong>Current Database Query:</strong>
+            <pre><code>SELECT * FROM properties WHERE status = 'approved'</code></pre>
+        </div>
+        
+        <div class="info">
+            <strong>Possible Status Values:</strong>
+            <ul>
+                <li><code>pending</code> - New property, not yet reviewed</li>
+                <li><code>approved</code> - Approved for public display</li>
+                <li><code>rejected</code> - Rejected by admin</li>
+                <li><code>inactive</code> - Temporarily hidden</li>
             </ul>
         </div>
         
-        <div class="step">
-            <h3>Step 3: Check Property Status</h3>
-            <p>On the "jjhd" property card:</p>
-            <ol>
-                <li>Look at the status dropdown</li>
-                <li>If it shows "Pending" (yellow), change it to "Active" (green)</li>
-                <li>If it shows "Active" but still not public, there's another issue</li>
-            </ol>
+        <div class="info">
+            <strong>Expected Behavior:</strong>
+            <ul>
+                <li>Owner Dashboard: Shows all properties regardless of status</li>
+                <li>Public Website: Only shows properties with status "approved"</li>
+                <li>Status can be changed by owner using dropdown in dashboard</li>
+            </ul>
         </div>
-        
-        <div class="step">
-            <h3>Step 4: Check Public Website</h3>
-            <a href="http://localhost:8082/properties" class="test-button" target="_blank">Open Properties Page</a>
-            <p>Look for "jjhd" property in the listings</p>
-        </div>
-        
-        <div class="step">
-            <h3>Step 5: Check localStorage</h3>
-            <p>Open browser console (F12) and type:</p>
-            <code>localStorage.getItem('properties_venteskraft@gmail.com')</code>
-            <p>Look for the "jjhd" property and check its status field.</p>
-        </div>
-    </div>
-
-    <div class="test-card">
-        <h2>✅ Expected Results</h2>
-        
-        <h3>✅ If Status is "Pending":</h3>
-        <ul>
-            <li class="warning">Property will NOT show on public website</li>
-            <li class="warning">Change status to "Active" to make it public</li>
-            <li class="success">After changing to "Active", it should appear on public website</li>
-        </ul>
-        
-        <h3>✅ If Status is "Active":</h3>
-        <ul>
-            <li class="success">Property should be visible on public Properties page</li>
-            <li class="success">Property should appear in search results</li>
-            <li class="success">Property detail page should be accessible</li>
-        </ul>
-        
-        <h3>❌ If Still Not Working:</h3>
-        <ul>
-            <li class="error">Check if owner dashboard loads without errors</li>
-            <li class="error">Check browser console for JavaScript errors</li>
-            <li class="error">Verify localStorage contains the property data</li>
-        </ul>
-    </div>
-
-    <div class="test-card">
-        <h2>🔧 Debug Information</h2>
-        
-        <h3>Console Commands to Run:</h3>
-        <ul>
-            <li><code>localStorage.getItem('properties_venteskraft@gmail.com')</code> - Check all properties</li>
-            <li><code>JSON.parse(localStorage.getItem('properties_venteskraft@gmail.com'))</code> - Parse and view data</li>
-            <li><code>localStorage.clear()</code> - Clear all data (use with caution)</li>
-        </ul>
-        
-        <h3>Status Values:</h3>
-        <ul>
-            <li><strong>Pending:</strong> Only visible in owner dashboard</li>
-            <li><strong>Active:</strong> Visible on public website</li>
-            <li><strong>Inactive:</strong> Only visible in owner dashboard</li>
-            <li><strong>Maintenance:</strong> Only visible in owner dashboard</li>
-        </ul>
-        
-        <h3>If Dashboard Doesn't Load:</h3>
-        <ul>
-            <li class="error">There's a syntax error in the code</li>
-            <li class="error">Check browser console for error messages</li>
-            <li class="error">The page needs to be fixed before testing</li>
-        </ul>
-    </div>
-
-    <div class="test-card">
-        <h2>🎯 Quick Fix Steps</h2>
-        
-        <h3>If jjhd Status is "Pending":</h3>
-        <ol>
-            <li>Go to Owner Dashboard</li>
-            <li>Find "jjhd" property</li>
-            <li>Change status dropdown from "Pending" to "Active"</li>
-            <li>Check public Properties page</li>
-            <li>"jjhd" should now be visible</li>
-        </ol>
-        
-        <h3>If Dashboard Has Errors:</h3>
-        <ol>
-            <li>Check browser console for syntax errors</li>
-            <li>Report the error messages</li>
-            <li>Wait for code fix</li>
-            <li>Refresh page after fix</li>
-        </ol>
     </div>
 
     <div class="test-card">
         <h2>📞 Report Results</h2>
         <p>After testing, report:</p>
         <ul>
-            <li>✅ Whether owner dashboard loads without errors</li>
-            <li>✅ Whether "jjhd" property is visible in owner dashboard</li>
-            <li>✅ What status "jjhd" property currently has</li>
-            <li>✅ Whether "jjhd" appears on public Properties page</li>
-            <li>❌ Any error messages in browser console</li>
-            <li>❌ Any issues with status change</li>
+            <li>✅ What status does "jjhd" property currently have?</li>
+            <li>✅ Does changing status to "Active" make it appear on public website?</li>
+            <li>✅ Are there any console errors?</li>
+            <li>❌ Any other issues with property visibility?</li>
         </ul>
     </div>
 
     <script>
-        console.log('🔍 jjhd Property Status Test Page Loaded');
-        console.log('📋 Testing why jjhd property is not showing on public website');
-        console.log('🎯 Key checks: Status, localStorage, public visibility');
-        console.log('🚀 Ready to test! Open http://localhost:8082/owner/view');
+        console.log('🔍 JJHD Property Status Test Page Loaded');
+        console.log('📋 Issue: jjhd property not showing on public website');
+        console.log('🎯 Root cause: Status mismatch (pending vs approved)');
+        console.log('🚀 Ready to test status changes');
     </script>
 </body>
 </html>

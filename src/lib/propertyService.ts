@@ -178,7 +178,7 @@ export class PropertyService {
       const { data, error } = await supabase
         .from('properties')
         .select('*')
-        .eq('status', 'approved')
+        .in('status', ['approved', 'active'])
         .order('created_at', { ascending: false });
 
       if (error) {
