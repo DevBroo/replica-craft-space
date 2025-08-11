@@ -166,17 +166,14 @@ return (
                         
                         // Smart navigation based on user state
                         if (isAuthenticated && user) {
-                          if (user.role === 'owner') {
-                            console.log('✅ User is owner, navigating to dashboard');
-                            navigate('/owner/view');
-                          } else {
-                            console.log('⚠️ User is not owner, navigating to signup');
-                            navigate('/owner/signup');
-                          }
-                                     } else {
-               console.log('❌ User not authenticated, navigating to login');
-               navigate('/owner/login');
-             }
+                          console.log('✅ User is authenticated, navigating to dashboard');
+                          console.log('🔍 User role:', user.role);
+                          // Navigate directly to /owner/view regardless of role for testing
+                          navigate('/owner/view');
+                        } else {
+                          console.log('❌ User not authenticated, navigating to login');
+                          navigate('/owner/login');
+                        }
            }}
            className="w-full text-left px-4 py-3 text-sm text-gray-700 hover:bg-gray-50 hover:text-brand-orange transition-colors duration-200 border-b border-gray-100"
          >
@@ -349,17 +346,14 @@ return (
                     });
                     
                     if (isAuthenticated && user) {
-                      if (user.role === 'owner') {
-                        console.log('✅ User is owner, navigating to dashboard');
-                        navigate('/owner/view');
-                      } else {
-                        console.log('⚠️ User is not owner, navigating to signup');
-                        navigate('/owner/signup');
-                      }
-                                 } else {
-               console.log('❌ User not authenticated, navigating to login');
-               navigate('/owner/login');
-             }
+                      console.log('✅ User is authenticated, navigating to dashboard');
+                      console.log('🔍 User role:', user.role);
+                      // Navigate directly to /owner/view regardless of role for testing
+                      navigate('/owner/view');
+                    } else {
+                      console.log('❌ User not authenticated, navigating to login');
+                      navigate('/owner/login');
+                    }
                     setIsMobileMenuOpen(false);
                   }}
                   className="block w-full text-left text-base text-muted-foreground hover:text-brand-orange transition-colors duration-200"
@@ -624,13 +618,9 @@ Join thousands of successful property owners earning premium income. Access your
   onClick={() => {
     console.log('🚀 Property Owner CTA clicked');
     if (isAuthenticated && user) {
-      if (user.role === 'owner') {
-        console.log('✅ User is owner, navigating to dashboard');
-        navigate('/owner/view');
-      } else {
-        console.log('⚠️ User is not owner, navigating to signup');
-        navigate('/owner/signup');
-      }
+      console.log('✅ User is authenticated, navigating to dashboard');
+      console.log('🔍 User role:', user.role);
+      navigate('/owner/view');
     } else {
       console.log('❌ User not authenticated, navigating to login');
       navigate('/owner/login');
@@ -919,13 +909,9 @@ Join thousands of successful hosts who are earning premium income by listing the
   onClick={() => {
     console.log('🚀 List Your Property clicked');
     if (isAuthenticated && user) {
-      if (user.role === 'owner') {
-        console.log('✅ User is owner, navigating to dashboard');
-        navigate('/owner/view');
-      } else {
-        console.log('⚠️ User is not owner, navigating to signup');
-        navigate('/owner/signup');
-      }
+      console.log('✅ User is authenticated, navigating to dashboard');
+      console.log('🔍 User role:', user.role);
+      navigate('/owner/view');
     } else {
       console.log('❌ User not authenticated, navigating to login');
       navigate('/owner/login');
