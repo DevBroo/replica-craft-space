@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Venteskraft Properties</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .test-card {
+            background: white;
+            border-radius: 8px;
+            padding: 20px;
+            margin: 20px 0;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .property-list {
+            background: #e8f4fd;
+            border-left: 4px solid #2196f3;
+            padding: 15px;
+            margin: 15px 0;
+        }
+        .property-item {
+            background: white;
+            border-radius: 4px;
+            padding: 10px;
+            margin: 10px 0;
+            border: 1px solid #ddd;
+        }
+        .status-active {
+            color: #4caf50;
+            font-weight: bold;
+        }
+        .status-pending {
+            color: #ff9800;
+            font-weight: bold;
+        }
+        .price {
+            font-size: 18px;
+            font-weight: bold;
+            color: #2196f3;
+        }
+        .test-button {
+            background: #2196f3;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            margin: 5px;
+            text-decoration: none;
+            display: inline-block;
+        }
+        .test-button:hover {
+            background: #1976d2;
+        }
+        .success {
+            color: #4caf50;
+            font-weight: bold;
+        }
+        .warning {
+            color: #ff9800;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <h1>🧪 Test Venteskraft Properties System</h1>
+    
+    <div class="test-card">
+        <h2>📋 Test Overview</h2>
+        <p>This test will verify that the property management system works correctly for the owner email: <strong>venteskraft@gmail.com</strong></p>
+        
+        <h3>🎯 What to Test:</h3>
+        <ol>
+            <li>Login with venteskraft@gmail.com</li>
+            <li>Access My Properties section</li>
+            <li>View the 3 pre-loaded properties</li>
+            <li>Test Add Property functionality</li>
+            <li>Test Edit Property functionality</li>
+            <li>Test View Property details</li>
+            <li>Test Delete Property functionality</li>
+        </ol>
+    </div>
+
+    <div class="test-card">
+        <h2>🏠 Pre-loaded Properties for venteskraft@gmail.com</h2>
+        
+        <div class="property-list">
+            <h3>1. Luxury Beach Villa - Goa</h3>
+            <div class="property-item">
+                <p><strong>Type:</strong> Villa</p>
+                <p><strong>Location:</strong> Calangute Beach Road, Goa</p>
+                <p><strong>Price:</strong> <span class="price">₹18,000/day</span></p>
+                <p><strong>Capacity:</strong> 10 guests | <strong>Bedrooms:</strong> 5 | <strong>Bathrooms:</strong> 4</p>
+                <p><strong>Status:</strong> <span class="status-active">Active</span></p>
+                <p><strong>Rating:</strong> 4.9/5 | <strong>Bookings:</strong> 67 | <strong>Earnings:</strong> ₹12,06,000</p>
+                <p><strong>Amenities:</strong> WiFi, AC, Parking, Kitchen, Pool, Gym, TV, Spa</p>
+            </div>
+
+            <h3>2. Mountain View Resort - Manali</h3>
+            <div class="property-item">
+                <p><strong>Type:</strong> Resort</p>
+                <p><strong>Location:</strong> Kullu Valley, Manali</p>
+                <p><strong>Price:</strong> <span class="price">₹12,000/day</span></p>
+                <p><strong>Capacity:</strong> 15 guests | <strong>Bedrooms:</strong> 8 | <strong>Bathrooms:</strong> 6</p>
+                <p><strong>Status:</strong> <span class="status-active">Active</span></p>
+                <p><strong>Rating:</strong> 4.7/5 | <strong>Bookings:</strong> 89 | <strong>Earnings:</strong> ₹10,68,000</p>
+                <p><strong>Amenities:</strong> WiFi, Heating, Kitchen, Fireplace, Parking, Gym, Spa</p>
+            </div>
+
+            <h3>3. Heritage Palace - Jaipur</h3>
+            <div class="property-item">
+                <p><strong>Type:</strong> Heritage Palace</p>
+                <p><strong>Location:</strong> Old City Palace District, Jaipur</p>
+                <p><strong>Price:</strong> <span class="price">₹35,000/day</span></p>
+                <p><strong>Capacity:</strong> 20 guests | <strong>Bedrooms:</strong> 12 | <strong>Bathrooms:</strong> 8</p>
+                <p><strong>Status:</strong> <span class="status-pending">Pending</span></p>
+                <p><strong>Rating:</strong> 0/5 | <strong>Bookings:</strong> 0 | <strong>Earnings:</strong> ₹0</p>
+                <p><strong>Amenities:</strong> WiFi, AC, Parking, Kitchen, Pool, Spa, TV, Fireplace</p>
+            </div>
+        </div>
+    </div>
+
+    <div class="test-card">
+        <h2>🚀 Test Steps</h2>
+        
+        <h3>Step 1: Access the Application</h3>
+        <a href="http://localhost:8082/" class="test-button" target="_blank">Open Application</a>
+        
+        <h3>Step 2: Login as Property Owner</h3>
+        <p>Use one of these methods:</p>
+        <ul>
+            <li>Click "Property Owner Portal" in the header</li>
+            <li>Or go directly to: <a href="http://localhost:8082/owner/login" target="_blank">http://localhost:8082/owner/login</a></li>
+        </ul>
+        
+        <h3>Step 3: Access My Properties</h3>
+        <p>After login, click "My Properties" in the sidebar</p>
+        
+        <h3>Step 4: Verify Properties</h3>
+        <p>You should see exactly 3 properties listed above for venteskraft@gmail.com</p>
+        
+        <h3>Step 5: Test Functionality</h3>
+        <ul>
+            <li><strong>View:</strong> Click "View" button on any property to see details</li>
+            <li><strong>Edit:</strong> Click edit icon to modify property details</li>
+            <li><strong>Add:</strong> Click "Add Property" to create a new property</li>
+            <li><strong>Delete:</strong> Click trash icon to delete a property</li>
+        </ul>
+    </div>
+
+    <div class="test-card">
+        <h2>✅ Expected Results</h2>
+        
+        <h3>✅ Success Criteria:</h3>
+        <ul>
+            <li class="success">3 properties should be visible for venteskraft@gmail.com</li>
+            <li class="success">Property cards should show correct information</li>
+            <li class="success">Add Property form should work and create new properties</li>
+            <li class="success">Edit Property should pre-fill existing data</li>
+            <li class="success">View Property should show detailed information</li>
+            <li class="success">Delete Property should remove properties with confirmation</li>
+            <li class="success">All modals should open and close properly</li>
+        </ul>
+        
+        <h3>⚠️ Common Issues to Check:</h3>
+        <ul>
+            <li class="warning">If no properties show, check if user email matches venteskraft@gmail.com</li>
+            <li class="warning">If forms don't work, check browser console for errors</li>
+            <li class="warning">If modals don't open, check if JavaScript is enabled</li>
+        </ul>
+    </div>
+
+    <div class="test-card">
+        <h2>🔧 Debug Information</h2>
+        
+        <h3>Console Logs to Check:</h3>
+        <p>Open browser console (F12) and look for:</p>
+        <ul>
+            <li><code>🏠 Loading properties for venteskraft@gmail.com: 3 properties</code></li>
+            <li>Any error messages in red</li>
+        </ul>
+        
+        <h3>Current User Check:</h3>
+        <p>In browser console, type:</p>
+        <code>localStorage.getItem('sb-user')</code>
+        <p>Should show user data with email: venteskraft@gmail.com</p>
+    </div>
+
+    <div class="test-card">
+        <h2>📞 Report Issues</h2>
+        <p>If you encounter any problems:</p>
+        <ul>
+            <li>Take a screenshot of the issue</li>
+            <li>Check browser console for error messages</li>
+            <li>Note which step failed</li>
+            <li>Report the specific error or unexpected behavior</li>
+        </ul>
+    </div>
+
+    <script>
+        // Add some helpful console logging
+        console.log('🧪 Venteskraft Properties Test Page Loaded');
+        console.log('📋 Test Properties for venteskraft@gmail.com:');
+        console.log('1. Luxury Beach Villa - Goa (₹18,000/day)');
+        console.log('2. Mountain View Resort - Manali (₹12,000/day)');
+        console.log('3. Heritage Palace - Jaipur (₹35,000/day)');
+        console.log('🚀 Ready to test! Open http://localhost:8082/owner/view');
+    </script>
+</body>
+</html>

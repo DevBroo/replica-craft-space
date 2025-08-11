@@ -31,70 +31,73 @@ const MyProperties: React.FC<{
     amenities: [] as string[]
   });
 
-  // Mock data for demonstration
+  // Mock data for venteskraft@gmail.com owner
   const mockProperties = [
     {
       id: '1',
-      name: 'Sunset Villa Paradise',
+      name: 'Luxury Beach Villa - Goa',
       type: 'villa',
-      location: 'Goa Beach Road',
+      location: 'Calangute Beach Road',
       city: 'Goa',
       state: 'Goa',
-      price: 15000,
-      capacity: 8,
-      bedrooms: 4,
-      bathrooms: 3,
+      price: 18000,
+      capacity: 10,
+      bedrooms: 5,
+      bathrooms: 4,
       status: 'active',
-      rating: 4.8,
-      totalBookings: 45,
-      totalEarnings: 675000,
+      rating: 4.9,
+      totalBookings: 67,
+      totalEarnings: 1206000,
       images: ['/placeholder.svg'],
-      amenities: ['wifi', 'ac', 'parking', 'kitchen', 'pool', 'gym'],
-      description: 'Luxurious beachfront villa with stunning ocean views and modern amenities.',
-      createdAt: '2024-01-15',
-      lastUpdated: '2024-08-10'
+      amenities: ['wifi', 'ac', 'parking', 'kitchen', 'pool', 'gym', 'tv', 'spa'],
+      description: 'Exclusive beachfront villa with private pool, stunning ocean views, and luxury amenities. Perfect for family vacations and corporate retreats.',
+      createdAt: '2024-01-10',
+      lastUpdated: '2024-08-15',
+      ownerEmail: 'venteskraft@gmail.com'
     },
     {
       id: '2',
-      name: 'Mountain Retreat Cottage',
-      type: 'homestay',
-      location: 'Himalayan Valley',
+      name: 'Mountain View Resort - Manali',
+      type: 'resort',
+      location: 'Kullu Valley',
       city: 'Manali',
       state: 'Himachal Pradesh',
-      price: 8000,
-      capacity: 4,
-      bedrooms: 2,
-      bathrooms: 2,
+      price: 12000,
+      capacity: 15,
+      bedrooms: 8,
+      bathrooms: 6,
       status: 'active',
-      rating: 4.6,
-      totalBookings: 32,
-      totalEarnings: 256000,
+      rating: 4.7,
+      totalBookings: 89,
+      totalEarnings: 1068000,
       images: ['/placeholder.svg'],
-      amenities: ['wifi', 'heating', 'kitchen', 'fireplace'],
-      description: 'Cozy mountain cottage with panoramic views of snow-capped peaks.',
-      createdAt: '2024-02-20',
-      lastUpdated: '2024-08-08'
+      amenities: ['wifi', 'heating', 'kitchen', 'fireplace', 'parking', 'gym', 'spa'],
+      description: 'Premium mountain resort with panoramic views of snow-capped peaks. Features luxury accommodations, spa facilities, and adventure activities.',
+      createdAt: '2024-02-15',
+      lastUpdated: '2024-08-12',
+      ownerEmail: 'venteskraft@gmail.com'
     },
     {
       id: '3',
-      name: 'Royal Heritage Palace',
+      name: 'Heritage Palace - Jaipur',
       type: 'heritage',
-      location: 'Old City',
+      location: 'Old City Palace District',
       city: 'Jaipur',
       state: 'Rajasthan',
-      price: 25000,
-      capacity: 12,
-      bedrooms: 6,
-      bathrooms: 4,
+      price: 35000,
+      capacity: 20,
+      bedrooms: 12,
+      bathrooms: 8,
       status: 'pending',
       rating: 0,
       totalBookings: 0,
       totalEarnings: 0,
       images: ['/placeholder.svg'],
-      amenities: ['wifi', 'ac', 'parking', 'kitchen', 'pool', 'spa'],
-      description: 'Magnificent heritage palace with royal architecture and luxury amenities.',
+      amenities: ['wifi', 'ac', 'parking', 'kitchen', 'pool', 'spa', 'tv', 'fireplace'],
+      description: 'Magnificent heritage palace with royal architecture, traditional Rajasthani design, and modern luxury amenities. Perfect for royal weddings and events.',
       createdAt: '2024-08-01',
-      lastUpdated: '2024-08-01'
+      lastUpdated: '2024-08-01',
+      ownerEmail: 'venteskraft@gmail.com'
     }
   ];
 
@@ -104,8 +107,16 @@ const MyProperties: React.FC<{
       return;
     }
     
-    // Load mock data
-    setProperties(mockProperties);
+    // Load mock data filtered by owner email
+    if (user && user.email) {
+      const userProperties = mockProperties.filter(property => 
+        property.ownerEmail === user.email
+      );
+      setProperties(userProperties);
+      console.log(`🏠 Loading properties for ${user.email}:`, userProperties.length, 'properties');
+    } else {
+      setProperties([]);
+    }
   }, [isAuthenticated, user, loading, navigate]);
 
   const getStatusColor = (status: string) => {
@@ -215,7 +226,8 @@ const MyProperties: React.FC<{
       amenities: formData.amenities,
       description: formData.description,
       createdAt: editingProperty ? editingProperty.createdAt : new Date().toISOString().split('T')[0],
-      lastUpdated: new Date().toISOString().split('T')[0]
+      lastUpdated: new Date().toISOString().split('T')[0],
+      ownerEmail: user?.email || 'venteskraft@gmail.com'
     };
 
     if (editingProperty) {
