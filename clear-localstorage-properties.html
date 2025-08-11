@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Clear localStorage Properties</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .test-card {
+            background: white;
+            border-radius: 8px;
+            padding: 20px;
+            margin: 20px 0;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .test-button {
+            background: #2196f3;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            margin: 5px;
+            text-decoration: none;
+            display: inline-block;
+        }
+        .danger-button {
+            background: #f44336;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        .success {
+            color: #4caf50;
+            font-weight: bold;
+        }
+        .warning {
+            color: #ff9800;
+            font-weight: bold;
+        }
+        .error {
+            color: #f44336;
+            font-weight: bold;
+        }
+        .info {
+            background: #e3f2fd;
+            border-left: 4px solid #2196f3;
+            padding: 15px;
+            margin: 15px 0;
+        }
+        .issue {
+            background: #ffebee;
+            border-left: 4px solid #f44336;
+            padding: 15px;
+            margin: 15px 0;
+        }
+        pre {
+            background: #f5f5f5;
+            padding: 10px;
+            border-radius: 4px;
+            overflow-x: auto;
+            font-size: 12px;
+        }
+    </style>
+</head>
+<body>
+    <h1>🗑️ Clear localStorage Properties</h1>
+    
+    <div class="test-card">
+        <h2>🔍 Current localStorage Status</h2>
+        
+        <div class="info">
+            <h3>Step 1: Check Current localStorage</h3>
+            <button onclick="checkLocalStorage()" class="test-button">Check localStorage</button>
+            <div id="localStorageStatus"></div>
+        </div>
+    </div>
+
+    <div class="test-card">
+        <h2>🚨 Clear Dummy Properties</h2>
+        
+        <div class="issue">
+            <strong>Problem:</strong> Owner Dashboard showing dummy properties from localStorage fallback
+        </div>
+        
+        <div class="info">
+            <strong>Solution:</strong> Clear all properties-related localStorage data
+        </div>
+        
+        <div class="info">
+            <h3>Step 2: Clear localStorage Properties</h3>
+            <button onclick="clearLocalStorageProperties()" class="danger-button">🗑️ Clear All Properties Data</button>
+            <p>This will remove all dummy properties from localStorage</p>
+        </div>
+    </div>
+
+    <div class="test-card">
+        <h2>✅ Verify Clean State</h2>
+        
+        <div class="info">
+            <h3>Step 3: Check Owner Dashboard</h3>
+            <a href="http://localhost:8082/owner/view" class="test-button" target="_blank">Open Owner Dashboard</a>
+            <p>Should now show 0 properties (no dummy data)</p>
+        </div>
+        
+        <div class="info">
+            <h3>Step 4: Check Properties Page</h3>
+            <a href="http://localhost:8082/properties" class="test-button" target="_blank">Open Properties Page</a>
+            <p>Should show only database properties (no dummy data)</p>
+        </div>
+    </div>
+
+    <div class="test-card">
+        <h2>🎯 Expected Results</h2>
+        
+        <div class="success">
+            <strong>After clearing localStorage:</strong>
+            <ul>
+                <li>✅ Owner Dashboard shows 0 properties</li>
+                <li>✅ No dummy properties like "jjhd", "Luxury Beach Villa", etc.</li>
+                <li>✅ Properties page shows only real database properties</li>
+                <li>✅ Clean slate for adding real properties</li>
+            </ul>
+        </div>
+    </div>
+
+    <script>
+        function checkLocalStorage() {
+            const statusDiv = document.getElementById('localStorageStatus');
+            const allKeys = Object.keys(localStorage);
+            const propertyKeys = allKeys.filter(key => key.includes('properties'));
+            
+            let html = '<h4>All localStorage Keys:</h4><pre>' + JSON.stringify(allKeys, null, 2) + '</pre>';
+            
+            if (propertyKeys.length > 0) {
+                html += '<h4>Property-related Keys:</h4>';
+                propertyKeys.forEach(key => {
+                    const value = localStorage.getItem(key);
+                    html += `<div><strong>${key}:</strong> <pre>${value}</pre></div>`;
+                });
+            } else {
+                html += '<p class="success">✅ No property-related localStorage data found</p>';
+            }
+            
+            statusDiv.innerHTML = html;
+        }
+
+        function clearLocalStorageProperties() {
+            const allKeys = Object.keys(localStorage);
+            const propertyKeys = allKeys.filter(key => key.includes('properties'));
+            
+            let clearedCount = 0;
+            propertyKeys.forEach(key => {
+                localStorage.removeItem(key);
+                clearedCount++;
+            });
+            
+            alert(`🗑️ Cleared ${clearedCount} property-related localStorage items!`);
+            
+            // Refresh the status
+            checkLocalStorage();
+        }
+
+        // Auto-check on page load
+        window.onload = function() {
+            console.log('🗑️ localStorage Properties Clear Tool Loaded');
+            checkLocalStorage();
+        };
+    </script>
+</body>
+</html>

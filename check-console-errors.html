@@ -1,0 +1,302 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Console Error Checker</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .test-card {
+            background: white;
+            border-radius: 8px;
+            padding: 20px;
+            margin: 20px 0;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .test-button {
+            background: #2196f3;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            margin: 5px;
+            text-decoration: none;
+            display: inline-block;
+        }
+        .danger-button {
+            background: #f44336;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        .success {
+            color: #4caf50;
+            font-weight: bold;
+        }
+        .warning {
+            color: #ff9800;
+            font-weight: bold;
+        }
+        .error {
+            color: #f44336;
+            font-weight: bold;
+        }
+        .info {
+            background: #e3f2fd;
+            border-left: 4px solid #2196f3;
+            padding: 15px;
+            margin: 15px 0;
+        }
+        .issue {
+            background: #ffebee;
+            border-left: 4px solid #f44336;
+            padding: 15px;
+            margin: 15px 0;
+        }
+        .console-output {
+            background: #1e1e1e;
+            color: #ffffff;
+            padding: 15px;
+            border-radius: 4px;
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+            max-height: 400px;
+            overflow-y: auto;
+            white-space: pre-wrap;
+        }
+        .error-log {
+            color: #ff6b6b;
+        }
+        .warning-log {
+            color: #ffd93d;
+        }
+        .info-log {
+            color: #6bcf7f;
+        }
+        .log-entry {
+            margin: 2px 0;
+            padding: 2px 0;
+        }
+        .timestamp {
+            color: #888;
+            font-size: 10px;
+        }
+    </style>
+</head>
+<body>
+    <h1>🔍 Console Error Checker</h1>
+    
+    <div class="test-card">
+        <h2>🚨 Current Console Errors</h2>
+        
+        <div class="info">
+            <h3>Step 1: Open MyProperties Page</h3>
+            <a href="http://localhost:8082/owner/view" class="test-button" target="_blank">Open Owner Dashboard</a>
+        </div>
+        
+        <div class="info">
+            <h3>Step 2: Monitor Console Errors</h3>
+            <button onclick="startErrorMonitoring()" class="test-button">Start Monitoring</button>
+            <button onclick="clearLogs()" class="danger-button">Clear Logs</button>
+            <button onclick="exportLogs()" class="test-button">Export Logs</button>
+        </div>
+    </div>
+
+    <div class="test-card">
+        <h2>📊 Console Output</h2>
+        <div id="consoleOutput" class="console-output">Waiting for console activity...</div>
+    </div>
+
+    <div class="test-card">
+        <h2>🔧 Known Issues & Fixes</h2>
+        
+        <div class="issue">
+            <h3>1. Database 404 Error</h3>
+            <p><strong>Error:</strong> POST https://riqsgtuzccwpplbodwbd.supabase.co/rest/v1/properties?select=* 404 (Not Found)</p>
+            <p><strong>Fix:</strong> Create properties table in Supabase or use localStorage fallback</p>
+            <a href="create-properties-table.html" class="test-button" target="_blank">Fix Database</a>
+        </div>
+        
+        <div class="issue">
+            <h3>2. Image Upload Errors</h3>
+            <p><strong>Error:</strong> File upload failures or image processing errors</p>
+            <p><strong>Fix:</strong> Use image links instead of file uploads</p>
+        </div>
+        
+        <div class="issue">
+            <h3>3. Authentication Errors</h3>
+            <p><strong>Error:</strong> User not found or authentication issues</p>
+            <p><strong>Fix:</strong> Check user login status and auth context</p>
+        </div>
+        
+        <div class="issue">
+            <h3>4. localStorage Errors</h3>
+            <p><strong>Error:</strong> localStorage quota exceeded or access denied</p>
+            <p><strong>Fix:</strong> Clear localStorage or use database</p>
+            <a href="clear-localstorage-properties.html" class="test-button" target="_blank">Clear localStorage</a>
+        </div>
+    </div>
+
+    <div class="test-card">
+        <h2>✅ Test Actions</h2>
+        
+        <div class="info">
+            <h3>Test Property Addition</h3>
+            <ol>
+                <li>Click "Add Property" on the dashboard</li>
+                <li>Fill in property details</li>
+                <li>Add image links (not file uploads)</li>
+                <li>Click "Add Property"</li>
+                <li>Watch console for errors</li>
+            </ol>
+        </div>
+        
+        <div class="info">
+            <h3>Test Image Link Upload</h3>
+            <p>Use these test image URLs:</p>
+            <ul>
+                <li><code>https://images.unsplash.com/photo-1564013799919-ab600027ffc6?w=800</code></li>
+                <li><code>https://images.unsplash.com/photo-1571896349842-33c89424de2d?w=800</code></li>
+                <li><code>https://images.unsplash.com/photo-1512917774080-9991f1c4c750?w=800</code></li>
+            </ul>
+        </div>
+    </div>
+
+    <script>
+        let originalConsole = {
+            log: console.log,
+            error: console.error,
+            warn: console.warn,
+            info: console.info
+        };
+        
+        let logs = [];
+        let isMonitoring = false;
+
+        function addLog(level, message, data) {
+            const timestamp = new Date().toLocaleTimeString();
+            const logEntry = {
+                timestamp,
+                level,
+                message,
+                data: data ? JSON.stringify(data, null, 2) : null
+            };
+            
+            logs.push(logEntry);
+            updateConsoleOutput();
+        }
+
+        function updateConsoleOutput() {
+            const output = document.getElementById('consoleOutput');
+            if (logs.length === 0) {
+                output.innerHTML = 'No console activity detected...';
+                return;
+            }
+            
+            let html = '';
+            logs.forEach(log => {
+                const levelClass = log.level === 'error' ? 'error-log' : 
+                                 log.level === 'warn' ? 'warning-log' : 'info-log';
+                
+                html += `<div class="log-entry ${levelClass}">`;
+                html += `<span class="timestamp">[${log.timestamp}]</span> `;
+                html += `<strong>${log.level.toUpperCase()}:</strong> ${log.message}`;
+                if (log.data) {
+                    html += `<pre>${log.data}</pre>`;
+                }
+                html += '</div>';
+            });
+            
+            output.innerHTML = html;
+            output.scrollTop = output.scrollHeight;
+        }
+
+        function startErrorMonitoring() {
+            if (isMonitoring) {
+                alert('Already monitoring console errors!');
+                return;
+            }
+            
+            isMonitoring = true;
+            logs = [];
+            
+            // Override console methods
+            console.log = function(...args) {
+                originalConsole.log.apply(console, args);
+                addLog('log', args.join(' '));
+            };
+            
+            console.error = function(...args) {
+                originalConsole.error.apply(console, args);
+                addLog('error', args.join(' '));
+            };
+            
+            console.warn = function(...args) {
+                originalConsole.warn.apply(console, args);
+                addLog('warn', args.join(' '));
+            };
+            
+            console.info = function(...args) {
+                originalConsole.info.apply(console, args);
+                addLog('info', args.join(' '));
+            };
+            
+            // Monitor for unhandled errors
+            window.addEventListener('error', function(event) {
+                addLog('error', `Unhandled Error: ${event.message}`, {
+                    filename: event.filename,
+                    lineno: event.lineno,
+                    colno: event.colno,
+                    error: event.error?.stack
+                });
+            });
+            
+            // Monitor for unhandled promise rejections
+            window.addEventListener('unhandledrejection', function(event) {
+                addLog('error', `Unhandled Promise Rejection: ${event.reason}`, {
+                    reason: event.reason
+                });
+            });
+            
+            addLog('info', 'Console error monitoring started');
+            updateConsoleOutput();
+        }
+
+        function clearLogs() {
+            logs = [];
+            updateConsoleOutput();
+        }
+
+        function exportLogs() {
+            const logText = logs.map(log => 
+                `[${log.timestamp}] ${log.level.toUpperCase()}: ${log.message}${log.data ? '\n' + log.data : ''}`
+            ).join('\n');
+            
+            const blob = new Blob([logText], { type: 'text/plain' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `console-logs-${new Date().toISOString().slice(0, 19)}.txt`;
+            a.click();
+            URL.revokeObjectURL(url);
+        }
+
+        // Auto-start monitoring on page load
+        window.onload = function() {
+            console.log('🔍 Console Error Checker Loaded');
+            console.log('📋 Ready to monitor MyProperties page errors');
+            console.log('🚀 Open Owner Dashboard and start testing');
+        };
+    </script>
+</body>
+</html>

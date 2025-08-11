@@ -27,8 +27,14 @@ const useScrollAnimation = () => {
   }, []);
 };
 
-// Import default image for properties without uploaded images
+// Import all the generated images
+import sunsetVillaResort from '@/assets/sunset-villa-resort.jpg';
+import mountainCottage from '@/assets/mountain-cottage.jpg';
 import beachsideParadise from '@/assets/beachside-paradise.jpg';
+import gardenEstate from '@/assets/garden-estate.jpg';
+import royalHeritageVilla from '@/assets/royal-heritage-villa.jpg';
+import lakesideRetreat from '@/assets/lakeside-retreat.jpg';
+import farmHouseBliss from '@/assets/farm-house-bliss.jpg';
 
 const Properties: React.FC = () => {
   // Initialize scroll animations
@@ -94,26 +100,234 @@ const Properties: React.FC = () => {
     });
   });
 
-  const properties = [
-    // Database Properties - Load from database only
-    ...dbProperties.map((property: any, index: number) => ({
-      id: property.id,
-      name: property.name,
-      location: property.city,
-      rating: property.rating,
-      reviews: property.totalBookings,
-      price: property.price,
-      originalPrice: property.price * 1.1, // 10% markup for original price
-      image: property.images && property.images.length > 0 ? property.images[0] : beachsideParadise, // Use uploaded image or default
-      amenities: property.amenities.map((a: string) => a.charAt(0).toUpperCase() + a.slice(1)),
-      type: property.type.charAt(0).toUpperCase() + property.type.slice(1),
-      guests: property.capacity,
-      bedrooms: property.bedrooms,
-      bathrooms: property.bathrooms,
-      featured: true,
-      ownerEmail: property.ownerEmail,
-      description: property.description
-    }))
+  const properties = dbProperties.map((property: any, index: number) => ({
+    id: property.id,
+    name: property.name,
+    location: property.city,
+    rating: property.rating,
+    reviews: property.totalBookings,
+    price: property.price,
+    originalPrice: property.price * 1.1, // 10% markup for original price
+    image: property.images && property.images.length > 0 ? property.images[0] : beachsideParadise, // Use uploaded image or default
+    amenities: property.amenities.map((a: string) => a.charAt(0).toUpperCase() + a.slice(1)),
+    type: property.type.charAt(0).toUpperCase() + property.type.slice(1),
+    guests: property.capacity,
+    bedrooms: property.bedrooms,
+    bathrooms: property.bathrooms,
+    featured: true,
+    ownerEmail: property.ownerEmail,
+    description: property.description
+  }));
+    // Original Properties
+    {
+      id: 4,
+      name: 'Sunset Villa Resort',
+      location: 'Goa',
+      rating: 4.8,
+      reviews: 245,
+      price: 2500,
+      originalPrice: 3200,
+      image: sunsetVillaResort,
+      amenities: ['Pool', 'WiFi', 'Parking', 'Kitchen', 'AC'],
+      type: 'Villa',
+      guests: 8,
+      bedrooms: 3,
+      bathrooms: 2,
+      featured: false
+    },
+    // Original Properties
+    {
+      id: 4,
+      name: 'Sunset Villa Resort',
+      location: 'Goa',
+      rating: 4.8,
+      reviews: 245,
+      price: 2500,
+      originalPrice: 3200,
+      image: sunsetVillaResort,
+      amenities: ['Pool', 'WiFi', 'Parking', 'Kitchen', 'AC'],
+      type: 'Villa',
+      guests: 8,
+      bedrooms: 3,
+      bathrooms: 2,
+      featured: false
+    },
+    {
+      id: 5,
+      name: 'Mountain View Cottage',
+      location: 'Manali',
+      rating: 4.6,
+      reviews: 182,
+      price: 1800,
+      originalPrice: 2200,
+      image: mountainCottage,
+      amenities: ['Fireplace', 'WiFi', 'Kitchen', 'Garden', 'Heating'],
+      type: 'Cottage',
+      guests: 6,
+      bedrooms: 2,
+      bathrooms: 1,
+      featured: false
+    },
+    {
+      id: 6,
+      name: 'Beachside Paradise',
+      location: 'Kerala',
+      rating: 4.9,
+      reviews: 398,
+      price: 3200,
+      originalPrice: 3800,
+      image: beachsideParadise,
+      amenities: ['Beach Access', 'Pool', 'WiFi', 'Restaurant', 'Spa'],
+      type: 'Resort',
+      guests: 12,
+      bedrooms: 4,
+      bathrooms: 3,
+      featured: false
+    },
+    {
+      id: 7,
+      name: 'Garden Estate',
+      location: 'Udaipur',
+      rating: 4.7,
+      reviews: 156,
+      price: 2200,
+      originalPrice: 2700,
+      image: gardenEstate,
+      amenities: ['Garden', 'Pool', 'WiFi', 'Parking', 'Kitchen'],
+      type: 'Estate',
+      guests: 10,
+      bedrooms: 4,
+      bathrooms: 2,
+      featured: false
+    },
+    {
+      id: 8,
+      name: 'Royal Heritage Villa',
+      location: 'Jaipur',
+      rating: 4.8,
+      reviews: 289,
+      price: 4500,
+      originalPrice: 5200,
+      image: royalHeritageVilla,
+      amenities: ['Pool', 'Garden', 'WiFi', 'Parking', 'Heritage'],
+      type: 'Heritage',
+      guests: 14,
+      bedrooms: 5,
+      bathrooms: 4,
+      featured: false
+    },
+    {
+      id: 9,
+      name: 'Lakeside Retreat',
+      location: 'Nainital',
+      rating: 4.6,
+      reviews: 134,
+      price: 2800,
+      originalPrice: 3300,
+      image: lakesideRetreat,
+      amenities: ['Lake View', 'Fireplace', 'Kitchen', 'Balcony', 'WiFi'],
+      type: 'Retreat',
+      guests: 8,
+      bedrooms: 3,
+      bathrooms: 2,
+      featured: false
+    },
+    {
+      id: 10,
+      name: 'Farm House Bliss',
+      location: 'Lonavala',
+      rating: 4.5,
+      reviews: 98,
+      price: 1900,
+      originalPrice: 2400,
+      image: farmHouseBliss,
+      amenities: ['Farm', 'BBQ', 'Games', 'Nature', 'WiFi'],
+      type: 'Farm House',
+      guests: 10,
+      bedrooms: 3,
+      bathrooms: 2,
+      featured: false
+    },
+    {
+      id: 8,
+      name: 'Desert Oasis Camp',
+      location: 'Rajasthan',
+      rating: 4.7,
+      reviews: 167,
+      price: 3500,
+      originalPrice: 4000,
+      image: sunsetVillaResort,
+      amenities: ['Desert View', 'Camp Fire', 'Traditional', 'Camel Safari'],
+      type: 'Camp',
+      guests: 6,
+      bedrooms: 2,
+      bathrooms: 1,
+      featured: true
+    },
+    {
+      id: 9,
+      name: 'Hill Station Bungalow',
+      location: 'Shimla',
+      rating: 4.4,
+      reviews: 203,
+      price: 2100,
+      originalPrice: 2600,
+      image: mountainCottage,
+      amenities: ['Mountain View', 'Fireplace', 'Garden', 'WiFi', 'Parking'],
+      type: 'Bungalow',
+      guests: 8,
+      bedrooms: 3,
+      bathrooms: 2,
+      featured: false
+    },
+    {
+      id: 10,
+      name: 'Urban Loft Studio',
+      location: 'Mumbai',
+      rating: 4.3,
+      reviews: 89,
+      price: 3800,
+      originalPrice: 4200,
+      image: gardenEstate,
+      amenities: ['City View', 'WiFi', 'AC', 'Modern', 'Parking'],
+      type: 'Loft',
+      guests: 4,
+      bedrooms: 1,
+      bathrooms: 1,
+      featured: false
+    },
+    {
+      id: 11,
+      name: 'Riverside Cabin',
+      location: 'Rishikesh',
+      rating: 4.8,
+      reviews: 312,
+      price: 2600,
+      originalPrice: 3100,
+      image: lakesideRetreat,
+      amenities: ['River View', 'Yoga', 'Nature', 'WiFi', 'Adventure'],
+      type: 'Cabin',
+      guests: 6,
+      bedrooms: 2,
+      bathrooms: 1,
+      featured: true
+    },
+    {
+      id: 12,
+      name: 'Palace Suite',
+      location: 'Jodhpur',
+      rating: 4.9,
+      reviews: 445,
+      price: 5500,
+      originalPrice: 6200,
+      image: royalHeritageVilla,
+      amenities: ['Heritage', 'Pool', 'Spa', 'Royal', 'WiFi'],
+      type: 'Palace',
+      guests: 16,
+      bedrooms: 6,
+      bathrooms: 5,
+      featured: true
+    }
   ];
 
   const filterOptions = {

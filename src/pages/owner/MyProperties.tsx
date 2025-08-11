@@ -33,6 +33,9 @@ const MyProperties: React.FC<{
   });
   const [selectedImages, setSelectedImages] = useState<File[]>([]);
   const [imagePreviewUrls, setImagePreviewUrls] = useState<string[]>([]);
+  const [imageLinks, setImageLinks] = useState<string[]>([]);
+  const [showLinkInput, setShowLinkInput] = useState(false);
+  const [newImageLink, setNewImageLink] = useState('');
 
 
 
@@ -64,22 +67,9 @@ const MyProperties: React.FC<{
       } catch (error) {
         console.error('❌ Error loading properties from database:', error);
         
-        // Fallback to localStorage for existing data
-        try {
-          const storageKey = `properties_${user.email}`;
-          const savedProperties = localStorage.getItem(storageKey);
-          
-          if (savedProperties) {
-            const parsedProperties = JSON.parse(savedProperties);
-            setProperties(parsedProperties);
-            console.log('📋 Properties loaded from localStorage fallback:', parsedProperties.length);
-          } else {
-            setProperties([]);
-          }
-        } catch (localStorageError) {
-          console.error('❌ Error loading from localStorage fallback:', localStorageError);
-          setProperties([]);
-        }
+        // No fallback - only show database properties
+        setProperties([]);
+        console.log('📋 No properties found in database, showing empty state');
       }
     };
 
@@ -128,17 +118,17 @@ const MyProperties: React.FC<{
   const handleEditProperty = (property: any) => {
     setEditingProperty(property);
     setFormData({
-      name: property.name,
-      type: property.type,
-      location: property.location,
-      city: property.city,
-      state: property.state,
-      price: property.price.toString(),
-      capacity: property.capacity.toString(),
-      bedrooms: property.bedrooms.toString(),
-      bathrooms: property.bathrooms.toString(),
-      description: property.description,
-      amenities: property.amenities
+      name: property.name || '',
+      type: property.type || 'villa',
+      location: property.location || '',
+      city: property.city || '',
+      state: property.state || '',
+      price: (property.price || 0).toString(),
+      capacity: (property.capacity || 0).toString(),
+      bedrooms: (property.bedrooms || 0).toString(),
+      bathrooms: (property.bathrooms || 0).toString(),
+      description: property.description || '',
+      amenities: property.amenities || []
     });
     setShowEditModal(true);
   };
@@ -236,6 +226,37 @@ const MyProperties: React.FC<{
     setImagePreviewUrls(prev => prev.filter((_, i) => i !== index));
   };
 
+  const addImageLink = () => {
+    try {
+      if (!newImageLink.trim()) {
+        alert('Please enter an image URL');
+        return;
+      }
+      
+      if (!isValidImageUrl(newImageLink.trim())) {
+        alert('Please enter a valid image URL (must end with .jpg, .jpeg, .png, .gif, .webp)');
+        return;
+      }
+      
+      setImageLinks(prev => [...prev, newImageLink.trim()]);
+      setNewImageLink('');
+      setShowLinkInput(false);
+      console.log('✅ Image link added:', newImageLink.trim());
+    } catch (error) {
+      console.error('❌ Error adding image link:', error);
+      alert('Error adding image link. Please try again.');
+    }
+  };
+
+  const removeImageLink = (index: number) => {
+    setImageLinks(prev => prev.filter((_, i) => i !== index));
+  };
+
+  const isValidImageUrl = (url: string) => {
+    const imageExtensions = ['.jpg', '.jpeg', '.png', '.gif', '.webp'];
+    return imageExtensions.some(ext => url.toLowerCase().includes(ext));
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
@@ -247,22 +268,25 @@ const MyProperties: React.FC<{
     console.log('💾 Saving property with images:', imagePreviewUrls.length);
     console.log('🖼️ Image preview URLs:', imagePreviewUrls);
     
-    try {
-      const propertyData = {
-        name: formData.name,
-        type: formData.type,
-        location: formData.location,
-        city: formData.city,
-        state: formData.state,
-        price: parseInt(formData.price),
-        capacity: parseInt(formData.capacity),
-        bedrooms: parseInt(formData.bedrooms),
-        bathrooms: parseInt(formData.bathrooms),
-        description: formData.description,
-        amenities: formData.amenities,
-        images: imagePreviewUrls.length > 0 ? imagePreviewUrls : ['/placeholder.svg']
-      };
+    // Combine uploaded images and image links
+    const allImages = [...imagePreviewUrls, ...imageLinks];
+    
+    const propertyData = {
+      name: formData.name,
+      type: formData.type,
+      location: formData.location,
+      city: formData.city,
+      state: formData.state,
+      price: parseInt(formData.price),
+      capacity: parseInt(formData.capacity),
+      bedrooms: parseInt(formData.bedrooms),
+      bathrooms: parseInt(formData.bathrooms),
+      description: formData.description,
+      amenities: formData.amenities,
+      images: allImages.length > 0 ? allImages : ['/placeholder.svg']
+    };
 
+    try {
       if (editingProperty) {
         // Update existing property in database
         const updatedDbProperty = await PropertyService.updateProperty(editingProperty.id, propertyData);
@@ -306,10 +330,68 @@ const MyProperties: React.FC<{
       });
       setSelectedImages([]);
       setImagePreviewUrls([]);
+      setImageLinks([]);
+      setNewImageLink('');
+      setShowLinkInput(false);
       
     } catch (error) {
       console.error('❌ Error saving property to database:', error);
-      alert('Failed to save property. Please try again.');
+      
+      // Fallback: Save to localStorage if database is not available
+      try {
+        const storageKey = `properties_${user.email}`;
+        const existingProperties = localStorage.getItem(storageKey);
+        const propertiesArray = existingProperties ? JSON.parse(existingProperties) : [];
+        
+        const newProperty = {
+          id: Date.now().toString(), // Generate temporary ID
+          ...propertyData,
+          ownerEmail: user.email,
+          status: 'active',
+          createdAt: new Date().toISOString(),
+          isLocalStorage: true // Flag to identify localStorage properties
+        };
+        
+        propertiesArray.push(newProperty);
+        localStorage.setItem(storageKey, JSON.stringify(propertiesArray));
+        
+        // Update UI
+        const updatedProperties = [...properties, newProperty];
+        setProperties(updatedProperties);
+        
+        if (editingProperty) {
+          setShowEditModal(false);
+        } else {
+          setShowAddModal(false);
+        }
+        
+        // Reset form
+        setFormData({
+          name: '',
+          type: 'villa',
+          location: '',
+          city: '',
+          state: '',
+          price: '',
+          capacity: '',
+          bedrooms: '',
+          bathrooms: '',
+          description: '',
+          amenities: []
+        });
+        setSelectedImages([]);
+        setImagePreviewUrls([]);
+        setImageLinks([]);
+        setNewImageLink('');
+        setShowLinkInput(false);
+        
+        alert('✅ Property saved locally! (Database not available - using localStorage fallback)');
+        console.log('📋 Property saved to localStorage:', newProperty);
+        
+      } catch (localStorageError) {
+        console.error('❌ Error saving to localStorage:', localStorageError);
+        alert('Failed to save property. Please check database setup or try again.');
+      }
     }
   };
 
@@ -687,7 +769,9 @@ const MyProperties: React.FC<{
                 
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">Property Images</label>
-                  <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center">
+                  
+                  {/* Upload Option */}
+                  <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center mb-4">
                     <input
                       type="file"
                       multiple
@@ -702,8 +786,41 @@ const MyProperties: React.FC<{
                       <p className="text-xs text-gray-500 mt-1">PNG, JPG up to 10MB</p>
                     </label>
                   </div>
+
+                  {/* Link Upload Option */}
+                  <div className="mb-4">
+                    <div className="flex items-center justify-between mb-2">
+                      <span className="text-sm font-medium text-gray-700">Or add image links:</span>
+                      <button
+                        type="button"
+                        onClick={() => setShowLinkInput(!showLinkInput)}
+                        className="text-blue-600 hover:text-blue-700 text-sm"
+                      >
+                        {showLinkInput ? 'Cancel' : 'Add Link'}
+                      </button>
+                    </div>
+                    
+                    {showLinkInput && (
+                      <div className="flex gap-2 mb-2">
+                        <input
+                          type="url"
+                          value={newImageLink}
+                          onChange={(e) => setNewImageLink(e.target.value)}
+                          placeholder="https://example.com/image.jpg"
+                          className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        />
+                        <button
+                          type="button"
+                          onClick={addImageLink}
+                          className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+                        >
+                          Add
+                        </button>
+                      </div>
+                    )}
+                  </div>
                   
-                  {/* Image Previews */}
+                  {/* Uploaded Image Previews */}
                   {imagePreviewUrls.length > 0 && (
                     <div className="mt-4">
                       <h4 className="text-sm font-medium text-gray-700 mb-2">Uploaded Images:</h4>
@@ -718,6 +835,34 @@ const MyProperties: React.FC<{
                             <button
                               type="button"
                               onClick={() => removeImage(index)}
+                              className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs hover:bg-red-600"
+                            >
+                              <i className="fas fa-times"></i>
+                            </button>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Image Link Previews */}
+                  {imageLinks.length > 0 && (
+                    <div className="mt-4">
+                      <h4 className="text-sm font-medium text-gray-700 mb-2">Image Links:</h4>
+                      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                        {imageLinks.map((url, index) => (
+                          <div key={index} className="relative">
+                            <img
+                              src={url}
+                              alt={`Link ${index + 1}`}
+                              className="w-full h-24 object-cover rounded-lg"
+                              onError={(e) => {
+                                e.currentTarget.src = '/placeholder.svg';
+                              }}
+                            />
+                            <button
+                              type="button"
+                              onClick={() => removeImageLink(index)}
                               className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs hover:bg-red-600"
                             >
                               <i className="fas fa-times"></i>
@@ -909,7 +1054,9 @@ const MyProperties: React.FC<{
                 
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">Property Images</label>
-                  <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center">
+                  
+                  {/* Upload Option */}
+                  <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center mb-4">
                     <input
                       type="file"
                       multiple
@@ -924,8 +1071,41 @@ const MyProperties: React.FC<{
                       <p className="text-xs text-gray-500 mt-1">PNG, JPG up to 10MB</p>
                     </label>
                   </div>
+
+                  {/* Link Upload Option */}
+                  <div className="mb-4">
+                    <div className="flex items-center justify-between mb-2">
+                      <span className="text-sm font-medium text-gray-700">Or add image links:</span>
+                      <button
+                        type="button"
+                        onClick={() => setShowLinkInput(!showLinkInput)}
+                        className="text-blue-600 hover:text-blue-700 text-sm"
+                      >
+                        {showLinkInput ? 'Cancel' : 'Add Link'}
+                      </button>
+                    </div>
+                    
+                    {showLinkInput && (
+                      <div className="flex gap-2 mb-2">
+                        <input
+                          type="url"
+                          value={newImageLink}
+                          onChange={(e) => setNewImageLink(e.target.value)}
+                          placeholder="https://example.com/image.jpg"
+                          className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        />
+                        <button
+                          type="button"
+                          onClick={addImageLink}
+                          className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+                        >
+                          Add
+                        </button>
+                      </div>
+                    )}
+                  </div>
                   
-                  {/* Image Previews */}
+                  {/* Uploaded Image Previews */}
                   {imagePreviewUrls.length > 0 && (
                     <div className="mt-4">
                       <h4 className="text-sm font-medium text-gray-700 mb-2">Uploaded Images:</h4>
@@ -940,6 +1120,34 @@ const MyProperties: React.FC<{
                             <button
                               type="button"
                               onClick={() => removeImage(index)}
+                              className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs hover:bg-red-600"
+                            >
+                              <i className="fas fa-times"></i>
+                            </button>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Image Link Previews */}
+                  {imageLinks.length > 0 && (
+                    <div className="mt-4">
+                      <h4 className="text-sm font-medium text-gray-700 mb-2">Image Links:</h4>
+                      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                        {imageLinks.map((url, index) => (
+                          <div key={index} className="relative">
+                            <img
+                              src={url}
+                              alt={`Link ${index + 1}`}
+                              className="w-full h-24 object-cover rounded-lg"
+                              onError={(e) => {
+                                e.currentTarget.src = '/placeholder.svg';
+                              }}
+                            />
+                            <button
+                              type="button"
+                              onClick={() => removeImageLink(index)}
                               className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs hover:bg-red-600"
                             >
                               <i className="fas fa-times"></i>

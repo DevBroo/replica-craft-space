@@ -1,0 +1,276 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Auto Setup Database</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .test-card {
+            background: white;
+            border-radius: 8px;
+            padding: 20px;
+            margin: 20px 0;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .test-button {
+            background: #2196f3;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            margin: 5px;
+            text-decoration: none;
+            display: inline-block;
+        }
+        .success {
+            color: #4caf50;
+            font-weight: bold;
+        }
+        .error {
+            color: #f44336;
+            font-weight: bold;
+        }
+        .info {
+            background: #e3f2fd;
+            border-left: 4px solid #2196f3;
+            padding: 15px;
+            margin: 15px 0;
+        }
+        .issue {
+            background: #ffebee;
+            border-left: 4px solid #f44336;
+            padding: 15px;
+            margin: 15px 0;
+        }
+        pre {
+            background: #f5f5f5;
+            padding: 10px;
+            border-radius: 4px;
+            overflow-x: auto;
+            font-size: 12px;
+        }
+    </style>
+</head>
+<body>
+    <h1>🗄️ Auto Setup Database</h1>
+    
+    <div class="test-card">
+        <h2>🚀 Automatic Database Setup</h2>
+        
+        <div class="info">
+            <strong>I'll create the properties table in your Supabase database automatically!</strong>
+        </div>
+        
+        <div class="info">
+            <h3>Step 1: Check Current Status</h3>
+            <button onclick="checkDatabaseStatus()" class="test-button">Check Database</button>
+            <div id="statusResult"></div>
+        </div>
+        
+        <div class="info">
+            <h3>Step 2: Create Properties Table</h3>
+            <button onclick="createPropertiesTable()" class="test-button">Create Table</button>
+            <div id="createResult"></div>
+        </div>
+        
+        <div class="info">
+            <h3>Step 3: Test Database</h3>
+            <button onclick="testDatabase()" class="test-button">Test Database</button>
+            <div id="testResult"></div>
+        </div>
+    </div>
+
+    <div class="test-card">
+        <h2>📊 Setup Progress</h2>
+        <div id="progressLog"></div>
+    </div>
+
+    <div class="test-card">
+        <h2>✅ After Setup</h2>
+        
+        <div class="info">
+            <h3>Test Property Addition</h3>
+            <a href="http://localhost:8082/owner/view" class="test-button" target="_blank">Open Owner Dashboard</a>
+            <p>Try adding a property - it should now save to the database instead of localStorage!</p>
+        </div>
+    </div>
+
+    <script>
+        const SUPABASE_URL = 'https://riqsgtuzccwpplbodwbd.supabase.co';
+        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJpZ3NndHV6Y2N3cHBsYm9kd2JkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MzQ5NzI5NzAsImV4cCI6MjA1MDU0ODk3MH0.Ej8Ej8Ej8Ej8Ej8Ej8Ej8Ej8Ej8Ej8Ej8Ej8Ej8Ej8';
+
+        function logProgress(message, type = 'info') {
+            const progressDiv = document.getElementById('progressLog');
+            const timestamp = new Date().toLocaleTimeString();
+            const color = type === 'error' ? '#f44336' : type === 'success' ? '#4caf50' : '#2196f3';
+            
+            progressDiv.innerHTML += `<div style="color: ${color}; margin: 5px 0;">
+                [${timestamp}] ${message}
+            </div>`;
+            progressDiv.scrollTop = progressDiv.scrollHeight;
+        }
+
+        async function checkDatabaseStatus() {
+            const resultDiv = document.getElementById('statusResult');
+            resultDiv.innerHTML = '<p>Checking database status...</p>';
+            
+            try {
+                const response = await fetch(`${SUPABASE_URL}/rest/v1/properties?select=count`, {
+                    headers: {
+                        'apikey': SUPABASE_ANON_KEY,
+                        'Authorization': `Bearer ${SUPABASE_ANON_KEY}`
+                    }
+                });
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    resultDiv.innerHTML = '<p class="success">✅ Properties table exists with ' + data.length + ' records</p>';
+                    logProgress('✅ Properties table already exists', 'success');
+                } else if (response.status === 404) {
+                    resultDiv.innerHTML = '<p class="error">❌ Properties table does not exist (404 error)</p>';
+                    logProgress('❌ Properties table does not exist', 'error');
+                } else {
+                    resultDiv.innerHTML = '<p class="error">❌ Error checking table: ' + response.status + '</p>';
+                    logProgress('❌ Error checking table: ' + response.status, 'error');
+                }
+            } catch (error) {
+                resultDiv.innerHTML = '<p class="error">❌ Error checking table: ' + error.message + '</p>';
+                logProgress('❌ Error checking table: ' + error.message, 'error');
+            }
+        }
+
+        async function createPropertiesTable() {
+            const resultDiv = document.getElementById('createResult');
+            resultDiv.innerHTML = '<p>Creating properties table...</p>';
+            
+            try {
+                logProgress('🔄 Creating properties table...', 'info');
+                
+                // SQL to create the properties table
+                const createTableSQL = `
+                    CREATE TABLE IF NOT EXISTS properties (
+                        id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+                        owner_id TEXT NOT NULL,
+                        title TEXT NOT NULL,
+                        description TEXT,
+                        location JSONB,
+                        address TEXT,
+                        property_type TEXT,
+                        amenities TEXT[],
+                        pricing JSONB,
+                        images TEXT[],
+                        max_guests INTEGER,
+                        bedrooms INTEGER,
+                        bathrooms INTEGER,
+                        status TEXT DEFAULT 'pending',
+                        is_featured BOOLEAN DEFAULT false,
+                        rating DECIMAL DEFAULT 0,
+                        review_count INTEGER DEFAULT 0,
+                        created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+                        updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+                    );
+                `;
+
+                // Execute the SQL using Supabase's SQL endpoint
+                const response = await fetch(`${SUPABASE_URL}/rest/v1/rpc/exec_sql`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'apikey': SUPABASE_ANON_KEY,
+                        'Authorization': `Bearer ${SUPABASE_ANON_KEY}`
+                    },
+                    body: JSON.stringify({
+                        sql: createTableSQL
+                    })
+                });
+
+                if (response.ok) {
+                    resultDiv.innerHTML = '<p class="success">✅ Properties table created successfully!</p>';
+                    logProgress('✅ Properties table created successfully!', 'success');
+                } else {
+                    const errorData = await response.text();
+                    resultDiv.innerHTML = '<p class="error">❌ Error creating table: ' + response.status + '</p>';
+                    logProgress('❌ Error creating table: ' + response.status + ' - ' + errorData, 'error');
+                }
+            } catch (error) {
+                resultDiv.innerHTML = '<p class="error">❌ Error creating table: ' + error.message + '</p>';
+                logProgress('❌ Error creating table: ' + error.message, 'error');
+            }
+        }
+
+        async function testDatabase() {
+            const resultDiv = document.getElementById('testResult');
+            resultDiv.innerHTML = '<p>Testing database...</p>';
+            
+            try {
+                logProgress('🔄 Testing database connection...', 'info');
+                
+                // Test inserting a sample property
+                const testProperty = {
+                    owner_id: 'test@example.com',
+                    title: 'Test Property',
+                    description: 'Test property for database verification',
+                    location: { city: 'Test City', state: 'Test State', address: 'Test Address' },
+                    address: 'Test Address, Test City, Test State',
+                    property_type: 'villa',
+                    amenities: ['wifi', 'ac'],
+                    pricing: { daily_rate: 1000, currency: 'INR' },
+                    images: ['/placeholder.svg'],
+                    max_guests: 4,
+                    bedrooms: 2,
+                    bathrooms: 1,
+                    status: 'pending'
+                };
+
+                const response = await fetch(`${SUPABASE_URL}/rest/v1/properties`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'apikey': SUPABASE_ANON_KEY,
+                        'Authorization': `Bearer ${SUPABASE_ANON_KEY}`
+                    },
+                    body: JSON.stringify(testProperty)
+                });
+
+                if (response.ok) {
+                    const data = await response.json();
+                    resultDiv.innerHTML = '<p class="success">✅ Database test successful! Test property created with ID: ' + data.id + '</p>';
+                    logProgress('✅ Database test successful!', 'success');
+                    
+                    // Clean up test data
+                    await fetch(`${SUPABASE_URL}/rest/v1/properties?id=eq.${data.id}`, {
+                        method: 'DELETE',
+                        headers: {
+                            'apikey': SUPABASE_ANON_KEY,
+                            'Authorization': `Bearer ${SUPABASE_ANON_KEY}`
+                        }
+                    });
+                    logProgress('🧹 Test data cleaned up', 'info');
+                } else {
+                    const errorData = await response.text();
+                    resultDiv.innerHTML = '<p class="error">❌ Database test failed: ' + response.status + '</p>';
+                    logProgress('❌ Database test failed: ' + response.status + ' - ' + errorData, 'error');
+                }
+            } catch (error) {
+                resultDiv.innerHTML = '<p class="error">❌ Database test error: ' + error.message + '</p>';
+                logProgress('❌ Database test error: ' + error.message, 'error');
+            }
+        }
+
+        // Auto-run on page load
+        window.onload = function() {
+            console.log('🗄️ Auto Setup Database Tool Loaded');
+            logProgress('🚀 Auto Setup Database Tool Loaded', 'info');
+            setTimeout(checkDatabaseStatus, 1000);
+        };
+    </script>
+</body>
+</html>
