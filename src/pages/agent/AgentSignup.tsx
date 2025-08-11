@@ -11,7 +11,7 @@ import picnifyLogo from '/lovable-uploads/f7960b1f-407a-4738-b8f6-067ea4600889.p
 
 const AgentSignup: React.FC = () => {
   const navigate = useNavigate();
-  const { signup, loading, error, clearError, isAuthenticated, user } = useAuth();
+  const { register, loading, error, clearError, isAuthenticated, user } = useAuth();
   
   const [formData, setFormData] = useState({
     firstName: '',
@@ -102,7 +102,7 @@ const AgentSignup: React.FC = () => {
         }
       };
 
-      await signup(formData.email, formData.password, agentData);
+      await register(agentData);
       setSuccessMessage('Agent account created successfully! Please check your email to verify your account.');
       
       // Redirect to agent login after 3 seconds
@@ -142,7 +142,7 @@ const AgentSignup: React.FC = () => {
             {error && (
               <Alert className="mb-6 border-red-200 bg-red-50">
                 <AlertDescription className="text-red-800">
-                  {error}
+                  {error?.message}
                 </AlertDescription>
               </Alert>
             )}

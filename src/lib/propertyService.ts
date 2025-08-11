@@ -1,5 +1,9 @@
 import { supabase } from '@/integrations/supabase/client';
-import type { PropertyInsert, PropertyUpdate, Property } from '@/integrations/supabase/types';
+import type { Database } from '@/integrations/supabase/types';
+
+type PropertyInsert = Database['public']['Tables']['properties']['Insert'];
+type PropertyUpdate = Database['public']['Tables']['properties']['Update'];
+type Property = Database['public']['Tables']['properties']['Row'];
 
 export interface PropertyFormData {
   name: string;

@@ -11,8 +11,8 @@ interface AuthContextType {
   loginWithOtp: (phone: string) => Promise<void>;
   verifyOtp: (phone: string, token: string) => Promise<void>;
   updateProfile: (updates: Partial<AuthUser>) => Promise<void>;
-  resetPassword: (email: string) => Promise<void>;
-  resendVerification: (email: string) => Promise<void>;
+  resetPassword: (email: string) => Promise<{ error: AuthError | null }>;
+  resendVerification: (email: string) => Promise<{ error: AuthError | null }>;
   changePassword: (newPassword: string) => Promise<void>;
   clearError: () => void;
   isAuthenticated: boolean;
@@ -207,18 +207,22 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     try {
       setLoading(true);
       setError(null);
-      const { error: authError } = await authService.resetPassword(email);
+      const result = await authService.resetPassword(email);
       
-      if (authError) {
-        setError(authError);
+      if (result.error) {
+        setError(result.error);
       }
+      
+      return result;
     } catch (err: unknown) {
       const errorMessage = err instanceof Error ? err.message : 'Password reset failed';
       const errorCode = (err as { code?: string })?.code;
-      setError({
+      const authError = {
         message: errorMessage,
         code: errorCode,
-      });
+      };
+      setError(authError);
+      return { error: authError };
     } finally {
       setLoading(false);
     }
@@ -228,18 +232,22 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     try {
       setLoading(true);
       setError(null);
-      const { error: authError } = await authService.resendVerification(email);
+      const result = await authService.resendVerification(email);
       
-      if (authError) {
-        setError(authError);
+      if (result.error) {
+        setError(result.error);
       }
+      
+      return result;
     } catch (err: unknown) {
       const errorMessage = err instanceof Error ? err.message : 'Failed to resend verification email';
       const errorCode = (err as { code?: string })?.code;
-      setError({
+      const authError = {
         message: errorMessage,
         code: errorCode,
-      });
+      };
+      setError(authError);
+      return { error: authError };
     } finally {
       setLoading(false);
     }

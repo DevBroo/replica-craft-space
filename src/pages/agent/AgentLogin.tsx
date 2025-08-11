@@ -61,7 +61,7 @@ const AgentLogin: React.FC = () => {
     }
 
     try {
-      await login(email, password);
+      await login({ email, password });
       // The redirect will be handled by the useEffect above
     } catch (err) {
       console.error('Login error:', err);
@@ -91,7 +91,7 @@ const AgentLogin: React.FC = () => {
             {error && (
               <Alert className="mb-6 border-red-200 bg-red-50">
                 <AlertDescription className="text-red-800">
-                  {error}
+                  {error?.message}
                 </AlertDescription>
               </Alert>
             )}

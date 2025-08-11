@@ -224,8 +224,8 @@ const Signup: React.FC = () => {
       await register({
         email,
         password,
-        first_name: firstName,
-        last_name: lastName,
+        firstName: firstName,
+        lastName: lastName,
         phone,
         role
       });
