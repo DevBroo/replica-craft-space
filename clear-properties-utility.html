@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Clear All Properties - Utility</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            background: white;
+            border-radius: 8px;
+            padding: 30px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            text-align: center;
+        }
+        .danger-button {
+            background: #f44336;
+            color: white;
+            border: none;
+            padding: 20px 40px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 18px;
+            font-weight: bold;
+            margin: 20px 0;
+        }
+        .danger-button:hover {
+            background: #d32f2f;
+        }
+        .danger-button:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+        }
+        .warning {
+            background: #ffebee;
+            border-left: 4px solid #f44336;
+            padding: 15px;
+            margin: 20px 0;
+            text-align: left;
+        }
+        .success {
+            background: #e8f5e8;
+            border-left: 4px solid #4caf50;
+            padding: 15px;
+            margin: 20px 0;
+            text-align: left;
+        }
+        .info {
+            background: #e3f2fd;
+            border-left: 4px solid #2196f3;
+            padding: 15px;
+            margin: 20px 0;
+            text-align: left;
+        }
+        #status {
+            margin: 20px 0;
+            padding: 15px;
+            border-radius: 4px;
+            display: none;
+        }
+        .links {
+            margin-top: 30px;
+        }
+        .link-button {
+            background: #2196f3;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            margin: 5px;
+            text-decoration: none;
+            display: inline-block;
+        }
+        .link-button:hover {
+            background: #1976d2;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🗑️ Clear All Properties</h1>
+        
+        <div class="warning">
+            <strong>⚠️ WARNING:</strong> This will permanently delete ALL properties from the database!
+            <ul>
+                <li>All property data will be lost</li>
+                <li>All property images will be removed</li>
+                <li>This action cannot be undone</li>
+            </ul>
+        </div>
+        
+        <div class="info">
+            <strong>Purpose:</strong> You want to start fresh and add properties from scratch through the owner dashboard
+        </div>
+        
+        <button id="clearButton" class="danger-button" onclick="clearAllProperties()">
+            🗑️ CLEAR ALL PROPERTIES
+        </button>
+        
+        <div id="status"></div>
+        
+        <div class="links">
+            <a href="http://localhost:8082/owner/view" class="link-button" target="_blank">Owner Dashboard</a>
+            <a href="http://localhost:8082/properties" class="link-button" target="_blank">Public Properties</a>
+            <a href="clear-all-properties.html" class="link-button" target="_blank">Detailed Guide</a>
+        </div>
+    </div>
+
+    <script>
+        async function clearAllProperties() {
+            const button = document.getElementById('clearButton');
+            const status = document.getElementById('status');
+            
+            // Confirm action
+            if (!confirm('Are you absolutely sure you want to delete ALL properties from the database? This action cannot be undone!')) {
+                return;
+            }
+            
+            // Double confirm
+            if (!confirm('This will permanently delete ALL properties. Are you sure?')) {
+                return;
+            }
+            
+            button.disabled = true;
+            button.textContent = '🗑️ DELETING...';
+            status.style.display = 'block';
+            status.className = 'info';
+            status.innerHTML = '🔄 Deleting all properties from database...';
+            
+            try {
+                // This would need to be called from within the React app
+                // For now, we'll show instructions
+                status.className = 'info';
+                status.innerHTML = `
+                    <strong>Manual Clear Required:</strong><br>
+                    Since this utility runs outside the React app, you need to:<br><br>
+                    1. <a href="http://localhost:8082/owner/view" target="_blank">Go to Owner Dashboard</a><br>
+                    2. Delete each property one by one using the Delete button<br>
+                    3. Or use the SQL command: <code>DELETE FROM properties;</code> in Supabase<br><br>
+                    <strong>Alternative:</strong> Open browser console on owner dashboard and run:<br>
+                    <code>await PropertyService.clearAllProperties()</code>
+                `;
+                
+            } catch (error) {
+                status.className = 'warning';
+                status.innerHTML = `❌ Error: ${error.message}`;
+            } finally {
+                button.disabled = false;
+                button.textContent = '🗑️ CLEAR ALL PROPERTIES';
+            }
+        }
+        
+        console.log('🗑️ Clear Properties Utility Loaded');
+        console.log('⚠️ WARNING: This will permanently delete all properties');
+        console.log('📋 Use owner dashboard to delete properties or run SQL command');
+    </script>
+</body>
+</html>

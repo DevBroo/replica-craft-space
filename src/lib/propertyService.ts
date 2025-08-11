@@ -294,4 +294,29 @@ export class PropertyService {
       images: frontendProperty.images
     };
   }
+
+  /**
+   * Clear all properties from database (DANGEROUS - use with caution)
+   */
+  static async clearAllProperties(): Promise<boolean> {
+    try {
+      console.log('🗑️ Clearing all properties from database...');
+      
+      const { error } = await supabase
+        .from('properties')
+        .delete()
+        .neq('id', '00000000-0000-0000-0000-000000000000'); // Delete all rows
+
+      if (error) {
+        console.error('❌ Error clearing all properties:', error);
+        throw error;
+      }
+
+      console.log('✅ All properties cleared from database successfully');
+      return true;
+    } catch (error) {
+      console.error('❌ Failed to clear all properties:', error);
+      throw error;
+    }
+  }
 }
