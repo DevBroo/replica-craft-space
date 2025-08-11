@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 
@@ -238,22 +238,23 @@ const MyProperties: React.FC<{
     }
   };
 
-  const handleFormChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
+  const handleFormChange = useCallback((e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
     setFormData(prev => ({
       ...prev,
       [name]: value
     }));
-  };
+    console.log(`📝 Form field changed: ${name} = ${value}`);
+  }, []);
 
-  const handleAmenityChange = (amenity: string) => {
+  const handleAmenityChange = useCallback((amenity: string) => {
     setFormData(prev => ({
       ...prev,
       amenities: prev.amenities.includes(amenity)
         ? prev.amenities.filter(a => a !== amenity)
         : [...prev.amenities, amenity]
     }));
-  };
+  }, []);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -325,7 +326,7 @@ const MyProperties: React.FC<{
     });
   };
 
-  const PropertyForm = () => (
+  const PropertyForm = React.memo(() => (
     <form onSubmit={handleSubmit} className="space-y-6">
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div>
@@ -715,7 +716,7 @@ const MyProperties: React.FC<{
                 <i className="fas fa-times text-xl"></i>
               </button>
             </div>
-            <PropertyForm />
+            <PropertyForm key="add-form" />
             <div className="flex justify-end space-x-3 mt-6">
               <button
                 onClick={() => setShowAddModal(false)}
@@ -747,7 +748,7 @@ const MyProperties: React.FC<{
                 <i className="fas fa-times text-xl"></i>
               </button>
             </div>
-            <PropertyForm />
+            <PropertyForm key="edit-form" />
             <div className="flex justify-end space-x-3 mt-6">
               <button
                 onClick={() => setShowEditModal(false)}
