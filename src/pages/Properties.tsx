@@ -94,27 +94,25 @@ const Properties: React.FC = () => {
     });
   });
 
-  const properties = [
-    // Database Properties - Load from database only
-    ...dbProperties.map((property: any, index: number) => ({
-      id: property.id,
-      name: property.name,
-      location: property.city,
-      rating: property.rating,
-      reviews: property.totalBookings,
-      price: property.price,
-      originalPrice: property.price * 1.1, // 10% markup for original price
-      image: property.images && property.images.length > 0 ? property.images[0] : beachsideParadise, // Use uploaded image or default
-      amenities: property.amenities.map((a: string) => a.charAt(0).toUpperCase() + a.slice(1)),
-      type: property.type.charAt(0).toUpperCase() + property.type.slice(1),
-      guests: property.capacity,
-      bedrooms: property.bedrooms,
-      bathrooms: property.bathrooms,
-      featured: true,
-      ownerEmail: property.ownerEmail,
-      description: property.description
-    }))
-  ];
+  // Only show database properties - no dummy data
+  const properties = dbProperties.map((property: any, index: number) => ({
+    id: property.id,
+    name: property.name,
+    location: property.city,
+    rating: property.rating,
+    reviews: property.totalBookings,
+    price: property.price,
+    originalPrice: property.price * 1.1, // 10% markup for original price
+    image: property.images && property.images.length > 0 ? property.images[0] : beachsideParadise, // Use uploaded image or default
+    amenities: property.amenities.map((a: string) => a.charAt(0).toUpperCase() + a.slice(1)),
+    type: property.type.charAt(0).toUpperCase() + property.type.slice(1),
+    guests: property.capacity,
+    bedrooms: property.bedrooms,
+    bathrooms: property.bathrooms,
+    featured: true,
+    ownerEmail: property.ownerEmail,
+    description: property.description
+  }));
 
   const filterOptions = {
     priceRanges: [

@@ -26,14 +26,7 @@ const useScrollAnimation = () => {
   }, []);
 };
 
-// Import all the generated images
-import sunsetVillaResort from '@/assets/sunset-villa-resort.jpg';
-import mountainCottage from '@/assets/mountain-cottage.jpg';
-import beachsideParadise from '@/assets/beachside-paradise.jpg';
-import gardenEstate from '@/assets/garden-estate.jpg';
-import royalHeritageVilla from '@/assets/royal-heritage-villa.jpg';
-import lakesideRetreat from '@/assets/lakeside-retreat.jpg';
-import farmHouseBliss from '@/assets/farm-house-bliss.jpg';
+// Import only required assets
 import heroBackground from '@/assets/hero-background.jpg';
 import successfulHost from '@/assets/successful-host.jpg';
 import picnifyLogo from '/lovable-uploads/f7960b1f-407a-4738-b8f6-067ea4600889.png';
@@ -58,119 +51,11 @@ useEffect(() => {
 // Initialize scroll animations
 useScrollAnimation();
 
-const topPicks = [
-// Venteskraft Properties (Featured)
-{
-id: 1,
-name: 'Luxury Beach Villa - Goa',
-location: 'Goa',
-rating: 4.9,
-price: 18000,
-image: beachsideParadise
-},
-{
-id: 2,
-name: 'Mountain View Resort - Manali',
-location: 'Manali',
-rating: 4.7,
-price: 12000,
-image: mountainCottage
-},
-{
-id: 3,
-name: 'Heritage Palace - Jaipur',
-location: 'Jaipur',
-rating: 0,
-price: 35000,
-image: royalHeritageVilla
-},
-// Original Properties
-{
-id: 4,
-name: 'Sunset Villa Resort',
-location: 'Goa',
-rating: 4.8,
-price: 2500,
-image: sunsetVillaResort
-},
-{
-id: 5,
-name: 'Mountain View Cottage',
-location: 'Manali',
-rating: 4.6,
-price: 1800,
-image: mountainCottage
-},
-{
-id: 6,
-name: 'Beachside Paradise',
-location: 'Kerala',
-rating: 4.9,
-price: 3200,
-image: beachsideParadise
-},
-{
-id: 7,
-name: 'Garden Estate',
-location: 'Udaipur',
-rating: 4.7,
-price: 2200,
-image: gardenEstate
-}
-];
+// No dummy data - will be replaced with database properties
+const topPicks: any[] = [];
 
-const featuredProperties = [
-// Venteskraft Properties (Featured)
-{
-id: 1,
-name: 'Luxury Beach Villa - Goa',
-location: 'Goa',
-amenities: ['Pool', 'WiFi', 'Parking', 'Kitchen', 'AC', 'Gym', 'TV', 'Spa'],
-price: 18000,
-image: beachsideParadise
-},
-{
-id: 2,
-name: 'Mountain View Resort - Manali',
-location: 'Manali',
-amenities: ['Fireplace', 'WiFi', 'Kitchen', 'Heating', 'Parking', 'Gym', 'Spa'],
-price: 12000,
-image: mountainCottage
-},
-{
-id: 3,
-name: 'Heritage Palace - Jaipur',
-location: 'Jaipur',
-amenities: ['Pool', 'Garden', 'WiFi', 'Parking', 'Heritage', 'Spa', 'TV', 'Fireplace'],
-price: 35000,
-image: royalHeritageVilla
-},
-// Original Properties
-{
-id: 4,
-name: 'Royal Heritage Villa',
-location: 'Jaipur',
-amenities: ['Pool', 'Garden', 'WiFi', 'Parking'],
-price: 4500,
-image: royalHeritageVilla
-},
-{
-id: 5,
-name: 'Lakeside Retreat',
-location: 'Nainital',
-amenities: ['Lake View', 'Fireplace', 'Kitchen', 'Balcony'],
-price: 2800,
-image: lakesideRetreat
-},
-{
-id: 6,
-name: 'Farm House Bliss',
-location: 'Lonavala',
-amenities: ['Farm', 'BBQ', 'Games', 'Nature'],
-price: 1900,
-image: farmHouseBliss
-}
-];
+// No dummy data - will be replaced with database properties
+const featuredProperties: any[] = [];
 
 const categories = [
 { name: 'Farm Houses', icon: 'fas fa-tractor' },
@@ -712,8 +597,8 @@ Top Picks for You
 Curated collection of the most stunning and luxurious properties that promise unforgettable experiences
 </p>
 </div>
-<div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
-{topPicks.map((property, index) => (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
+{topPicks.length > 0 ? topPicks.map((property, index) => (
 <div key={property.id} className="group cursor-pointer fade-in-up" style={{animationDelay: `${index * 0.1}s`}}>
 <div className="bg-gradient-to-br from-brand-orange to-brand-red p-0.5 rounded-2xl hover-lift">
 <div className="bg-background rounded-2xl overflow-hidden">
@@ -762,8 +647,16 @@ className="w-full h-64 object-cover transition-transform duration-700 group-hove
 </div>
 </div>
 </div>
-))}
-</div>
+)) : (
+          <div className="col-span-full text-center py-16">
+            <div className="bg-secondary/20 rounded-2xl p-12 max-w-md mx-auto">
+              <i className="fas fa-home text-6xl text-muted-foreground mb-4"></i>
+              <h3 className="text-xl font-bold text-foreground mb-2">No Properties Available</h3>
+              <p className="text-muted-foreground">Check back later for amazing property listings!</p>
+            </div>
+          </div>
+        )}
+        </div>
 <div className="text-center mt-16">
 <button className="bg-gradient-to-r from-red-600 to-orange-500 text-white px-10 py-4 rounded-xl hover:from-red-700 hover:to-orange-600 transition-all duration-300 cursor-pointer whitespace-nowrap rounded-button font-bold text-lg shadow-xl hover:shadow-2xl transform hover:scale-105">
 Explore All Properties
@@ -832,8 +725,8 @@ Featured Properties
 </h2>
 <div className="w-24 h-1 bg-gradient-to-r from-brand-red to-brand-orange mx-auto rounded-full"></div>
 </div>
-<div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-10">
-{featuredProperties.map((property, index) => (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-10">
+{featuredProperties.length > 0 ? featuredProperties.map((property, index) => (
 <div key={property.id} className="group cursor-pointer fade-in-up" style={{animationDelay: `${index * 0.2}s`}}>
 <div className="bg-background rounded-3xl shadow-xl hover:shadow-2xl transition-all duration-500 overflow-hidden transform hover:scale-105 hover:-rotate-1 border border-border">
 <div className="relative overflow-hidden">
@@ -885,8 +778,16 @@ Book Now
 </div>
 </div>
 </div>
-))}
-</div>
+)) : (
+          <div className="col-span-full text-center py-16">
+            <div className="bg-secondary/20 rounded-2xl p-12 max-w-md mx-auto">
+              <i className="fas fa-building text-6xl text-muted-foreground mb-4"></i>
+              <h3 className="text-xl font-bold text-foreground mb-2">No Featured Properties</h3>
+              <p className="text-muted-foreground">Featured properties will appear here once added!</p>
+            </div>
+          </div>
+        )}
+        </div>
 <div className="text-center mt-16">
 <button className="bg-gradient-to-r from-gray-800 to-gray-900 text-white px-10 py-4 rounded-xl hover:from-gray-900 hover:to-black transition-all duration-300 cursor-pointer whitespace-nowrap font-bold text-lg shadow-xl hover:shadow-2xl transform hover:scale-105">
 View All Featured Properties

@@ -3,176 +3,128 @@ import { ArrowLeft, Star, MapPin, Wifi, Car, Utensils, Waves, Heart, Share2, Cal
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { PropertyService } from "@/lib/propertyService";
 
-// Comprehensive dummy data for properties
-const propertyData = {
-  "1": {
-    id: "1",
-    title: "Beachside Paradise Resort",
-    location: "Maldives",
-    price: 450,
-    rating: 4.9,
-    reviews: 128,
-    images: [
-      "/lovable-uploads/f7960b1f-407a-4738-b8f6-067ea4600889.png",
-      "/lovable-uploads/e228e944-68b4-44be-b2e6-34da27786e7b.png",
-      "/lovable-uploads/4a6c26a9-df9d-4bbe-a6d2-acb1b3d99100.png",
-      "/lovable-uploads/f5331113-f11c-4b8a-93ba-4f472bf22f0a.png"
-    ],
-    description: "Experience pure luxury at our stunning beachside resort. Wake up to pristine white sand beaches and crystal-clear turquoise waters. This premium property offers world-class amenities, exceptional service, and breathtaking ocean views that will make your stay unforgettable.",
-    amenities: [
-      { icon: Wifi, name: "Free WiFi" },
-      { icon: Car, name: "Free Parking" },
-      { icon: Utensils, name: "Restaurant" },
-      { icon: Waves, name: "Private Beach" }
-    ],
-    roomTypes: [
-      {
-        name: "Ocean View Suite",
-        price: 450,
-        features: ["King Bed", "Ocean View", "Private Balcony", "Minibar"]
-      },
-      {
-        name: "Beach Villa",
-        price: 650,
-        features: ["2 Bedrooms", "Direct Beach Access", "Private Pool", "Butler Service"]
-      }
-    ],
-    highlights: [
-      "Direct beach access",
-      "World-class spa services",
-      "Multiple dining options",
-      "Water sports activities",
-      "24/7 concierge service"
-    ]
-  },
-  "2": {
-    id: "2",
-    title: "Mountain Cottage Retreat",
-    location: "Swiss Alps",
-    price: 320,
-    rating: 4.7,
-    reviews: 89,
-    images: [
-      "/lovable-uploads/e228e944-68b4-44be-b2e6-34da27786e7b.png",
-      "/lovable-uploads/f7960b1f-407a-4738-b8f6-067ea4600889.png",
-      "/lovable-uploads/4a6c26a9-df9d-4bbe-a6d2-acb1b3d99100.png"
-    ],
-    description: "Escape to our charming mountain cottage nestled in the heart of the Swiss Alps. Surrounded by snow-capped peaks and pristine forests, this cozy retreat offers the perfect blend of rustic charm and modern comfort.",
-    amenities: [
-      { icon: Wifi, name: "Free WiFi" },
-      { icon: Car, name: "Free Parking" },
-      { icon: Utensils, name: "Kitchenette" }
-    ],
-    roomTypes: [
-      {
-        name: "Alpine Suite",
-        price: 320,
-        features: ["Queen Bed", "Mountain View", "Fireplace", "Kitchenette"]
-      }
-    ],
-    highlights: [
-      "Mountain hiking trails",
-      "Ski resort nearby",
-      "Cozy fireplace",
-      "Spectacular views",
-      "Pet-friendly"
-    ]
-  },
-  "3": {
-    id: "3",
-    title: "Lakeside Retreat Villa",
-    location: "Lake Como, Italy",
-    price: 380,
-    rating: 4.8,
-    reviews: 156,
-    images: [
-      "/lovable-uploads/4a6c26a9-df9d-4bbe-a6d2-acb1b3d99100.png",
-      "/lovable-uploads/f5331113-f11c-4b8a-93ba-4f472bf22f0a.png",
-      "/lovable-uploads/f7960b1f-407a-4738-b8f6-067ea4600889.png"
-    ],
-    description: "Discover tranquility at our luxurious lakeside villa overlooking the stunning Lake Como. This elegant property combines Italian sophistication with breathtaking natural beauty, offering an unforgettable romantic getaway.",
-    amenities: [
-      { icon: Wifi, name: "Free WiFi" },
-      { icon: Car, name: "Valet Parking" },
-      { icon: Utensils, name: "Fine Dining" },
-      { icon: Waves, name: "Lake Access" }
-    ],
-    roomTypes: [
-      {
-        name: "Lake View Room",
-        price: 380,
-        features: ["King Bed", "Lake View", "Marble Bathroom", "Balcony"]
-      }
-    ],
-    highlights: [
-      "Private lake access",
-      "Italian gardens",
-      "Boat rental available",
-      "Wine tasting",
-      "Spa treatments"
-    ]
-  }
-};
+// No dummy data - load from database using PropertyService
 
 const PropertyDetails = () => {
   const { id } = useParams();
   const navigate = useNavigate();
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [guests, setGuests] = useState(2);
+  const [property, setProperty] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
   
-  // Load venteskraft properties from localStorage
-  const getVenteskraftProperties = () => {
-    try {
-      const storageKey = 'properties_venteskraft@gmail.com';
-      const savedProperties = localStorage.getItem(storageKey);
-      if (savedProperties) {
-        const parsedProperties = JSON.parse(savedProperties);
-        return parsedProperties.filter((property: any) => property.status === 'active');
+  useEffect(() => {
+    const loadProperty = async () => {
+      if (!id) return;
+      
+      try {
+        console.log('🔍 Loading property details for ID:', id);
+        const propertyData = await PropertyService.getPropertyById(id);
+        
+        if (propertyData) {
+          const formattedProperty = {
+            id: propertyData.id,
+            title: propertyData.title,
+            location: `${(propertyData.location as any)?.city || ''}, ${(propertyData.location as any)?.state || ''}`,
+            price: (propertyData.pricing as any)?.daily_rate || 0,
+            rating: propertyData.rating || 0,
+            reviews: propertyData.review_count || 0,
+            images: propertyData.images && propertyData.images.length > 0 
+              ? propertyData.images 
+              : ['/placeholder.svg'],
+            description: propertyData.description || 'No description available.',
+            amenities: propertyData.amenities?.map((a: string) => ({ 
+              icon: Wifi, 
+              name: a.charAt(0).toUpperCase() + a.slice(1) 
+            })) || [],
+            roomTypes: [
+              {
+                name: `${propertyData.property_type.charAt(0).toUpperCase() + propertyData.property_type.slice(1)} Room`,
+                price: (propertyData.pricing as any)?.daily_rate || 0,
+                features: [
+                  `${propertyData.bedrooms || 0} Bedrooms`, 
+                  `${propertyData.bathrooms || 0} Bathrooms`, 
+                  `Capacity: ${propertyData.max_guests || 0} guests`
+                ]
+              }
+            ],
+            highlights: [
+              `${propertyData.bedrooms || 0} Bedrooms`,
+              `${propertyData.bathrooms || 0} Bathrooms`,
+              `Capacity: ${propertyData.max_guests || 0} guests`,
+              `${propertyData.property_type.charAt(0).toUpperCase() + propertyData.property_type.slice(1)} Type`,
+              `Status: ${propertyData.status}`
+            ]
+          };
+          setProperty(formattedProperty);
+          console.log('✅ Property details loaded successfully');
+        } else {
+          // Fallback to localStorage for testing
+          console.log('📋 Property not found in database, checking localStorage...');
+          const storageKey = 'properties_venteskraft@gmail.com';
+          const savedProperties = localStorage.getItem(storageKey);
+          if (savedProperties) {
+            const parsedProperties = JSON.parse(savedProperties);
+            const localProperty = parsedProperties.find((p: any) => p.id === id && p.status === 'active');
+            if (localProperty) {
+              const formattedProperty = {
+                id: localProperty.id,
+                title: localProperty.name,
+                location: `${localProperty.city}, ${localProperty.state}`,
+                price: localProperty.price,
+                rating: localProperty.rating,
+                reviews: localProperty.totalBookings,
+                images: localProperty.images && localProperty.images.length > 0 
+                  ? localProperty.images 
+                  : ['/placeholder.svg'],
+                description: localProperty.description || 'No description available.',
+                amenities: localProperty.amenities?.map((a: string) => ({ 
+                  icon: Wifi, 
+                  name: a.charAt(0).toUpperCase() + a.slice(1) 
+                })) || [],
+                roomTypes: [
+                  {
+                    name: `${localProperty.type.charAt(0).toUpperCase() + localProperty.type.slice(1)} Room`,
+                    price: localProperty.price,
+                    features: [`${localProperty.bedrooms} Bedrooms`, `${localProperty.bathrooms} Bathrooms`, `Capacity: ${localProperty.capacity} guests`]
+                  }
+                ],
+                highlights: [
+                  `${localProperty.bedrooms} Bedrooms`,
+                  `${localProperty.bathrooms} Bathrooms`,
+                  `Capacity: ${localProperty.capacity} guests`,
+                  `${localProperty.type.charAt(0).toUpperCase() + localProperty.type.slice(1)} Type`,
+                  'Active Property'
+                ]
+              };
+              setProperty(formattedProperty);
+              console.log('✅ Property details loaded from localStorage');
+            }
+          }
+        }
+      } catch (error) {
+        console.error('❌ Error loading property details:', error);
+      } finally {
+        setLoading(false);
       }
-    } catch (error) {
-      console.log('Error loading venteskraft properties:', error);
-    }
-    return [];
-  };
+    };
 
-  const venteskraftProperties = getVenteskraftProperties();
-  
-  // Check if it's a venteskraft property first
-  const venteskraftProperty = venteskraftProperties.find((p: any) => p.id === id);
-  
-  // If not found in venteskraft properties, check the dummy data
-  const property = venteskraftProperty ? {
-    id: venteskraftProperty.id,
-    title: venteskraftProperty.name,
-    location: `${venteskraftProperty.city}, ${venteskraftProperty.state}`,
-    price: venteskraftProperty.price,
-    rating: venteskraftProperty.rating,
-    reviews: venteskraftProperty.totalBookings,
-    images: venteskraftProperty.images && venteskraftProperty.images.length > 0 
-      ? venteskraftProperty.images 
-      : ['/placeholder.svg'],
-    description: venteskraftProperty.description || 'No description available.',
-    amenities: venteskraftProperty.amenities.map((a: string) => ({ 
-      icon: Wifi, 
-      name: a.charAt(0).toUpperCase() + a.slice(1) 
-    })),
-    roomTypes: [
-      {
-        name: `${venteskraftProperty.type.charAt(0).toUpperCase() + venteskraftProperty.type.slice(1)} Room`,
-        price: venteskraftProperty.price,
-        features: [`${venteskraftProperty.bedrooms} Bedrooms`, `${venteskraftProperty.bathrooms} Bathrooms`, `Capacity: ${venteskraftProperty.capacity} guests`]
-      }
-    ],
-    highlights: [
-      `${venteskraftProperty.bedrooms} Bedrooms`,
-      `${venteskraftProperty.bathrooms} Bathrooms`,
-      `Capacity: ${venteskraftProperty.capacity} guests`,
-      `${venteskraftProperty.type.charAt(0).toUpperCase() + venteskraftProperty.type.slice(1)} Type`,
-      'Active Property'
-    ]
-  } : propertyData[id as keyof typeof propertyData];
+    loadProperty();
+  }, [id]);
+
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-primary mx-auto mb-4"></div>
+          <p className="text-muted-foreground">Loading property details...</p>
+        </div>
+      </div>
+    );
+  }
   
   if (!property) {
     return (
