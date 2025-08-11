@@ -34,75 +34,7 @@ const MyProperties: React.FC<{
   const [selectedImages, setSelectedImages] = useState<File[]>([]);
   const [imagePreviewUrls, setImagePreviewUrls] = useState<string[]>([]);
 
-  // Mock data for venteskraft@gmail.com owner
-  const mockProperties = [
-    {
-      id: '1',
-      name: 'Luxury Beach Villa - Goa',
-      type: 'villa',
-      location: 'Calangute Beach Road',
-      city: 'Goa',
-      state: 'Goa',
-      price: 18000,
-      capacity: 10,
-      bedrooms: 5,
-      bathrooms: 4,
-      status: 'active',
-      rating: 4.9,
-      totalBookings: 67,
-      totalEarnings: 1206000,
-      images: ['/placeholder.svg'],
-      amenities: ['wifi', 'ac', 'parking', 'kitchen', 'pool', 'gym', 'tv', 'spa'],
-      description: 'Exclusive beachfront villa with private pool, stunning ocean views, and luxury amenities. Perfect for family vacations and corporate retreats.',
-      createdAt: '2024-01-10',
-      lastUpdated: '2024-08-15',
-      ownerEmail: 'venteskraft@gmail.com'
-    },
-    {
-      id: '2',
-      name: 'Mountain View Resort - Manali',
-      type: 'resort',
-      location: 'Kullu Valley',
-      city: 'Manali',
-      state: 'Himachal Pradesh',
-      price: 12000,
-      capacity: 15,
-      bedrooms: 8,
-      bathrooms: 6,
-      status: 'active',
-      rating: 4.7,
-      totalBookings: 89,
-      totalEarnings: 1068000,
-      images: ['/placeholder.svg'],
-      amenities: ['wifi', 'heating', 'kitchen', 'fireplace', 'parking', 'gym', 'spa'],
-      description: 'Premium mountain resort with panoramic views of snow-capped peaks. Features luxury accommodations, spa facilities, and adventure activities.',
-      createdAt: '2024-02-15',
-      lastUpdated: '2024-08-12',
-      ownerEmail: 'venteskraft@gmail.com'
-    },
-    {
-      id: '3',
-      name: 'Heritage Palace - Jaipur',
-      type: 'heritage',
-      location: 'Old City Palace District',
-      city: 'Jaipur',
-      state: 'Rajasthan',
-      price: 35000,
-      capacity: 20,
-      bedrooms: 12,
-      bathrooms: 8,
-      status: 'pending',
-      rating: 0,
-      totalBookings: 0,
-      totalEarnings: 0,
-      images: ['/placeholder.svg'],
-      amenities: ['wifi', 'ac', 'parking', 'kitchen', 'pool', 'spa', 'tv', 'fireplace'],
-      description: 'Magnificent heritage palace with royal architecture, traditional Rajasthani design, and modern luxury amenities. Perfect for royal weddings and events.',
-      createdAt: '2024-08-01',
-      lastUpdated: '2024-08-01',
-      ownerEmail: 'venteskraft@gmail.com'
-    }
-  ];
+
 
   useEffect(() => {
     if (!loading && (!isAuthenticated || !user)) {
@@ -125,21 +57,10 @@ const MyProperties: React.FC<{
         
         const dbProperties = await PropertyService.getOwnerProperties(ownerId);
         
-        if (dbProperties.length > 0) {
-          // Convert database properties to frontend format
-          const frontendProperties = dbProperties.map(PropertyService.convertToFrontendFormat);
-          setProperties(frontendProperties);
-          console.log('✅ Properties loaded from database:', frontendProperties.length);
-        } else {
-          // Fallback to mock data for venteskraft@gmail.com
-          if (user.email === 'venteskraft@gmail.com') {
-            setProperties(mockProperties);
-            console.log('📋 Mock properties loaded for venteskraft@gmail.com');
-          } else {
-            setProperties([]);
-            console.log('📋 No properties found for user:', user.email);
-          }
-        }
+        // Convert database properties to frontend format
+        const frontendProperties = dbProperties.map(PropertyService.convertToFrontendFormat);
+        setProperties(frontendProperties);
+        console.log('✅ Properties loaded from database:', frontendProperties.length);
       } catch (error) {
         console.error('❌ Error loading properties from database:', error);
         
@@ -257,21 +178,7 @@ const MyProperties: React.FC<{
     }
   };
 
-  const resetToInitialProperties = () => {
-    if (confirm('Are you sure you want to reset to initial properties? This will remove all your changes.')) {
-      if (user && user.email) {
-        const userProperties = mockProperties.filter(property => 
-          property.ownerEmail === user.email
-        );
-        setProperties(userProperties);
-        
-        // Save to localStorage
-        const storageKey = `properties_${user.email}`;
-        localStorage.setItem(storageKey, JSON.stringify(userProperties));
-        console.log('🔄 Reset to initial properties');
-      }
-    }
-  };
+
 
   const handleFormChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
@@ -484,14 +391,7 @@ const MyProperties: React.FC<{
                 <i className="fas fa-plus mr-2"></i>
                 Add Property
               </button>
-              <button 
-                onClick={resetToInitialProperties}
-                className="bg-gray-500 hover:bg-gray-600 text-white px-4 py-2 rounded-lg flex items-center"
-                title="Reset to initial properties"
-              >
-                <i className="fas fa-undo mr-2"></i>
-                Reset
-              </button>
+
             </div>
           </div>
         </header>
