@@ -865,12 +865,14 @@ const Properties: React.FC = () => {
       </section>
 
       {/* Main Content */}
-      <section className="py-12 bg-secondary/10 min-h-screen">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <section className="py-12 relative min-h-screen">
+        {/* Glassmorphic Background */}
+        <div className="absolute inset-0 bg-gradient-to-br from-blue-50/30 via-purple-50/20 to-pink-50/30 dark:from-slate-900/30 dark:via-purple-900/20 dark:to-blue-900/30"></div>
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative">
           <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
             {/* Filters Sidebar */}
             <div className={`lg:col-span-1 ${showFilters ? 'block' : 'hidden lg:block'}`}>
-              <div className="bg-background rounded-2xl shadow-lg p-6 sticky top-32">
+              <div className="glass-sidebar rounded-2xl p-6 sticky top-32">
                 <div className="flex items-center justify-between mb-6">
                   <h3 className="text-xl font-bold text-foreground">Filters</h3>
                   <button
@@ -971,7 +973,7 @@ const Properties: React.FC = () => {
               ) : (
                 <div className={`grid gap-8 ${viewMode === 'grid' ? 'grid-cols-1 md:grid-cols-2 xl:grid-cols-3' : 'grid-cols-1'}`}>
                   {currentProperties.map((property, index) => (
-                    <div key={property.id} className="bg-background rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 border border-border overflow-hidden transform hover:scale-[1.02]">
+                    <div key={property.id} className="glass-card-property property-card-height rounded-2xl overflow-hidden">
                       {/* Image Carousel */}
                       <div className="relative">
                         <ImageCarousel
@@ -979,12 +981,12 @@ const Properties: React.FC = () => {
                           alt={property.name}
                         />
                         <div className="absolute top-3 left-3">
-                          <span className="bg-gradient-to-r from-brand-red to-brand-orange text-white px-3 py-1 rounded-full text-sm font-semibold">
+                          <span className="bg-gradient-to-r from-brand-red to-brand-orange text-white px-3 py-1 rounded-full text-sm font-semibold backdrop-blur-sm">
                             {property.type || 'Villa'}
                           </span>
                         </div>
                         {property.rating > 0 && (
-                          <div className="absolute top-3 right-3 bg-black/70 text-white px-2 py-1 rounded-full text-sm flex items-center gap-1">
+                          <div className="absolute top-3 right-3 bg-black/70 backdrop-blur-sm text-white px-2 py-1 rounded-full text-sm flex items-center gap-1">
                             <i className="fas fa-star text-yellow-400 text-xs"></i>
                             {property.rating.toFixed(1)}
                           </div>
@@ -992,7 +994,7 @@ const Properties: React.FC = () => {
                       </div>
                       
                       {/* Content Section */}
-                      <div className="p-6">
+                      <div className="property-card-content p-6">
                         <div className="flex items-start justify-between mb-3">
                           <h3 className="text-xl font-bold text-foreground line-clamp-2">{property.name}</h3>
                         </div>
@@ -1026,15 +1028,15 @@ const Properties: React.FC = () => {
                         </div>
 
                         {/* Action Buttons */}
-                        <div className="flex gap-3">
+                        <div className="property-card-actions flex gap-3 mt-auto">
                           <button
                             onClick={() => handleViewProperty(property)}
-                            className="flex-1 bg-gradient-to-r from-brand-red to-brand-orange text-white py-3 rounded-lg font-semibold hover:scale-105 transition-transform duration-200 flex items-center justify-center gap-2"
+                            className="flex-1 bg-gradient-to-r from-brand-red to-brand-orange text-white py-3 rounded-lg font-semibold hover:scale-105 transition-transform duration-200 flex items-center justify-center gap-2 backdrop-blur-sm"
                           >
                             <i className="fas fa-eye"></i>
                             View Details
                           </button>
-                          <button className="px-4 py-3 border border-brand-red text-brand-red rounded-lg font-semibold hover:bg-brand-red hover:text-white transition-colors duration-200">
+                          <button className="px-4 py-3 border border-brand-red/30 text-brand-red rounded-lg font-semibold hover:bg-brand-red hover:text-white transition-colors duration-200 backdrop-blur-sm">
                             <i className="fas fa-heart"></i>
                           </button>
                         </div>
