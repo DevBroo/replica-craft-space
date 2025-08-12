@@ -203,6 +203,31 @@ export class PropertyService {
   }
 
   /**
+   * Get all properties (for admin/cache purposes)
+   */
+  static async getAllProperties(): Promise<Property[]> {
+    try {
+      console.log('🔍 Fetching all properties');
+      
+      const { data, error } = await supabase
+        .from('properties')
+        .select('*')
+        .order('created_at', { ascending: false });
+
+      if (error) {
+        console.error('❌ Error fetching all properties:', error);
+        throw error;
+      }
+
+      console.log('✅ Successfully fetched all properties:', data?.length || 0);
+      return data || [];
+    } catch (error) {
+      console.error('❌ Failed to fetch all properties:', error);
+      throw error;
+    }
+  }
+
+  /**
    * Get all active properties for public display
    */
   static async getActiveProperties(): Promise<Property[]> {

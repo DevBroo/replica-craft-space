@@ -9,6 +9,8 @@ export interface AuthUser {
   full_name?: string;
   avatar_url?: string;
   phone?: string;
+  created_at?: string;
+  updated_at?: string;
 }
 
 export interface AuthError {
