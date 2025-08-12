@@ -1,22 +1,34 @@
 import React, { useState } from 'react';
+import { useAuth } from '@/contexts/AuthContext';
+import { PropertyService } from '@/lib/propertyService';
 
 interface AddPropertyProps {
   onBack: () => void;
 }
 
 const AddProperty: React.FC<AddPropertyProps> = ({ onBack }) => {
+  const { user, isAuthenticated } = useAuth();
+  
   const [formData, setFormData] = useState({
     name: '',
     location: '',
+    city: '',
+    state: '',
     propertyType: '',
     description: '',
     pricing: '',
+    capacity: '',
+    bedrooms: '',
+    bathrooms: '',
     amenities: [] as string[],
     status: true
   });
 
   const [uploadedImages, setUploadedImages] = useState<string[]>([]);
   const [isDragOver, setIsDragOver] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [successMessage, setSuccessMessage] = useState<string | null>(null);
 
   const propertyTypes = [
     'Apartment',
@@ -97,6 +109,96 @@ const AddProperty: React.FC<AddPropertyProps> = ({ onBack }) => {
     setUploadedImages(prev => prev.filter((_, i) => i !== index));
   };
 
+  const validateForm = (): string | null => {
+    if (!formData.name.trim()) return 'Property name is required';
+    if (!formData.location.trim()) return 'Address is required';
+    if (!formData.city.trim()) return 'City is required';
+    if (!formData.state.trim()) return 'State is required';
+    if (!formData.propertyType) return 'Property type is required';
+    if (!formData.description.trim()) return 'Description is required';
+    if (!formData.pricing || parseFloat(formData.pricing) <= 0) return 'Valid pricing is required';
+    if (!formData.capacity || parseInt(formData.capacity) <= 0) return 'Valid guest capacity is required';
+    if (!formData.bedrooms || parseInt(formData.bedrooms) <= 0) return 'Valid number of bedrooms is required';
+    if (!formData.bathrooms || parseInt(formData.bathrooms) <= 0) return 'Valid number of bathrooms is required';
+    if (uploadedImages.length === 0) return 'At least one property image is required';
+    return null;
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    // Clear previous messages
+    setError(null);
+    setSuccessMessage(null);
+
+    // Check authentication
+    if (!isAuthenticated || !user) {
+      setError('You must be logged in to add a property');
+      return;
+    }
+
+    // Validate form
+    const validationError = validateForm();
+    if (validationError) {
+      setError(validationError);
+      return;
+    }
+
+    setIsLoading(true);
+
+    try {
+      // Transform form data to match PropertyService interface
+      const propertyData = {
+        name: formData.name.trim(),
+        type: formData.propertyType,
+        location: formData.location.trim(),
+        city: formData.city.trim(),
+        state: formData.state.trim(),
+        price: parseFloat(formData.pricing),
+        capacity: parseInt(formData.capacity),
+        bedrooms: parseInt(formData.bedrooms),
+        bathrooms: parseInt(formData.bathrooms),
+        description: formData.description.trim(),
+        amenities: formData.amenities,
+        images: uploadedImages
+      };
+
+      // Save to database
+      const savedProperty = await PropertyService.addProperty(propertyData, user.id);
+      
+      if (savedProperty) {
+        setSuccessMessage('Property added successfully!');
+        
+        // Reset form
+        setFormData({
+          name: '',
+          location: '',
+          city: '',
+          state: '',
+          propertyType: '',
+          description: '',
+          pricing: '',
+          capacity: '',
+          bedrooms: '',
+          bathrooms: '',
+          amenities: [],
+          status: true
+        });
+        setUploadedImages([]);
+
+        // Redirect back to properties list after a short delay
+        setTimeout(() => {
+          onBack();
+        }, 2000);
+      }
+    } catch (err) {
+      console.error('Error saving property:', err);
+      setError('Failed to save property. Please check database setup or try again.');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Header */}
@@ -139,9 +241,35 @@ const AddProperty: React.FC<AddPropertyProps> = ({ onBack }) => {
           <p className="text-gray-600">Fill in the details below to add a new property to your portfolio</p>
         </div>
 
+        {/* Error Message */}
+        {error && (
+          <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-6">
+            <div className="flex">
+              <i className="fas fa-exclamation-circle text-red-400 mr-3 mt-0.5"></i>
+              <div>
+                <h3 className="text-sm font-medium text-red-800">Error</h3>
+                <p className="text-sm text-red-700 mt-1">{error}</p>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Success Message */}
+        {successMessage && (
+          <div className="bg-green-50 border border-green-200 rounded-lg p-4 mb-6">
+            <div className="flex">
+              <i className="fas fa-check-circle text-green-400 mr-3 mt-0.5"></i>
+              <div>
+                <h3 className="text-sm font-medium text-green-800">Success</h3>
+                <p className="text-sm text-green-700 mt-1">{successMessage}</p>
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* Form Container */}
         <div className="bg-white rounded-lg shadow-sm border p-8">
-          <form className="space-y-6">
+          <form onSubmit={handleSubmit} className="space-y-6">
             {/* Property Name */}
             <div>
               <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-2">
@@ -159,10 +287,10 @@ const AddProperty: React.FC<AddPropertyProps> = ({ onBack }) => {
               />
             </div>
 
-            {/* Location */}
+            {/* Address */}
             <div>
               <label htmlFor="location" className="block text-sm font-medium text-gray-700 mb-2">
-                Location <span className="text-red-500">*</span>
+                Address <span className="text-red-500">*</span>
               </label>
               <div className="relative">
                 <input
@@ -171,11 +299,45 @@ const AddProperty: React.FC<AddPropertyProps> = ({ onBack }) => {
                   name="location"
                   value={formData.location}
                   onChange={handleInputChange}
-                  placeholder="Enter property location"
+                  placeholder="Enter property address"
                   className="w-full px-4 py-3 pl-10 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
                   required
                 />
                 <i className="fas fa-map-marker-alt absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 text-sm"></i>
+              </div>
+            </div>
+
+            {/* City and State */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label htmlFor="city" className="block text-sm font-medium text-gray-700 mb-2">
+                  City <span className="text-red-500">*</span>
+                </label>
+                <input
+                  type="text"
+                  id="city"
+                  name="city"
+                  value={formData.city}
+                  onChange={handleInputChange}
+                  placeholder="Enter city"
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
+                  required
+                />
+              </div>
+              <div>
+                <label htmlFor="state" className="block text-sm font-medium text-gray-700 mb-2">
+                  State <span className="text-red-500">*</span>
+                </label>
+                <input
+                  type="text"
+                  id="state"
+                  name="state"
+                  value={formData.state}
+                  onChange={handleInputChange}
+                  placeholder="Enter state"
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
+                  required
+                />
               </div>
             </div>
 
@@ -235,23 +397,74 @@ const AddProperty: React.FC<AddPropertyProps> = ({ onBack }) => {
               />
             </div>
 
-            {/* Pricing */}
-            <div>
-              <label htmlFor="pricing" className="block text-sm font-medium text-gray-700 mb-2">
-                Price per Night <span className="text-red-500">*</span>
-              </label>
-              <div className="relative">
+            {/* Property Details */}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+              <div>
+                <label htmlFor="pricing" className="block text-sm font-medium text-gray-700 mb-2">
+                  Price per Night <span className="text-red-500">*</span>
+                </label>
+                <div className="relative">
+                  <input
+                    type="number"
+                    id="pricing"
+                    name="pricing"
+                    value={formData.pricing}
+                    onChange={handleInputChange}
+                    placeholder="0"
+                    min="1"
+                    className="w-full px-4 py-3 pl-10 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                    required
+                  />
+                  <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500 text-sm">₹</span>
+                </div>
+              </div>
+              <div>
+                <label htmlFor="capacity" className="block text-sm font-medium text-gray-700 mb-2">
+                  Max Guests <span className="text-red-500">*</span>
+                </label>
                 <input
                   type="number"
-                  id="pricing"
-                  name="pricing"
-                  value={formData.pricing}
+                  id="capacity"
+                  name="capacity"
+                  value={formData.capacity}
                   onChange={handleInputChange}
                   placeholder="0"
-                  className="w-full px-4 py-3 pl-10 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                  min="1"
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                   required
                 />
-                <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500 text-sm">₹</span>
+              </div>
+              <div>
+                <label htmlFor="bedrooms" className="block text-sm font-medium text-gray-700 mb-2">
+                  Bedrooms <span className="text-red-500">*</span>
+                </label>
+                <input
+                  type="number"
+                  id="bedrooms"
+                  name="bedrooms"
+                  value={formData.bedrooms}
+                  onChange={handleInputChange}
+                  placeholder="0"
+                  min="1"
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                  required
+                />
+              </div>
+              <div>
+                <label htmlFor="bathrooms" className="block text-sm font-medium text-gray-700 mb-2">
+                  Bathrooms <span className="text-red-500">*</span>
+                </label>
+                <input
+                  type="number"
+                  id="bathrooms"
+                  name="bathrooms"
+                  value={formData.bathrooms}
+                  onChange={handleInputChange}
+                  placeholder="0"
+                  min="1"
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                  required
+                />
               </div>
             </div>
 
@@ -376,19 +589,44 @@ const AddProperty: React.FC<AddPropertyProps> = ({ onBack }) => {
         {/* Action Buttons */}
         <div className="flex items-center justify-end space-x-4 mt-8">
           <button
+            type="button"
             onClick={onBack}
-            className="px-6 py-3 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors cursor-pointer !rounded-button whitespace-nowrap"
+            disabled={isLoading}
+            className="px-6 py-3 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors cursor-pointer !rounded-button whitespace-nowrap disabled:opacity-50 disabled:cursor-not-allowed"
           >
             Cancel
           </button>
           <button
             type="submit"
-            className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors cursor-pointer !rounded-button whitespace-nowrap"
+            disabled={isLoading || !isAuthenticated}
+            className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors cursor-pointer !rounded-button whitespace-nowrap disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            <i className="fas fa-save mr-2"></i>
-            Save Property
+            {isLoading ? (
+              <>
+                <i className="fas fa-spinner fa-spin mr-2"></i>
+                Saving...
+              </>
+            ) : (
+              <>
+                <i className="fas fa-save mr-2"></i>
+                Save Property
+              </>
+            )}
           </button>
         </div>
+
+        {/* Authentication Warning */}
+        {!isAuthenticated && (
+          <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mt-6">
+            <div className="flex">
+              <i className="fas fa-exclamation-triangle text-yellow-400 mr-3 mt-0.5"></i>
+              <div>
+                <h3 className="text-sm font-medium text-yellow-800">Authentication Required</h3>
+                <p className="text-sm text-yellow-700 mt-1">You must be logged in to save properties to the database.</p>
+              </div>
+            </div>
+          </div>
+        )}
       </main>
     </div>
   );
