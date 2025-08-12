@@ -233,6 +233,10 @@ export class PropertyService {
   static async getActiveProperties(): Promise<Property[]> {
     try {
       console.log('🔍 Fetching properties for public display');
+      console.log('🔧 Environment check:', {
+        isProduction: window.location.hostname !== 'localhost',
+        hostname: window.location.hostname
+      });
       
       const { data, error } = await supabase
         .from('properties')
@@ -241,15 +245,40 @@ export class PropertyService {
         .order('created_at', { ascending: false });
 
       if (error) {
-        console.error('❌ Error fetching properties:', error);
+        console.error('❌ Supabase error details:', {
+          message: error.message,
+          details: error.details,
+          hint: error.hint,
+          code: error.code
+        });
         throw error;
       }
 
-      console.log('✅ Properties fetched successfully:', data?.length || 0);
-      return data || [];
-    } catch (error) {
-      console.error('❌ Failed to fetch properties:', error);
-      throw error;
+      if (!data) {
+        console.warn('⚠️ No data returned from Supabase');
+        return [];
+      }
+
+      console.log('✅ Properties fetched successfully:', {
+        count: data.length,
+        firstProperty: data[0] ? {
+          id: data[0].id,
+          title: data[0].title,
+          status: data[0].status
+        } : 'none'
+      });
+      
+      return data;
+    } catch (error: any) {
+      console.error('❌ Failed to fetch properties:', {
+        name: error?.name || 'Unknown',
+        message: error?.message || 'Unknown error',
+        stack: error?.stack || 'No stack trace',
+        cause: error?.cause || 'No cause'
+      });
+      
+      // Return empty array instead of throwing to prevent app crash
+      return [];
     }
   }
 

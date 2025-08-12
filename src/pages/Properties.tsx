@@ -68,33 +68,17 @@ const Properties: React.FC = () => {
   } = useAuth();
   const navigate = useNavigate();
 
-  // Load properties from database with instant loading strategy
-  const [dbProperties, setDbProperties] = useState<any[]>(() => {
-    // Initialize with cached data immediately for instant loading
-    try {
-      const cachedProperties = localStorage.getItem('properties_cache');
-      if (cachedProperties) {
-        const parsed = JSON.parse(cachedProperties);
-        console.log('⚡ Instant properties load from cache:', parsed.length);
-        return parsed;
-      }
-    } catch (error) {
-      console.warn('⚠️ Cache parsing failed during initialization');
-    }
-    return [];
-  });
-  const [loading, setLoading] = useState(() => {
-    // Only show loading if we don't have cached data
-    const cachedProperties = localStorage.getItem('properties_cache');
-    return !cachedProperties;
-  });
-  const [propertiesLoaded, setPropertiesLoaded] = useState(() => {
-    // Consider loaded if we have cached data
-    const cachedProperties = localStorage.getItem('properties_cache');
-    return !!cachedProperties;
-  });
+  // Load properties from database with production-optimized strategy
+  const [dbProperties, setDbProperties] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [propertiesLoaded, setPropertiesLoaded] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const [cacheDisabled, setCacheDisabled] = useState(() => {
-    return localStorage.getItem('cache_disabled') === 'true';
+    try {
+      return localStorage?.getItem('cache_disabled') === 'true';
+    } catch {
+      return false;
+    }
   });
 
   // Background refresh function for seamless updates
@@ -131,114 +115,133 @@ const Properties: React.FC = () => {
   useEffect(() => {
     let isMounted = true;
 
-    // If we already have properties loaded, skip loading
-    if (propertiesLoaded && dbProperties.length > 0) {
-      console.log('⚡ Properties already available, skipping load');
-      return;
-    }
     const loadProperties = async () => {
-      // Check cache with extended expiration (30 minutes instead of 5)
-      const cacheKey = 'properties_cache';
-      const cacheTimestamp = localStorage.getItem('properties_cache_timestamp');
-      const now = Date.now();
-      const cacheAge = cacheTimestamp ? now - parseInt(cacheTimestamp) : Infinity;
-
-      // Use cache if it's less than 30 minutes old and caching is not disabled
-      if (!cacheDisabled && cacheAge < 30 * 60 * 1000) {
-        const cachedProperties = localStorage.getItem(cacheKey);
-        if (cachedProperties) {
-          try {
-            const parsed = JSON.parse(cachedProperties);
-            if (isMounted) {
-              setDbProperties(parsed);
-              setPropertiesLoaded(true);
-              setLoading(false);
-              console.log('⚡ Properties loaded from cache:', parsed.length);
-
-              // Background refresh if cache is older than 10 minutes
-              if (cacheAge > 10 * 60 * 1000) {
-                console.log('🔄 Background refresh initiated...');
-                refreshPropertiesInBackground();
-              }
-              return;
-            }
-          } catch (error) {
-            console.warn('⚠️ Cache parsing failed, fetching fresh data');
-          }
-        }
-      }
-
-      // Only fetch if not already loaded
-      if (propertiesLoaded) {
-        console.log('⚡ Properties already loaded, skipping fetch');
-        setLoading(false);
-        return;
-      }
       try {
-        console.log('🔍 Loading properties from database...');
+        console.log('🔍 Starting properties load...');
+        console.log('🔧 Environment info:', {
+          hostname: window.location.hostname,
+          isProduction: !window.location.hostname.includes('localhost'),
+          hasLocalStorage: typeof localStorage !== 'undefined'
+        });
+        
         setLoading(true);
+        setError(null);
 
-        // Use Promise.race to add timeout protection
-        const propertiesPromise = PropertyService.getActiveProperties();
-        const timeoutPromise = new Promise((_, reject) => setTimeout(() => reject(new Error('Properties fetch timeout')), 5000));
-        const activeProperties = (await Promise.race([propertiesPromise, timeoutPromise])) as any[];
-        if (!isMounted) return;
+        // Try cache first (only if available)
+        let cachedData = null;
+        try {
+          if (typeof localStorage !== 'undefined' && !cacheDisabled) {
+            const cacheKey = 'properties_cache';
+            const cacheTimestamp = localStorage.getItem('properties_cache_timestamp');
+            const now = Date.now();
+            const cacheAge = cacheTimestamp ? now - parseInt(cacheTimestamp) : Infinity;
 
-        // Skip caching entirely if disabled or if we've had previous storage issues
-        if (cacheDisabled) {
-          console.log('⚠️ Caching disabled for this session, skipping cache');
-        } else {
+            if (cacheAge < 30 * 60 * 1000) { // 30 minutes
+              const cachedProperties = localStorage.getItem(cacheKey);
+              if (cachedProperties) {
+                cachedData = JSON.parse(cachedProperties);
+                console.log('⚡ Using cached properties:', cachedData.length);
+                
+                if (isMounted) {
+                  setDbProperties(cachedData);
+                  setPropertiesLoaded(true);
+                  setLoading(false);
+                }
+                
+                // Background refresh for fresh data
+                if (cacheAge > 10 * 60 * 1000) {
+                  refreshPropertiesInBackground();
+                }
+                return;
+              }
+            }
+          }
+        } catch (cacheError) {
+          console.warn('⚠️ Cache check failed:', cacheError);
+        }
+
+        // Fetch from database with retry logic
+        console.log('🔍 Fetching properties from database...');
+        let attempts = 0;
+        let lastError = null;
+        
+        while (attempts < 3 && isMounted) {
           try {
-            // Store only essential data to reduce storage size
-            const essentialProperties = activeProperties.map(property => ({
+            attempts++;
+            console.log(`🔄 Fetch attempt ${attempts}/3`);
+            
+            const activeProperties = await PropertyService.getActiveProperties();
+            
+            if (!isMounted) return;
+
+            // Always convert to frontend format for consistency
+            const formattedProperties = activeProperties.map(property => ({
               id: property.id,
               name: property.title || 'Unnamed Property',
-              location: typeof property.location === 'string' ? property.location : property.location && typeof property.location === 'object' && 'city' in property.location ? (property.location as any).city : property.address || 'Unknown Location',
-              price: typeof property.pricing === 'object' && property.pricing && 'daily_rate' in property.pricing ? (property.pricing as any).daily_rate : 0,
+              location: typeof property.location === 'string' ? property.location : 
+                       property.location && typeof property.location === 'object' && 'city' in property.location ? 
+                       (property.location as any).city : property.address || 'Unknown Location',
+              price: typeof property.pricing === 'object' && property.pricing && 'daily_rate' in property.pricing ? 
+                     (property.pricing as any).daily_rate : 0,
               image: property.images && property.images.length > 0 ? property.images[0] : '',
               type: property.property_type || 'Property',
               status: property.status || 'pending',
               rating: property.rating || 0,
               guests: property.max_guests || 1,
               bedrooms: property.bedrooms || 1,
-              bathrooms: property.bathrooms || 1
+              bathrooms: property.bathrooms || 1,
+              // Keep raw data for detailed view
+              rawData: property
             }));
-            const propertiesJson = JSON.stringify(essentialProperties);
-            localStorage.setItem(cacheKey, propertiesJson);
-            localStorage.setItem('properties_cache_timestamp', now.toString());
-            console.log('✅ Properties cached successfully (compressed data)');
-          } catch (cacheError) {
-            console.warn('⚠️ Cache storage failed (quota exceeded), continuing without cache:', cacheError);
-            // Clear all cache to free space
-            clearAllCache();
-            // Disable caching for this session to prevent repeated errors
-            setCacheDisabled(true);
-            localStorage.setItem('cache_disabled', 'true');
-            console.warn('⚠️ Caching disabled for this session due to storage issues');
+
+            setDbProperties(formattedProperties);
+            setPropertiesLoaded(true);
+            setError(null);
+            console.log('✅ Properties loaded successfully:', formattedProperties.length);
+
+            // Cache the formatted properties (if possible)
+            try {
+              if (typeof localStorage !== 'undefined' && !cacheDisabled) {
+                localStorage.setItem('properties_cache', JSON.stringify(formattedProperties));
+                localStorage.setItem('properties_cache_timestamp', Date.now().toString());
+                console.log('✅ Properties cached successfully');
+              }
+            } catch (cacheError) {
+              console.warn('⚠️ Failed to cache properties:', cacheError);
+            }
+            
+            break; // Success, exit retry loop
+            
+          } catch (fetchError: any) {
+            lastError = fetchError;
+            console.error(`❌ Fetch attempt ${attempts} failed:`, fetchError);
+            
+            if (attempts < 3) {
+              console.log(`⏳ Retrying in ${attempts}s...`);
+              await new Promise(resolve => setTimeout(resolve, attempts * 1000));
+            }
           }
         }
-        setDbProperties(activeProperties);
-        setPropertiesLoaded(true);
-        console.log('✅ Properties loaded from database:', activeProperties.length);
-      } catch (error) {
-        console.error('❌ Error loading properties from database:', error);
-        if (!isMounted) return;
 
-        // Fallback to localStorage for existing data
-        try {
-          const storageKey = 'properties_venteskraft@gmail.com';
-          const savedProperties = localStorage.getItem(storageKey);
-          if (savedProperties) {
-            const parsedProperties = JSON.parse(savedProperties);
-            const activeProperties = parsedProperties.filter((property: any) => property.status === 'active');
-            setDbProperties(activeProperties);
+        // If all retries failed
+        if (lastError && isMounted) {
+          console.error('❌ All fetch attempts failed:', lastError);
+          setError(`Failed to load properties: ${lastError.message}`);
+          
+          // Try to use any cached data as fallback
+          if (cachedData) {
+            console.log('🔄 Using stale cache as fallback');
+            setDbProperties(cachedData);
             setPropertiesLoaded(true);
-            console.log('📋 Properties loaded from localStorage fallback:', activeProperties.length);
           } else {
             setDbProperties([]);
           }
-        } catch (localStorageError) {
-          console.error('❌ Error loading from localStorage fallback:', localStorageError);
+        }
+
+      } catch (error: any) {
+        console.error('❌ Unexpected error in loadProperties:', error);
+        if (isMounted) {
+          setError(`Unexpected error: ${error.message}`);
           setDbProperties([]);
         }
       } finally {
@@ -247,6 +250,7 @@ const Properties: React.FC = () => {
         }
       }
     };
+
     loadProperties();
 
     // Cleanup function to prevent memory leaks
@@ -1094,6 +1098,26 @@ const Properties: React.FC = () => {
             </div>
           </div>
         </div>}
+        
+        {/* Production Debug Component */}
+        {typeof window !== 'undefined' && !window.location.hostname.includes('localhost') && (
+          <div className="fixed bottom-4 right-4 z-50">
+            <details className="bg-black/80 text-white text-xs p-2 rounded max-w-xs">
+              <summary className="cursor-pointer">🔧 Debug</summary>
+              <pre className="mt-2 whitespace-pre-wrap text-[10px]">
+                {JSON.stringify({
+                  hostname: window.location.hostname,
+                  propertiesCount: dbProperties.length,
+                  loading,
+                  error,
+                  propertiesLoaded,
+                  cacheDisabled,
+                  timestamp: new Date().toISOString()
+                }, null, 2)}
+              </pre>
+            </details>
+          </div>
+        )}
     </div>;
 };
 export default Properties;
