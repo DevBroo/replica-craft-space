@@ -531,7 +531,7 @@ const MyProperties: React.FC<{
                       </div>
                     </div>
                     <div className="text-lg font-bold text-gray-800">
-                      ₹{property.price.toLocaleString()}
+                      ₹{(property.price || 0).toLocaleString()}
                     </div>
                   </div>
 
@@ -545,7 +545,7 @@ const MyProperties: React.FC<{
                     <div className="text-sm text-gray-600">
                       <div className="flex items-center">
                         <i className="fas fa-dollar-sign mr-1"></i>
-                        ₹{property.totalEarnings.toLocaleString()}
+                        ₹{(property.totalEarnings || 0).toLocaleString()}
                       </div>
                     </div>
                   </div>
@@ -1214,7 +1214,7 @@ const MyProperties: React.FC<{
                   </div>
                   <div className="grid grid-cols-2 gap-4 text-sm">
                     <div>
-                      <span className="font-medium">Price:</span> ₹{selectedProperty.price.toLocaleString()}/day
+                      <span className="font-medium">Price:</span> ₹{(selectedProperty.price || 0).toLocaleString()}/day
                     </div>
                     <div>
                       <span className="font-medium">Capacity:</span> {selectedProperty.capacity} guests
@@ -1251,7 +1251,7 @@ const MyProperties: React.FC<{
                   <span className="font-medium">Total Bookings:</span> {selectedProperty.totalBookings}
                 </div>
                 <div>
-                  <span className="font-medium">Total Earnings:</span> ₹{selectedProperty.totalEarnings.toLocaleString()}
+                  <span className="font-medium">Total Earnings:</span> ₹{(selectedProperty.totalEarnings || 0).toLocaleString()}
                 </div>
                 <div>
                   <span className="font-medium">Created:</span> {new Date(selectedProperty.createdAt).toLocaleDateString()}
