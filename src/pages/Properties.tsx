@@ -12,25 +12,21 @@ const useScrollAnimation = () => {
       threshold: 0.1,
       rootMargin: '0px 0px -50px 0px'
     };
-
-    const observer = new IntersectionObserver((entries) => {
+    const observer = new IntersectionObserver(entries => {
       entries.forEach(entry => {
         if (entry.isIntersecting) {
           entry.target.classList.add('animate');
         }
       });
     }, observerOptions);
-
     const elements = document.querySelectorAll('.fade-in-up, .fade-in');
     elements.forEach(el => observer.observe(el));
-
     return () => observer.disconnect();
   }, []);
 };
 
 // Import default image for properties without uploaded images
 import beachsideParadise from '@/assets/beachside-paradise.jpg';
-
 const Properties: React.FC = () => {
   // Initialize scroll animations
   useScrollAnimation();
@@ -46,7 +42,7 @@ const Properties: React.FC = () => {
   const [showFilters, setShowFilters] = useState(false);
   const [selectedProperty, setSelectedProperty] = useState<any>(null);
   const [showViewModal, setShowViewModal] = useState(false);
-  
+
   // Dropdown states for search functionality
   const [showGuestsDropdown, setShowGuestsDropdown] = useState(false);
   const [showPriceDropdown, setShowPriceDropdown] = useState(false);
@@ -62,11 +58,14 @@ const Properties: React.FC = () => {
         setShowLocationDropdown(false);
       }
     };
-
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
-  const { user, isAuthenticated, logout } = useAuth();
+  const {
+    user,
+    isAuthenticated,
+    logout
+  } = useAuth();
   const navigate = useNavigate();
 
   // Load properties from database with instant loading strategy
@@ -84,19 +83,16 @@ const Properties: React.FC = () => {
     }
     return [];
   });
-  
   const [loading, setLoading] = useState(() => {
     // Only show loading if we don't have cached data
     const cachedProperties = localStorage.getItem('properties_cache');
     return !cachedProperties;
   });
-  
   const [propertiesLoaded, setPropertiesLoaded] = useState(() => {
     // Consider loaded if we have cached data
     const cachedProperties = localStorage.getItem('properties_cache');
     return !!cachedProperties;
   });
-  
   const [cacheDisabled, setCacheDisabled] = useState(() => {
     return localStorage.getItem('cache_disabled') === 'true';
   });
@@ -105,17 +101,14 @@ const Properties: React.FC = () => {
   const refreshPropertiesInBackground = async () => {
     try {
       console.log('🔄 Background refresh started...');
-      const activeProperties = await PropertyService.getActiveProperties() as any[];
-      
+      const activeProperties = (await PropertyService.getActiveProperties()) as any[];
+
       // Store only essential data to reduce storage size
       const essentialProperties = activeProperties.map((property: any) => ({
         id: property.id,
         name: property.title || 'Unnamed Property',
-        location: typeof property.location === 'string' ? property.location : 
-                 (property.location && typeof property.location === 'object' && 'city' in property.location) ? 
-                 (property.location as any).city : property.address || 'Unknown Location',
-        price: typeof property.pricing === 'object' && property.pricing && 'daily_rate' in property.pricing ? 
-               (property.pricing as any).daily_rate : 0,
+        location: typeof property.location === 'string' ? property.location : property.location && typeof property.location === 'object' && 'city' in property.location ? (property.location as any).city : property.address || 'Unknown Location',
+        price: typeof property.pricing === 'object' && property.pricing && 'daily_rate' in property.pricing ? (property.pricing as any).daily_rate : 0,
         image: property.images && property.images.length > 0 ? property.images[0] : '',
         type: property.property_type || 'Property',
         status: property.status || 'pending',
@@ -124,11 +117,10 @@ const Properties: React.FC = () => {
         bedrooms: property.bedrooms || 1,
         bathrooms: property.bathrooms || 1
       }));
-      
       const propertiesJson = JSON.stringify(essentialProperties);
       localStorage.setItem('properties_cache', propertiesJson);
       localStorage.setItem('properties_cache_timestamp', Date.now().toString());
-      
+
       // Update state if component is still mounted
       setDbProperties(essentialProperties);
       console.log('✅ Background refresh completed:', essentialProperties.length);
@@ -136,23 +128,21 @@ const Properties: React.FC = () => {
       console.warn('⚠️ Background refresh failed:', error);
     }
   };
-
   useEffect(() => {
     let isMounted = true;
-    
+
     // If we already have properties loaded, skip loading
     if (propertiesLoaded && dbProperties.length > 0) {
       console.log('⚡ Properties already available, skipping load');
       return;
     }
-    
     const loadProperties = async () => {
       // Check cache with extended expiration (30 minutes instead of 5)
       const cacheKey = 'properties_cache';
       const cacheTimestamp = localStorage.getItem('properties_cache_timestamp');
       const now = Date.now();
       const cacheAge = cacheTimestamp ? now - parseInt(cacheTimestamp) : Infinity;
-      
+
       // Use cache if it's less than 30 minutes old and caching is not disabled
       if (!cacheDisabled && cacheAge < 30 * 60 * 1000) {
         const cachedProperties = localStorage.getItem(cacheKey);
@@ -164,7 +154,7 @@ const Properties: React.FC = () => {
               setPropertiesLoaded(true);
               setLoading(false);
               console.log('⚡ Properties loaded from cache:', parsed.length);
-              
+
               // Background refresh if cache is older than 10 minutes
               if (cacheAge > 10 * 60 * 1000) {
                 console.log('🔄 Background refresh initiated...');
@@ -177,29 +167,22 @@ const Properties: React.FC = () => {
           }
         }
       }
-      
+
       // Only fetch if not already loaded
       if (propertiesLoaded) {
         console.log('⚡ Properties already loaded, skipping fetch');
         setLoading(false);
         return;
       }
-      
       try {
         console.log('🔍 Loading properties from database...');
         setLoading(true);
-        
+
         // Use Promise.race to add timeout protection
         const propertiesPromise = PropertyService.getActiveProperties();
-        const timeoutPromise = new Promise((_, reject) => 
-          setTimeout(() => reject(new Error('Properties fetch timeout')), 5000)
-        );
-        
-        const activeProperties = await Promise.race([propertiesPromise, timeoutPromise]) as any[];
-        
+        const timeoutPromise = new Promise((_, reject) => setTimeout(() => reject(new Error('Properties fetch timeout')), 5000));
+        const activeProperties = (await Promise.race([propertiesPromise, timeoutPromise])) as any[];
         if (!isMounted) return;
-        
-
 
         // Skip caching entirely if disabled or if we've had previous storage issues
         if (cacheDisabled) {
@@ -210,11 +193,8 @@ const Properties: React.FC = () => {
             const essentialProperties = activeProperties.map(property => ({
               id: property.id,
               name: property.title || 'Unnamed Property',
-              location: typeof property.location === 'string' ? property.location : 
-                       (property.location && typeof property.location === 'object' && 'city' in property.location) ? 
-                       (property.location as any).city : property.address || 'Unknown Location',
-              price: typeof property.pricing === 'object' && property.pricing && 'daily_rate' in property.pricing ? 
-                     (property.pricing as any).daily_rate : 0,
+              location: typeof property.location === 'string' ? property.location : property.location && typeof property.location === 'object' && 'city' in property.location ? (property.location as any).city : property.address || 'Unknown Location',
+              price: typeof property.pricing === 'object' && property.pricing && 'daily_rate' in property.pricing ? (property.pricing as any).daily_rate : 0,
               image: property.images && property.images.length > 0 ? property.images[0] : '',
               type: property.property_type || 'Property',
               status: property.status || 'pending',
@@ -223,7 +203,6 @@ const Properties: React.FC = () => {
               bedrooms: property.bedrooms || 1,
               bathrooms: property.bathrooms || 1
             }));
-            
             const propertiesJson = JSON.stringify(essentialProperties);
             localStorage.setItem(cacheKey, propertiesJson);
             localStorage.setItem('properties_cache_timestamp', now.toString());
@@ -238,16 +217,13 @@ const Properties: React.FC = () => {
             console.warn('⚠️ Caching disabled for this session due to storage issues');
           }
         }
-        
         setDbProperties(activeProperties);
         setPropertiesLoaded(true);
         console.log('✅ Properties loaded from database:', activeProperties.length);
-        
       } catch (error) {
         console.error('❌ Error loading properties from database:', error);
-        
         if (!isMounted) return;
-        
+
         // Fallback to localStorage for existing data
         try {
           const storageKey = 'properties_venteskraft@gmail.com';
@@ -271,9 +247,8 @@ const Properties: React.FC = () => {
         }
       }
     };
-
     loadProperties();
-    
+
     // Cleanup function to prevent memory leaks
     return () => {
       isMounted = false;
@@ -287,7 +262,6 @@ const Properties: React.FC = () => {
     setPropertiesLoaded(false);
     console.log('🗑️ Properties cache cleared');
   };
-
   const clearAllCache = () => {
     try {
       const keys = Object.keys(localStorage);
@@ -298,13 +272,11 @@ const Properties: React.FC = () => {
       console.warn('⚠️ Error clearing localStorage:', error);
     }
   };
-
   const reEnableCaching = () => {
     setCacheDisabled(false);
     localStorage.removeItem('cache_disabled');
     console.log('✅ Caching re-enabled');
   };
-
   const refreshProperties = () => {
     clearPropertiesCache();
     setLoading(true);
@@ -382,25 +354,18 @@ const Properties: React.FC = () => {
 
     // Filter by amenities
     if (amenities.length > 0) {
-      const propertyAmenities = Array.isArray(property.amenities) 
-        ? property.amenities.map((a: string) => a.toLowerCase())
-        : [];
-      
+      const propertyAmenities = Array.isArray(property.amenities) ? property.amenities.map((a: string) => a.toLowerCase()) : [];
+
       // Check if at least one selected amenity is present
-      const hasMatchingAmenity = amenities.some(amenity => 
-        propertyAmenities.includes(amenity.toLowerCase())
-      );
-      
+      const hasMatchingAmenity = amenities.some(amenity => propertyAmenities.includes(amenity.toLowerCase()));
       if (!hasMatchingAmenity) {
         passesFilter = false;
         filterReasons.push(`No matching amenities: ${amenities.join(', ')} vs ${propertyAmenities.join(', ')}`);
       }
     }
-
     if (!passesFilter && (searchLocation || groupSize || priceRange || propertyType || amenities.length > 0)) {
       console.log(`❌ Property "${property.name || property.title}" filtered out:`, filterReasons.join(', '));
     }
-
     return passesFilter;
   });
 
@@ -439,137 +404,134 @@ const Properties: React.FC = () => {
     const mappedProperty = {
       id: property.id || `property-${index}`,
       name: property.name || property.title || 'Unnamed Property',
-      location: property.city || (property.location?.city) || 'Unknown Location',
+      location: property.city || property.location?.city || 'Unknown Location',
       rating: property.rating || 0,
       reviews: property.totalBookings || property.review_count || 0,
-      price: property.price || (property.pricing?.daily_rate) || 0,
-      originalPrice: (property.price || (property.pricing?.daily_rate) || 0) * 1.1, // 10% markup for original price
-      image: property.images && property.images.length > 0 ? property.images[0] : 
-             property.image_url || 
-             property.image || 
-             property.firstImage || 
-             (() => {
-               // Provide default images based on property type
-               const defaultImages = {
-                 'villa': 'https://images.unsplash.com/photo-1564013799919-ab600027ffc6?w=400&h=300&fit=crop',
-                 'cottage': 'https://images.unsplash.com/photo-1571896349842-33c89424de2d?w=400&h=300&fit=crop',
-                 'resort': 'https://images.unsplash.com/photo-1582268611958-ebfd161ef9cf?w=400&h=300&fit=crop',
-                 'estate': 'https://images.unsplash.com/photo-1564013799919-ab600027ffc6?w=400&h=300&fit=crop',
-                 'heritage': 'https://images.unsplash.com/photo-1571896349842-33c89424de2d?w=400&h=300&fit=crop',
-                 'retreat': 'https://images.unsplash.com/photo-1582268611958-ebfd161ef9cf?w=400&h=300&fit=crop'
-               };
-               const propertyType = (property.property_type || property.type || 'villa').toLowerCase();
-               return defaultImages[propertyType] || defaultImages['villa'];
-             })(), // Use uploaded image or fallback to type-specific default
+      price: property.price || property.pricing?.daily_rate || 0,
+      originalPrice: (property.price || property.pricing?.daily_rate || 0) * 1.1,
+      // 10% markup for original price
+      image: property.images && property.images.length > 0 ? property.images[0] : property.image_url || property.image || property.firstImage || (() => {
+        // Provide default images based on property type
+        const defaultImages = {
+          'villa': 'https://images.unsplash.com/photo-1564013799919-ab600027ffc6?w=400&h=300&fit=crop',
+          'cottage': 'https://images.unsplash.com/photo-1571896349842-33c89424de2d?w=400&h=300&fit=crop',
+          'resort': 'https://images.unsplash.com/photo-1582268611958-ebfd161ef9cf?w=400&h=300&fit=crop',
+          'estate': 'https://images.unsplash.com/photo-1564013799919-ab600027ffc6?w=400&h=300&fit=crop',
+          'heritage': 'https://images.unsplash.com/photo-1571896349842-33c89424de2d?w=400&h=300&fit=crop',
+          'retreat': 'https://images.unsplash.com/photo-1582268611958-ebfd161ef9cf?w=400&h=300&fit=crop'
+        };
+        const propertyType = (property.property_type || property.type || 'villa').toLowerCase();
+        return defaultImages[propertyType] || defaultImages['villa'];
+      })(),
+      // Use uploaded image or fallback to type-specific default
       amenities: Array.isArray(property.amenities) ? property.amenities.map((a: string) => a.charAt(0).toUpperCase() + a.slice(1)) : [],
       type: property.type || property.property_type || 'Property',
       guests: property.capacity || property.max_guests || 1,
       bedrooms: property.bedrooms || 1,
       bathrooms: property.bathrooms || 1,
-      status: property.status || 'pending', // Add status for pending indicator
+      status: property.status || 'pending',
+      // Add status for pending indicator
       featured: true,
       ownerEmail: property.ownerEmail || property.owner_id || '',
       description: property.description || ''
     };
-    
+
     // Ensure type is a string and capitalize it
     if (typeof mappedProperty.type === 'string') {
       mappedProperty.type = mappedProperty.type.charAt(0).toUpperCase() + mappedProperty.type.slice(1);
     } else {
       mappedProperty.type = 'Property';
     }
-    
     return mappedProperty;
   });
-
   const filterOptions = {
-    priceRanges: [
-      { label: 'Under ₹2,000', value: '0-2000' },
-      { label: '₹2,000 - ₹3,000', value: '2000-3000' },
-      { label: '₹3,000 - ₹4,000', value: '3000-4000' },
-      { label: 'Above ₹4,000', value: '4000+' }
-    ],
-    propertyTypes: [
-      'Villa', 'Cottage', 'Resort', 'Estate', 'Heritage', 'Retreat', 'Farm House', 'Camp', 'Bungalow', 'Loft', 'Cabin', 'Palace'
-    ],
-    amenitiesList: [
-      'Pool', 'WiFi', 'Parking', 'Kitchen', 'AC', 'Fireplace', 'Garden', 'Beach Access', 'Restaurant', 'Spa', 'Heritage', 'Lake View', 'Balcony', 'Farm', 'BBQ', 'Games', 'Nature', 'Desert View', 'Camp Fire', 'Traditional', 'Camel Safari', 'Mountain View', 'Heating', 'City View', 'Modern', 'River View', 'Yoga', 'Adventure', 'Royal'
-    ],
-    sortOptions: [
-      { label: 'Popularity', value: 'popularity' },
-      { label: 'Price: Low to High', value: 'price-asc' },
-      { label: 'Price: High to Low', value: 'price-desc' },
-      { label: 'Rating: High to Low', value: 'rating-desc' },
-      { label: 'Newest First', value: 'newest' }
-    ]
+    priceRanges: [{
+      label: 'Under ₹2,000',
+      value: '0-2000'
+    }, {
+      label: '₹2,000 - ₹3,000',
+      value: '2000-3000'
+    }, {
+      label: '₹3,000 - ₹4,000',
+      value: '3000-4000'
+    }, {
+      label: 'Above ₹4,000',
+      value: '4000+'
+    }],
+    propertyTypes: ['Villa', 'Cottage', 'Resort', 'Estate', 'Heritage', 'Retreat', 'Farm House', 'Camp', 'Bungalow', 'Loft', 'Cabin', 'Palace'],
+    amenitiesList: ['Pool', 'WiFi', 'Parking', 'Kitchen', 'AC', 'Fireplace', 'Garden', 'Beach Access', 'Restaurant', 'Spa', 'Heritage', 'Lake View', 'Balcony', 'Farm', 'BBQ', 'Games', 'Nature', 'Desert View', 'Camp Fire', 'Traditional', 'Camel Safari', 'Mountain View', 'Heating', 'City View', 'Modern', 'River View', 'Yoga', 'Adventure', 'Royal'],
+    sortOptions: [{
+      label: 'Popularity',
+      value: 'popularity'
+    }, {
+      label: 'Price: Low to High',
+      value: 'price-asc'
+    }, {
+      label: 'Price: High to Low',
+      value: 'price-desc'
+    }, {
+      label: 'Rating: High to Low',
+      value: 'rating-desc'
+    }, {
+      label: 'Newest First',
+      value: 'newest'
+    }]
   };
 
   // Search dropdown options
   const searchOptions = {
-    locations: [
-      'Mumbai, Maharashtra',
-      'Delhi, NCR',
-      'Bangalore, Karnataka',
-      'Chennai, Tamil Nadu',
-      'Kolkata, West Bengal',
-      'Hyderabad, Telangana',
-      'Pune, Maharashtra',
-      'Ahmedabad, Gujarat',
-      'Jaipur, Rajasthan',
-      'Goa',
-      'Kerala',
-      'Himachal Pradesh',
-      'Uttarakhand',
-      'Rajasthan',
-      'Gujarat'
-    ],
-    guests: [
-      { value: '1', label: '1 Guest' },
-      { value: '2', label: '2 Guests' },
-      { value: '3', label: '3 Guests' },
-      { value: '4', label: '4 Guests' },
-      { value: '5', label: '5 Guests' },
-      { value: '6', label: '6 Guests' },
-      { value: '7', label: '7 Guests' },
-      { value: '8', label: '8 Guests' },
-      { value: '9+', label: '9+ Guests' }
-    ]
+    locations: ['Mumbai, Maharashtra', 'Delhi, NCR', 'Bangalore, Karnataka', 'Chennai, Tamil Nadu', 'Kolkata, West Bengal', 'Hyderabad, Telangana', 'Pune, Maharashtra', 'Ahmedabad, Gujarat', 'Jaipur, Rajasthan', 'Goa', 'Kerala', 'Himachal Pradesh', 'Uttarakhand', 'Rajasthan', 'Gujarat'],
+    guests: [{
+      value: '1',
+      label: '1 Guest'
+    }, {
+      value: '2',
+      label: '2 Guests'
+    }, {
+      value: '3',
+      label: '3 Guests'
+    }, {
+      value: '4',
+      label: '4 Guests'
+    }, {
+      value: '5',
+      label: '5 Guests'
+    }, {
+      value: '6',
+      label: '6 Guests'
+    }, {
+      value: '7',
+      label: '7 Guests'
+    }, {
+      value: '8',
+      label: '8 Guests'
+    }, {
+      value: '9+',
+      label: '9+ Guests'
+    }]
   };
-
   const toggleAmenity = (amenity: string) => {
-    setAmenities(prev =>
-      prev.includes(amenity)
-        ? prev.filter(a => a !== amenity)
-        : [...prev, amenity]
-    );
+    setAmenities(prev => prev.includes(amenity) ? prev.filter(a => a !== amenity) : [...prev, amenity]);
   };
-
   const clearAllFilters = () => {
     setPriceRange('');
     setPropertyType('');
     setAmenities([]);
   };
-
   const propertiesPerPage = 9;
   const totalPages = Math.ceil(properties.length / propertiesPerPage);
-  const currentProperties = properties.slice(
-    (currentPage - 1) * propertiesPerPage,
-    currentPage * propertiesPerPage
-  );
+  const currentProperties = properties.slice((currentPage - 1) * propertiesPerPage, currentPage * propertiesPerPage);
 
   // Modal handlers
   const handleViewProperty = (property: any) => {
     setSelectedProperty(property);
     setShowViewModal(true);
   };
-
   const closeViewModal = () => {
     setShowViewModal(false);
     setSelectedProperty(null);
   };
-
-  return (
-    <div className="min-h-screen bg-background font-poppins">
+  return <div className="min-h-screen bg-background font-poppins">
       {/* Header */}
       <header className="sticky top-0 z-50 bg-background shadow-lg">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -587,8 +549,7 @@ const Properties: React.FC = () => {
               <a href="/contact" className="text-foreground hover:text-brand-orange font-medium transition-colors duration-200 cursor-pointer">Contact</a>
             </nav>
             <div className="flex items-center space-x-4">
-              {isAuthenticated && user ? (
-                <div className="flex items-center space-x-4">
+              {isAuthenticated && user ? <div className="flex items-center space-x-4">
                   <div className="flex items-center space-x-2">
                     <div className="w-8 h-8 bg-gradient-to-r from-brand-orange to-brand-red rounded-full flex items-center justify-center text-white font-medium text-sm">
                       {user.email.charAt(0).toUpperCase()}
@@ -597,29 +558,17 @@ const Properties: React.FC = () => {
                       {user.email}
                     </span>
                   </div>
-                  <button
-                    onClick={() => logout()}
-                    className="bg-secondary text-secondary-foreground hover:bg-secondary/80 font-medium transition-all duration-200 cursor-pointer whitespace-nowrap rounded-button px-6 py-3 inline-flex items-center"
-                  >
+                  <button onClick={() => logout()} className="bg-secondary text-secondary-foreground hover:bg-secondary/80 font-medium transition-all duration-200 cursor-pointer whitespace-nowrap rounded-button px-6 py-3 inline-flex items-center">
                     <i className="fas fa-sign-out-alt mr-2"></i>Logout
                   </button>
-                </div>
-              ) : (
-                <>
-                  <Link 
-                    to="/login"
-                    className="bg-secondary text-secondary-foreground hover:bg-secondary/80 font-medium transition-all duration-200 cursor-pointer whitespace-nowrap rounded-button px-6 py-3 inline-flex items-center"
-                  >
+                </div> : <>
+                  <Link to="/login" className="bg-secondary text-secondary-foreground hover:bg-secondary/80 font-medium transition-all duration-200 cursor-pointer whitespace-nowrap rounded-button px-6 py-3 inline-flex items-center">
                     <i className="fas fa-user mr-2"></i>Login
                   </Link>
-                  <Link 
-                    to="/signup"
-                    className="bg-gradient-to-r from-brand-orange to-brand-red text-white px-6 py-3 hover:from-orange-600 hover:to-red-600 transition-all duration-300 cursor-pointer whitespace-nowrap rounded-button font-medium shadow-lg hover:shadow-xl transform hover:scale-105 inline-flex items-center"
-                  >
+                  <Link to="/signup" className="bg-gradient-to-r from-brand-orange to-brand-red text-white px-6 py-3 hover:from-orange-600 hover:to-red-600 transition-all duration-300 cursor-pointer whitespace-nowrap rounded-button font-medium shadow-lg hover:shadow-xl transform hover:scale-105 inline-flex items-center">
                     <i className="fas fa-arrow-right-to-bracket mr-2"></i>Sign Up
                   </Link>
-                </>
-              )}
+                </>}
             </div>
           </div>
         </div>
@@ -646,37 +595,18 @@ const Properties: React.FC = () => {
                   <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
                     <i className="fas fa-map-marker-alt text-brand-red text-lg"></i>
                   </div>
-                  <input
-                    type="text"
-                    placeholder="Search destination..."
-                    value={searchLocation}
-                    onChange={(e) => {
-                      setSearchLocation(e.target.value);
-                      setShowLocationDropdown(true);
-                    }}
-                    onFocus={() => setShowLocationDropdown(true)}
-                    className="w-full pl-12 pr-4 py-4 text-foreground placeholder-muted-foreground border-2 border-border rounded-xl outline-none focus:border-brand-red focus:ring-4 focus:ring-brand-red/20 transition-all duration-300 text-sm font-medium"
-                  />
-                  {showLocationDropdown && (
-                    <div className="absolute top-full left-0 right-0 mt-1 bg-background border-2 border-border rounded-xl shadow-lg z-50 max-h-60 overflow-y-auto">
-                      {searchOptions.locations
-                        .filter(location => 
-                          location.toLowerCase().includes(searchLocation.toLowerCase())
-                        )
-                        .map((location, index) => (
-                          <button
-                            key={index}
-                            onClick={() => {
-                              setSearchLocation(location);
-                              setShowLocationDropdown(false);
-                            }}
-                            className="w-full px-4 py-3 text-left text-foreground hover:bg-secondary transition-colors duration-200 cursor-pointer"
-                          >
+                  <input type="text" placeholder="Search destination..." value={searchLocation} onChange={e => {
+                  setSearchLocation(e.target.value);
+                  setShowLocationDropdown(true);
+                }} onFocus={() => setShowLocationDropdown(true)} className="w-full pl-12 pr-4 py-4 text-foreground placeholder-muted-foreground border-2 border-border rounded-xl outline-none focus:border-brand-red focus:ring-4 focus:ring-brand-red/20 transition-all duration-300 text-sm font-medium" />
+                  {showLocationDropdown && <div className="absolute top-full left-0 right-0 mt-1 bg-background border-2 border-border rounded-xl shadow-lg z-50 max-h-60 overflow-y-auto">
+                      {searchOptions.locations.filter(location => location.toLowerCase().includes(searchLocation.toLowerCase())).map((location, index) => <button key={index} onClick={() => {
+                    setSearchLocation(location);
+                    setShowLocationDropdown(false);
+                  }} className="w-full px-4 py-3 text-left text-foreground hover:bg-secondary transition-colors duration-200 cursor-pointer">
                             {location}
-                          </button>
-                        ))}
-                    </div>
-                  )}
+                          </button>)}
+                    </div>}
                 </div>
               </div>
 
@@ -686,12 +616,7 @@ const Properties: React.FC = () => {
                   <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
                     <i className="fas fa-calendar-alt text-brand-orange text-lg"></i>
                   </div>
-                  <input
-                    type="date"
-                    value={searchDate}
-                    onChange={(e) => setSearchDate(e.target.value)}
-                    className="w-full pl-12 pr-4 py-4 text-foreground border-2 border-border rounded-xl outline-none focus:border-brand-orange focus:ring-4 focus:ring-brand-orange/20 transition-all duration-300 text-sm font-medium"
-                  />
+                  <input type="date" value={searchDate} onChange={e => setSearchDate(e.target.value)} className="w-full pl-12 pr-4 py-4 text-foreground border-2 border-border rounded-xl outline-none focus:border-brand-orange focus:ring-4 focus:ring-brand-orange/20 transition-all duration-300 text-sm font-medium" />
                 </div>
               </div>
 
@@ -704,28 +629,17 @@ const Properties: React.FC = () => {
                   <div className="absolute inset-y-0 right-0 pr-4 flex items-center pointer-events-none">
                     <i className="fas fa-chevron-down text-muted-foreground"></i>
                   </div>
-                  <button 
-                    onClick={() => setShowGuestsDropdown(!showGuestsDropdown)}
-                    className="w-full pl-12 pr-12 py-4 text-left text-foreground border-2 border-border rounded-xl outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-500/20 transition-all duration-300 text-sm font-medium cursor-pointer"
-                  >
+                  <button onClick={() => setShowGuestsDropdown(!showGuestsDropdown)} className="w-full pl-12 pr-12 py-4 text-left text-foreground border-2 border-border rounded-xl outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-500/20 transition-all duration-300 text-sm font-medium cursor-pointer">
                     {groupSize ? searchOptions.guests.find(g => g.value === groupSize)?.label || groupSize : 'Select guests'}
                   </button>
-                  {showGuestsDropdown && (
-                    <div className="absolute top-full left-0 right-0 mt-1 bg-background border-2 border-border rounded-xl shadow-lg z-50">
-                      {searchOptions.guests.map((guest, index) => (
-                        <button
-                          key={index}
-                          onClick={() => {
-                            setGroupSize(guest.value);
-                            setShowGuestsDropdown(false);
-                          }}
-                          className="w-full px-4 py-3 text-left text-foreground hover:bg-secondary transition-colors duration-200 cursor-pointer"
-                        >
+                  {showGuestsDropdown && <div className="absolute top-full left-0 right-0 mt-1 bg-background border-2 border-border rounded-xl shadow-lg z-50">
+                      {searchOptions.guests.map((guest, index) => <button key={index} onClick={() => {
+                    setGroupSize(guest.value);
+                    setShowGuestsDropdown(false);
+                  }} className="w-full px-4 py-3 text-left text-foreground hover:bg-secondary transition-colors duration-200 cursor-pointer">
                           {guest.label}
-                        </button>
-                      ))}
-                    </div>
-                  )}
+                        </button>)}
+                    </div>}
                 </div>
               </div>
 
@@ -738,48 +652,34 @@ const Properties: React.FC = () => {
                   <div className="absolute inset-y-0 right-0 pr-4 flex items-center pointer-events-none">
                     <i className="fas fa-chevron-down text-muted-foreground"></i>
                   </div>
-                  <button 
-                    onClick={() => setShowPriceDropdown(!showPriceDropdown)}
-                    className="w-full pl-12 pr-12 py-4 text-left text-foreground border-2 border-border rounded-xl outline-none focus:border-green-500 focus:ring-4 focus:ring-green-500/20 transition-all duration-300 text-sm font-medium cursor-pointer"
-                  >
+                  <button onClick={() => setShowPriceDropdown(!showPriceDropdown)} className="w-full pl-12 pr-12 py-4 text-left text-foreground border-2 border-border rounded-xl outline-none focus:border-green-500 focus:ring-4 focus:ring-green-500/20 transition-all duration-300 text-sm font-medium cursor-pointer">
                     {priceRange ? filterOptions.priceRanges.find(p => p.value === priceRange)?.label || priceRange : 'Any price'}
                   </button>
-                  {showPriceDropdown && (
-                    <div className="absolute top-full left-0 right-0 mt-1 bg-background border-2 border-border rounded-xl shadow-lg z-50">
-                      {filterOptions.priceRanges.map((range, index) => (
-                        <button
-                          key={index}
-                          onClick={() => {
-                            setPriceRange(range.value);
-                            setShowPriceDropdown(false);
-                          }}
-                          className="w-full px-4 py-3 text-left text-foreground hover:bg-secondary transition-colors duration-200 cursor-pointer"
-                        >
+                  {showPriceDropdown && <div className="absolute top-full left-0 right-0 mt-1 bg-background border-2 border-border rounded-xl shadow-lg z-50">
+                      {filterOptions.priceRanges.map((range, index) => <button key={index} onClick={() => {
+                    setPriceRange(range.value);
+                    setShowPriceDropdown(false);
+                  }} className="w-full px-4 py-3 text-left text-foreground hover:bg-secondary transition-colors duration-200 cursor-pointer">
                           {range.label}
-                        </button>
-                      ))}
-                    </div>
-                  )}
+                        </button>)}
+                    </div>}
                 </div>
               </div>
 
-              <button 
-                onClick={() => {
-                  console.log('🔍 Search triggered with:', {
-                    location: searchLocation,
-                    date: searchDate,
-                    guests: groupSize,
-                    priceRange: priceRange
-                  });
-                  // Close all dropdowns
-                  setShowLocationDropdown(false);
-                  setShowGuestsDropdown(false);
-                  setShowPriceDropdown(false);
-                  // The filtering is now handled automatically by the filter logic above
-                  console.log('✅ Filters applied automatically');
-                }}
-                className="bg-gradient-to-r from-brand-red to-brand-orange text-white px-8 py-4 rounded-xl hover:from-red-700 hover:to-orange-700 transition-all duration-300 cursor-pointer whitespace-nowrap rounded-button font-bold text-lg shadow-xl hover:shadow-2xl transform hover:scale-105 flex items-center justify-center gap-3"
-              >
+              <button onClick={() => {
+              console.log('🔍 Search triggered with:', {
+                location: searchLocation,
+                date: searchDate,
+                guests: groupSize,
+                priceRange: priceRange
+              });
+              // Close all dropdowns
+              setShowLocationDropdown(false);
+              setShowGuestsDropdown(false);
+              setShowPriceDropdown(false);
+              // The filtering is now handled automatically by the filter logic above
+              console.log('✅ Filters applied automatically');
+            }} className="bg-gradient-to-r from-brand-red to-brand-orange text-white px-8 py-4 rounded-xl hover:from-red-700 hover:to-orange-700 transition-all duration-300 cursor-pointer whitespace-nowrap rounded-button font-bold text-lg shadow-xl hover:shadow-2xl transform hover:scale-105 flex items-center justify-center gap-3">
                 <i className="fas fa-search text-xl"></i>
                 <span>Search</span>
               </button>
@@ -796,14 +696,8 @@ const Properties: React.FC = () => {
               <div className="flex items-center gap-4">
                 <span className="text-foreground font-semibold">Sort by:</span>
                 <div className="relative">
-                  <select
-                    value={sortBy}
-                    onChange={(e) => setSortBy(e.target.value)}
-                    className="appearance-none bg-background border border-border rounded-lg px-4 py-2 pr-8 text-foreground focus:outline-none focus:border-brand-red cursor-pointer"
-                  >
-                    {filterOptions.sortOptions.map((option) => (
-                      <option key={option.value} value={option.value}>{option.label}</option>
-                    ))}
+                  <select value={sortBy} onChange={e => setSortBy(e.target.value)} className="appearance-none bg-background border border-border rounded-lg px-4 py-2 pr-8 text-foreground focus:outline-none focus:border-brand-red cursor-pointer">
+                    {filterOptions.sortOptions.map(option => <option key={option.value} value={option.value}>{option.label}</option>)}
                   </select>
                   <div className="absolute inset-y-0 right-0 flex items-center px-2 pointer-events-none">
                     <i className="fas fa-chevron-down text-muted-foreground"></i>
@@ -813,16 +707,10 @@ const Properties: React.FC = () => {
 
               <div className="flex items-center gap-2">
                 <span className="text-foreground font-semibold">View:</span>
-                <button
-                  className={`p-2 rounded-lg transition-colors duration-200 cursor-pointer ${viewMode === 'grid' ? 'bg-brand-red/10 text-brand-red' : 'text-muted-foreground hover:text-foreground'}`}
-                  onClick={() => setViewMode('grid')}
-                >
+                <button className={`p-2 rounded-lg transition-colors duration-200 cursor-pointer ${viewMode === 'grid' ? 'bg-brand-red/10 text-brand-red' : 'text-muted-foreground hover:text-foreground'}`} onClick={() => setViewMode('grid')}>
                   <i className="fas fa-th-large"></i>
                 </button>
-                <button
-                  className={`p-2 rounded-lg transition-colors duration-200 cursor-pointer ${viewMode === 'list' ? 'bg-brand-red/10 text-brand-red' : 'text-muted-foreground hover:text-foreground'}`}
-                  onClick={() => setViewMode('list')}
-                >
+                <button className={`p-2 rounded-lg transition-colors duration-200 cursor-pointer ${viewMode === 'list' ? 'bg-brand-red/10 text-brand-red' : 'text-muted-foreground hover:text-foreground'}`} onClick={() => setViewMode('list')}>
                   <i className="fas fa-list"></i>
                 </button>
               </div>
@@ -830,32 +718,12 @@ const Properties: React.FC = () => {
 
             <div className="flex items-center gap-4">
               <span className="text-muted-foreground">Showing {properties.length} properties</span>
-                      <button
-          onClick={refreshProperties}
-          disabled={loading}
-          className="flex items-center gap-2 px-4 py-2 border border-border rounded-lg hover:border-brand-red transition-colors duration-200 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
-          title="Refresh properties"
-        >
+                      <button onClick={refreshProperties} disabled={loading} className="flex items-center gap-2 px-4 py-2 border border-border rounded-lg hover:border-brand-red transition-colors duration-200 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed" title="Refresh properties">
           <i className={`fas fa-sync-alt ${loading ? 'animate-spin' : ''} text-brand-red`}></i>
           <span className="text-foreground">Refresh</span>
         </button>
-        {cacheDisabled && (
-          <div className="flex items-center gap-2 px-3 py-1 bg-yellow-100 text-yellow-800 rounded-lg text-sm">
-            <i className="fas fa-exclamation-triangle"></i>
-            <span>Caching disabled (storage full)</span>
-            <button
-              onClick={reEnableCaching}
-              className="ml-2 px-2 py-1 bg-yellow-600 text-white rounded text-xs hover:bg-yellow-700 transition-colors"
-              title="Re-enable caching"
-            >
-              <i className="fas fa-redo"></i> Re-enable
-            </button>
-          </div>
-        )}
-              <button
-                className="flex items-center gap-2 px-4 py-2 border border-border rounded-lg hover:border-muted-foreground transition-colors duration-200 cursor-pointer lg:hidden"
-                onClick={() => setShowFilters(!showFilters)}
-              >
+        {cacheDisabled}
+              <button className="flex items-center gap-2 px-4 py-2 border border-border rounded-lg hover:border-muted-foreground transition-colors duration-200 cursor-pointer lg:hidden" onClick={() => setShowFilters(!showFilters)}>
                 <i className="fas fa-filter text-muted-foreground"></i>
                 <span className="text-foreground">Filters</span>
               </button>
@@ -875,10 +743,7 @@ const Properties: React.FC = () => {
               <div className="glass-sidebar rounded-2xl p-6 sticky top-32">
                 <div className="flex items-center justify-between mb-6">
                   <h3 className="text-xl font-bold text-foreground">Filters</h3>
-                  <button
-                    className="lg:hidden text-muted-foreground hover:text-foreground"
-                    onClick={() => setShowFilters(false)}
-                  >
+                  <button className="lg:hidden text-muted-foreground hover:text-foreground" onClick={() => setShowFilters(false)}>
                     <i className="fas fa-times"></i>
                   </button>
                 </div>
@@ -887,19 +752,10 @@ const Properties: React.FC = () => {
                 <div className="mb-8">
                   <h4 className="font-semibold text-foreground mb-4">Price Range</h4>
                   <div className="space-y-3">
-                    {filterOptions.priceRanges.map((range, index) => (
-                      <label key={index} className="flex items-center cursor-pointer">
-                        <input
-                          type="radio"
-                          name="priceRange"
-                          value={range.value}
-                          checked={priceRange === range.value}
-                          onChange={(e) => setPriceRange(e.target.value)}
-                          className="w-4 h-4 text-brand-red border-border focus:ring-brand-red"
-                        />
+                    {filterOptions.priceRanges.map((range, index) => <label key={index} className="flex items-center cursor-pointer">
+                        <input type="radio" name="priceRange" value={range.value} checked={priceRange === range.value} onChange={e => setPriceRange(e.target.value)} className="w-4 h-4 text-brand-red border-border focus:ring-brand-red" />
                         <span className="ml-3 text-foreground">{range.label}</span>
-                      </label>
-                    ))}
+                      </label>)}
                   </div>
                 </div>
 
@@ -907,19 +763,10 @@ const Properties: React.FC = () => {
                 <div className="mb-8">
                   <h4 className="font-semibold text-foreground mb-4">Property Type</h4>
                   <div className="space-y-3 max-h-48 overflow-y-auto">
-                    {filterOptions.propertyTypes.map((type, index) => (
-                      <label key={index} className="flex items-center cursor-pointer">
-                        <input
-                          type="radio"
-                          name="propertyType"
-                          value={type}
-                          checked={propertyType === type}
-                          onChange={(e) => setPropertyType(e.target.value)}
-                          className="w-4 h-4 text-brand-red border-border focus:ring-brand-red"
-                        />
+                    {filterOptions.propertyTypes.map((type, index) => <label key={index} className="flex items-center cursor-pointer">
+                        <input type="radio" name="propertyType" value={type} checked={propertyType === type} onChange={e => setPropertyType(e.target.value)} className="w-4 h-4 text-brand-red border-border focus:ring-brand-red" />
                         <span className="ml-3 text-foreground">{type}</span>
-                      </label>
-                    ))}
+                      </label>)}
                   </div>
                 </div>
 
@@ -927,25 +774,15 @@ const Properties: React.FC = () => {
                 <div className="mb-8">
                   <h4 className="font-semibold text-foreground mb-4">Amenities</h4>
                   <div className="space-y-3 max-h-64 overflow-y-auto">
-                    {filterOptions.amenitiesList.map((amenity, index) => (
-                      <label key={index} className="flex items-center cursor-pointer">
-                        <input
-                          type="checkbox"
-                          checked={amenities.includes(amenity)}
-                          onChange={() => toggleAmenity(amenity)}
-                          className="w-4 h-4 text-brand-red border-border rounded focus:ring-brand-red"
-                        />
+                    {filterOptions.amenitiesList.map((amenity, index) => <label key={index} className="flex items-center cursor-pointer">
+                        <input type="checkbox" checked={amenities.includes(amenity)} onChange={() => toggleAmenity(amenity)} className="w-4 h-4 text-brand-red border-border rounded focus:ring-brand-red" />
                         <span className="ml-3 text-foreground">{amenity}</span>
-                      </label>
-                    ))}
+                      </label>)}
                   </div>
                 </div>
 
                 {/* Clear Filters */}
-                <button
-                  onClick={clearAllFilters}
-                  className="w-full bg-secondary text-secondary-foreground py-3 rounded-lg hover:bg-secondary/80 transition-colors duration-200 cursor-pointer whitespace-nowrap rounded-button font-medium"
-                >
+                <button onClick={clearAllFilters} className="w-full bg-secondary text-secondary-foreground py-3 rounded-lg hover:bg-secondary/80 transition-colors duration-200 cursor-pointer whitespace-nowrap rounded-button font-medium">
                   Clear All Filters
                 </button>
               </div>
@@ -954,43 +791,32 @@ const Properties: React.FC = () => {
             {/* Properties Grid */}
             <div className="lg:col-span-3">
               
-                            {loading ? (
-                <div className="text-center py-12">
+                            {loading ? <div className="text-center py-12">
                   <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4 animate-spin">
                     <i className="fas fa-spinner text-gray-400 text-2xl"></i>
                   </div>
                   <h3 className="text-lg font-medium text-gray-800 mb-2">Loading properties...</h3>
                   <p className="text-gray-600">Please wait while we fetch your properties</p>
-                </div>
-              ) : currentProperties.length === 0 ? (
-                <div className="text-center py-12">
+                </div> : currentProperties.length === 0 ? <div className="text-center py-12">
                   <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
                     <i className="fas fa-home text-gray-400 text-2xl"></i>
                   </div>
                   <h3 className="text-lg font-medium text-gray-800 mb-2">No properties found</h3>
                   <p className="text-gray-600 mb-4">Properties array length: {properties.length}, Current properties: {currentProperties.length}</p>
-                </div>
-              ) : (
-                <div className={`grid gap-8 ${viewMode === 'grid' ? 'grid-cols-1 md:grid-cols-2 xl:grid-cols-3' : 'grid-cols-1'}`}>
-                  {currentProperties.map((property, index) => (
-                    <div key={property.id} className="glass-card-property property-card-height rounded-2xl overflow-hidden">
+                </div> : <div className={`grid gap-8 ${viewMode === 'grid' ? 'grid-cols-1 md:grid-cols-2 xl:grid-cols-3' : 'grid-cols-1'}`}>
+                  {currentProperties.map((property, index) => <div key={property.id} className="glass-card-property property-card-height rounded-2xl overflow-hidden">
                       {/* Image Carousel */}
                       <div className="relative">
-                        <ImageCarousel
-                          images={property.image ? [property.image] : [beachsideParadise]}
-                          alt={property.name}
-                        />
+                        <ImageCarousel images={property.image ? [property.image] : [beachsideParadise]} alt={property.name} />
                         <div className="absolute top-3 left-3">
                           <span className="bg-gradient-to-r from-brand-red to-brand-orange text-white px-3 py-1 rounded-full text-sm font-semibold backdrop-blur-sm">
                             {property.type || 'Villa'}
                           </span>
                         </div>
-                        {property.rating > 0 && (
-                          <div className="absolute top-3 right-3 bg-black/70 backdrop-blur-sm text-white px-2 py-1 rounded-full text-sm flex items-center gap-1">
+                        {property.rating > 0 && <div className="absolute top-3 right-3 bg-black/70 backdrop-blur-sm text-white px-2 py-1 rounded-full text-sm flex items-center gap-1">
                             <i className="fas fa-star text-yellow-400 text-xs"></i>
                             {property.rating.toFixed(1)}
-                          </div>
-                        )}
+                          </div>}
                       </div>
                       
                       {/* Content Section */}
@@ -1029,10 +855,7 @@ const Properties: React.FC = () => {
 
                         {/* Action Buttons */}
                         <div className="property-card-actions flex gap-3 mt-auto">
-                          <button
-                            onClick={() => handleViewProperty(property)}
-                            className="flex-1 bg-gradient-to-r from-brand-red to-brand-orange text-white py-3 rounded-lg font-semibold hover:scale-105 transition-transform duration-200 flex items-center justify-center gap-2 backdrop-blur-sm"
-                          >
+                          <button onClick={() => handleViewProperty(property)} className="flex-1 bg-gradient-to-r from-brand-red to-brand-orange text-white py-3 rounded-lg font-semibold hover:scale-105 transition-transform duration-200 flex items-center justify-center gap-2 backdrop-blur-sm">
                             <i className="fas fa-eye"></i>
                             View Details
                           </button>
@@ -1041,41 +864,21 @@ const Properties: React.FC = () => {
                           </button>
                         </div>
                       </div>
-                    </div>
-                  ))}
-                </div>
-              )}
+                    </div>)}
+                </div>}
 
               {/* Pagination */}
               <div className="flex justify-center items-center mt-12 gap-4">
-                <button
-                  onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
-                  disabled={currentPage === 1}
-                  className="px-4 py-2 border border-border rounded-lg hover:bg-secondary disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer whitespace-nowrap rounded-button"
-                >
+                <button onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))} disabled={currentPage === 1} className="px-4 py-2 border border-border rounded-lg hover:bg-secondary disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer whitespace-nowrap rounded-button">
                   <i className="fas fa-chevron-left mr-2"></i>
                   Previous
                 </button>
                 <div className="flex gap-2">
-                  {[...Array(totalPages)].map((_, index) => (
-                    <button
-                      key={index}
-                      onClick={() => setCurrentPage(index + 1)}
-                      className={`px-4 py-2 rounded-lg cursor-pointer whitespace-nowrap rounded-button ${
-                        currentPage === index + 1
-                          ? 'bg-brand-red text-white'
-                          : 'border border-border hover:bg-secondary'
-                      }`}
-                    >
+                  {[...Array(totalPages)].map((_, index) => <button key={index} onClick={() => setCurrentPage(index + 1)} className={`px-4 py-2 rounded-lg cursor-pointer whitespace-nowrap rounded-button ${currentPage === index + 1 ? 'bg-brand-red text-white' : 'border border-border hover:bg-secondary'}`}>
                       {index + 1}
-                    </button>
-                  ))}
+                    </button>)}
                 </div>
-                <button
-                  onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
-                  disabled={currentPage === totalPages}
-                  className="px-4 py-2 border border-border rounded-lg hover:bg-secondary disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer whitespace-nowrap rounded-button"
-                >
+                <button onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))} disabled={currentPage === totalPages} className="px-4 py-2 border border-border rounded-lg hover:bg-secondary disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer whitespace-nowrap rounded-button">
                   Next
                   <i className="fas fa-chevron-right ml-2"></i>
                 </button>
@@ -1164,16 +967,12 @@ const Properties: React.FC = () => {
       </footer>
 
       {/* View Property Modal */}
-      {showViewModal && selectedProperty && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+      {showViewModal && selectedProperty && <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
           <div className="bg-background rounded-2xl shadow-2xl max-w-4xl w-full max-h-[90vh] overflow-y-auto">
             {/* Modal Header */}
             <div className="sticky top-0 bg-background border-b border-border p-6 flex justify-between items-center">
               <h2 className="text-2xl font-bold text-foreground">Property Details</h2>
-              <button
-                onClick={closeViewModal}
-                className="w-10 h-10 rounded-full bg-muted hover:bg-muted/80 flex items-center justify-center transition-colors"
-              >
+              <button onClick={closeViewModal} className="w-10 h-10 rounded-full bg-muted hover:bg-muted/80 flex items-center justify-center transition-colors">
                 <i className="fas fa-times text-muted-foreground"></i>
               </button>
             </div>
@@ -1181,10 +980,7 @@ const Properties: React.FC = () => {
             <div className="p-6">
               {/* Property Images */}
               <div className="mb-6">
-                <ImageCarousel
-                  images={selectedProperty.image ? [selectedProperty.image] : [beachsideParadise]}
-                  alt={selectedProperty.name}
-                />
+                <ImageCarousel images={selectedProperty.image ? [selectedProperty.image] : [beachsideParadise]} alt={selectedProperty.name} />
               </div>
 
               {/* Property Info Grid */}
@@ -1204,18 +1000,14 @@ const Properties: React.FC = () => {
                       <span>{selectedProperty.location}</span>
                     </div>
 
-                    {selectedProperty.rating > 0 && (
-                      <div className="flex items-center gap-2 mb-4">
+                    {selectedProperty.rating > 0 && <div className="flex items-center gap-2 mb-4">
                         <div className="flex text-yellow-400">
-                          {[...Array(5)].map((_, i) => (
-                            <i key={i} className={`fas fa-star ${i < Math.floor(selectedProperty.rating) ? 'text-yellow-400' : 'text-gray-300'}`}></i>
-                          ))}
+                          {[...Array(5)].map((_, i) => <i key={i} className={`fas fa-star ${i < Math.floor(selectedProperty.rating) ? 'text-yellow-400' : 'text-gray-300'}`}></i>)}
                         </div>
                         <span className="text-sm text-muted-foreground">
                           {selectedProperty.rating.toFixed(1)} ({selectedProperty.reviewCount || 0} reviews)
                         </span>
-                      </div>
-                    )}
+                      </div>}
                   </div>
 
                   {/* Property Stats */}
@@ -1247,32 +1039,26 @@ const Properties: React.FC = () => {
                   </div>
 
                   {/* Description */}
-                  {selectedProperty.description && (
-                    <div className="mb-6">
+                  {selectedProperty.description && <div className="mb-6">
                       <h3 className="text-lg font-semibold text-foreground mb-3">Description</h3>
                       <p className="text-muted-foreground leading-relaxed">
                         {selectedProperty.description}
                       </p>
-                    </div>
-                  )}
+                    </div>}
                 </div>
 
                 {/* Right Column */}
                 <div>
                   {/* Amenities */}
-                  {selectedProperty.amenities && selectedProperty.amenities.length > 0 && (
-                    <div className="mb-6">
+                  {selectedProperty.amenities && selectedProperty.amenities.length > 0 && <div className="mb-6">
                       <h3 className="text-lg font-semibold text-foreground mb-3">Amenities</h3>
                       <div className="grid grid-cols-2 gap-3">
-                        {selectedProperty.amenities.map((amenity: string, index: number) => (
-                          <div key={index} className="flex items-center gap-2 text-sm text-muted-foreground">
+                        {selectedProperty.amenities.map((amenity: string, index: number) => <div key={index} className="flex items-center gap-2 text-sm text-muted-foreground">
                             <i className="fas fa-check text-green-500"></i>
                             {amenity}
-                          </div>
-                        ))}
+                          </div>)}
                       </div>
-                    </div>
-                  )}
+                    </div>}
 
                   {/* Pricing Details */}
                   <div className="bg-muted rounded-lg p-6 mb-6">
@@ -1307,10 +1093,7 @@ const Properties: React.FC = () => {
               </div>
             </div>
           </div>
-        </div>
-      )}
-    </div>
-  );
+        </div>}
+    </div>;
 };
-
 export default Properties;
