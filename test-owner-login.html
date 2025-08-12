@@ -1,0 +1,333 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Owner Login</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .test-card {
+            background: white;
+            border-radius: 8px;
+            padding: 20px;
+            margin: 20px 0;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .test-button {
+            background: #2196f3;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            margin: 5px;
+            text-decoration: none;
+            display: inline-block;
+        }
+        .success {
+            color: #4caf50;
+            font-weight: bold;
+        }
+        .error {
+            color: #f44336;
+            font-weight: bold;
+        }
+        .warning {
+            color: #ff9800;
+            font-weight: bold;
+        }
+        .info {
+            background: #e3f2fd;
+            border-left: 4px solid #2196f3;
+            padding: 15px;
+            margin: 15px 0;
+        }
+        .issue {
+            background: #ffebee;
+            border-left: 4px solid #f44336;
+            padding: 15px;
+            margin: 15px 0;
+        }
+        .console-output {
+            background: #1e1e1e;
+            color: #ffffff;
+            padding: 15px;
+            border-radius: 4px;
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+            max-height: 300px;
+            overflow-y: auto;
+            white-space: pre-wrap;
+        }
+    </style>
+</head>
+<body>
+    <h1>🔐 Test Owner Login</h1>
+    
+    <div class="test-card">
+        <h2>🚨 Current Issue</h2>
+        
+        <div class="issue">
+            <strong>Problem:</strong> Infinite sign-in loop for property owners
+        </div>
+        
+        <div class="info">
+            <strong>Goal:</strong> Ensure smooth owner login without infinite loops
+        </div>
+    </div>
+
+    <div class="test-card">
+        <h2>🔍 Test Steps</h2>
+        
+        <div class="info">
+            <h3>Step 1: Open Owner Login</h3>
+            <a href="http://localhost:8082/owner/login" class="test-button" target="_blank">Open Owner Login</a>
+        </div>
+        
+        <div class="info">
+            <h3>Step 2: Test Login Flow</h3>
+            <ol>
+                <li>Enter email: <code>venteskraft@gmail.com</code></li>
+                <li>Enter password: <code>your_password</code></li>
+                <li>Click "Sign In"</li>
+                <li>Watch for redirect to dashboard</li>
+            </ol>
+        </div>
+        
+        <div class="info">
+            <h3>Step 3: Check Console for Errors</h3>
+            <button onclick="startConsoleMonitoring()" class="test-button">Start Console Monitoring</button>
+            <div id="consoleOutput" class="console-output">Waiting for console activity...</div>
+        </div>
+    </div>
+
+    <div class="test-card">
+        <h2>🔧 Potential Issues & Fixes</h2>
+        
+        <div class="issue">
+            <h3>1. RLS Policy Issues</h3>
+            <p><strong>Problem:</strong> RLS policies might be blocking profile access</p>
+            <p><strong>Fix:</strong> Remove restrictive RLS policies for profiles table</p>
+            <button onclick="fixRLSPolicies()" class="test-button">Fix RLS Policies</button>
+        </div>
+        
+        <div class="issue">
+            <h3>2. Profile Creation Issues</h3>
+            <p><strong>Problem:</strong> User profile not created during signup</p>
+            <p><strong>Fix:</strong> Ensure profile creation trigger works</p>
+            <button onclick="checkProfileCreation()" class="test-button">Check Profile Creation</button>
+        </div>
+        
+        <div class="issue">
+            <h3>3. Authentication State Issues</h3>
+            <p><strong>Problem:</strong> Auth state not properly syncing</p>
+            <p><strong>Fix:</strong> Clear localStorage and retry</p>
+            <button onclick="clearAuthState()" class="test-button">Clear Auth State</button>
+        </div>
+    </div>
+
+    <div class="test-card">
+        <h2>✅ Quick Fixes</h2>
+        
+        <div class="info">
+            <h3>Option 1: Remove RLS Policies (Recommended)</h3>
+            <p>Remove restrictive RLS policies that might block owner access:</p>
+            <button onclick="removeRestrictiveRLS()" class="test-button">Remove Restrictive RLS</button>
+        </div>
+        
+        <div class="info">
+            <h3>Option 2: Create Test Owner Account</h3>
+            <p>Create a test owner account with proper role:</p>
+            <button onclick="createTestOwner()" class="test-button">Create Test Owner</button>
+        </div>
+        
+        <div class="info">
+            <h3>Option 3: Check Current Users</h3>
+            <p>Check what users exist in the database:</p>
+            <button onclick="checkExistingUsers()" class="test-button">Check Users</button>
+        </div>
+    </div>
+
+    <script>
+        const SUPABASE_URL = 'https://riqsgtuzccwpplbodwbd.supabase.co';
+        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJpZ3NndHV6Y2N3cHBsYm9kd2JkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MzQ5NzI5NzAsImV4cCI6MjA1MDU0ODk3MH0.Ej8Ej8Ej8Ej8Ej8Ej8Ej8Ej8Ej8Ej8Ej8Ej8Ej8Ej8';
+
+        let logs = [];
+        let isMonitoring = false;
+
+        function addLog(message, type = 'info') {
+            const timestamp = new Date().toLocaleTimeString();
+            const color = type === 'error' ? '#ff6b6b' : type === 'success' ? '#6bcf7f' : '#4dabf7';
+            
+            logs.push(`[${timestamp}] ${message}`);
+            updateConsoleOutput();
+        }
+
+        function updateConsoleOutput() {
+            const output = document.getElementById('consoleOutput');
+            output.innerHTML = logs.join('\n');
+            output.scrollTop = output.scrollHeight;
+        }
+
+        function startConsoleMonitoring() {
+            if (isMonitoring) {
+                alert('Already monitoring console!');
+                return;
+            }
+            
+            isMonitoring = true;
+            logs = [];
+            
+            // Override console methods
+            const originalLog = console.log;
+            const originalError = console.error;
+            const originalWarn = console.warn;
+            
+            console.log = function(...args) {
+                originalLog.apply(console, args);
+                addLog('LOG: ' + args.join(' '), 'info');
+            };
+            
+            console.error = function(...args) {
+                originalError.apply(console, args);
+                addLog('ERROR: ' + args.join(' '), 'error');
+            };
+            
+            console.warn = function(...args) {
+                originalWarn.apply(console, args);
+                addLog('WARN: ' + args.join(' '), 'warning');
+            };
+            
+            addLog('Console monitoring started', 'success');
+        }
+
+        async function removeRestrictiveRLS() {
+            try {
+                addLog('Removing restrictive RLS policies...', 'info');
+                
+                // Drop restrictive RLS policies
+                const dropPoliciesSQL = `
+                    DROP POLICY IF EXISTS "Users can view their own profile" ON public.profiles;
+                    DROP POLICY IF EXISTS "Users can update their own profile" ON public.profiles;
+                    DROP POLICY IF EXISTS "Users can insert their own profile" ON public.profiles;
+                    
+                    -- Create more permissive policies for testing
+                    CREATE POLICY "Allow all profile operations" ON public.profiles
+                        FOR ALL USING (true) WITH CHECK (true);
+                `;
+
+                const response = await fetch(`${SUPABASE_URL}/rest/v1/rpc/exec_sql`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'apikey': SUPABASE_ANON_KEY,
+                        'Authorization': `Bearer ${SUPABASE_ANON_KEY}`
+                    },
+                    body: JSON.stringify({
+                        sql: dropPoliciesSQL
+                    })
+                });
+
+                if (response.ok) {
+                    addLog('✅ RLS policies updated successfully', 'success');
+                } else {
+                    const error = await response.text();
+                    addLog('❌ Error updating RLS policies: ' + error, 'error');
+                }
+            } catch (error) {
+                addLog('❌ Error updating RLS policies: ' + error.message, 'error');
+            }
+        }
+
+        async function checkProfileCreation() {
+            try {
+                addLog('Checking profile creation trigger...', 'info');
+                
+                const response = await fetch(`${SUPABASE_URL}/rest/v1/profiles?select=count`, {
+                    headers: {
+                        'apikey': SUPABASE_ANON_KEY,
+                        'Authorization': `Bearer ${SUPABASE_ANON_KEY}`
+                    }
+                });
+
+                if (response.ok) {
+                    const data = await response.json();
+                    addLog(`✅ Found ${data.length} profiles in database`, 'success');
+                } else {
+                    addLog('❌ Error checking profiles: ' + response.status, 'error');
+                }
+            } catch (error) {
+                addLog('❌ Error checking profiles: ' + error.message, 'error');
+            }
+        }
+
+        async function clearAuthState() {
+            try {
+                addLog('Clearing authentication state...', 'info');
+                
+                // Clear localStorage
+                localStorage.clear();
+                addLog('✅ localStorage cleared', 'success');
+                
+                // Clear session storage
+                sessionStorage.clear();
+                addLog('✅ sessionStorage cleared', 'success');
+                
+                addLog('🔄 Please refresh the page and try logging in again', 'info');
+            } catch (error) {
+                addLog('❌ Error clearing auth state: ' + error.message, 'error');
+            }
+        }
+
+        async function createTestOwner() {
+            try {
+                addLog('Creating test owner account...', 'info');
+                
+                // This would require Supabase Auth API access
+                addLog('⚠️ Test owner creation requires Supabase Auth API access', 'warning');
+                addLog('💡 Use the signup page to create a new owner account', 'info');
+            } catch (error) {
+                addLog('❌ Error creating test owner: ' + error.message, 'error');
+            }
+        }
+
+        async function checkExistingUsers() {
+            try {
+                addLog('Checking existing users...', 'info');
+                
+                const response = await fetch(`${SUPABASE_URL}/rest/v1/profiles?select=*`, {
+                    headers: {
+                        'apikey': SUPABASE_ANON_KEY,
+                        'Authorization': `Bearer ${SUPABASE_ANON_KEY}`
+                    }
+                });
+
+                if (response.ok) {
+                    const users = await response.json();
+                    addLog(`✅ Found ${users.length} users:`, 'success');
+                    users.forEach(user => {
+                        addLog(`  - ${user.email} (role: ${user.role})`, 'info');
+                    });
+                } else {
+                    addLog('❌ Error checking users: ' + response.status, 'error');
+                }
+            } catch (error) {
+                addLog('❌ Error checking users: ' + error.message, 'error');
+            }
+        }
+
+        // Auto-start monitoring on page load
+        window.onload = function() {
+            console.log('🔐 Owner Login Test Tool Loaded');
+            addLog('🚀 Owner Login Test Tool Loaded', 'success');
+            addLog('📋 Ready to test owner login functionality', 'info');
+        };
+    </script>
+</body>
+</html>

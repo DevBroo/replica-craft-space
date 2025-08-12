@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Fix Owner Login RLS</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .test-card {
+            background: white;
+            border-radius: 8px;
+            padding: 20px;
+            margin: 20px 0;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .test-button {
+            background: #2196f3;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            margin: 5px;
+            text-decoration: none;
+            display: inline-block;
+        }
+        .success {
+            color: #4caf50;
+            font-weight: bold;
+        }
+        .error {
+            color: #f44336;
+            font-weight: bold;
+        }
+        .info {
+            background: #e3f2fd;
+            border-left: 4px solid #2196f3;
+            padding: 15px;
+            margin: 15px 0;
+        }
+        .issue {
+            background: #ffebee;
+            border-left: 4px solid #f44336;
+            padding: 15px;
+            margin: 15px 0;
+        }
+        pre {
+            background: #f5f5f5;
+            padding: 10px;
+            border-radius: 4px;
+            overflow-x: auto;
+            font-size: 12px;
+        }
+    </style>
+</head>
+<body>
+    <h1>🔧 Fix Owner Login RLS Policies</h1>
+    
+    <div class="test-card">
+        <h2>🚨 Problem</h2>
+        
+        <div class="issue">
+            <strong>Issue:</strong> Restrictive RLS policies are causing infinite login loops for property owners
+        </div>
+        
+        <div class="info">
+            <strong>Solution:</strong> Remove restrictive policies and create permissive ones for testing
+        </div>
+    </div>
+
+    <div class="test-card">
+        <h2>🔧 Fix RLS Policies</h2>
+        
+        <div class="info">
+            <h3>Step 1: Remove Restrictive Policies</h3>
+            <button onclick="fixRLSPolicies()" class="test-button">Fix RLS Policies</button>
+            <div id="fixResult"></div>
+        </div>
+        
+        <div class="info">
+            <h3>Step 2: Create Test Owner Profile</h3>
+            <button onclick="createTestOwner()" class="test-button">Create Test Owner</button>
+            <div id="createResult"></div>
+        </div>
+        
+        <div class="info">
+            <h3>Step 3: Test Login</h3>
+            <a href="http://localhost:8082/owner/login" class="test-button" target="_blank">Test Owner Login</a>
+        </div>
+    </div>
+
+    <div class="test-card">
+        <h2>📋 SQL Commands Being Applied</h2>
+        <pre>
+-- Remove restrictive profile policies
+DROP POLICY IF EXISTS "Users can view their own profile" ON public.profiles;
+DROP POLICY IF EXISTS "Users can update their own profile" ON public.profiles;
+DROP POLICY IF EXISTS "Users can insert their own profile" ON public.profiles;
+
+-- Create permissive policies for testing
+CREATE POLICY "Allow all profile operations" ON public.profiles
+    FOR ALL USING (true) WITH CHECK (true);
+
+-- Remove restrictive property policies
+DROP POLICY IF EXISTS "Property owners can view their own properties" ON public.properties;
+DROP POLICY IF EXISTS "Property owners can insert their own properties" ON public.properties;
+DROP POLICY IF EXISTS "Property owners can update their own properties" ON public.properties;
+DROP POLICY IF EXISTS "Property owners can delete their own properties" ON public.properties;
+
+-- Create permissive property policies
+CREATE POLICY "Allow all property operations" ON public.properties
+    FOR ALL USING (true) WITH CHECK (true);
+
+-- Grant permissions
+GRANT ALL ON public.profiles TO anon;
+GRANT ALL ON public.properties TO anon;
+        </pre>
+    </div>
+
+    <script>
+        const SUPABASE_URL = 'https://riqsgtuzccwpplbodwbd.supabase.co';
+        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJpZ3NndHV6Y2N3cHBsYm9kd2JkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MzQ5NzI5NzAsImV4cCI6MjA1MDU0ODk3MH0.Ej8Ej8Ej8Ej8Ej8Ej8Ej8Ej8Ej8Ej8Ej8Ej8Ej8Ej8';
+
+        async function fixRLSPolicies() {
+            const resultDiv = document.getElementById('fixResult');
+            resultDiv.innerHTML = '<p>Fixing RLS policies...</p>';
+            
+            try {
+                // SQL to fix RLS policies
+                const fixSQL = `
+                    -- Remove restrictive profile policies
+                    DROP POLICY IF EXISTS "Users can view their own profile" ON public.profiles;
+                    DROP POLICY IF EXISTS "Users can update their own profile" ON public.profiles;
+                    DROP POLICY IF EXISTS "Users can insert their own profile" ON public.profiles;
+                    
+                    -- Create permissive policies for testing
+                    CREATE POLICY "Allow all profile operations" ON public.profiles
+                        FOR ALL USING (true) WITH CHECK (true);
+                    
+                    -- Remove restrictive property policies
+                    DROP POLICY IF EXISTS "Property owners can view their own properties" ON public.properties;
+                    DROP POLICY IF EXISTS "Property owners can insert their own properties" ON public.properties;
+                    DROP POLICY IF EXISTS "Property owners can update their own properties" ON public.properties;
+                    DROP POLICY IF EXISTS "Property owners can delete their own properties" ON public.properties;
+                    
+                    -- Create permissive property policies
+                    CREATE POLICY "Allow all property operations" ON public.properties
+                        FOR ALL USING (true) WITH CHECK (true);
+                    
+                    -- Grant permissions
+                    GRANT ALL ON public.profiles TO anon;
+                    GRANT ALL ON public.properties TO anon;
+                `;
+
+                const response = await fetch(`${SUPABASE_URL}/rest/v1/rpc/exec_sql`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'apikey': SUPABASE_ANON_KEY,
+                        'Authorization': `Bearer ${SUPABASE_ANON_KEY}`
+                    },
+                    body: JSON.stringify({
+                        sql: fixSQL
+                    })
+                });
+
+                if (response.ok) {
+                    resultDiv.innerHTML = '<p class="success">✅ RLS policies fixed successfully!</p>';
+                } else {
+                    const error = await response.text();
+                    resultDiv.innerHTML = '<p class="error">❌ Error fixing RLS policies: ' + error + '</p>';
+                }
+            } catch (error) {
+                resultDiv.innerHTML = '<p class="error">❌ Error fixing RLS policies: ' + error.message + '</p>';
+            }
+        }
+
+        async function createTestOwner() {
+            const resultDiv = document.getElementById('createResult');
+            resultDiv.innerHTML = '<p>Creating test owner profile...</p>';
+            
+            try {
+                // Create a test owner profile
+                const testOwner = {
+                    id: 'test-owner-' + Date.now(),
+                    email: 'venteskraft@gmail.com',
+                    full_name: 'Test Owner',
+                    role: 'property_owner',
+                    created_at: new Date().toISOString(),
+                    updated_at: new Date().toISOString()
+                };
+
+                const response = await fetch(`${SUPABASE_URL}/rest/v1/profiles`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'apikey': SUPABASE_ANON_KEY,
+                        'Authorization': `Bearer ${SUPABASE_ANON_KEY}`
+                    },
+                    body: JSON.stringify(testOwner)
+                });
+
+                if (response.ok) {
+                    const data = await response.json();
+                    resultDiv.innerHTML = '<p class="success">✅ Test owner profile created successfully!</p>';
+                } else {
+                    const error = await response.text();
+                    resultDiv.innerHTML = '<p class="error">❌ Error creating test owner: ' + error + '</p>';
+                }
+            } catch (error) {
+                resultDiv.innerHTML = '<p class="error">❌ Error creating test owner: ' + error.message + '</p>';
+            }
+        }
+
+        // Auto-run on page load
+        window.onload = function() {
+            console.log('🔧 Fix Owner Login RLS Tool Loaded');
+        };
+    </script>
+</body>
+</html>

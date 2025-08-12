@@ -1,0 +1,302 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Fast Property Loading</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .test-card {
+            background: white;
+            border-radius: 8px;
+            padding: 20px;
+            margin: 20px 0;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .success {
+            color: #4caf50;
+            font-weight: bold;
+        }
+        .error {
+            color: #f44336;
+            font-weight: bold;
+        }
+        .info {
+            background: #e3f2fd;
+            border-left: 4px solid #2196f3;
+            padding: 15px;
+            margin: 15px 0;
+        }
+        .fix {
+            background: #e8f5e8;
+            border-left: 4px solid #4caf50;
+            padding: 15px;
+            margin: 15px 0;
+        }
+        .warning {
+            background: #fff3e0;
+            border-left: 4px solid #ff9800;
+            padding: 15px;
+            margin: 15px 0;
+        }
+        .timer {
+            background: #f0f8ff;
+            border-left: 4px solid #0066cc;
+            padding: 15px;
+            margin: 15px 0;
+            font-family: monospace;
+            font-size: 18px;
+        }
+    </style>
+</head>
+<body>
+    <h1>⚡ Test Fast Property Loading</h1>
+    
+    <div class="test-card">
+        <h2>🚨 Issue Fixed</h2>
+        
+        <div class="info">
+            <strong>Problem:</strong> Properties loading slowly after page refresh
+        </div>
+        
+        <div class="fix">
+            <strong>Root Cause:</strong> Waiting for slow profile operations before showing properties
+        </div>
+        
+        <div class="fix">
+            <strong>Fix Applied:</strong> 
+            <ul>
+                <li>✅ Load localStorage properties immediately for instant display</li>
+                <li>✅ Reduced profile operation timeouts from 10s to 3s</li>
+                <li>✅ Parallel loading of database and localStorage data</li>
+                <li>✅ Progressive enhancement with database data</li>
+            </ul>
+        </div>
+    </div>
+
+    <div class="test-card">
+        <h2>⏱️ Performance Test</h2>
+        
+        <div class="timer">
+            <div id="loadingTimer">Loading time: --</div>
+            <div id="propertyCount">Properties found: --</div>
+        </div>
+        
+        <div class="info">
+            <h3>Step 1: Start Timer</h3>
+            <button onclick="startTimer()" style="background: #2196f3; color: white; border: none; padding: 10px 20px; border-radius: 4px; cursor: pointer;">Start Timer</button>
+            <p>Click this before refreshing the page</p>
+        </div>
+        
+        <div class="info">
+            <h3>Step 2: Test Loading Speed</h3>
+            <ol>
+                <li>Click "Start Timer" above</li>
+                <li><a href="http://localhost:8082/owner/view" target="_blank">Open My Properties</a></li>
+                <li>Watch the timer - should show properties within 1-2 seconds</li>
+                <li>Check console for loading logs</li>
+            </ol>
+        </div>
+        
+        <div class="info">
+            <h3>Step 3: Refresh Test</h3>
+            <ol>
+                <li>Once properties are visible, refresh the page (F5)</li>
+                <li>Properties should appear almost instantly</li>
+                <li>Timer should show fast loading time</li>
+            </ol>
+        </div>
+    </div>
+
+    <div class="test-card">
+        <h2>✅ Expected Results</h2>
+        
+        <div class="success">
+            <h3>After Fix:</h3>
+            <ul>
+                <li>✅ Properties appear within 1-2 seconds</li>
+                <li>✅ localStorage properties show immediately</li>
+                <li>✅ Database properties load in background</li>
+                <li>✅ No long loading delays</li>
+                <li>✅ Smooth user experience</li>
+            </ul>
+        </div>
+        
+        <div class="warning">
+            <h3>Console Logs to Watch:</h3>
+            <ul>
+                <li>📋 "Loading localStorage properties immediately" (should appear first)</li>
+                <li>🔍 "Loading properties from database" (should appear after)</li>
+                <li>✅ "All properties loaded" (final count)</li>
+                <li>⏱️ Profile timeouts should be 3 seconds max</li>
+            </ul>
+        </div>
+    </div>
+
+    <div class="test-card">
+        <h2>🔍 Debug Tools</h2>
+        
+        <div class="info">
+            <h3>Check Loading Performance</h3>
+            <button onclick="checkPerformance()" style="background: #4caf50; color: white; border: none; padding: 10px 20px; border-radius: 4px; cursor: pointer;">Check Performance</button>
+            <div id="performanceResult" style="margin-top: 10px;"></div>
+        </div>
+        
+        <div class="info">
+            <h3>Create Test Properties</h3>
+            <button onclick="createMultipleTestProperties()" style="background: #ff9800; color: white; border: none; padding: 10px 20px; border-radius: 4px; cursor: pointer;">Create 5 Test Properties</button>
+            <p>Creates multiple test properties to test loading with more data</p>
+        </div>
+    </div>
+
+    <div class="test-card">
+        <h2>🔍 Debug Info</h2>
+        
+        <div class="info">
+            <h3>Key Optimizations Made:</h3>
+            <ul>
+                <li><strong>Immediate Display:</strong> localStorage properties show instantly</li>
+                <li><strong>Reduced Timeouts:</strong> Profile operations timeout in 3s instead of 10s</li>
+                <li><strong>Parallel Loading:</strong> Database and localStorage load simultaneously</li>
+                <li><strong>Progressive Enhancement:</strong> Database data updates UI when available</li>
+            </ul>
+        </div>
+        
+        <div class="warning">
+            <h3>Performance Targets:</h3>
+            <ul>
+                <li>⚡ <strong>Initial load:</strong> Properties visible within 1-2 seconds</li>
+                <li>⚡ <strong>Page refresh:</strong> Properties visible within 500ms</li>
+                <li>⚡ <strong>Profile sync:</strong> Complete within 3 seconds</li>
+                <li>⚡ <strong>Database sync:</strong> Background process, doesn't block UI</li>
+            </ul>
+        </div>
+    </div>
+
+    <script>
+        let startTime = null;
+        let timerInterval = null;
+
+        function startTimer() {
+            startTime = Date.now();
+            const timerDiv = document.getElementById('loadingTimer');
+            const countDiv = document.getElementById('propertyCount');
+            
+            timerDiv.innerHTML = 'Loading time: 0.0s';
+            countDiv.innerHTML = 'Properties found: --';
+            
+            if (timerInterval) clearInterval(timerInterval);
+            
+            timerInterval = setInterval(() => {
+                const elapsed = (Date.now() - startTime) / 1000;
+                timerDiv.innerHTML = `Loading time: ${elapsed.toFixed(1)}s`;
+            }, 100);
+            
+            console.log('⏱️ Timer started - refresh the page now');
+        }
+
+        function checkPerformance() {
+            const resultDiv = document.getElementById('performanceResult');
+            resultDiv.innerHTML = '<p>Checking performance...</p>';
+            
+            try {
+                const keys = Object.keys(localStorage);
+                const propertyKeys = keys.filter(key => key.startsWith('properties_'));
+                
+                let html = '<div style="background: #f5f5f5; padding: 10px; border-radius: 4px;">';
+                html += '<h4>Performance Check:</h4>';
+                
+                if (propertyKeys.length === 0) {
+                    html += '<p>No property keys found - create some properties first</p>';
+                } else {
+                    let totalProperties = 0;
+                    propertyKeys.forEach(key => {
+                        const data = localStorage.getItem(key);
+                        try {
+                            const properties = JSON.parse(data);
+                            totalProperties += properties.length;
+                            html += `<p><strong>${key}:</strong> ${properties.length} properties</p>`;
+                        } catch (e) {
+                            html += `<p><strong>${key}:</strong> Invalid JSON</p>`;
+                        }
+                    });
+                    
+                    html += `<p><strong>Total Properties:</strong> ${totalProperties}</p>`;
+                    html += `<p><strong>Expected Load Time:</strong> ${totalProperties * 50}ms (50ms per property)</p>`;
+                }
+                
+                html += '</div>';
+                resultDiv.innerHTML = html;
+            } catch (error) {
+                resultDiv.innerHTML = `<p style="color: red;">Error: ${error.message}</p>`;
+            }
+        }
+
+        function createMultipleTestProperties() {
+            try {
+                const testProperties = [];
+                for (let i = 1; i <= 5; i++) {
+                    testProperties.push({
+                        id: Date.now().toString() + i,
+                        name: `Test Property ${i}`,
+                        type: 'villa',
+                        location: `Test Location ${i}`,
+                        city: 'Test City',
+                        state: 'Test State',
+                        price: 1000 + (i * 100),
+                        capacity: 4,
+                        bedrooms: 2,
+                        bathrooms: 2,
+                        description: `This is test property ${i}`,
+                        amenities: ['WiFi', 'Parking'],
+                        images: [`https://via.placeholder.com/300x200?text=Test+Property+${i}`],
+                        status: 'active',
+                        ownerEmail: 'test@example.com',
+                        createdAt: new Date().toISOString(),
+                        isLocalStorage: true
+                    });
+                }
+                
+                const storageKey = 'properties_test@example.com';
+                const existing = localStorage.getItem(storageKey);
+                const properties = existing ? JSON.parse(existing) : [];
+                properties.push(...testProperties);
+                localStorage.setItem(storageKey, JSON.stringify(properties));
+                
+                alert(`Created ${testProperties.length} test properties in localStorage`);
+                checkPerformance();
+            } catch (error) {
+                alert(`Error creating test properties: ${error.message}`);
+            }
+        }
+
+        // Auto-start timer when page loads (for testing)
+        window.addEventListener('load', function() {
+            console.log('⚡ Fast Property Loading Test Tool Loaded');
+            console.log('📋 Ready to test loading performance');
+            
+            // Check if we should auto-start timer
+            if (window.location.search.includes('autostart')) {
+                startTimer();
+            }
+        });
+
+        // Listen for property loading events
+        window.addEventListener('storage', function(e) {
+            if (e.key && e.key.startsWith('properties_')) {
+                console.log('📋 localStorage property data changed:', e.key);
+                if (startTime) {
+                    const elapsed = (Date.now() - startTime) / 1000;
+                    console.log(`⏱️ Properties loaded in ${elapsed.toFixed(2)}s`);
+                }
+            }
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Property Rendering Debug</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .card {
+            background: white;
+            border-radius: 8px;
+            padding: 20px;
+            margin: 20px 0;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .success { color: #4caf50; font-weight: bold; }
+        .error { color: #f44336; font-weight: bold; }
+        .info { background: #e3f2fd; border-left: 4px solid #2196f3; padding: 15px; margin: 15px 0; }
+        .warning { background: #fff3e0; border-left: 4px solid #ff9800; padding: 15px; margin: 15px 0; }
+        button {
+            background: #2196f3;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        button:hover { background: #1976d2; }
+        .success-btn { background: #4caf50; }
+        .success-btn:hover { background: #388e3c; }
+        pre {
+            background: #f5f5f5;
+            padding: 10px;
+            border-radius: 4px;
+            overflow-x: auto;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+    </style>
+</head>
+<body>
+    <h1>🔍 Test Property Rendering Debug</h1>
+    
+    <div class="card">
+        <h2>🚨 Issue Identified</h2>
+        <div class="error">
+            Properties are being fetched but not rendering in the UI
+        </div>
+        <div class="info">
+            <strong>Problem:</strong> Console shows properties are loaded but UI is empty<br>
+            <strong>Debug Added:</strong> Added debug info and direct property test to identify the issue<br>
+            <strong>Expected:</strong> Debug info should show the property data and direct test should display
+        </div>
+    </div>
+
+    <div class="card">
+        <h2>🔧 Debug Features Added</h2>
+        
+        <div class="info">
+            <h3>1. Debug Info Panel</h3>
+            <p>A gray debug panel will show:</p>
+            <ul>
+                <li>Loading state</li>
+                <li>Properties array length</li>
+                <li>Current properties length</li>
+                <li>Current page</li>
+                <li>Total pages</li>
+                <li>Properties per page</li>
+            </ul>
+        </div>
+        
+        <div class="info">
+            <h3>2. Direct Property Test</h3>
+            <p>A green box will show the first property directly:</p>
+            <ul>
+                <li>Property Name</li>
+                <li>Property ID</li>
+                <li>Property Location</li>
+                <li>Property Price</li>
+            </ul>
+        </div>
+        
+        <div class="info">
+            <h3>3. Enhanced Console Logs</h3>
+            <p>Additional console logs will show:</p>
+            <ul>
+                <li>Properties array length</li>
+                <li>Current page</li>
+                <li>Properties per page</li>
+                <li>Total pages</li>
+                <li>Slice start and end indices</li>
+            </ul>
+        </div>
+    </div>
+
+    <div class="card">
+        <h2>🧪 Test the Debug</h2>
+        
+        <button onclick="openPropertiesPage()" class="success-btn">
+            🌐 Open Properties Page with Debug
+        </button>
+        
+        <button onclick="checkConsoleLogs()">
+            🔍 Check Expected Console Logs
+        </button>
+        
+        <div id="result" style="margin-top: 15px;"></div>
+    </div>
+
+    <div class="card">
+        <h2>📋 Test Instructions</h2>
+        
+        <div class="info">
+            <h3>Step 1: Open Properties Page</h3>
+            <ol>
+                <li>Click "🌐 Open Properties Page with Debug"</li>
+                <li>Look for the gray debug info panel at the top</li>
+                <li>Check if the green "Direct Property Test" box appears</li>
+            </ol>
+        </div>
+        
+        <div class="info">
+            <h3>Step 2: Check Debug Info</h3>
+            <ol>
+                <li>Look at the debug panel values</li>
+                <li>Properties length should be > 0</li>
+                <li>Current properties length should match</li>
+                <li>Current page should be 1</li>
+            </ol>
+        </div>
+        
+        <div class="info">
+            <h3>Step 3: Check Console Logs</h3>
+            <ol>
+                <li>Open browser console (F12)</li>
+                <li>Look for the new debug logs</li>
+                <li>Check slice start/end values</li>
+                <li>Verify currentProperties array has items</li>
+            </ol>
+        </div>
+    </div>
+
+    <div class="card">
+        <h2>✅ Expected Results</h2>
+        
+        <div class="success">
+            <h3>If Debug Works:</h3>
+            <ul>
+                <li>✅ Gray debug panel shows property data</li>
+                <li>✅ Green direct property test box appears</li>
+                <li>✅ Console shows detailed slice information</li>
+                <li>✅ Property cards should render below</li>
+            </ul>
+        </div>
+        
+        <div class="warning">
+            <h3>If Still Not Working:</h3>
+            <ul>
+                <li>❌ Debug panel shows 0 properties</li>
+                <li>❌ Green test box doesn't appear</li>
+                <li>❌ Console shows empty arrays</li>
+                <li>❌ Need to check data loading logic</li>
+            </ul>
+        </div>
+    </div>
+
+    <script>
+        function openPropertiesPage() {
+            const resultDiv = document.getElementById('result');
+            resultDiv.innerHTML = `
+                <div class="info">
+                    <strong>Opening Properties Page with Debug:</strong><br>
+                    <p>Look for:</p>
+                    <ol>
+                        <li>Gray debug info panel at the top</li>
+                        <li>Green "Direct Property Test" box</li>
+                        <li>Property cards below (if working)</li>
+                        <li>Console logs with slice information</li>
+                    </ol>
+                </div>
+            `;
+            
+            window.open('http://localhost:8080/properties', '_blank');
+        }
+
+        function checkConsoleLogs() {
+            const resultDiv = document.getElementById('result');
+            resultDiv.innerHTML = `
+                <div class="info">
+                    <strong>Expected Console Logs:</strong><br>
+                    <pre>
+🔍 Properties array length: 1
+🔍 Current page: 1
+🔍 Properties per page: 9
+🔍 Total pages: 1
+🔍 Slice start: 0
+🔍 Slice end: 9
+🔍 Current properties to display: [{...}]
+                    </pre>
+                    <p>If you see these logs but no UI, there's a rendering issue.</p>
+                    <p>If you don't see these logs, there's a data loading issue.</p>
+                </div>
+            `;
+        }
+
+        console.log('🔍 Property Rendering Debug Tool Loaded');
+        console.log('📋 Ready to debug property rendering with enhanced logging');
+    </script>
+</body>
+</html>

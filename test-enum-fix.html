@@ -1,0 +1,310 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Enum Fix</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .card {
+            background: white;
+            border-radius: 8px;
+            padding: 20px;
+            margin: 20px 0;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .success { color: #4caf50; font-weight: bold; }
+        .error { color: #f44336; font-weight: bold; }
+        .info { background: #e3f2fd; border-left: 4px solid #2196f3; padding: 15px; margin: 15px 0; }
+        .warning { background: #fff3e0; border-left: 4px solid #ff9800; padding: 15px; margin: 15px 0; }
+        button {
+            background: #2196f3;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        button:hover { background: #1976d2; }
+        .danger { background: #f44336; }
+        .danger:hover { background: #d32f2f; }
+        .success-btn { background: #4caf50; }
+        .success-btn:hover { background: #388e3c; }
+        pre {
+            background: #f5f5f5;
+            padding: 10px;
+            border-radius: 4px;
+            overflow-x: auto;
+        }
+    </style>
+</head>
+<body>
+    <h1>🔧 Test Enum Fix Status</h1>
+    
+    <div class="card">
+        <h2>🚨 Current Issue</h2>
+        <div class="error">
+            Database constraint violation: "properties_status_check"
+        </div>
+        <div class="info">
+            <strong>Error:</strong> The database enum doesn't include 'active' and 'maintenance' values<br>
+            <strong>UI sends:</strong> 'active', 'maintenance'<br>
+            <strong>Database expects:</strong> 'pending', 'approved', 'rejected', 'inactive'
+        </div>
+    </div>
+
+    <div class="card">
+        <h2>🔍 Test Current Status</h2>
+        
+        <button onclick="checkEnumValues()">
+            🔍 Check Current Enum Values
+        </button>
+        
+        <button onclick="testStatusUpdate()">
+            🧪 Test Status Update
+        </button>
+        
+        <button onclick="applyQuickFix()" class="success-btn">
+            ⚡ Apply Quick Fix
+        </button>
+        
+        <div id="result" style="margin-top: 15px;"></div>
+    </div>
+
+    <div class="card">
+        <h2>⚡ Quick Fix Options</h2>
+        
+        <div class="info">
+            <h3>Option 1: Update UI to Use Existing Values</h3>
+            <p>Change the dropdown to use 'approved' instead of 'active' and 'rejected' instead of 'maintenance'</p>
+            <button onclick="updateUIToUseExistingValues()" class="success-btn">
+                🔄 Update UI Values
+            </button>
+        </div>
+        
+        <div class="warning">
+            <h3>Option 2: Manual Database Fix</h3>
+            <p>If the automatic fix didn't work, you can manually run these SQL commands in Supabase Dashboard:</p>
+            <pre>
+-- Go to Supabase Dashboard > SQL Editor and run:
+
+-- Add new enum values
+ALTER TYPE property_status ADD VALUE IF NOT EXISTS 'active';
+ALTER TYPE property_status ADD VALUE IF NOT EXISTS 'maintenance';
+
+-- Verify the enum values
+SELECT unnest(enum_range(NULL::property_status)) as status_values;
+            </pre>
+        </div>
+    </div>
+
+    <div class="card">
+        <h2>📋 Manual Steps (If Auto-Fix Fails)</h2>
+        
+        <div class="info">
+            <ol>
+                <li><strong>Go to Supabase Dashboard:</strong> <a href="https://supabase.com/dashboard/project/riqsgtuzccwpplbodwbd" target="_blank">https://supabase.com/dashboard/project/riqsgtuzccwpplbodwbd</a></li>
+                <li><strong>Navigate to SQL Editor</strong></li>
+                <li><strong>Run this SQL:</strong>
+                    <pre>
+ALTER TYPE property_status ADD VALUE IF NOT EXISTS 'active';
+ALTER TYPE property_status ADD VALUE IF NOT EXISTS 'maintenance';
+                    </pre>
+                </li>
+                <li><strong>Click "Run"</strong></li>
+                <li><strong>Test status change in your app</strong></li>
+            </ol>
+        </div>
+    </div>
+
+    <script>
+        const SUPABASE_URL = 'https://riqsgtuzccwpplbodwbd.supabase.co';
+        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJpcXNndHV6Y2N3cHBsYm9kd2JkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MzQwNzI5NzAsImV4cCI6MjA0OTY0ODk3MH0.Ej8Ej8Ej8Ej8Ej8Ej8Ej8Ej8Ej8Ej8Ej8Ej8Ej8Ej8';
+
+        async function checkEnumValues() {
+            const resultDiv = document.getElementById('result');
+            resultDiv.innerHTML = '<p>🔍 Checking current enum values...</p>';
+
+            try {
+                // Try to get enum values through a query
+                const response = await fetch(`${SUPABASE_URL}/rest/v1/properties?select=status&limit=1`, {
+                    headers: {
+                        'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
+                        'apikey': SUPABASE_ANON_KEY
+                    }
+                });
+
+                if (response.ok) {
+                    resultDiv.innerHTML = `
+                        <div class="info">
+                            <strong>Database connection successful</strong><br>
+                            <strong>Known valid status values:</strong> pending, approved, rejected, inactive<br>
+                            <strong>Testing if 'active' and 'maintenance' are now valid...</strong>
+                        </div>
+                    `;
+                } else {
+                    throw new Error(`Database connection failed: ${response.status}`);
+                }
+            } catch (error) {
+                resultDiv.innerHTML = `
+                    <div class="error">
+                        ❌ Error checking enum: ${error.message}
+                    </div>
+                `;
+            }
+        }
+
+        async function testStatusUpdate() {
+            const resultDiv = document.getElementById('result');
+            resultDiv.innerHTML = '<p>🧪 Testing status update...</p>';
+
+            try {
+                // First, get a property to test with
+                const propertiesResponse = await fetch(`${SUPABASE_URL}/rest/v1/properties?select=id,title,status&limit=1`, {
+                    headers: {
+                        'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
+                        'apikey': SUPABASE_ANON_KEY
+                    }
+                });
+
+                if (!propertiesResponse.ok) {
+                    throw new Error(`Failed to fetch properties: ${propertiesResponse.status}`);
+                }
+
+                const properties = await propertiesResponse.json();
+                
+                if (properties.length === 0) {
+                    resultDiv.innerHTML = '<div class="warning">⚠️ No properties found to test with</div>';
+                    return;
+                }
+
+                const testProperty = properties[0];
+                console.log('Testing with property:', testProperty);
+
+                // Try to update status to 'active'
+                const updateResponse = await fetch(`${SUPABASE_URL}/rest/v1/properties?id=eq.${testProperty.id}&select=*`, {
+                    method: 'PATCH',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
+                        'apikey': SUPABASE_ANON_KEY
+                    },
+                    body: JSON.stringify({ status: 'active' })
+                });
+
+                if (updateResponse.ok) {
+                    resultDiv.innerHTML = `
+                        <div class="success">
+                            ✅ Status update test successful!<br>
+                            ✅ Property "${testProperty.title}" status changed to 'active'<br>
+                            ✅ The enum fix worked!
+                        </div>
+                    `;
+                    console.log('✅ Status update test successful');
+                } else {
+                    const errorData = await updateResponse.json();
+                    resultDiv.innerHTML = `
+                        <div class="error">
+                            ❌ Status update test failed:<br>
+                            <pre>${JSON.stringify(errorData, null, 2)}</pre>
+                            <br>
+                            <strong>The enum fix didn't work. Try the manual approach.</strong>
+                        </div>
+                    `;
+                    console.error('❌ Status update test failed:', errorData);
+                }
+            } catch (error) {
+                resultDiv.innerHTML = `
+                    <div class="error">
+                        ❌ Error testing status update: ${error.message}
+                    </div>
+                `;
+                console.error('❌ Error testing status update:', error);
+            }
+        }
+
+        async function applyQuickFix() {
+            const resultDiv = document.getElementById('result');
+            resultDiv.innerHTML = '<p>⚡ Applying quick fix...</p>';
+
+            try {
+                // Try to execute SQL to add enum values
+                const response = await fetch(`${SUPABASE_URL}/rest/v1/rpc/exec_sql`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
+                        'apikey': SUPABASE_ANON_KEY
+                    },
+                    body: JSON.stringify({ 
+                        sql: "ALTER TYPE property_status ADD VALUE IF NOT EXISTS 'active';" 
+                    })
+                });
+
+                if (response.ok) {
+                    resultDiv.innerHTML = `
+                        <div class="success">
+                            ✅ Quick fix applied successfully!<br>
+                            ✅ Added 'active' to enum<br>
+                            <strong>Now test the status update...</strong>
+                        </div>
+                    `;
+                    
+                    // Auto-test after fix
+                    setTimeout(() => {
+                        testStatusUpdate();
+                    }, 2000);
+                } else {
+                    const errorData = await response.json();
+                    resultDiv.innerHTML = `
+                        <div class="error">
+                            ❌ Quick fix failed:<br>
+                            <pre>${JSON.stringify(errorData, null, 2)}</pre>
+                            <br>
+                            <strong>Try the manual approach in Supabase Dashboard</strong>
+                        </div>
+                    `;
+                }
+            } catch (error) {
+                resultDiv.innerHTML = `
+                    <div class="error">
+                        ❌ Error applying quick fix: ${error.message}<br>
+                        <strong>Try the manual approach in Supabase Dashboard</strong>
+                    </div>
+                `;
+            }
+        }
+
+        function updateUIToUseExistingValues() {
+            const resultDiv = document.getElementById('result');
+            resultDiv.innerHTML = `
+                <div class="info">
+                    <strong>UI Update Instructions:</strong><br>
+                    <ol>
+                        <li>Open <code>src/pages/owner/MyProperties.tsx</code></li>
+                        <li>Find the status dropdown (around line 740)</li>
+                        <li>Change the options to:</li>
+                        <pre>
+&lt;option value="pending"&gt;Pending&lt;/option&gt;
+&lt;option value="approved"&gt;Active&lt;/option&gt;
+&lt;option value="inactive"&gt;Inactive&lt;/option&gt;
+&lt;option value="rejected"&gt;Maintenance&lt;/option&gt;
+                        </pre>
+                        <li>Also update PropertyService.ts to accept these values</li>
+                    </ol>
+                </div>
+            `;
+        }
+
+        console.log('🔧 Enum Fix Test Tool Loaded');
+        console.log('📋 Ready to test and fix the status enum issue');
+    </script>
+</body>
+</html>

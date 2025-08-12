@@ -23,6 +23,7 @@ const OwnerLogin: React.FC = () => {
   const [otpSent, setOtpSent] = useState(false);
   const [otpTimer, setOtpTimer] = useState(0);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
+  const [isLoggingIn, setIsLoggingIn] = useState(false);
 
   // Check for success message from signup
   useEffect(() => {
@@ -39,13 +40,8 @@ const OwnerLogin: React.FC = () => {
   useEffect(() => {
     console.log('🔍 OwnerLogin - loading:', loading, 'isAuthenticated:', isAuthenticated, 'user:', user);
     
-    // Wait for auth state to stabilize
-    if (loading) {
-      console.log('⏳ Auth still loading, waiting before redirect...');
-      return;
-    }
-    
-    if (isAuthenticated && user) {
+    // Only redirect if we're sure the user is authenticated
+    if (!loading && isAuthenticated && user) {
       console.log('✅ User is authenticated, redirecting to dashboard');
       navigate('/owner/view', { replace: true });
     }
@@ -63,7 +59,12 @@ const OwnerLogin: React.FC = () => {
     e.preventDefault();
     console.log('🚀 Owner login attempt with email:', email);
     clearError();
-    await login({ email, password });
+    setIsLoggingIn(true);
+    try {
+      await login({ email, password });
+    } finally {
+      setIsLoggingIn(false);
+    }
   };
 
   const handleSendOtp = async (e: React.FormEvent) => {
@@ -72,9 +73,14 @@ const OwnerLogin: React.FC = () => {
     
     console.log('🚀 Owner login attempt with phone:', phone);
     clearError();
-    await loginWithOtp(phone);
-    setOtpSent(true);
-    setOtpTimer(60);
+    setIsLoggingIn(true);
+    try {
+      await loginWithOtp(phone);
+      setOtpSent(true);
+      setOtpTimer(60);
+    } finally {
+      setIsLoggingIn(false);
+    }
   };
 
   const handleVerifyOtp = async (e: React.FormEvent) => {
@@ -83,7 +89,12 @@ const OwnerLogin: React.FC = () => {
     
     console.log('🚀 Owner OTP verification for phone:', phone);
     clearError();
-    await verifyOtp(phone, otp);
+    setIsLoggingIn(true);
+    try {
+      await verifyOtp(phone, otp);
+    } finally {
+      setIsLoggingIn(false);
+    }
   };
 
   const handleResendOtp = async () => {
@@ -210,9 +221,9 @@ const OwnerLogin: React.FC = () => {
                 <Button 
                   type="submit" 
                   className="w-full" 
-                  disabled={loading}
+                  disabled={isLoggingIn}
                 >
-                  {loading ? (
+                  {isLoggingIn ? (
                     <>
                       <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                       Signing In...
@@ -247,9 +258,9 @@ const OwnerLogin: React.FC = () => {
                     <Button 
                       type="submit" 
                       className="w-full mt-4" 
-                      disabled={loading}
+                      disabled={isLoggingIn}
                     >
-                      {loading ? (
+                      {isLoggingIn ? (
                         <>
                           <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                           Sending OTP...
@@ -290,9 +301,9 @@ const OwnerLogin: React.FC = () => {
                     <Button 
                       type="submit" 
                       className="w-full mt-4" 
-                      disabled={loading || otp.length !== 6}
+                      disabled={isLoggingIn || otp.length !== 6}
                     >
-                      {loading ? (
+                      {isLoggingIn ? (
                         <>
                           <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                           Verifying...

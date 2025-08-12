@@ -51,17 +51,42 @@ const Properties: React.FC = () => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    let isMounted = true;
+    let retryCount = 0;
+    const maxRetries = 3;
+    
     const loadProperties = async () => {
       try {
-        console.log('🔍 Loading properties from database...');
+        console.log(`🔍 Loading properties from database... (attempt ${retryCount + 1})`);
+        setLoading(true);
+        
         const activeProperties = await PropertyService.getActiveProperties();
         
-        // Convert database properties to frontend format
-        const frontendProperties = activeProperties.map(PropertyService.convertToFrontendFormat);
-        setDbProperties(frontendProperties);
-        console.log('✅ Properties loaded from database:', frontendProperties.length);
+        if (!isMounted) return; // Prevent setting state if component unmounted
+        
+        // Use the raw database properties directly instead of convertToFrontendFormat
+        setDbProperties(activeProperties);
+        console.log('✅ Properties loaded from database:', activeProperties.length);
+        console.log('✅ Raw properties data:', activeProperties);
+        
+        // Reset retry count on success
+        retryCount = 0;
       } catch (error) {
-        console.error('❌ Error loading properties from database:', error);
+        console.error(`❌ Error loading properties from database (attempt ${retryCount + 1}):`, error);
+        
+        if (!isMounted) return;
+        
+        // Retry logic
+        if (retryCount < maxRetries) {
+          retryCount++;
+          console.log(`🔄 Retrying... (${retryCount}/${maxRetries})`);
+          setTimeout(() => {
+            if (isMounted) {
+              loadProperties();
+            }
+          }, 1000 * retryCount); // Exponential backoff
+          return;
+        }
         
         // Fallback to localStorage for existing data
         try {
@@ -72,47 +97,76 @@ const Properties: React.FC = () => {
             const activeProperties = parsedProperties.filter((property: any) => property.status === 'active');
             setDbProperties(activeProperties);
             console.log('📋 Properties loaded from localStorage fallback:', activeProperties.length);
+          } else {
+            setDbProperties([]);
           }
         } catch (localStorageError) {
           console.error('❌ Error loading from localStorage fallback:', localStorageError);
           setDbProperties([]);
         }
       } finally {
-        setLoading(false);
+        if (isMounted) {
+          setLoading(false);
+        }
       }
     };
 
     loadProperties();
+    
+    // Cleanup function to prevent memory leaks
+    return () => {
+      isMounted = false;
+    };
   }, []);
 
   console.log('🔍 Database properties loaded:', dbProperties.length);
+  console.log('🔍 Raw database properties:', dbProperties);
   dbProperties.forEach((prop: any) => {
-    console.log(`📸 Property "${prop.name}":`, {
+    console.log(`📸 Property "${prop.name || prop.title}":`, {
       id: prop.id,
+      name: prop.name || prop.title,
       images: prop.images ? prop.images.length : 0,
       firstImage: prop.images && prop.images.length > 0 ? prop.images[0].substring(0, 50) + '...' : 'No images'
     });
   });
 
   // Only show database properties - no dummy data
-  const properties = dbProperties.map((property: any, index: number) => ({
-    id: property.id,
-    name: property.name,
-    location: property.city,
-    rating: property.rating,
-    reviews: property.totalBookings,
-    price: property.price,
-    originalPrice: property.price * 1.1, // 10% markup for original price
-    image: property.images && property.images.length > 0 ? property.images[0] : beachsideParadise, // Use uploaded image or default
-    amenities: property.amenities.map((a: string) => a.charAt(0).toUpperCase() + a.slice(1)),
-    type: property.type.charAt(0).toUpperCase() + property.type.slice(1),
-    guests: property.capacity,
-    bedrooms: property.bedrooms,
-    bathrooms: property.bathrooms,
-    featured: true,
-    ownerEmail: property.ownerEmail,
-    description: property.description
-  }));
+  const properties = dbProperties.map((property: any, index: number) => {
+    console.log(`🔍 Mapping property ${index}:`, property);
+    
+    // Add error handling for missing properties
+    const mappedProperty = {
+      id: property.id || `property-${index}`,
+      name: property.name || property.title || 'Unnamed Property',
+      location: property.city || (property.location?.city) || 'Unknown Location',
+      rating: property.rating || 0,
+      reviews: property.totalBookings || property.review_count || 0,
+      price: property.price || (property.pricing?.daily_rate) || 0,
+      originalPrice: (property.price || (property.pricing?.daily_rate) || 0) * 1.1, // 10% markup for original price
+      image: property.images && property.images.length > 0 ? property.images[0] : beachsideParadise, // Use uploaded image or default
+      amenities: Array.isArray(property.amenities) ? property.amenities.map((a: string) => a.charAt(0).toUpperCase() + a.slice(1)) : [],
+      type: property.type || property.property_type || 'Property',
+      guests: property.capacity || property.max_guests || 1,
+      bedrooms: property.bedrooms || 1,
+      bathrooms: property.bathrooms || 1,
+      status: property.status || 'pending', // Add status for pending indicator
+      featured: true,
+      ownerEmail: property.ownerEmail || property.owner_id || '',
+      description: property.description || ''
+    };
+    
+    // Ensure type is a string and capitalize it
+    if (typeof mappedProperty.type === 'string') {
+      mappedProperty.type = mappedProperty.type.charAt(0).toUpperCase() + mappedProperty.type.slice(1);
+    } else {
+      mappedProperty.type = 'Property';
+    }
+    
+    console.log(`✅ Mapped property ${index}:`, mappedProperty);
+    return mappedProperty;
+  });
+  
+  console.log('🔍 Final mapped properties:', properties);
 
   const filterOptions = {
     priceRanges: [
@@ -156,6 +210,14 @@ const Properties: React.FC = () => {
     (currentPage - 1) * propertiesPerPage,
     currentPage * propertiesPerPage
   );
+  
+  console.log('🔍 Current properties to display:', currentProperties);
+  console.log('🔍 Properties array length:', properties.length);
+  console.log('🔍 Current page:', currentPage);
+  console.log('🔍 Properties per page:', propertiesPerPage);
+  console.log('🔍 Total pages:', totalPages);
+  console.log('🔍 Slice start:', (currentPage - 1) * propertiesPerPage);
+  console.log('🔍 Slice end:', currentPage * propertiesPerPage);
 
   return (
     <div className="min-h-screen bg-background font-poppins">
@@ -440,120 +502,40 @@ const Properties: React.FC = () => {
 
             {/* Properties Grid */}
             <div className="lg:col-span-3">
-              <div className={`grid gap-8 ${viewMode === 'grid' ? 'grid-cols-1 md:grid-cols-2 xl:grid-cols-3' : 'grid-cols-1'}`}>
-                {currentProperties.map((property, index) => (
-                  <div key={property.id} className="group cursor-pointer fade-in" style={{animationDelay: `${index * 0.1}s`}}>
-                    <div className="bg-background rounded-2xl shadow-lg hover:shadow-2xl transition-all duration-500 overflow-hidden transform hover:scale-105 border border-border hover-lift">
-                      <div className="relative overflow-hidden">
-                        {property.featured && (
-                          <div className="absolute top-4 left-4 z-10">
-                            <span className="bg-gradient-to-r from-brand-red to-brand-orange text-white px-3 py-1 rounded-full text-xs font-bold shadow-lg">
-                              <i className="fas fa-star mr-1"></i>
-                              Featured
-                            </span>
-                          </div>
-                        )}
-                        <div className="absolute top-4 right-4 z-10">
-                          <button className="w-10 h-10 bg-background/90 backdrop-blur-sm rounded-full flex items-center justify-center shadow-lg hover:bg-brand-red hover:text-white transition-all duration-300 group cursor-pointer">
-                            <i className="fas fa-heart text-muted-foreground group-hover:text-white"></i>
-                          </button>
-                        </div>
-                        <img
-                          src={property.image}
-                          alt={property.name}
-                          className="w-full h-64 object-cover object-top transition-transform duration-700 group-hover:scale-110"
-                          onError={(e) => {
-                            console.log('Image failed to load:', property.image);
-                            e.currentTarget.src = '/placeholder.svg';
-                          }}
-                        />
-                        <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
-                        <div className="absolute bottom-4 left-4 right-4 transform translate-y-8 group-hover:translate-y-0 opacity-0 group-hover:opacity-100 transition-all duration-500">
-                          <button 
-                            onClick={() => navigate(`/property/${property.id}`)}
-                            className="w-full bg-background text-foreground py-3 rounded-lg font-bold hover:bg-secondary transition-colors duration-200 rounded-button cursor-pointer whitespace-nowrap"
-                          >
-                            View Details
-                          </button>
-                        </div>
-                      </div>
-                      <div className="p-6">
-                        <div className="flex items-start justify-between mb-3">
-                          <div>
-                            <h3 className="text-lg font-bold text-foreground mb-1 group-hover:text-brand-red transition-colors duration-300">{property.name}</h3>
-                            <div className="flex items-center text-muted-foreground mb-2">
-                              <i className="fas fa-map-marker-alt text-brand-red mr-2"></i>
-                              <span className="font-medium">{property.location}</span>
-                            </div>
-                            <div className="flex items-center gap-1 mb-3">
-                              <div className="flex items-center">
-                                {[...Array(5)].map((_, i) => (
-                                  <i key={i} className={`fas fa-star text-sm ${i < Math.floor(property.rating) ? 'text-yellow-400' : 'text-gray-300'}`}></i>
-                                ))}
-                              </div>
-                              <span className="text-sm font-semibold text-foreground ml-2">{property.rating}</span>
-                              <span className="text-sm text-muted-foreground">({property.reviews} reviews)</span>
-                            </div>
-                          </div>
-                        </div>
-                        <div className="flex items-center justify-between mb-4">
-                          <div className="flex items-center gap-4 text-sm text-muted-foreground">
-                            <div className="flex items-center gap-1">
-                              <i className="fas fa-users"></i>
-                              <span>{property.guests}</span>
-                            </div>
-                            <div className="flex items-center gap-1">
-                              <i className="fas fa-bed"></i>
-                              <span>{property.bedrooms}</span>
-                            </div>
-                            <div className="flex items-center gap-1">
-                              <i className="fas fa-bath"></i>
-                              <span>{property.bathrooms}</span>
-                            </div>
-                          </div>
-                          <span className="bg-blue-100 text-blue-800 px-2 py-1 rounded-full text-xs font-semibold">
-                            {property.type}
-                          </span>
-                        </div>
-                        <div className="flex flex-wrap gap-2 mb-4">
-                          {property.amenities.slice(0, 4).map((amenity, index) => (
-                            <span key={index} className="bg-secondary text-secondary-foreground px-3 py-1 rounded-full text-xs font-medium">
-                              {amenity}
-                            </span>
-                          ))}
-                          {property.amenities.length > 4 && (
-                            <span className="bg-secondary text-secondary-foreground px-3 py-1 rounded-full text-xs font-medium">
-                              +{property.amenities.length - 4} more
-                            </span>
-                          )}
-                        </div>
-                        <div className="flex items-center justify-between">
-                          <div>
-                            <div className="flex items-center gap-2">
-                              <span className="text-xl font-black text-foreground">₹{property.price.toLocaleString()}</span>
-                              {property.originalPrice > property.price && (
-                                <span className="text-sm text-muted-foreground line-through">₹{property.originalPrice.toLocaleString()}</span>
-                              )}
-                            </div>
-                            <span className="text-sm text-muted-foreground">per day</span>
-                          </div>
-                          <div className="flex items-center gap-2">
-                            {property.originalPrice > property.price && (
-                              <span className="bg-green-100 text-green-800 px-2 py-1 rounded-full text-xs font-bold">
-                                {Math.round(((property.originalPrice - property.price) / property.originalPrice) * 100)}% OFF
-                              </span>
-                            )}
-                          </div>
-                        </div>
-                        <button className="w-full bg-gradient-to-r from-brand-red to-brand-orange text-white py-3 rounded-xl hover:from-red-700 hover:to-orange-600 transition-all duration-300 cursor-pointer whitespace-nowrap rounded-button font-bold mt-4 shadow-lg hover:shadow-xl transform hover:scale-105">
+              
+                            {loading ? (
+                <div className="text-center py-12">
+                  <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4 animate-spin">
+                    <i className="fas fa-spinner text-gray-400 text-2xl"></i>
+                  </div>
+                  <h3 className="text-lg font-medium text-gray-800 mb-2">Loading properties...</h3>
+                  <p className="text-gray-600">Please wait while we fetch your properties</p>
+                </div>
+              ) : currentProperties.length === 0 ? (
+                <div className="text-center py-12">
+                  <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <i className="fas fa-home text-gray-400 text-2xl"></i>
+                  </div>
+                  <h3 className="text-lg font-medium text-gray-800 mb-2">No properties found</h3>
+                  <p className="text-gray-600 mb-4">Properties array length: {properties.length}, Current properties: {currentProperties.length}</p>
+                </div>
+              ) : (
+                <div className={`grid gap-8 ${viewMode === 'grid' ? 'grid-cols-1 md:grid-cols-2 xl:grid-cols-3' : 'grid-cols-1'}`}>
+                  {currentProperties.map((property, index) => (
+                      <div key={property.id} className="bg-background rounded-2xl shadow-lg border border-border p-6">
+                        <h3 className="text-lg font-bold text-foreground mb-2">{property.name}</h3>
+                        <p className="text-muted-foreground mb-2">
+                          <i className="fas fa-map-marker-alt text-brand-red mr-2"></i>
+                          {property.location}
+                        </p>
+                        <p className="text-xl font-black text-foreground mb-4">₹{property.price.toLocaleString()}</p>
+                        <button className="w-full bg-gradient-to-r from-brand-red to-brand-orange text-white py-2 rounded-lg font-bold">
                           Book Now
-                          <i className="fas fa-arrow-right ml-2"></i>
                         </button>
                       </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
+                    ))}
+                </div>
+              )}
 
               {/* Pagination */}
               <div className="flex justify-center items-center mt-12 gap-4">

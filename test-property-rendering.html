@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Property Rendering</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .card {
+            background: white;
+            border-radius: 8px;
+            padding: 20px;
+            margin: 20px 0;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .success { color: #4caf50; font-weight: bold; }
+        .error { color: #f44336; font-weight: bold; }
+        .info { background: #e3f2fd; border-left: 4px solid #2196f3; padding: 15px; margin: 15px 0; }
+        .warning { background: #fff3e0; border-left: 4px solid #ff9800; padding: 15px; margin: 15px 0; }
+        button {
+            background: #2196f3;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        button:hover { background: #1976d2; }
+        .success-btn { background: #4caf50; }
+        .success-btn:hover { background: #388e3c; }
+        pre {
+            background: #f5f5f5;
+            padding: 10px;
+            border-radius: 4px;
+            overflow-x: auto;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+    </style>
+</head>
+<body>
+    <h1>🔍 Test Property Rendering</h1>
+    
+    <div class="card">
+        <h2>🚨 Issue Identified</h2>
+        <div class="error">
+            Properties are being fetched but not rendering on the UI
+        </div>
+        <div class="info">
+            <strong>Problem:</strong> Console shows "Properties fetched successfully: 1" but UI shows empty<br>
+            <strong>Cause:</strong> Property mapping is failing due to missing or incorrect data structure<br>
+            <strong>Fix Applied:</strong> Added error handling and debugging to property mapping
+        </div>
+    </div>
+
+    <div class="card">
+        <h2>🔧 Debug Steps</h2>
+        
+        <button onclick="checkProperties()">
+            🔍 Check Raw Properties
+        </button>
+        
+        <button onclick="testPropertyMapping()" class="success-btn">
+            🧪 Test Property Mapping
+        </button>
+        
+        <button onclick="openPropertiesPage()">
+            🌐 Open Properties Page
+        </button>
+        
+        <div id="result" style="margin-top: 15px;"></div>
+    </div>
+
+    <div class="card">
+        <h2>📋 Test Instructions</h2>
+        
+        <div class="info">
+            <h3>Step 1: Check Console Logs</h3>
+            <ol>
+                <li>Open the properties page</li>
+                <li>Open browser console (F12)</li>
+                <li>Look for these debug messages:</li>
+                <ul>
+                    <li>🔍 Raw database properties: [...]</li>
+                    <li>🔍 Mapping property 0: {...}</li>
+                    <li>✅ Mapped property 0: {...}</li>
+                    <li>🔍 Final mapped properties: [...]</li>
+                    <li>🔍 Current properties to display: [...]</li>
+                </ul>
+            </ol>
+        </div>
+        
+        <div class="info">
+            <h3>Step 2: Check for Error Messages</h3>
+            <ol>
+                <li>Look for any error messages in console</li>
+                <li>Check if properties are being mapped correctly</li>
+                <li>Verify that currentProperties array has items</li>
+            </ol>
+        </div>
+        
+        <div class="info">
+            <h3>Step 3: Check UI Debug Message</h3>
+            <ol>
+                <li>If no properties show, look for debug message</li>
+                <li>It will show: "Debug: Properties array length: X, Current properties: Y"</li>
+                <li>And display the raw dbProperties data</li>
+            </ol>
+        </div>
+    </div>
+
+    <div class="card">
+        <h2>✅ Expected Results</h2>
+        
+        <div class="success">
+            <h3>After the Fix:</h3>
+            <ul>
+                <li>✅ Properties should render on the page</li>
+                <li>✅ Console should show detailed mapping logs</li>
+                <li>✅ No more empty property display</li>
+                <li>✅ Pending properties show "Pending Approval" badge</li>
+            </ul>
+        </div>
+    </div>
+
+    <script>
+        const SUPABASE_URL = 'https://riqsgtuzccwpplbodwbd.supabase.co';
+        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJpcXNndHV6Y2N3cHBsYm9kd2JkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MzQwNzI5NzAsImV4cCI6MjA0OTY0ODk3MH0.Ej8Ej8Ej8Ej8Ej8Ej8Ej8Ej8Ej8Ej8Ej8Ej8Ej8Ej8';
+
+        async function checkProperties() {
+            const resultDiv = document.getElementById('result');
+            resultDiv.innerHTML = '<p>🔍 Checking raw properties...</p>';
+
+            try {
+                const response = await fetch(`${SUPABASE_URL}/rest/v1/properties?select=*&order=created_at.desc`, {
+                    headers: {
+                        'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
+                        'apikey': SUPABASE_ANON_KEY
+                    }
+                });
+
+                if (!response.ok) {
+                    throw new Error(`Failed to fetch properties: ${response.status}`);
+                }
+
+                const properties = await response.json();
+                
+                resultDiv.innerHTML = `
+                    <div class="info">
+                        <strong>Raw Properties from Database:</strong>
+                        <pre>${JSON.stringify(properties, null, 2)}</pre>
+                    </div>
+                `;
+
+                console.log('Raw properties:', properties);
+            } catch (error) {
+                resultDiv.innerHTML = `
+                    <div class="error">
+                        ❌ Error checking properties: ${error.message}
+                    </div>
+                `;
+            }
+        }
+
+        function testPropertyMapping() {
+            const resultDiv = document.getElementById('result');
+            resultDiv.innerHTML = `
+                <div class="info">
+                    <strong>Property Mapping Test:</strong><br>
+                    <ol>
+                        <li>Open the properties page in a new tab</li>
+                        <li>Open browser console (F12)</li>
+                        <li>Look for mapping debug messages</li>
+                        <li>Check if properties render correctly</li>
+                    </ol>
+                </div>
+            `;
+            
+            window.open('http://localhost:8080/properties', '_blank');
+        }
+
+        function openPropertiesPage() {
+            const resultDiv = document.getElementById('result');
+            resultDiv.innerHTML = `
+                <div class="info">
+                    <strong>Opening Properties Page:</strong><br>
+                    <p>Check the console for debug messages and verify property rendering.</p>
+                </div>
+            `;
+            
+            window.open('http://localhost:8080/properties', '_blank');
+        }
+
+        console.log('🔍 Property Rendering Test Tool Loaded');
+        console.log('📋 Ready to debug property rendering issue');
+    </script>
+</body>
+</html>

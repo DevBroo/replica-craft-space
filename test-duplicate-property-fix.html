@@ -1,0 +1,301 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Duplicate Property Fix</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .test-card {
+            background: white;
+            border-radius: 8px;
+            padding: 20px;
+            margin: 20px 0;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .success {
+            color: #4caf50;
+            font-weight: bold;
+        }
+        .error {
+            color: #f44336;
+            font-weight: bold;
+        }
+        .info {
+            background: #e3f2fd;
+            border-left: 4px solid #2196f3;
+            padding: 15px;
+            margin: 15px 0;
+        }
+        .fix {
+            background: #e8f5e8;
+            border-left: 4px solid #4caf50;
+            padding: 15px;
+            margin: 15px 0;
+        }
+        .warning {
+            background: #fff3e0;
+            border-left: 4px solid #ff9800;
+            padding: 15px;
+            margin: 15px 0;
+        }
+    </style>
+</head>
+<body>
+    <h1>🔧 Test Duplicate Property Fix</h1>
+    
+    <div class="test-card">
+        <h2>🚨 Issue Fixed</h2>
+        
+        <div class="info">
+            <strong>Problem:</strong> Multiple duplicate properties appearing after adding a new property
+        </div>
+        
+        <div class="fix">
+            <strong>Root Cause:</strong> Poor duplicate detection when combining database and localStorage properties
+        </div>
+        
+        <div class="fix">
+            <strong>Fix Applied:</strong> 
+            <ul>
+                <li>✅ Improved duplicate detection logic</li>
+                <li>✅ Check for exact ID matches first</li>
+                <li>✅ Check for name + location + city matches</li>
+                <li>✅ Prevent duplicate localStorage saves</li>
+                <li>✅ Better logging for duplicate detection</li>
+            </ul>
+        </div>
+    </div>
+
+    <div class="test-card">
+        <h2>🧪 Test Steps</h2>
+        
+        <div class="info">
+            <h3>Step 1: Check Current Properties</h3>
+            <ol>
+                <li><a href="http://localhost:8082/owner/view" target="_blank">Open My Properties</a></li>
+                <li>Note the current number of properties</li>
+                <li>Check console for property loading logs</li>
+            </ol>
+        </div>
+        
+        <div class="info">
+            <h3>Step 2: Add New Property</h3>
+            <ol>
+                <li>Click "+ Add Property" button</li>
+                <li>Fill in property details (name, location, city, etc.)</li>
+                <li>Add some image links</li>
+                <li>Click "Add Property" to save</li>
+                <li>Verify only ONE new property appears</li>
+            </ol>
+        </div>
+        
+        <div class="info">
+            <h3>Step 3: Test Duplicate Prevention</h3>
+            <ol>
+                <li>Try to add the same property again (same name, location, city)</li>
+                <li>Should update existing property instead of creating duplicate</li>
+                <li>Refresh page and verify no duplicates</li>
+                <li>Check console for duplicate detection logs</li>
+            </ol>
+        </div>
+    </div>
+
+    <div class="test-card">
+        <h2>✅ Expected Results</h2>
+        
+        <div class="success">
+            <h3>After Fix:</h3>
+            <ul>
+                <li>✅ Only one property added per submission</li>
+                <li>✅ No duplicate properties in the list</li>
+                <li>✅ Proper duplicate detection and prevention</li>
+                <li>✅ Clear console logs showing duplicate handling</li>
+                <li>✅ Properties persist correctly after refresh</li>
+            </ul>
+        </div>
+        
+        <div class="warning">
+            <h3>Console Logs to Watch:</h3>
+            <ul>
+                <li>📋 "Loading localStorage properties immediately"</li>
+                <li>📋 "Skipped duplicate localStorage property" (if duplicates found)</li>
+                <li>📋 "localStorage properties added: X" (should be 0 if no new ones)</li>
+                <li>📋 "Property already exists in localStorage, updating instead of adding"</li>
+                <li>✅ "Property saved to localStorage successfully"</li>
+            </ul>
+        </div>
+    </div>
+
+    <div class="test-card">
+        <h2>🔍 Debug Tools</h2>
+        
+        <div class="info">
+            <h3>Check for Duplicates</h3>
+            <button onclick="checkForDuplicates()" style="background: #2196f3; color: white; border: none; padding: 10px 20px; border-radius: 4px; cursor: pointer;">Check for Duplicates</button>
+            <div id="duplicateResult" style="margin-top: 10px;"></div>
+        </div>
+        
+        <div class="info">
+            <h3>Clear All Properties</h3>
+            <button onclick="clearAllProperties()" style="background: #f44336; color: white; border: none; padding: 10px 20px; border-radius: 4px; cursor: pointer;">Clear All Properties</button>
+            <p>Use this to start fresh (will clear both database and localStorage)</p>
+        </div>
+        
+        <div class="info">
+            <h3>Create Test Duplicates</h3>
+            <button onclick="createTestDuplicates()" style="background: #ff9800; color: white; border: none; padding: 10px 20px; border-radius: 4px; cursor: pointer;">Create Test Duplicates</button>
+            <p>Creates test properties to test duplicate detection</p>
+        </div>
+    </div>
+
+    <div class="test-card">
+        <h2>🔍 Debug Info</h2>
+        
+        <div class="info">
+            <h3>Key Changes Made:</h3>
+            <ul>
+                <li><strong>Duplicate Detection:</strong> Check ID first, then name+location+city</li>
+                <li><strong>localStorage Logic:</strong> Update existing instead of adding duplicates</li>
+                <li><strong>Better Logging:</strong> Clear messages about duplicate handling</li>
+                <li><strong>UI Updates:</strong> Proper state management to prevent duplicates</li>
+            </ul>
+        </div>
+        
+        <div class="warning">
+            <h3>Duplicate Detection Rules:</h3>
+            <ul>
+                <li>🔍 <strong>Exact ID match:</strong> Same property ID (primary check)</li>
+                <li>🔍 <strong>Name + Location + City:</strong> Same property details (secondary check)</li>
+                <li>✅ <strong>localStorage update:</strong> Update existing instead of adding new</li>
+                <li>✅ <strong>Database priority:</strong> Database properties take precedence</li>
+            </ul>
+        </div>
+    </div>
+
+    <script>
+        function checkForDuplicates() {
+            const resultDiv = document.getElementById('duplicateResult');
+            resultDiv.innerHTML = '<p>Checking for duplicates...</p>';
+            
+            try {
+                const keys = Object.keys(localStorage);
+                const propertyKeys = keys.filter(key => key.startsWith('properties_'));
+                
+                let html = '<div style="background: #f5f5f5; padding: 10px; border-radius: 4px;">';
+                html += '<h4>Duplicate Check Results:</h4>';
+                
+                if (propertyKeys.length === 0) {
+                    html += '<p>No property keys found</p>';
+                } else {
+                    propertyKeys.forEach(key => {
+                        const data = localStorage.getItem(key);
+                        try {
+                            const properties = JSON.parse(data);
+                            
+                            // Check for duplicates
+                            const names = properties.map(p => p.name);
+                            const duplicates = names.filter((name, index) => names.indexOf(name) !== index);
+                            
+                            html += `<p><strong>${key}:</strong> ${properties.length} properties</p>`;
+                            
+                            if (duplicates.length > 0) {
+                                html += `<p style="color: red;">❌ Found duplicates: ${duplicates.join(', ')}</p>`;
+                            } else {
+                                html += `<p style="color: green;">✅ No duplicates found</p>`;
+                            }
+                            
+                            // Show all properties
+                            properties.forEach(prop => {
+                                html += `<div style="margin-left: 20px; font-size: 12px;">- ${prop.name} (${prop.location}, ${prop.city}) [${prop.isLocalStorage ? 'localStorage' : 'database'}]</div>`;
+                            });
+                        } catch (e) {
+                            html += `<p><strong>${key}:</strong> Invalid JSON</p>`;
+                        }
+                    });
+                }
+                
+                html += '</div>';
+                resultDiv.innerHTML = html;
+            } catch (error) {
+                resultDiv.innerHTML = `<p style="color: red;">Error: ${error.message}</p>`;
+            }
+        }
+
+        function clearAllProperties() {
+            if (confirm('Are you sure you want to clear ALL properties? This cannot be undone.')) {
+                try {
+                    const keys = Object.keys(localStorage);
+                    const propertyKeys = keys.filter(key => key.startsWith('properties_'));
+                    
+                    propertyKeys.forEach(key => {
+                        localStorage.removeItem(key);
+                    });
+                    
+                    alert(`Cleared ${propertyKeys.length} property keys from localStorage`);
+                    checkForDuplicates();
+                } catch (error) {
+                    alert(`Error clearing properties: ${error.message}`);
+                }
+            }
+        }
+
+        function createTestDuplicates() {
+            try {
+                const testProperties = [
+                    {
+                        id: '1',
+                        name: 'Test Villa',
+                        location: 'Test Location',
+                        city: 'Test City',
+                        type: 'villa',
+                        price: 1000,
+                        isLocalStorage: true
+                    },
+                    {
+                        id: '2',
+                        name: 'Test Villa', // Duplicate name
+                        location: 'Test Location', // Duplicate location
+                        city: 'Test City', // Duplicate city
+                        type: 'villa',
+                        price: 1200,
+                        isLocalStorage: true
+                    },
+                    {
+                        id: '3',
+                        name: 'Unique Villa',
+                        location: 'Unique Location',
+                        city: 'Unique City',
+                        type: 'villa',
+                        price: 1500,
+                        isLocalStorage: true
+                    }
+                ];
+                
+                const storageKey = 'properties_test@example.com';
+                localStorage.setItem(storageKey, JSON.stringify(testProperties));
+                
+                alert('Created test properties with duplicates for testing');
+                checkForDuplicates();
+            } catch (error) {
+                alert(`Error creating test duplicates: ${error.message}`);
+            }
+        }
+
+        console.log('🔧 Duplicate Property Fix Test Tool Loaded');
+        console.log('📋 Ready to test duplicate property prevention');
+        
+        // Auto-check for duplicates on page load
+        window.addEventListener('load', function() {
+            console.log('✅ Page loaded successfully');
+            console.log('🔍 Check for duplicate properties');
+        });
+    </script>
+</body>
+</html>

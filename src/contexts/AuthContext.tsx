@@ -95,6 +95,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   // Helper function to create or update user profile
   const ensureUserProfile = async (authUser: User, userRole?: string): Promise<void> => {
     try {
+      console.log('🔧 Attempting to ensure user profile for:', authUser.email);
+      
       const { error } = await supabase
         .from('profiles')
         .upsert({
@@ -108,91 +110,156 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         });
 
       if (error) {
-        console.error('Error creating/updating user profile:', error);
+        console.error('❌ Error creating/updating user profile:', error);
+        // Don't throw - just log the error and continue
+        // The user can still log in even if profile creation fails
       } else {
         console.log('✅ User profile created/updated successfully');
       }
     } catch (err) {
-      console.error('Error in ensureUserProfile:', err);
+      console.error('❌ Exception in ensureUserProfile:', err);
+      // Don't throw - just log the error and continue
+      // The user can still log in even if profile creation fails
     }
   };
 
   useEffect(() => {
-    // Set up auth state listener FIRST
+    let isInitialized = false;
+    
+    // Set up auth state listener
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
         console.log('🔐 Auth state changed:', event, session?.user?.email);
-        console.log('🔄 Auth loading state: true (starting profile sync)');
         
-        setLoading(true); // Keep loading until everything is synchronized
+        // Only set loading if this is not the initial session check
+        if (isInitialized) {
+          setLoading(true);
+        }
+        
         setSession(session);
         
         if (session?.user) {
           try {
             console.log('👤 Ensuring user profile exists...');
-            // Ensure user profile exists
-            await ensureUserProfile(session.user);
+            // Ensure user profile exists with shorter timeout
+            const profilePromise = ensureUserProfile(session.user);
+            const timeoutPromise = new Promise((_, reject) => 
+              setTimeout(() => reject(new Error('Profile creation timeout')), 3000)
+            );
+            
+            await Promise.race([profilePromise, timeoutPromise]);
             
             console.log('📝 Fetching user profile data...');
-            // Get user profile data
-            const userProfile = await getUserProfile(session.user.id);
+            // Get user profile data with shorter timeout
+            const profileDataPromise = getUserProfile(session.user.id);
+            const profileTimeoutPromise = new Promise((_, reject) => 
+              setTimeout(() => reject(new Error('Profile fetch timeout')), 3000)
+            );
+            
+            const userProfile = await Promise.race([profileDataPromise, profileTimeoutPromise]);
             console.log('✅ User profile loaded:', userProfile?.email, 'role:', userProfile?.role);
             setUser(userProfile);
           } catch (error) {
             console.error('❌ Error during profile sync:', error);
-            setUser(null);
+            // Set a basic user object even if profile sync fails
+            setUser({
+              id: session.user.id,
+              email: session.user.email || '',
+              role: 'property_owner',
+              full_name: session.user.user_metadata?.full_name || '',
+              avatar_url: session.user.user_metadata?.avatar_url || null,
+              phone: session.user.user_metadata?.phone || null,
+              created_at: new Date().toISOString(),
+              updated_at: new Date().toISOString(),
+            });
           }
         } else {
           console.log('🚫 No session user, clearing user state');
           setUser(null);
         }
         
-        console.log('🔄 Auth loading state: false (profile sync complete)');
-        setLoading(false);
+        if (isInitialized) {
+          console.log('🔄 Auth loading state: false (profile sync complete)');
+          setLoading(false);
+        }
       }
     );
 
-    // THEN check for existing session
-    supabase.auth.getSession().then(async ({ data: { session } }) => {
+    // Check for existing session (initial load)
+    const initializeAuth = async () => {
       console.log('📋 Checking for existing session...');
-      if (session) {
-        console.log('✅ Existing session found:', session.user?.email);
-        console.log('🔄 Initial loading state: true (syncing existing session)');
-        setLoading(true);
-        setSession(session);
+      setLoading(true);
+      
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
         
-        try {
-          await ensureUserProfile(session.user);
-          const userProfile = await getUserProfile(session.user.id);
-          console.log('✅ Initial user profile loaded:', userProfile?.email, 'role:', userProfile?.role);
-          setUser(userProfile);
-        } catch (error) {
-          console.error('❌ Error during initial profile sync:', error);
+        if (session) {
+          console.log('✅ Existing session found:', session.user?.email);
+          setSession(session);
+          
+          try {
+            // Ensure user profile exists with shorter timeout
+            const profilePromise = ensureUserProfile(session.user);
+            const timeoutPromise = new Promise((_, reject) => 
+              setTimeout(() => reject(new Error('Profile creation timeout')), 3000)
+            );
+            
+            await Promise.race([profilePromise, timeoutPromise]);
+            
+            // Get user profile data with shorter timeout
+            const profileDataPromise = getUserProfile(session.user.id);
+            const profileTimeoutPromise = new Promise((_, reject) => 
+              setTimeout(() => reject(new Error('Profile fetch timeout')), 3000)
+            );
+            
+            const userProfile = await Promise.race([profileDataPromise, profileTimeoutPromise]);
+            console.log('✅ Initial user profile loaded:', userProfile?.email, 'role:', userProfile?.role);
+            setUser(userProfile);
+          } catch (error) {
+            console.error('❌ Error during initial profile sync:', error);
+            // Set a basic user object even if profile sync fails
+            setUser({
+              id: session.user.id,
+              email: session.user.email || '',
+              role: 'property_owner',
+              full_name: session.user.user_metadata?.full_name || '',
+              avatar_url: session.user.user_metadata?.avatar_url || null,
+              phone: session.user.user_metadata?.phone || null,
+              created_at: new Date().toISOString(),
+              updated_at: new Date().toISOString(),
+            });
+          }
+        } else {
+          console.log('🚫 No existing session found');
           setUser(null);
         }
-        
-        console.log('🔄 Initial loading state: false (sync complete)');
+      } catch (error) {
+        console.error('❌ Error during initial auth check:', error);
+        setUser(null);
+      } finally {
+        console.log('🔄 Initial loading state: false (initialization complete)');
         setLoading(false);
-      } else {
-        console.log('🚫 No existing session found');
-        setLoading(false);
+        isInitialized = true;
       }
-    });
+    };
+
+    initializeAuth();
 
     return () => subscription.unsubscribe();
   }, []);
 
   const login = useCallback(async (credentials: LoginCredentials) => {
     try {
-      setLoading(true);
       setError(null);
       
+      console.log('🔐 Attempting login for:', credentials.email);
       const { data, error } = await supabase.auth.signInWithPassword({
         email: credentials.email,
         password: credentials.password,
       });
       
       if (error) {
+        console.error('❌ Login error:', error.message);
         setError({
           message: error.message,
           code: error.name,
@@ -201,24 +268,24 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       }
 
       console.log('✅ User logged in successfully:', data.user?.email);
+      // Don't set loading to false here - let the auth state listener handle it
     } catch (err: unknown) {
       const errorMessage = err instanceof Error ? err.message : 'Login failed';
+      console.error('❌ Login exception:', errorMessage);
       setError({
         message: errorMessage,
         code: 'LOGIN_ERROR',
       });
-    } finally {
-      setLoading(false);
     }
   }, []);
 
   const register = useCallback(async (data: RegisterData) => {
     try {
-      setLoading(true);
       setError(null);
       
       const redirectUrl = `${window.location.origin}/`;
       
+      console.log('🔐 Attempting registration for:', data.email);
       const { data: authData, error } = await supabase.auth.signUp({
         email: data.email,
         password: data.password,
@@ -232,6 +299,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       });
       
       if (error) {
+        console.error('❌ Registration error:', error.message);
         setError({
           message: error.message,
           code: error.name,
@@ -244,12 +312,11 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       // Profile creation will be handled by the auth state change listener
     } catch (err: unknown) {
       const errorMessage = err instanceof Error ? err.message : 'Registration failed';
+      console.error('❌ Registration exception:', errorMessage);
       setError({
         message: errorMessage,
         code: 'REGISTER_ERROR',
       });
-    } finally {
-      setLoading(false);
     }
   }, []);
 

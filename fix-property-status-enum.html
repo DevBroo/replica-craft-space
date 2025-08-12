@@ -1,0 +1,278 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Fix Property Status Enum</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .card {
+            background: white;
+            border-radius: 8px;
+            padding: 20px;
+            margin: 20px 0;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .success { color: #4caf50; font-weight: bold; }
+        .error { color: #f44336; font-weight: bold; }
+        .info { background: #e3f2fd; border-left: 4px solid #2196f3; padding: 15px; margin: 15px 0; }
+        .warning { background: #fff3e0; border-left: 4px solid #ff9800; padding: 15px; margin: 15px 0; }
+        button {
+            background: #2196f3;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        button:hover { background: #1976d2; }
+        .danger { background: #f44336; }
+        .danger:hover { background: #d32f2f; }
+        .success-btn { background: #4caf50; }
+        .success-btn:hover { background: #388e3c; }
+        pre {
+            background: #f5f5f5;
+            padding: 10px;
+            border-radius: 4px;
+            overflow-x: auto;
+        }
+    </style>
+</head>
+<body>
+    <h1>🔧 Fix Property Status Enum</h1>
+    
+    <div class="card">
+        <h2>🚨 Issue Identified</h2>
+        <div class="error">
+            Database constraint violation: "properties_status_check"
+        </div>
+        <div class="info">
+            <strong>Problem:</strong> The database enum only allows: 'pending', 'approved', 'rejected', 'inactive'<br>
+            <strong>UI is sending:</strong> 'active', 'maintenance' (not in enum)<br>
+            <strong>Solution:</strong> Add 'active' and 'maintenance' to the database enum
+        </div>
+    </div>
+
+    <div class="card">
+        <h2>🔧 Fix Database Enum</h2>
+        <div class="warning">
+            <strong>Warning:</strong> This will modify the database schema. Make sure you have a backup.
+        </div>
+        
+        <button onclick="fixPropertyStatusEnum()" class="success-btn">
+            🔧 Fix Property Status Enum
+        </button>
+        
+        <button onclick="checkCurrentEnum()">
+            🔍 Check Current Enum Values
+        </button>
+        
+        <button onclick="testStatusUpdate()">
+            🧪 Test Status Update
+        </button>
+        
+        <div id="result" style="margin-top: 15px;"></div>
+    </div>
+
+    <div class="card">
+        <h2>📋 SQL Commands to Execute</h2>
+        <pre id="sqlCommands">
+-- Add new enum values to property_status
+ALTER TYPE property_status ADD VALUE IF NOT EXISTS 'active';
+ALTER TYPE property_status ADD VALUE IF NOT EXISTS 'maintenance';
+
+-- Verify the enum values
+SELECT unnest(enum_range(NULL::property_status)) as status_values;
+
+-- Update any invalid status values to 'pending'
+UPDATE properties 
+SET status = 'pending' 
+WHERE status NOT IN ('pending', 'approved', 'rejected', 'inactive', 'active', 'maintenance');
+        </pre>
+    </div>
+
+    <div class="card">
+        <h2>✅ Expected Results</h2>
+        <div class="info">
+            After fixing the enum:
+            <ul>
+                <li>✅ Status dropdown will work with 'active' and 'maintenance'</li>
+                <li>✅ Database updates will succeed</li>
+                <li>✅ No more constraint violation errors</li>
+                <li>✅ Status changes will persist after refresh</li>
+            </ul>
+        </div>
+    </div>
+
+    <script>
+        const SUPABASE_URL = 'https://riqsgtuzccwpplbodwbd.supabase.co';
+        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJpcXNndHV6Y2N3cHBsYm9kd2JkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MzQwNzI5NzAsImV4cCI6MjA0OTY0ODk3MH0.Ej8Ej8Ej8Ej8Ej8Ej8Ej8Ej8Ej8Ej8Ej8Ej8Ej8Ej8';
+
+        async function executeSQL(sql) {
+            try {
+                const response = await fetch(`${SUPABASE_URL}/rest/v1/rpc/exec_sql`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
+                        'apikey': SUPABASE_ANON_KEY
+                    },
+                    body: JSON.stringify({ sql })
+                });
+
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+
+                return await response.json();
+            } catch (error) {
+                console.error('SQL execution error:', error);
+                throw error;
+            }
+        }
+
+        async function fixPropertyStatusEnum() {
+            const resultDiv = document.getElementById('result');
+            resultDiv.innerHTML = '<p>🔧 Fixing property status enum...</p>';
+
+            try {
+                // Step 1: Add new enum values
+                console.log('Step 1: Adding new enum values...');
+                await executeSQL("ALTER TYPE property_status ADD VALUE IF NOT EXISTS 'active';");
+                await executeSQL("ALTER TYPE property_status ADD VALUE IF NOT EXISTS 'maintenance';");
+                
+                // Step 2: Update any invalid status values
+                console.log('Step 2: Updating invalid status values...');
+                await executeSQL(`
+                    UPDATE properties 
+                    SET status = 'pending' 
+                    WHERE status NOT IN ('pending', 'approved', 'rejected', 'inactive', 'active', 'maintenance');
+                `);
+
+                resultDiv.innerHTML = `
+                    <div class="success">
+                        ✅ Property status enum fixed successfully!<br>
+                        ✅ Added 'active' and 'maintenance' values<br>
+                        ✅ Updated any invalid status values to 'pending'
+                    </div>
+                `;
+
+                console.log('✅ Property status enum fixed successfully');
+            } catch (error) {
+                resultDiv.innerHTML = `
+                    <div class="error">
+                        ❌ Error fixing enum: ${error.message}<br>
+                        <small>This might require admin privileges. Try the manual SQL approach.</small>
+                    </div>
+                `;
+                console.error('❌ Error fixing enum:', error);
+            }
+        }
+
+        async function checkCurrentEnum() {
+            const resultDiv = document.getElementById('result');
+            resultDiv.innerHTML = '<p>🔍 Checking current enum values...</p>';
+
+            try {
+                const result = await executeSQL(`
+                    SELECT unnest(enum_range(NULL::property_status)) as status_values;
+                `);
+
+                const statusValues = result.map(row => row.status_values);
+                
+                resultDiv.innerHTML = `
+                    <div class="info">
+                        <strong>Current property_status enum values:</strong><br>
+                        ${statusValues.map(status => `• ${status}`).join('<br>')}
+                    </div>
+                `;
+
+                console.log('Current enum values:', statusValues);
+            } catch (error) {
+                resultDiv.innerHTML = `
+                    <div class="error">
+                        ❌ Error checking enum: ${error.message}
+                    </div>
+                `;
+                console.error('❌ Error checking enum:', error);
+            }
+        }
+
+        async function testStatusUpdate() {
+            const resultDiv = document.getElementById('result');
+            resultDiv.innerHTML = '<p>🧪 Testing status update...</p>';
+
+            try {
+                // First, get a property to test with
+                const propertiesResponse = await fetch(`${SUPABASE_URL}/rest/v1/properties?select=id,title,status&limit=1`, {
+                    headers: {
+                        'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
+                        'apikey': SUPABASE_ANON_KEY
+                    }
+                });
+
+                if (!propertiesResponse.ok) {
+                    throw new Error(`Failed to fetch properties: ${propertiesResponse.status}`);
+                }
+
+                const properties = await propertiesResponse.json();
+                
+                if (properties.length === 0) {
+                    resultDiv.innerHTML = '<div class="warning">⚠️ No properties found to test with</div>';
+                    return;
+                }
+
+                const testProperty = properties[0];
+                console.log('Testing with property:', testProperty);
+
+                // Try to update status to 'active'
+                const updateResponse = await fetch(`${SUPABASE_URL}/rest/v1/properties?id=eq.${testProperty.id}&select=*`, {
+                    method: 'PATCH',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
+                        'apikey': SUPABASE_ANON_KEY
+                    },
+                    body: JSON.stringify({ status: 'active' })
+                });
+
+                if (updateResponse.ok) {
+                    resultDiv.innerHTML = `
+                        <div class="success">
+                            ✅ Status update test successful!<br>
+                            ✅ Property "${testProperty.title}" status changed to 'active'
+                        </div>
+                    `;
+                    console.log('✅ Status update test successful');
+                } else {
+                    const errorData = await updateResponse.json();
+                    resultDiv.innerHTML = `
+                        <div class="error">
+                            ❌ Status update test failed:<br>
+                            <pre>${JSON.stringify(errorData, null, 2)}</pre>
+                        </div>
+                    `;
+                    console.error('❌ Status update test failed:', errorData);
+                }
+            } catch (error) {
+                resultDiv.innerHTML = `
+                    <div class="error">
+                        ❌ Error testing status update: ${error.message}
+                    </div>
+                `;
+                console.error('❌ Error testing status update:', error);
+            }
+        }
+
+        console.log('🔧 Property Status Enum Fix Tool Loaded');
+        console.log('📋 Ready to fix database enum constraint issue');
+    </script>
+</body>
+</html>

@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Login Loading Fix</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .test-card {
+            background: white;
+            border-radius: 8px;
+            padding: 20px;
+            margin: 20px 0;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .success {
+            color: #4caf50;
+            font-weight: bold;
+        }
+        .error {
+            color: #f44336;
+            font-weight: bold;
+        }
+        .info {
+            background: #e3f2fd;
+            border-left: 4px solid #2196f3;
+            padding: 15px;
+            margin: 15px 0;
+        }
+        .fix {
+            background: #e8f5e8;
+            border-left: 4px solid #4caf50;
+            padding: 15px;
+            margin: 15px 0;
+        }
+    </style>
+</head>
+<body>
+    <h1>🔧 Test Login Loading Fix</h1>
+    
+    <div class="test-card">
+        <h2>🚨 Issue Fixed</h2>
+        
+        <div class="info">
+            <strong>Problem:</strong> Infinite loading spinner on login button
+        </div>
+        
+        <div class="fix">
+            <strong>Root Cause:</strong> Conflict between AuthContext loading state and login function
+        </div>
+        
+        <div class="fix">
+            <strong>Fix Applied:</strong> 
+            <ul>
+                <li>✅ Removed loading state management from login/register functions</li>
+                <li>✅ Added local loading state to OwnerLogin component</li>
+                <li>✅ Let auth state listener handle global loading</li>
+                <li>✅ Fixed button disabled states</li>
+            </ul>
+        </div>
+    </div>
+
+    <div class="test-card">
+        <h2>🧪 Test Steps</h2>
+        
+        <div class="info">
+            <h3>Step 1: Test Login Button</h3>
+            <ol>
+                <li><a href="http://localhost:8082/owner/login" target="_blank">Open Owner Login</a></li>
+                <li>Enter your email and password</li>
+                <li>Click "Sign In" button</li>
+                <li>Should show brief loading then redirect</li>
+            </ol>
+        </div>
+        
+        <div class="info">
+            <h3>Step 2: Test OTP Login</h3>
+            <ol>
+                <li>Switch to "Phone" tab</li>
+                <li>Enter phone number and click "Send OTP"</li>
+                <li>Should show brief loading then OTP input</li>
+                <li>Enter OTP and click "Verify OTP"</li>
+                <li>Should show brief loading then redirect</li>
+            </ol>
+        </div>
+        
+        <div class="info">
+            <h3>Step 3: Test Dashboard Refresh</h3>
+            <ol>
+                <li>Once logged in, refresh the dashboard page</li>
+                <li>Should load quickly without infinite loading</li>
+            </ol>
+        </div>
+    </div>
+
+    <div class="test-card">
+        <h2>✅ Expected Results</h2>
+        
+        <div class="success">
+            <h3>After Fix:</h3>
+            <ul>
+                <li>✅ Login button shows brief loading spinner</li>
+                <li>✅ Button becomes enabled after login attempt</li>
+                <li>✅ Smooth redirect to dashboard</li>
+                <li>✅ No infinite loading states</li>
+                <li>✅ Dashboard loads quickly after refresh</li>
+            </ul>
+        </div>
+        
+        <div class="info">
+            <h3>Console Logs to Watch:</h3>
+            <ul>
+                <li>🚀 "Owner login attempt with email"</li>
+                <li>🔐 "Attempting login for"</li>
+                <li>✅ "User logged in successfully"</li>
+                <li>🔐 "Auth state changed"</li>
+                <li>✅ "User profile loaded"</li>
+            </ul>
+        </div>
+    </div>
+
+    <div class="test-card">
+        <h2>🔍 Debug Info</h2>
+        
+        <div class="info">
+            <h3>Key Changes Made:</h3>
+            <ul>
+                <li><strong>AuthContext.tsx:</strong> Removed loading state from login/register functions</li>
+                <li><strong>OwnerLogin.tsx:</strong> Added local isLoggingIn state</li>
+                <li><strong>Button States:</strong> Use local loading state instead of global</li>
+                <li><strong>Error Handling:</strong> Proper try/finally blocks</li>
+            </ul>
+        </div>
+        
+        <div class="info">
+            <h3>If Still Having Issues:</h3>
+            <ul>
+                <li>Clear browser cache and localStorage</li>
+                <li>Check browser console for errors</li>
+                <li>Try incognito/private browsing mode</li>
+                <li>Restart the development server</li>
+            </ul>
+        </div>
+    </div>
+
+    <script>
+        console.log('🔧 Login Loading Fix Test Tool Loaded');
+        console.log('📋 Ready to test the login loading fix');
+        
+        // Add some helpful console messages
+        window.addEventListener('load', function() {
+            console.log('✅ Page loaded successfully');
+            console.log('🔍 Check browser console for login-related logs');
+        });
+    </script>
+</body>
+</html>

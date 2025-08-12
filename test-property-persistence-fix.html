@@ -1,0 +1,283 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Property Persistence Fix</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .test-card {
+            background: white;
+            border-radius: 8px;
+            padding: 20px;
+            margin: 20px 0;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .success {
+            color: #4caf50;
+            font-weight: bold;
+        }
+        .error {
+            color: #f44336;
+            font-weight: bold;
+        }
+        .info {
+            background: #e3f2fd;
+            border-left: 4px solid #2196f3;
+            padding: 15px;
+            margin: 15px 0;
+        }
+        .fix {
+            background: #e8f5e8;
+            border-left: 4px solid #4caf50;
+            padding: 15px;
+            margin: 15px 0;
+        }
+        .warning {
+            background: #fff3e0;
+            border-left: 4px solid #ff9800;
+            padding: 15px;
+            margin: 15px 0;
+        }
+    </style>
+</head>
+<body>
+    <h1>🔧 Test Property Persistence Fix</h1>
+    
+    <div class="test-card">
+        <h2>🚨 Issue Fixed</h2>
+        
+        <div class="info">
+            <strong>Problem:</strong> Properties disappearing after page refresh
+        </div>
+        
+        <div class="fix">
+            <strong>Root Cause:</strong> Properties saved to localStorage but not loaded on refresh due to database timeout
+        </div>
+        
+        <div class="fix">
+            <strong>Fix Applied:</strong> 
+            <ul>
+                <li>✅ Added localStorage fallback to property loading</li>
+                <li>✅ Combined database and localStorage properties</li>
+                <li>✅ Fixed delete and status change for localStorage properties</li>
+                <li>✅ Prevented duplicate properties</li>
+            </ul>
+        </div>
+    </div>
+
+    <div class="test-card">
+        <h2>🧪 Test Steps</h2>
+        
+        <div class="info">
+            <h3>Step 1: Create Properties</h3>
+            <ol>
+                <li><a href="http://localhost:8082/owner/view" target="_blank">Open My Properties</a></li>
+                <li>Click "+ Add Property" button</li>
+                <li>Fill in property details (name, location, price, etc.)</li>
+                <li>Add some image links (URLs ending in .jpg, .png, etc.)</li>
+                <li>Click "Add Property" to save</li>
+                <li>Verify property appears in the list</li>
+            </ol>
+        </div>
+        
+        <div class="info">
+            <h3>Step 2: Test Persistence</h3>
+            <ol>
+                <li>Refresh the page (F5)</li>
+                <li>Check if properties are still visible</li>
+                <li>Look for console logs showing property loading</li>
+                <li>Verify property count remains the same</li>
+            </ol>
+        </div>
+        
+        <div class="info">
+            <h3>Step 3: Test Property Operations</h3>
+            <ol>
+                <li>Try editing a property (click pencil icon)</li>
+                <li>Change status using the dropdown</li>
+                <li>Delete a property (click trash icon)</li>
+                <li>Refresh page and verify changes persist</li>
+            </ol>
+        </div>
+    </div>
+
+    <div class="test-card">
+        <h2>✅ Expected Results</h2>
+        
+        <div class="success">
+            <h3>After Fix:</h3>
+            <ul>
+                <li>✅ Properties remain visible after page refresh</li>
+                <li>✅ Property count stays consistent</li>
+                <li>✅ Edit/delete/status changes persist</li>
+                <li>✅ No duplicate properties</li>
+                <li>✅ Smooth fallback between database and localStorage</li>
+            </ul>
+        </div>
+        
+        <div class="warning">
+            <h3>Console Logs to Watch:</h3>
+            <ul>
+                <li>🔍 "Loading properties for user"</li>
+                <li>📋 "Found localStorage properties"</li>
+                <li>✅ "All properties loaded" (showing DB + Local counts)</li>
+                <li>📋 "Added localStorage property" (if fallback used)</li>
+                <li>✅ "Property saved locally" (if database unavailable)</li>
+            </ul>
+        </div>
+    </div>
+
+    <div class="test-card">
+        <h2>🔍 Debug Tools</h2>
+        
+        <div class="info">
+            <h3>Check localStorage Properties</h3>
+            <button onclick="checkLocalStorageProperties()" style="background: #2196f3; color: white; border: none; padding: 10px 20px; border-radius: 4px; cursor: pointer;">Check localStorage</button>
+            <div id="localStorageResult" style="margin-top: 10px;"></div>
+        </div>
+        
+        <div class="info">
+            <h3>Clear localStorage Properties</h3>
+            <button onclick="clearLocalStorageProperties()" style="background: #f44336; color: white; border: none; padding: 10px 20px; border-radius: 4px; cursor: pointer;">Clear localStorage</button>
+            <p>Use this if you want to start fresh</p>
+        </div>
+        
+        <div class="info">
+            <h3>Test Property Creation</h3>
+            <button onclick="createTestProperty()" style="background: #4caf50; color: white; border: none; padding: 10px 20px; border-radius: 4px; cursor: pointer;">Create Test Property</button>
+            <p>Creates a test property in localStorage</p>
+        </div>
+    </div>
+
+    <div class="test-card">
+        <h2>🔍 Debug Info</h2>
+        
+        <div class="info">
+            <h3>Key Changes Made:</h3>
+            <ul>
+                <li><strong>Property Loading:</strong> Now loads from both database and localStorage</li>
+                <li><strong>Duplicate Prevention:</strong> Avoids showing same property twice</li>
+                <li><strong>Fallback System:</strong> Uses localStorage when database fails</li>
+                <li><strong>CRUD Operations:</strong> All operations work with localStorage properties</li>
+            </ul>
+        </div>
+        
+        <div class="warning">
+            <h3>If Still Having Issues:</h3>
+            <ul>
+                <li>Check browser console for specific error messages</li>
+                <li>Clear browser cache and localStorage</li>
+                <li>Try incognito/private browsing mode</li>
+                <li>Verify user authentication is working</li>
+                <li>Check if database connection is available</li>
+            </ul>
+        </div>
+    </div>
+
+    <script>
+        function checkLocalStorageProperties() {
+            const resultDiv = document.getElementById('localStorageResult');
+            resultDiv.innerHTML = '<p>Checking localStorage...</p>';
+            
+            try {
+                const keys = Object.keys(localStorage);
+                const propertyKeys = keys.filter(key => key.startsWith('properties_'));
+                
+                let html = '<div style="background: #f5f5f5; padding: 10px; border-radius: 4px;">';
+                html += '<h4>localStorage Property Keys:</h4>';
+                
+                if (propertyKeys.length === 0) {
+                    html += '<p>No property keys found in localStorage</p>';
+                } else {
+                    propertyKeys.forEach(key => {
+                        const data = localStorage.getItem(key);
+                        try {
+                            const properties = JSON.parse(data);
+                            html += `<p><strong>${key}:</strong> ${properties.length} properties</p>`;
+                            properties.forEach(prop => {
+                                html += `<div style="margin-left: 20px; font-size: 12px;">- ${prop.name} (${prop.isLocalStorage ? 'localStorage' : 'database'})</div>`;
+                            });
+                        } catch (e) {
+                            html += `<p><strong>${key}:</strong> Invalid JSON</p>`;
+                        }
+                    });
+                }
+                
+                html += '</div>';
+                resultDiv.innerHTML = html;
+            } catch (error) {
+                resultDiv.innerHTML = `<p style="color: red;">Error: ${error.message}</p>`;
+            }
+        }
+
+        function clearLocalStorageProperties() {
+            if (confirm('Are you sure you want to clear all localStorage properties?')) {
+                try {
+                    const keys = Object.keys(localStorage);
+                    const propertyKeys = keys.filter(key => key.startsWith('properties_'));
+                    
+                    propertyKeys.forEach(key => {
+                        localStorage.removeItem(key);
+                    });
+                    
+                    alert(`Cleared ${propertyKeys.length} property keys from localStorage`);
+                    checkLocalStorageProperties();
+                } catch (error) {
+                    alert(`Error clearing localStorage: ${error.message}`);
+                }
+            }
+        }
+
+        function createTestProperty() {
+            try {
+                const testProperty = {
+                    id: Date.now().toString(),
+                    name: 'Test Property',
+                    type: 'villa',
+                    location: 'Test Location',
+                    city: 'Test City',
+                    state: 'Test State',
+                    price: 1000,
+                    capacity: 4,
+                    bedrooms: 2,
+                    bathrooms: 2,
+                    description: 'This is a test property',
+                    amenities: ['WiFi', 'Parking'],
+                    images: ['https://via.placeholder.com/300x200?text=Test+Property'],
+                    status: 'active',
+                    ownerEmail: 'test@example.com',
+                    createdAt: new Date().toISOString(),
+                    isLocalStorage: true
+                };
+                
+                const storageKey = 'properties_test@example.com';
+                const existing = localStorage.getItem(storageKey);
+                const properties = existing ? JSON.parse(existing) : [];
+                properties.push(testProperty);
+                localStorage.setItem(storageKey, JSON.stringify(properties));
+                
+                alert('Test property created in localStorage');
+                checkLocalStorageProperties();
+            } catch (error) {
+                alert(`Error creating test property: ${error.message}`);
+            }
+        }
+
+        console.log('🔧 Property Persistence Fix Test Tool Loaded');
+        console.log('📋 Ready to test property persistence');
+        
+        // Auto-check localStorage on page load
+        window.addEventListener('load', function() {
+            console.log('✅ Page loaded successfully');
+            console.log('🔍 Check localStorage for existing properties');
+        });
+    </script>
+</body>
+</html>

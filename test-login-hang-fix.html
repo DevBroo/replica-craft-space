@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Login Hang Fix</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .test-card {
+            background: white;
+            border-radius: 8px;
+            padding: 20px;
+            margin: 20px 0;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .success {
+            color: #4caf50;
+            font-weight: bold;
+        }
+        .error {
+            color: #f44336;
+            font-weight: bold;
+        }
+        .info {
+            background: #e3f2fd;
+            border-left: 4px solid #2196f3;
+            padding: 15px;
+            margin: 15px 0;
+        }
+        .fix {
+            background: #e8f5e8;
+            border-left: 4px solid #4caf50;
+            padding: 15px;
+            margin: 15px 0;
+        }
+        .warning {
+            background: #fff3e0;
+            border-left: 4px solid #ff9800;
+            padding: 15px;
+            margin: 15px 0;
+        }
+    </style>
+</head>
+<body>
+    <h1>🔧 Test Login Hang Fix</h1>
+    
+    <div class="test-card">
+        <h2>🚨 Issue Fixed</h2>
+        
+        <div class="info">
+            <strong>Problem:</strong> Login button stuck in "Signing In..." state indefinitely
+        </div>
+        
+        <div class="fix">
+            <strong>Root Cause:</strong> Profile creation/fetch operations hanging due to RLS policies or network issues
+        </div>
+        
+        <div class="fix">
+            <strong>Fix Applied:</strong> 
+            <ul>
+                <li>✅ Added 10-second timeouts to profile operations</li>
+                <li>✅ Better error handling in ensureUserProfile</li>
+                <li>✅ Fallback user object creation if profile sync fails</li>
+                <li>✅ Non-blocking profile operations</li>
+            </ul>
+        </div>
+    </div>
+
+    <div class="test-card">
+        <h2>🧪 Test Steps</h2>
+        
+        <div class="info">
+            <h3>Step 1: Test Login with Credentials</h3>
+            <ol>
+                <li><a href="http://localhost:8082/owner/login" target="_blank">Open Owner Login</a></li>
+                <li>Enter email: <strong>mshimavarsha07@gmail.com</strong></li>
+                <li>Enter password: <strong>Alliance@8</strong></li>
+                <li>Click "Sign In" button</li>
+                <li>Should show brief loading then redirect to dashboard</li>
+            </ol>
+        </div>
+        
+        <div class="info">
+            <h3>Step 2: Monitor Console</h3>
+            <ol>
+                <li>Open browser console (F12)</li>
+                <li>Watch for these logs during login:</li>
+                <ul>
+                    <li>🚀 "Owner login attempt with email"</li>
+                    <li>🔐 "Attempting login for"</li>
+                    <li>✅ "User logged in successfully"</li>
+                    <li>🔐 "Auth state changed"</li>
+                    <li>🔧 "Attempting to ensure user profile"</li>
+                    <li>✅ "User profile created/updated" OR timeout message</li>
+                    <li>✅ "User authenticated, showing dashboard"</li>
+                </ul>
+            </ol>
+        </div>
+        
+        <div class="info">
+            <h3>Step 3: Test Dashboard Access</h3>
+            <ol>
+                <li>Once logged in, verify dashboard loads</li>
+                <li>Refresh the dashboard page</li>
+                <li>Should load quickly without hanging</li>
+            </ol>
+        </div>
+    </div>
+
+    <div class="test-card">
+        <h2>✅ Expected Results</h2>
+        
+        <div class="success">
+            <h3>After Fix:</h3>
+            <ul>
+                <li>✅ Login button shows brief loading (max 10 seconds)</li>
+                <li>✅ Button becomes enabled after login completes</li>
+                <li>✅ Smooth redirect to dashboard</li>
+                <li>✅ No infinite "Signing In..." state</li>
+                <li>✅ Dashboard loads properly</li>
+                <li>✅ Profile sync works or gracefully fails</li>
+            </ul>
+        </div>
+        
+        <div class="warning">
+            <h3>If Profile Sync Fails:</h3>
+            <ul>
+                <li>⚠️ You'll see timeout messages in console</li>
+                <li>✅ Login will still complete successfully</li>
+                <li>✅ User will be created with basic profile data</li>
+                <li>✅ Dashboard will load normally</li>
+            </ul>
+        </div>
+    </div>
+
+    <div class="test-card">
+        <h2>🔍 Debug Info</h2>
+        
+        <div class="info">
+            <h3>Key Changes Made:</h3>
+            <ul>
+                <li><strong>Timeout Protection:</strong> 10-second timeouts on profile operations</li>
+                <li><strong>Error Handling:</strong> Non-blocking profile creation</li>
+                <li><strong>Fallback User:</strong> Basic user object if profile sync fails</li>
+                <li><strong>Better Logging:</strong> Detailed console logs for debugging</li>
+            </ul>
+        </div>
+        
+        <div class="info">
+            <h3>Console Messages to Watch:</h3>
+            <ul>
+                <li><strong>Success:</strong> "✅ User profile created/updated successfully"</li>
+                <li><strong>Timeout:</strong> "Profile creation timeout" or "Profile fetch timeout"</li>
+                <li><strong>Error:</strong> "❌ Error creating/updating user profile"</li>
+                <li><strong>Fallback:</strong> "✅ User authenticated, showing dashboard"</li>
+            </ul>
+        </div>
+        
+        <div class="warning">
+            <h3>If Still Having Issues:</h3>
+            <ul>
+                <li>Clear browser cache and localStorage</li>
+                <li>Check browser console for specific error messages</li>
+                <li>Try incognito/private browsing mode</li>
+                <li>Check network connectivity to Supabase</li>
+                <li>Verify RLS policies are not blocking profile creation</li>
+            </ul>
+        </div>
+    </div>
+
+    <script>
+        console.log('🔧 Login Hang Fix Test Tool Loaded');
+        console.log('📋 Ready to test the login hang fix');
+        
+        // Add some helpful console messages
+        window.addEventListener('load', function() {
+            console.log('✅ Page loaded successfully');
+            console.log('🔍 Check browser console for login-related logs');
+            console.log('⏱️ Login should complete within 10 seconds now');
+        });
+    </script>
+</body>
+</html>

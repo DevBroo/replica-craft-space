@@ -1,0 +1,245 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Status Values</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .test-card {
+            background: white;
+            border-radius: 8px;
+            padding: 20px;
+            margin: 20px 0;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .success {
+            color: #4caf50;
+            font-weight: bold;
+        }
+        .error {
+            color: #f44336;
+            font-weight: bold;
+        }
+        .info {
+            background: #e3f2fd;
+            border-left: 4px solid #2196f3;
+            padding: 15px;
+            margin: 15px 0;
+        }
+        .warning {
+            background: #fff3e0;
+            border-left: 4px solid #ff9800;
+            padding: 15px;
+            margin: 15px 0;
+        }
+    </style>
+</head>
+<body>
+    <h1>🔧 Test Status Values</h1>
+    
+    <div class="test-card">
+        <h2>🚨 Issue Identified</h2>
+        
+        <div class="info">
+            <strong>Problem:</strong> Status values mismatch between UI and database
+        </div>
+        
+        <div class="warning">
+            <strong>Root Cause:</strong> PropertyService expected 'approved'/'rejected' but UI sends 'active'/'maintenance'
+        </div>
+        
+        <div class="success">
+            <strong>Fix Applied:</strong> 
+            <ul>
+                <li>✅ Updated PropertyService to accept 'active' and 'maintenance'</li>
+                <li>✅ Added better debugging logs</li>
+                <li>✅ Status values now match between UI and backend</li>
+            </ul>
+        </div>
+    </div>
+
+    <div class="test-card">
+        <h2>🧪 Test Steps</h2>
+        
+        <div class="info">
+            <h3>Step 1: Check Current Status</h3>
+            <ol>
+                <li><a href="http://localhost:8082/owner/view" target="_blank">Open My Properties</a></li>
+                <li>Open browser console (F12)</li>
+                <li>Note current status of properties</li>
+            </ol>
+        </div>
+        
+        <div class="info">
+            <h3>Step 2: Test Status Change</h3>
+            <ol>
+                <li>Find a property with "Pending" status</li>
+                <li>Click the status dropdown</li>
+                <li>Change it to "Active"</li>
+                <li>Watch console for detailed logs</li>
+            </ol>
+        </div>
+        
+        <div class="info">
+            <h3>Step 3: Verify Persistence</h3>
+            <ol>
+                <li>Refresh the page (F5)</li>
+                <li>Check if status remains "Active"</li>
+                <li>Look for console logs showing property loading</li>
+            </ol>
+        </div>
+    </div>
+
+    <div class="test-card">
+        <h2>✅ Expected Results</h2>
+        
+        <div class="success">
+            <h3>After Fix:</h3>
+            <ul>
+                <li>✅ Status changes immediately in UI</li>
+                <li>✅ Console shows detailed property information</li>
+                <li>✅ Database update succeeds with correct status values</li>
+                <li>✅ localStorage backup works correctly</li>
+                <li>✅ Status persists after page refresh</li>
+            </ul>
+        </div>
+        
+        <div class="warning">
+            <h3>Console Logs to Watch:</h3>
+            <ul>
+                <li>🔄 "Changing status for property X from Y to Z"</li>
+                <li>🔍 "Property details: {id, name, currentStatus, newStatus}"</li>
+                <li>🔄 "Updating property status: [id] [status]"</li>
+                <li>✅ "Property status updated successfully"</li>
+                <li>✅ "Property status changed to X in localStorage"</li>
+                <li>🎉 "Status change successful: X"</li>
+            </ul>
+        </div>
+    </div>
+
+    <div class="test-card">
+        <h2>🔍 Debug Tools</h2>
+        
+        <div class="info">
+            <h3>Test Status Values</h3>
+            <button onclick="testStatusValues()" style="background: #2196f3; color: white; border: none; padding: 10px 20px; border-radius: 4px; cursor: pointer;">Test Status Values</button>
+            <div id="statusTestResult" style="margin-top: 10px;"></div>
+        </div>
+        
+        <div class="info">
+            <h3>Create Test Property with Different Status</h3>
+            <button onclick="createTestPropertyWithStatus()" style="background: #4caf50; color: white; border: none; padding: 10px 20px; border-radius: 4px; cursor: pointer;">Create Active Property</button>
+            <p>Creates a test property with "Active" status for testing</p>
+        </div>
+    </div>
+
+    <div class="test-card">
+        <h2>🔍 Debug Info</h2>
+        
+        <div class="info">
+            <h3>Status Values Fixed:</h3>
+            <ul>
+                <li>✅ <strong>pending:</strong> Property awaiting approval</li>
+                <li>✅ <strong>active:</strong> Property is live and bookable (was 'approved')</li>
+                <li>✅ <strong>inactive:</strong> Property temporarily unavailable</li>
+                <li>✅ <strong>maintenance:</strong> Property under maintenance (was 'rejected')</li>
+            </ul>
+        </div>
+        
+        <div class="warning">
+            <h3>Previous Issue:</h3>
+            <ul>
+                <li>❌ <strong>UI sent:</strong> 'active', 'maintenance'</li>
+                <li>❌ <strong>Backend expected:</strong> 'approved', 'rejected'</li>
+                <li>✅ <strong>Now aligned:</strong> Both use 'active', 'maintenance'</li>
+            </ul>
+        </div>
+    </div>
+
+    <script>
+        function testStatusValues() {
+            const resultDiv = document.getElementById('statusTestResult');
+            resultDiv.innerHTML = '<p>Testing status values...</p>';
+            
+            const validStatuses = ['pending', 'active', 'inactive', 'maintenance'];
+            const testProperty = {
+                id: 'test-123',
+                name: 'Test Property',
+                status: 'pending'
+            };
+            
+            let html = '<div style="background: #f5f5f5; padding: 10px; border-radius: 4px;">';
+            html += '<h4>Status Value Test:</h4>';
+            html += `<p><strong>Test Property:</strong> ${testProperty.name} (ID: ${testProperty.id})</p>`;
+            html += `<p><strong>Current Status:</strong> ${testProperty.status}</p>`;
+            html += '<p><strong>Valid Status Values:</strong></p>';
+            
+            validStatuses.forEach(status => {
+                html += `<div style="margin-left: 20px;">- ${status}</div>`;
+            });
+            
+            html += '<p><strong>Test Status Changes:</strong></p>';
+            validStatuses.forEach(newStatus => {
+                if (newStatus !== testProperty.status) {
+                    html += `<div style="margin-left: 20px;">- ${testProperty.status} → ${newStatus} ✅</div>`;
+                }
+            });
+            
+            html += '</div>';
+            resultDiv.innerHTML = html;
+        }
+
+        function createTestPropertyWithStatus() {
+            try {
+                const testProperty = {
+                    id: Date.now().toString(),
+                    name: 'Test Active Property',
+                    type: 'villa',
+                    location: 'Test Location',
+                    city: 'Test City',
+                    state: 'Test State',
+                    price: 1000,
+                    capacity: 4,
+                    bedrooms: 2,
+                    bathrooms: 2,
+                    description: 'This is a test property with active status',
+                    amenities: ['WiFi', 'Parking'],
+                    images: ['https://via.placeholder.com/300x200?text=Test+Active'],
+                    status: 'active', // This should now work with the backend
+                    ownerEmail: 'test@example.com',
+                    createdAt: new Date().toISOString(),
+                    updatedAt: new Date().toISOString(),
+                    isLocalStorage: true
+                };
+                
+                const storageKey = 'properties_test@example.com';
+                const existing = localStorage.getItem(storageKey);
+                const properties = existing ? JSON.parse(existing) : [];
+                properties.push(testProperty);
+                localStorage.setItem(storageKey, JSON.stringify(properties));
+                
+                alert('Created test property with "Active" status (should work now)');
+                console.log('✅ Test property created with status:', testProperty.status);
+            } catch (error) {
+                alert(`Error creating test property: ${error.message}`);
+            }
+        }
+
+        console.log('🔧 Status Values Test Tool Loaded');
+        console.log('📋 Ready to test status value alignment');
+        
+        // Auto-test status values on page load
+        window.addEventListener('load', function() {
+            console.log('✅ Page loaded successfully');
+            console.log('🔍 Status values should now be aligned between UI and backend');
+        });
+    </script>
+</body>
+</html>

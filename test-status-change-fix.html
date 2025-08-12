@@ -1,0 +1,304 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Status Change Fix</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .test-card {
+            background: white;
+            border-radius: 8px;
+            padding: 20px;
+            margin: 20px 0;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .success {
+            color: #4caf50;
+            font-weight: bold;
+        }
+        .error {
+            color: #f44336;
+            font-weight: bold;
+        }
+        .info {
+            background: #e3f2fd;
+            border-left: 4px solid #2196f3;
+            padding: 15px;
+            margin: 15px 0;
+        }
+        .fix {
+            background: #e8f5e8;
+            border-left: 4px solid #4caf50;
+            padding: 15px;
+            margin: 15px 0;
+        }
+        .warning {
+            background: #fff3e0;
+            border-left: 4px solid #ff9800;
+            padding: 15px;
+            margin: 15px 0;
+        }
+    </style>
+</head>
+<body>
+    <h1>🔧 Test Status Change Fix</h1>
+    
+    <div class="test-card">
+        <h2>🚨 Issue Fixed</h2>
+        
+        <div class="info">
+            <strong>Problem:</strong> Property status reverting to "Pending" after page refresh
+        </div>
+        
+        <div class="fix">
+            <strong>Root Cause:</strong> Status changes not being properly saved to localStorage as backup
+        </div>
+        
+        <div class="fix">
+            <strong>Fix Applied:</strong> 
+            <ul>
+                <li>✅ Always update localStorage as backup for all properties</li>
+                <li>✅ Better error handling and fallback logic</li>
+                <li>✅ Improved property matching in localStorage</li>
+                <li>✅ Enhanced logging for status change tracking</li>
+                <li>✅ Success/failure feedback for users</li>
+            </ul>
+        </div>
+    </div>
+
+    <div class="test-card">
+        <h2>🧪 Test Steps</h2>
+        
+        <div class="info">
+            <h3>Step 1: Check Current Status</h3>
+            <ol>
+                <li><a href="http://localhost:8082/owner/view" target="_blank">Open My Properties</a></li>
+                <li>Note the current status of properties (likely "Pending")</li>
+                <li>Open browser console to monitor logs</li>
+            </ol>
+        </div>
+        
+        <div class="info">
+            <h3>Step 2: Change Property Status</h3>
+            <ol>
+                <li>Find a property with "Pending" status</li>
+                <li>Click the status dropdown (should show "Pending")</li>
+                <li>Change it to "Active" or another status</li>
+                <li>Watch console for status change logs</li>
+                <li>Verify status changes immediately in UI</li>
+            </ol>
+        </div>
+        
+        <div class="info">
+            <h3>Step 3: Test Persistence</h3>
+            <ol>
+                <li>Refresh the page (F5)</li>
+                <li>Check if the status change persists</li>
+                <li>Look for console logs showing property loading</li>
+                <li>Verify status remains changed</li>
+            </ol>
+        </div>
+    </div>
+
+    <div class="test-card">
+        <h2>✅ Expected Results</h2>
+        
+        <div class="success">
+            <h3>After Fix:</h3>
+            <ul>
+                <li>✅ Status changes immediately in UI</li>
+                <li>✅ Status persists after page refresh</li>
+                <li>✅ Clear console logs showing status updates</li>
+                <li>✅ localStorage backup ensures persistence</li>
+                <li>✅ Works for both database and localStorage properties</li>
+            </ul>
+        </div>
+        
+        <div class="warning">
+            <h3>Console Logs to Watch:</h3>
+            <ul>
+                <li>🔄 "Changing status for property X from Y to Z"</li>
+                <li>✅ "Property status changed to X in database"</li>
+                <li>✅ "Property status changed to X in localStorage"</li>
+                <li>🎉 "Status change successful: X"</li>
+                <li>📋 "Loading localStorage properties immediately" (on refresh)</li>
+            </ul>
+        </div>
+    </div>
+
+    <div class="test-card">
+        <h2>🔍 Debug Tools</h2>
+        
+        <div class="info">
+            <h3>Check Property Statuses</h3>
+            <button onclick="checkPropertyStatuses()" style="background: #2196f3; color: white; border: none; padding: 10px 20px; border-radius: 4px; cursor: pointer;">Check Statuses</button>
+            <div id="statusResult" style="margin-top: 10px;"></div>
+        </div>
+        
+        <div class="info">
+            <h3>Create Test Property with Status</h3>
+            <button onclick="createTestPropertyWithStatus()" style="background: #4caf50; color: white; border: none; padding: 10px 20px; border-radius: 4px; cursor: pointer;">Create Test Property</button>
+            <p>Creates a test property with "Active" status for testing</p>
+        </div>
+        
+        <div class="info">
+            <h3>Simulate Status Change</h3>
+            <button onclick="simulateStatusChange()" style="background: #ff9800; color: white; border: none; padding: 10px 20px; border-radius: 4px; cursor: pointer;">Simulate Status Change</button>
+            <p>Simulates changing a property status in localStorage</p>
+        </div>
+    </div>
+
+    <div class="test-card">
+        <h2>🔍 Debug Info</h2>
+        
+        <div class="info">
+            <h3>Key Changes Made:</h3>
+            <ul>
+                <li><strong>Backup Strategy:</strong> Always update localStorage as backup</li>
+                <li><strong>Property Matching:</strong> Match by ID or name+location+city</li>
+                <li><strong>Error Handling:</strong> Graceful fallback when database fails</li>
+                <li><strong>UI Feedback:</strong> Immediate UI updates with success/failure messages</li>
+            </ul>
+        </div>
+        
+        <div class="warning">
+            <h3>Status Values Supported:</h3>
+            <ul>
+                <li>🟡 <strong>pending:</strong> Property awaiting approval</li>
+                <li>🟢 <strong>active:</strong> Property is live and bookable</li>
+                <li>🔴 <strong>inactive:</strong> Property temporarily unavailable</li>
+                <li>❌ <strong>rejected:</strong> Property was rejected</li>
+            </ul>
+        </div>
+    </div>
+
+    <script>
+        function checkPropertyStatuses() {
+            const resultDiv = document.getElementById('statusResult');
+            resultDiv.innerHTML = '<p>Checking property statuses...</p>';
+            
+            try {
+                const keys = Object.keys(localStorage);
+                const propertyKeys = keys.filter(key => key.startsWith('properties_'));
+                
+                let html = '<div style="background: #f5f5f5; padding: 10px; border-radius: 4px;">';
+                html += '<h4>Property Status Check:</h4>';
+                
+                if (propertyKeys.length === 0) {
+                    html += '<p>No property keys found</p>';
+                } else {
+                    propertyKeys.forEach(key => {
+                        const data = localStorage.getItem(key);
+                        try {
+                            const properties = JSON.parse(data);
+                            
+                            html += `<p><strong>${key}:</strong> ${properties.length} properties</p>`;
+                            
+                            properties.forEach(prop => {
+                                const statusColor = getStatusColor(prop.status);
+                                html += `<div style="margin-left: 20px; font-size: 12px;">- ${prop.name}: <span style="color: ${statusColor};">${prop.status || 'pending'}</span> (${prop.updatedAt ? 'updated: ' + new Date(prop.updatedAt).toLocaleString() : 'no update time'})</div>`;
+                            });
+                        } catch (e) {
+                            html += `<p><strong>${key}:</strong> Invalid JSON</p>`;
+                        }
+                    });
+                }
+                
+                html += '</div>';
+                resultDiv.innerHTML = html;
+            } catch (error) {
+                resultDiv.innerHTML = `<p style="color: red;">Error: ${error.message}</p>`;
+            }
+        }
+
+        function getStatusColor(status) {
+            switch (status) {
+                case 'active': return '#4caf50';
+                case 'pending': return '#ff9800';
+                case 'inactive': return '#f44336';
+                case 'rejected': return '#9c27b0';
+                default: return '#666';
+            }
+        }
+
+        function createTestPropertyWithStatus() {
+            try {
+                const testProperty = {
+                    id: Date.now().toString(),
+                    name: 'Test Active Property',
+                    type: 'villa',
+                    location: 'Test Location',
+                    city: 'Test City',
+                    state: 'Test State',
+                    price: 1000,
+                    capacity: 4,
+                    bedrooms: 2,
+                    bathrooms: 2,
+                    description: 'This is a test property with active status',
+                    amenities: ['WiFi', 'Parking'],
+                    images: ['https://via.placeholder.com/300x200?text=Test+Active'],
+                    status: 'active',
+                    ownerEmail: 'test@example.com',
+                    createdAt: new Date().toISOString(),
+                    updatedAt: new Date().toISOString(),
+                    isLocalStorage: true
+                };
+                
+                const storageKey = 'properties_test@example.com';
+                const existing = localStorage.getItem(storageKey);
+                const properties = existing ? JSON.parse(existing) : [];
+                properties.push(testProperty);
+                localStorage.setItem(storageKey, JSON.stringify(properties));
+                
+                alert('Created test property with "Active" status');
+                checkPropertyStatuses();
+            } catch (error) {
+                alert(`Error creating test property: ${error.message}`);
+            }
+        }
+
+        function simulateStatusChange() {
+            try {
+                const storageKey = 'properties_test@example.com';
+                const existing = localStorage.getItem(storageKey);
+                
+                if (existing) {
+                    const properties = JSON.parse(existing);
+                    if (properties.length > 0) {
+                        // Change the first property's status
+                        properties[0].status = properties[0].status === 'active' ? 'pending' : 'active';
+                        properties[0].updatedAt = new Date().toISOString();
+                        
+                        localStorage.setItem(storageKey, JSON.stringify(properties));
+                        
+                        alert(`Simulated status change: ${properties[0].name} is now ${properties[0].status}`);
+                        checkPropertyStatuses();
+                    } else {
+                        alert('No properties found to simulate status change');
+                    }
+                } else {
+                    alert('No properties found. Create a test property first.');
+                }
+            } catch (error) {
+                alert(`Error simulating status change: ${error.message}`);
+            }
+        }
+
+        console.log('🔧 Status Change Fix Test Tool Loaded');
+        console.log('📋 Ready to test status change persistence');
+        
+        // Auto-check statuses on page load
+        window.addEventListener('load', function() {
+            console.log('✅ Page loaded successfully');
+            console.log('🔍 Check property statuses');
+        });
+    </script>
+</body>
+</html>

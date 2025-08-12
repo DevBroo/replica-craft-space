@@ -1,0 +1,276 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Auth Refresh Loop</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .test-card {
+            background: white;
+            border-radius: 8px;
+            padding: 20px;
+            margin: 20px 0;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .test-button {
+            background: #2196f3;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            margin: 5px;
+            text-decoration: none;
+            display: inline-block;
+        }
+        .success {
+            color: #4caf50;
+            font-weight: bold;
+        }
+        .error {
+            color: #f44336;
+            font-weight: bold;
+        }
+        .warning {
+            color: #ff9800;
+            font-weight: bold;
+        }
+        .info {
+            background: #e3f2fd;
+            border-left: 4px solid #2196f3;
+            padding: 15px;
+            margin: 15px 0;
+        }
+        .issue {
+            background: #ffebee;
+            border-left: 4px solid #f44336;
+            padding: 15px;
+            margin: 15px 0;
+        }
+        .console-output {
+            background: #1e1e1e;
+            color: #ffffff;
+            padding: 15px;
+            border-radius: 4px;
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+            max-height: 400px;
+            overflow-y: auto;
+            white-space: pre-wrap;
+        }
+    </style>
+</head>
+<body>
+    <h1>🔄 Test Auth Refresh Loop</h1>
+    
+    <div class="test-card">
+        <h2>🚨 Current Issue</h2>
+        
+        <div class="issue">
+            <strong>Problem:</strong> Infinite loop after page refresh on dashboard
+        </div>
+        
+        <div class="info">
+            <strong>Root Cause:</strong> Race condition between auth state loading and redirect logic
+        </div>
+        
+        <div class="info">
+            <strong>Fix Applied:</strong> Improved auth state handling in OwnerDashboardView and OwnerLogin
+        </div>
+    </div>
+
+    <div class="test-card">
+        <h2>🔍 Test Steps</h2>
+        
+        <div class="info">
+            <h3>Step 1: Start Console Monitoring</h3>
+            <button onclick="startConsoleMonitoring()" class="test-button">Start Monitoring</button>
+            <div id="consoleOutput" class="console-output">Waiting for console activity...</div>
+        </div>
+        
+        <div class="info">
+            <h3>Step 2: Test Login Flow</h3>
+            <ol>
+                <li><a href="http://localhost:8082/owner/login" target="_blank">Open Owner Login</a></li>
+                <li>Login with your credentials</li>
+                <li>Wait for redirect to dashboard</li>
+                <li>Check console for auth state logs</li>
+            </ol>
+        </div>
+        
+        <div class="info">
+            <h3>Step 3: Test Refresh Loop</h3>
+            <ol>
+                <li>Once on dashboard, refresh the page (F5)</li>
+                <li>Watch console for any loops or errors</li>
+                <li>Should see smooth auth state loading</li>
+            </ol>
+        </div>
+    </div>
+
+    <div class="test-card">
+        <h2>🔧 Debug Tools</h2>
+        
+        <div class="info">
+            <h3>Check Auth State</h3>
+            <button onclick="checkAuthState()" class="test-button">Check Current Auth State</button>
+            <div id="authStateResult"></div>
+        </div>
+        
+        <div class="info">
+            <h3>Clear Auth State</h3>
+            <button onclick="clearAuthState()" class="test-button">Clear Auth State</button>
+            <p>Use this if you get stuck in a loop</p>
+        </div>
+        
+        <div class="info">
+            <h3>Test Dashboard Direct Access</h3>
+            <a href="http://localhost:8082/owner/view" class="test-button" target="_blank">Test Dashboard Direct</a>
+            <p>Should redirect to login if not authenticated</p>
+        </div>
+    </div>
+
+    <div class="test-card">
+        <h2>✅ Expected Behavior</h2>
+        
+        <div class="success">
+            <h3>After Fix:</h3>
+            <ul>
+                <li>✅ Login works smoothly</li>
+                <li>✅ Dashboard loads without loops</li>
+                <li>✅ Page refresh works correctly</li>
+                <li>✅ Auth state persists properly</li>
+                <li>✅ No infinite redirects</li>
+            </ul>
+        </div>
+        
+        <div class="warning">
+            <h3>Console Logs to Watch For:</h3>
+            <ul>
+                <li>🔍 "Auth state check" - Should show loading then authenticated</li>
+                <li>⏳ "Auth loading, waiting..." - Should be brief</li>
+                <li>✅ "User authenticated, showing dashboard" - Should appear once</li>
+                <li>❌ "User not authenticated, redirecting" - Should not appear if logged in</li>
+            </ul>
+        </div>
+    </div>
+
+    <script>
+        let logs = [];
+        let isMonitoring = false;
+
+        function addLog(message, type = 'info') {
+            const timestamp = new Date().toLocaleTimeString();
+            const color = type === 'error' ? '#ff6b6b' : type === 'success' ? '#6bcf7f' : '#4dabf7';
+            
+            logs.push(`[${timestamp}] ${message}`);
+            updateConsoleOutput();
+        }
+
+        function updateConsoleOutput() {
+            const output = document.getElementById('consoleOutput');
+            output.innerHTML = logs.join('\n');
+            output.scrollTop = output.scrollHeight;
+        }
+
+        function startConsoleMonitoring() {
+            if (isMonitoring) {
+                alert('Already monitoring console!');
+                return;
+            }
+            
+            isMonitoring = true;
+            logs = [];
+            
+            // Override console methods
+            const originalLog = console.log;
+            const originalError = console.error;
+            const originalWarn = console.warn;
+            
+            console.log = function(...args) {
+                originalLog.apply(console, args);
+                const message = args.join(' ');
+                if (message.includes('Auth') || message.includes('User') || message.includes('loading') || message.includes('redirect')) {
+                    addLog('LOG: ' + message, 'info');
+                }
+            };
+            
+            console.error = function(...args) {
+                originalError.apply(console, args);
+                addLog('ERROR: ' + args.join(' '), 'error');
+            };
+            
+            console.warn = function(...args) {
+                originalWarn.apply(console, args);
+                addLog('WARN: ' + args.join(' '), 'warning');
+            };
+            
+            addLog('Console monitoring started - watching for auth-related logs', 'success');
+        }
+
+        function checkAuthState() {
+            const resultDiv = document.getElementById('authStateResult');
+            resultDiv.innerHTML = '<p>Checking auth state...</p>';
+            
+            // Check localStorage for auth data
+            const authData = localStorage.getItem('sb-riqsgtuzccwpplbodwbd-auth-token');
+            const sessionData = sessionStorage.getItem('sb-riqsgtuzccwpplbodwbd-auth-token');
+            
+            let html = '<div style="background: #f5f5f5; padding: 10px; border-radius: 4px; margin: 10px 0;">';
+            html += '<h4>Auth State Check:</h4>';
+            html += '<p><strong>localStorage auth:</strong> ' + (authData ? 'Present' : 'Not found') + '</p>';
+            html += '<p><strong>sessionStorage auth:</strong> ' + (sessionData ? 'Present' : 'Not found') + '</p>';
+            
+            if (authData) {
+                try {
+                    const parsed = JSON.parse(authData);
+                    html += '<p><strong>User email:</strong> ' + (parsed.currentSession?.user?.email || 'Not found') + '</p>';
+                    html += '<p><strong>Session expires:</strong> ' + (parsed.currentSession?.expires_at ? new Date(parsed.currentSession.expires_at * 1000).toLocaleString() : 'Not found') + '</p>';
+                } catch (e) {
+                    html += '<p><strong>Parse error:</strong> ' + e.message + '</p>';
+                }
+            }
+            
+            html += '</div>';
+            resultDiv.innerHTML = html;
+        }
+
+        function clearAuthState() {
+            try {
+                // Clear Supabase auth data
+                localStorage.removeItem('sb-riqsgtuzccwpplbodwbd-auth-token');
+                sessionStorage.removeItem('sb-riqsgtuzccwpplbodwbd-auth-token');
+                
+                // Clear any other auth-related data
+                const keysToRemove = [];
+                for (let i = 0; i < localStorage.length; i++) {
+                    const key = localStorage.key(i);
+                    if (key && key.includes('auth')) {
+                        keysToRemove.push(key);
+                    }
+                }
+                keysToRemove.forEach(key => localStorage.removeItem(key));
+                
+                addLog('✅ Auth state cleared successfully', 'success');
+                addLog('🔄 Please refresh the page and try logging in again', 'info');
+            } catch (error) {
+                addLog('❌ Error clearing auth state: ' + error.message, 'error');
+            }
+        }
+
+        // Auto-start monitoring on page load
+        window.onload = function() {
+            console.log('🔄 Auth Refresh Loop Test Tool Loaded');
+            addLog('🚀 Auth Refresh Loop Test Tool Loaded', 'success');
+            addLog('📋 Ready to test authentication refresh behavior', 'info');
+        };
+    </script>
+</body>
+</html>

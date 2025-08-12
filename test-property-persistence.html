@@ -12,14 +12,18 @@
             padding: 20px;
             background-color: #f5f5f5;
         }
-        .test-card {
+        .card {
             background: white;
             border-radius: 8px;
             padding: 20px;
             margin: 20px 0;
             box-shadow: 0 2px 4px rgba(0,0,0,0.1);
         }
-        .test-button {
+        .success { color: #4caf50; font-weight: bold; }
+        .error { color: #f44336; font-weight: bold; }
+        .info { background: #e3f2fd; border-left: 4px solid #2196f3; padding: 15px; margin: 15px 0; }
+        .warning { background: #fff3e0; border-left: 4px solid #ff9800; padding: 15px; margin: 15px 0; }
+        button {
             background: #2196f3;
             color: white;
             border: none;
@@ -27,237 +31,268 @@
             border-radius: 4px;
             cursor: pointer;
             margin: 5px;
-            text-decoration: none;
-            display: inline-block;
         }
-        .test-button:hover {
-            background: #1976d2;
+        button:hover { background: #1976d2; }
+        .success-btn { background: #4caf50; }
+        .success-btn:hover { background: #388e3c; }
+        .danger-btn { background: #f44336; }
+        .danger-btn:hover { background: #d32f2f; }
+        pre {
+            background: #f5f5f5;
+            padding: 10px;
+            border-radius: 4px;
+            overflow-x: auto;
+            max-height: 200px;
+            overflow-y: auto;
         }
-        .success {
-            color: #4caf50;
-            font-weight: bold;
+        .test-result {
+            margin: 10px 0;
+            padding: 10px;
+            border-radius: 4px;
         }
-        .warning {
-            color: #ff9800;
-            font-weight: bold;
-        }
-        .info {
-            background: #e3f2fd;
-            border-left: 4px solid #2196f3;
-            padding: 15px;
-            margin: 15px 0;
-        }
-        .step {
-            background: #f3e5f5;
-            border-left: 4px solid #9c27b0;
-            padding: 15px;
-            margin: 15px 0;
-        }
+        .test-pass { background: #d4edda; border: 1px solid #c3e6cb; }
+        .test-fail { background: #f8d7da; border: 1px solid #f5c6cb; }
     </style>
 </head>
 <body>
-    <h1>💾 Test Property Persistence</h1>
+    <h1>🔍 Test Property Persistence</h1>
     
-    <div class="test-card">
-        <h2>📋 Test Overview</h2>
-        <p>This test verifies that property edits are saved and persist after page refresh.</p>
-        
+    <div class="card">
+        <h2>✅ Fix Applied</h2>
+        <div class="success">
+            Fixed intermittent property loading issue
+        </div>
         <div class="info">
-            <strong>Problem Fixed:</strong> Previously, when you edited properties and refreshed the page, all changes were lost because they were only stored in component state.
-        </div>
-        
-        <div class="info">
-            <strong>Solution:</strong> Now all property changes are automatically saved to localStorage and will persist across page refreshes.
-        </div>
-    </div>
-
-    <div class="test-card">
-        <h2>🚀 Test Steps</h2>
-        
-        <div class="step">
-            <h3>Step 1: Access My Properties</h3>
-            <a href="http://localhost:8082/owner/view" class="test-button" target="_blank">Open Owner Dashboard</a>
-            <p>Go to "My Properties" section</p>
-        </div>
-        
-        <div class="step">
-            <h3>Step 2: Edit a Property</h3>
-            <p>Click the edit (pencil) icon on any property and make changes:</p>
+            <strong>Changes Made:</strong>
             <ul>
-                <li>Change the property name</li>
-                <li>Update the price</li>
-                <li>Modify the description</li>
-                <li>Add or remove amenities</li>
-                <li>Click "Update Property" to save</li>
-            </ul>
-        </div>
-        
-        <div class="step">
-            <h3>Step 3: Test Persistence</h3>
-            <p>After saving your changes:</p>
-            <ul>
-                <li><strong>Refresh the page</strong> (F5 or Ctrl+R)</li>
-                <li>Check if your edits are still there</li>
-                <li>If they persist, the localStorage is working!</li>
-            </ul>
-        </div>
-        
-        <div class="step">
-            <h3>Step 4: Add New Property</h3>
-            <p>Test adding a new property:</p>
-            <ul>
-                <li>Click "Add Property"</li>
-                <li>Fill out the form completely</li>
-                <li>Click "Add Property" to save</li>
-                <li>Refresh the page and verify it's still there</li>
-            </ul>
-        </div>
-        
-        <div class="step">
-            <h3>Step 5: Delete Property</h3>
-            <p>Test deleting a property:</p>
-            <ul>
-                <li>Click the trash icon on a property</li>
-                <li>Confirm deletion</li>
-                <li>Refresh the page and verify it's gone</li>
-            </ul>
-        </div>
-        
-        <div class="step">
-            <h3>Step 6: Reset to Initial (Optional)</h3>
-            <p>If you want to reset to the original properties:</p>
-            <ul>
-                <li>Click the "Reset" button in the header</li>
-                <li>Confirm the reset</li>
-                <li>This will restore the original 3 properties</li>
+                <li>✅ Added loading state to prevent flickering</li>
+                <li>✅ Implemented retry mechanism with exponential backoff</li>
+                <li>✅ Added component mount/unmount protection</li>
+                <li>✅ Removed problematic convertToFrontendFormat call</li>
+                <li>✅ Enhanced error handling and fallbacks</li>
             </ul>
         </div>
     </div>
 
-    <div class="test-card">
+    <div class="card">
+        <h2>🧪 Test Property Persistence</h2>
+        
+        <button onclick="testPropertyLoading()" class="success-btn">
+            🔍 Test Property Loading
+        </button>
+        
+        <button onclick="testMultipleRefreshes()" class="success-btn">
+            🔄 Test Multiple Refreshes
+        </button>
+        
+        <button onclick="openPropertiesPage()">
+            🌐 Open Properties Page
+        </button>
+        
+        <button onclick="clearCache()" class="danger-btn">
+            🗑️ Clear Cache & Test
+        </button>
+        
+        <div id="result" style="margin-top: 15px;"></div>
+    </div>
+
+    <div class="card">
+        <h2>📋 Test Instructions</h2>
+        
+        <div class="info">
+            <h3>Step 1: Test Basic Loading</h3>
+            <ol>
+                <li>Click "🔍 Test Property Loading"</li>
+                <li>Verify properties are fetched successfully</li>
+                <li>Check console for loading logs</li>
+            </ol>
+        </div>
+        
+        <div class="info">
+            <h3>Step 2: Test Refresh Persistence</h3>
+            <ol>
+                <li>Click "🌐 Open Properties Page"</li>
+                <li>Wait for properties to load</li>
+                <li>Refresh the page (F5) multiple times</li>
+                <li>Verify properties appear consistently</li>
+            </ol>
+        </div>
+        
+        <div class="info">
+            <h3>Step 3: Test Multiple Refreshes</h3>
+            <ol>
+                <li>Click "🔄 Test Multiple Refreshes"</li>
+                <li>This will automatically test multiple refresh cycles</li>
+                <li>Monitor the results</li>
+            </ol>
+        </div>
+    </div>
+
+    <div class="card">
         <h2>✅ Expected Results</h2>
         
-        <h3>✅ After Editing Properties:</h3>
-        <ul>
-            <li class="success">Changes should persist after page refresh</li>
-            <li class="success">Property names, prices, descriptions should be saved</li>
-            <li class="success">Amenities changes should be preserved</li>
-            <li class="success">Console should show "💾 Updated property saved to localStorage"</li>
-        </ul>
-        
-        <h3>✅ After Adding New Property:</h3>
-        <ul>
-            <li class="success">New property should appear in the list</li>
-            <li class="success">Property should persist after page refresh</li>
-            <li class="success">Console should show "💾 New property saved to localStorage"</li>
-        </ul>
-        
-        <h3>✅ After Deleting Property:</h3>
-        <ul>
-            <li class="success">Property should be removed from the list</li>
-            <li class="success">Property should stay deleted after page refresh</li>
-            <li class="success">Console should show "💾 Property deleted and saved to localStorage"</li>
-        </ul>
-        
-        <h3>✅ After Reset:</h3>
-        <ul>
-            <li class="success">Should return to original 3 properties</li>
-            <li class="success">All custom changes should be removed</li>
-            <li class="success">Console should show "🔄 Reset to initial properties"</li>
-        </ul>
-    </div>
-
-    <div class="test-card">
-        <h2>🔧 Debug Information</h2>
-        
-        <h3>Check localStorage:</h3>
-        <p>Open browser console (F12) and type:</p>
-        <code>localStorage.getItem('properties_venteskraft@gmail.com')</code>
-        <p>This will show the saved properties data.</p>
-        
-        <h3>Console Logs to Watch For:</h3>
-        <ul>
-            <li><code>🏠 Loading saved properties for venteskraft@gmail.com: X properties</code></li>
-            <li><code>💾 Updated property saved to localStorage</code></li>
-            <li><code>💾 New property saved to localStorage</code></li>
-            <li><code>💾 Property deleted and saved to localStorage</code></li>
-            <li><code>🔄 Reset to initial properties</code></li>
-        </ul>
-        
-        <h3>Storage Key Format:</h3>
-        <p>Properties are stored with the key: <code>properties_[user-email]</code></p>
-        <p>For example: <code>properties_venteskraft@gmail.com</code></p>
-    </div>
-
-    <div class="test-card">
-        <h2>⚠️ Common Issues</h2>
-        
-        <h3>If Changes Don't Persist:</h3>
-        <ul>
-            <li class="warning">Check if localStorage is enabled in your browser</li>
-            <li class="warning">Check browser console for JavaScript errors</li>
-            <li class="warning">Verify you're logged in with the correct email</li>
-            <li class="warning">Check if the storage key is correct</li>
-        </ul>
-        
-        <h3>If Reset Doesn't Work:</h3>
-        <ul>
-            <li class="warning">Check if the mock data is still available</li>
-            <li class="warning">Verify the user email matches the mock data</li>
-            <li class="warning">Check console for reset confirmation</li>
-        </ul>
-    </div>
-
-    <div class="test-card">
-        <h2>🎯 Test Scenarios</h2>
-        
-        <h3>Scenario 1: Edit and Refresh</h3>
-        <ol>
-            <li>Edit property name to "My Custom Villa"</li>
-            <li>Change price to ₹25,000</li>
-            <li>Save changes</li>
-            <li>Refresh page (F5)</li>
-            <li>Verify changes are still there</li>
-        </ol>
-        
-        <h3>Scenario 2: Add and Refresh</h3>
-        <ol>
-            <li>Add a new property called "Test Property"</li>
-            <li>Set price to ₹5,000</li>
-            <li>Save the property</li>
-            <li>Refresh page (F5)</li>
-            <li>Verify the new property is still there</li>
-        </ol>
-        
-        <h3>Scenario 3: Delete and Refresh</h3>
-        <ol>
-            <li>Delete one of the properties</li>
-            <li>Confirm deletion</li>
-            <li>Refresh page (F5)</li>
-            <li>Verify the property is still deleted</li>
-        </ol>
-    </div>
-
-    <div class="test-card">
-        <h2>📞 Report Results</h2>
-        <p>After testing, report:</p>
-        <ul>
-            <li>✅ Which persistence features are working</li>
-            <li>❌ Any issues with saving or loading</li>
-            <li>🔄 Whether reset functionality works</li>
-            <li>💾 Any localStorage errors in console</li>
-        </ul>
+        <div class="success">
+            <h3>After the Fix:</h3>
+            <ul>
+                <li>✅ Properties load consistently on every refresh</li>
+                <li>✅ Loading spinner shows during data fetch</li>
+                <li>✅ No more flickering or disappearing properties</li>
+                <li>✅ Retry mechanism handles temporary failures</li>
+                <li>✅ Console shows detailed loading progress</li>
+            </ul>
+        </div>
     </div>
 
     <script>
-        console.log('💾 Property Persistence Test Page Loaded');
-        console.log('🔧 Testing localStorage persistence for property edits');
-        console.log('📋 Key features to test:');
-        console.log('1. Edit properties and refresh');
-        console.log('2. Add new properties and refresh');
-        console.log('3. Delete properties and refresh');
-        console.log('4. Reset to initial properties');
-        console.log('🚀 Ready to test! Open http://localhost:8082/owner/view');
+        const SUPABASE_URL = 'https://riqsgtuzccwpplbodwbd.supabase.co';
+        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJpcXNndHV6Y2N3cHBsYm9kd2JkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MzQwNzI5NzAsImV4cCI6MjA0OTY0ODk3MH0.Ej8Ej8Ej8Ej8Ej8Ej8Ej8Ej8Ej8Ej8Ej8Ej8Ej8Ej8';
+
+        async function testPropertyLoading() {
+            const resultDiv = document.getElementById('result');
+            resultDiv.innerHTML = '<p>🔍 Testing property loading...</p>';
+
+            try {
+                const response = await fetch(`${SUPABASE_URL}/rest/v1/properties?select=*&order=created_at.desc`, {
+                    headers: {
+                        'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
+                        'apikey': SUPABASE_ANON_KEY
+                    }
+                });
+
+                if (!response.ok) {
+                    throw new Error(`Failed to fetch properties: ${response.status}`);
+                }
+
+                const properties = await response.json();
+                
+                const testResult = properties.length > 0 ? 'PASS' : 'FAIL';
+                const resultClass = testResult === 'PASS' ? 'test-pass' : 'test-fail';
+                
+                resultDiv.innerHTML = `
+                    <div class="test-result ${resultClass}">
+                        <strong>Property Loading Test: ${testResult}</strong><br>
+                        <strong>Properties Found:</strong> ${properties.length}<br>
+                        <strong>Response Time:</strong> ${response.headers.get('x-response-time') || 'N/A'}<br>
+                        <strong>Status:</strong> ${response.status} ${response.statusText}
+                    </div>
+                `;
+
+                console.log('Property loading test result:', { success: testResult === 'PASS', count: properties.length });
+            } catch (error) {
+                resultDiv.innerHTML = `
+                    <div class="test-result test-fail">
+                        <strong>Property Loading Test: FAIL</strong><br>
+                        <strong>Error:</strong> ${error.message}
+                    </div>
+                `;
+                console.error('Property loading test failed:', error);
+            }
+        }
+
+        async function testMultipleRefreshes() {
+            const resultDiv = document.getElementById('result');
+            resultDiv.innerHTML = '<p>🔄 Testing multiple refresh cycles...</p>';
+
+            const results = [];
+            const testCount = 5;
+
+            for (let i = 0; i < testCount; i++) {
+                try {
+                    const startTime = Date.now();
+                    const response = await fetch(`${SUPABASE_URL}/rest/v1/properties?select=*&order=created_at.desc`, {
+                        headers: {
+                            'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
+                            'apikey': SUPABASE_ANON_KEY
+                        }
+                    });
+
+                    const endTime = Date.now();
+                    const properties = await response.json();
+                    
+                    results.push({
+                        attempt: i + 1,
+                        success: response.ok,
+                        count: properties.length,
+                        time: endTime - startTime,
+                        status: response.status
+                    });
+
+                    // Small delay between requests
+                    await new Promise(resolve => setTimeout(resolve, 500));
+                } catch (error) {
+                    results.push({
+                        attempt: i + 1,
+                        success: false,
+                        error: error.message
+                    });
+                }
+            }
+
+            const successCount = results.filter(r => r.success).length;
+            const totalCount = results.length;
+            const avgTime = results.filter(r => r.time).reduce((sum, r) => sum + r.time, 0) / results.filter(r => r.time).length;
+
+            resultDiv.innerHTML = `
+                <div class="test-result ${successCount === totalCount ? 'test-pass' : 'test-fail'}">
+                    <strong>Multiple Refresh Test: ${successCount}/${totalCount} PASSED</strong><br>
+                    <strong>Success Rate:</strong> ${((successCount / totalCount) * 100).toFixed(1)}%<br>
+                    <strong>Average Response Time:</strong> ${avgTime.toFixed(0)}ms<br>
+                    <strong>Results:</strong>
+                    <pre>${JSON.stringify(results, null, 2)}</pre>
+                </div>
+            `;
+
+            console.log('Multiple refresh test results:', results);
+        }
+
+        function openPropertiesPage() {
+            const resultDiv = document.getElementById('result');
+            resultDiv.innerHTML = `
+                <div class="info">
+                    <strong>Opening Properties Page:</strong><br>
+                    <p>Please test the following:</p>
+                    <ol>
+                        <li>Wait for properties to load</li>
+                        <li>Refresh the page (F5) 3-5 times</li>
+                        <li>Check if properties appear consistently</li>
+                        <li>Look for loading spinner during refresh</li>
+                    </ol>
+                </div>
+            `;
+            
+            window.open('http://localhost:8080/properties', '_blank');
+        }
+
+        function clearCache() {
+            const resultDiv = document.getElementById('result');
+            resultDiv.innerHTML = '<p>🗑️ Clearing cache and testing...</p>';
+
+            // Clear localStorage
+            const keys = Object.keys(localStorage);
+            keys.forEach(key => {
+                if (key.includes('properties') || key.includes('supabase')) {
+                    localStorage.removeItem(key);
+                }
+            });
+
+            // Clear sessionStorage
+            sessionStorage.clear();
+
+            resultDiv.innerHTML = `
+                <div class="info">
+                    <strong>Cache Cleared:</strong><br>
+                    <p>localStorage and sessionStorage have been cleared.</p>
+                    <p>Now test the properties page to verify it works without cached data.</p>
+                </div>
+            `;
+            
+            setTimeout(() => {
+                window.open('http://localhost:8080/properties', '_blank');
+            }, 1000);
+        }
+
+        console.log('🔍 Property Persistence Test Tool Loaded');
+        console.log('📋 Ready to test property loading consistency');
     </script>
 </body>
 </html>

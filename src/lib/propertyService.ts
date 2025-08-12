@@ -207,23 +207,23 @@ export class PropertyService {
    */
   static async getActiveProperties(): Promise<Property[]> {
     try {
-      console.log('🔍 Fetching active properties for public display');
+      console.log('🔍 Fetching properties for public display');
       
       const { data, error } = await supabase
         .from('properties')
         .select('*')
-        .in('status', ['approved', 'active'])
+        .in('status', ['approved', 'pending'])
         .order('created_at', { ascending: false });
 
       if (error) {
-        console.error('❌ Error fetching active properties:', error);
+        console.error('❌ Error fetching properties:', error);
         throw error;
       }
 
-      console.log('✅ Active properties fetched successfully:', data?.length || 0);
+      console.log('✅ Properties fetched successfully:', data?.length || 0);
       return data || [];
     } catch (error) {
-      console.error('❌ Failed to fetch active properties:', error);
+      console.error('❌ Failed to fetch properties:', error);
       throw error;
     }
   }

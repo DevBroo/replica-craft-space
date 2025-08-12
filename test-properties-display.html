@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Properties Display</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .card {
+            background: white;
+            border-radius: 8px;
+            padding: 20px;
+            margin: 20px 0;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .success { color: #4caf50; font-weight: bold; }
+        .error { color: #f44336; font-weight: bold; }
+        .info { background: #e3f2fd; border-left: 4px solid #2196f3; padding: 15px; margin: 15px 0; }
+        .warning { background: #fff3e0; border-left: 4px solid #ff9800; padding: 15px; margin: 15px 0; }
+        button {
+            background: #2196f3;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        button:hover { background: #1976d2; }
+        .success-btn { background: #4caf50; }
+        .success-btn:hover { background: #388e3c; }
+        pre {
+            background: #f5f5f5;
+            padding: 10px;
+            border-radius: 4px;
+            overflow-x: auto;
+        }
+        .property-item {
+            background: #f9f9f9;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            padding: 10px;
+            margin: 10px 0;
+        }
+        .status-pending { background: #fff3cd; border-color: #ffeaa7; }
+        .status-approved { background: #d4edda; border-color: #c3e6cb; }
+    </style>
+</head>
+<body>
+    <h1>🔍 Test Properties Display</h1>
+    
+    <div class="card">
+        <h2>✅ Fix Applied</h2>
+        <div class="success">
+            Properties page now shows both 'approved' and 'pending' properties
+        </div>
+        <div class="info">
+            <strong>Changes Made:</strong>
+            <ul>
+                <li>✅ Updated PropertyService to fetch 'approved' and 'pending' properties</li>
+                <li>✅ Added status indicator for pending properties</li>
+                <li>✅ Disabled "Book Now" button for pending properties</li>
+                <li>✅ Added "Pending Approval" badge</li>
+            </ul>
+        </div>
+    </div>
+
+    <div class="card">
+        <h2>🔍 Test Current Properties</h2>
+        
+        <button onclick="checkProperties()">
+            🔍 Check All Properties
+        </button>
+        
+        <button onclick="testMainPage()" class="success-btn">
+            🌐 Test Main Properties Page
+        </button>
+        
+        <div id="result" style="margin-top: 15px;"></div>
+    </div>
+
+    <div class="card">
+        <h2>📋 Test Steps</h2>
+        
+        <div class="info">
+            <h3>Step 1: Check Properties in Database</h3>
+            <ol>
+                <li>Click "🔍 Check All Properties" above</li>
+                <li>Verify that your properties are listed</li>
+                <li>Check their status values</li>
+            </ol>
+        </div>
+        
+        <div class="info">
+            <h3>Step 2: Test Main Properties Page</h3>
+            <ol>
+                <li>Click "🌐 Test Main Properties Page" above</li>
+                <li>Open the main properties page in a new tab</li>
+                <li>Verify your properties are visible</li>
+                <li>Check for "Pending Approval" badges on pending properties</li>
+            </ol>
+        </div>
+        
+        <div class="info">
+            <h3>Step 3: Verify Status Changes</h3>
+            <ol>
+                <li>Go to My Properties dashboard</li>
+                <li>Change a property status from "Pending" to "Active"</li>
+                <li>Refresh the main properties page</li>
+                <li>Verify the property now shows as bookable</li>
+            </ol>
+        </div>
+    </div>
+
+    <div class="card">
+        <h2>✅ Expected Results</h2>
+        
+        <div class="success">
+            <h3>After the Fix:</h3>
+            <ul>
+                <li>✅ All properties (approved + pending) show on main page</li>
+                <li>✅ Pending properties have "Pending Approval" badge</li>
+                <li>✅ Pending properties have disabled "Book Now" button</li>
+                <li>✅ Approved properties are fully bookable</li>
+                <li>✅ Status changes reflect immediately</li>
+            </ul>
+        </div>
+    </div>
+
+    <script>
+        const SUPABASE_URL = 'https://riqsgtuzccwpplbodwbd.supabase.co';
+        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJpcXNndHV6Y2N3cHBsYm9kd2JkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MzQwNzI5NzAsImV4cCI6MjA0OTY0ODk3MH0.Ej8Ej8Ej8Ej8Ej8Ej8Ej8Ej8Ej8Ej8Ej8Ej8Ej8Ej8';
+
+        async function checkProperties() {
+            const resultDiv = document.getElementById('result');
+            resultDiv.innerHTML = '<p>🔍 Checking all properties...</p>';
+
+            try {
+                // Get all properties
+                const response = await fetch(`${SUPABASE_URL}/rest/v1/properties?select=*&order=created_at.desc`, {
+                    headers: {
+                        'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
+                        'apikey': SUPABASE_ANON_KEY
+                    }
+                });
+
+                if (!response.ok) {
+                    throw new Error(`Failed to fetch properties: ${response.status}`);
+                }
+
+                const properties = await response.json();
+                
+                if (properties.length === 0) {
+                    resultDiv.innerHTML = '<div class="warning">⚠️ No properties found in database</div>';
+                    return;
+                }
+
+                let html = `
+                    <div class="info">
+                        <strong>Found ${properties.length} properties in database:</strong>
+                    </div>
+                `;
+
+                properties.forEach((property, index) => {
+                    const statusClass = property.status === 'pending' ? 'status-pending' : 'status-approved';
+                    html += `
+                        <div class="property-item ${statusClass}">
+                            <strong>${index + 1}. ${property.title}</strong><br>
+                            <strong>Status:</strong> ${property.status}<br>
+                            <strong>Location:</strong> ${property.location?.city || 'N/A'}, ${property.location?.state || 'N/A'}<br>
+                            <strong>Type:</strong> ${property.property_type}<br>
+                            <strong>Price:</strong> ₹${property.pricing?.daily_rate || 0}<br>
+                            <strong>Created:</strong> ${new Date(property.created_at).toLocaleDateString()}
+                        </div>
+                    `;
+                });
+
+                resultDiv.innerHTML = html;
+                console.log('Properties found:', properties);
+
+            } catch (error) {
+                resultDiv.innerHTML = `
+                    <div class="error">
+                        ❌ Error checking properties: ${error.message}
+                    </div>
+                `;
+                console.error('❌ Error checking properties:', error);
+            }
+        }
+
+        function testMainPage() {
+            const resultDiv = document.getElementById('result');
+            resultDiv.innerHTML = `
+                <div class="info">
+                    <strong>Testing Main Properties Page:</strong><br>
+                    <ol>
+                        <li>Opening main properties page in new tab...</li>
+                        <li>Check if your properties are visible</li>
+                        <li>Look for "Pending Approval" badges on pending properties</li>
+                        <li>Verify "Book Now" buttons are disabled for pending properties</li>
+                    </ol>
+                </div>
+            `;
+            
+            // Open the main properties page
+            window.open('http://localhost:8080/properties', '_blank');
+        }
+
+        console.log('🔍 Properties Display Test Tool Loaded');
+        console.log('📋 Ready to test property visibility on main page');
+    </script>
+</body>
+</html>

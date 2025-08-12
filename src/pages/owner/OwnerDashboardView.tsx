@@ -19,17 +19,17 @@ const OwnerDashboardView: React.FC = () => {
       user: user ? { id: user.id, email: user.email, role: user.role } : null 
     });
     
+    // Don't do anything while loading
     if (loading) {
       console.log('⏳ Auth loading, waiting...');
-      return; // Wait for auth to load
+      return;
     }
     
+    // Only redirect if user is definitely not authenticated
     if (!isAuthenticated || !user) {
-      // User is not authenticated, redirect to owner login
       console.log('❌ User not authenticated, redirecting to owner login');
       navigate('/owner/login', { replace: true });
     } else {
-      // User is authenticated - BYPASS ROLE CHECKING
       console.log('✅ User authenticated, showing dashboard (bypassing role check)');
       console.log('🔍 User details:', { id: user.id, email: user.email, role: user.role });
     }
@@ -71,7 +71,7 @@ const OwnerDashboardView: React.FC = () => {
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-          <p className="text-gray-600">Loading...</p>
+          <p className="text-gray-600">Loading authentication...</p>
         </div>
       </div>
     );

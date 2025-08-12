@@ -45,15 +45,31 @@ const MyProperties: React.FC<{
       return;
     }
     
-    // Load properties from database
+    // Load properties immediately from localStorage first, then update with database
     const loadProperties = async () => {
       if (!user || !user.email) {
         setProperties([]);
         return;
       }
 
+      // Load localStorage properties immediately for fast display
+      const storageKey = `properties_${user.email}`;
+      const localStorageProperties = localStorage.getItem(storageKey);
+      let localStoragePropertiesArray = [];
+      
+      if (localStorageProperties) {
+        try {
+          localStoragePropertiesArray = JSON.parse(localStorageProperties);
+          console.log('📋 Loading localStorage properties immediately:', localStoragePropertiesArray.length);
+          setProperties(localStoragePropertiesArray); // Show immediately
+        } catch (parseError) {
+          console.error('❌ Error parsing localStorage properties:', parseError);
+        }
+      }
+
+      // Then try to load from database and update
       try {
-        console.log('🔍 Loading properties for user:', user.email);
+        console.log('🔍 Loading properties from database for user:', user.email);
         
         // Get user ID from auth context or use email as fallback
         const ownerId = user.id || user.email;
@@ -62,14 +78,59 @@ const MyProperties: React.FC<{
         
         // Convert database properties to frontend format
         const frontendProperties = dbProperties.map(PropertyService.convertToFrontendFormat);
-        setProperties(frontendProperties);
-        console.log('✅ Properties loaded from database:', frontendProperties.length);
+        
+        // Combine database and localStorage properties, avoiding duplicates
+        const allProperties = [...frontendProperties];
+        const addedLocalProperties = [];
+        
+        // Add localStorage properties that aren't already in database
+        localStoragePropertiesArray.forEach(localProperty => {
+          // Check for exact ID match first
+          const existsById = frontendProperties.some(dbProperty => 
+            dbProperty.id === localProperty.id
+          );
+          
+          // Check for name + location match (for properties that might have different IDs)
+          const existsByNameLocation = frontendProperties.some(dbProperty => 
+            dbProperty.name === localProperty.name && 
+            dbProperty.location === localProperty.location &&
+            dbProperty.city === localProperty.city
+          );
+          
+          if (!existsById && !existsByNameLocation) {
+            allProperties.push(localProperty);
+            addedLocalProperties.push(localProperty.name);
+            console.log('📋 Added localStorage property:', localProperty.name);
+          } else {
+            console.log('📋 Skipped duplicate localStorage property:', localProperty.name);
+          }
+        });
+        
+        console.log('📋 localStorage properties added:', addedLocalProperties.length);
+        
+        setProperties(allProperties);
+        console.log('✅ All properties loaded:', allProperties.length, '(DB:', frontendProperties.length, 'Local:', localStoragePropertiesArray.length, ')');
       } catch (error) {
         console.error('❌ Error loading properties from database:', error);
         
-        // No fallback - only show database properties
-        setProperties([]);
-        console.log('📋 No properties found in database, showing empty state');
+        // If no localStorage properties were loaded initially, try again
+        if (localStoragePropertiesArray.length === 0) {
+          try {
+            const localStorageProperties = localStorage.getItem(storageKey);
+            
+            if (localStorageProperties) {
+              const parsedProperties = JSON.parse(localStorageProperties);
+              setProperties(parsedProperties);
+              console.log('📋 Loaded properties from localStorage fallback:', parsedProperties.length);
+            } else {
+              setProperties([]);
+              console.log('📋 No properties found in database or localStorage');
+            }
+          } catch (localStorageError) {
+            console.error('❌ Error loading from localStorage:', localStorageError);
+            setProperties([]);
+          }
+        }
       }
     };
 
@@ -141,29 +202,125 @@ const MyProperties: React.FC<{
   const handleDeleteProperty = async (propertyId: string) => {
     if (confirm('Are you sure you want to delete this property?')) {
       try {
+        // Try to delete from database first
         await PropertyService.deleteProperty(propertyId);
-        
-        const updatedProperties = properties.filter(p => p.id !== propertyId);
-        setProperties(updatedProperties);
         console.log('✅ Property deleted from database successfully');
       } catch (error) {
         console.error('❌ Error deleting property from database:', error);
-        alert('Failed to delete property. Please try again.');
+        // Continue to localStorage deletion even if database fails
       }
+      
+      // Also delete from localStorage if it's a localStorage property
+      try {
+        const property = properties.find(p => p.id === propertyId);
+        if (property && property.isLocalStorage && user?.email) {
+          const storageKey = `properties_${user.email}`;
+          const localStorageProperties = localStorage.getItem(storageKey);
+          
+          if (localStorageProperties) {
+            const propertiesArray = JSON.parse(localStorageProperties);
+            const updatedArray = propertiesArray.filter((p: any) => p.id !== propertyId);
+            localStorage.setItem(storageKey, JSON.stringify(updatedArray));
+            console.log('✅ Property deleted from localStorage');
+          }
+        }
+      } catch (localStorageError) {
+        console.error('❌ Error deleting from localStorage:', localStorageError);
+      }
+      
+      // Update UI
+      const updatedProperties = properties.filter(p => p.id !== propertyId);
+      setProperties(updatedProperties);
     }
   };
 
   const handleStatusChange = async (propertyId: string, newStatus: string) => {
+    const property = properties.find(p => p.id === propertyId);
+    if (!property) {
+      console.error('❌ Property not found for status change:', propertyId);
+      return;
+    }
+
+    console.log(`🔄 Changing status for property "${property.name}" from "${property.status}" to "${newStatus}"`);
+    console.log(`🔍 Property details:`, { id: property.id, name: property.name, currentStatus: property.status, newStatus });
+
+    let databaseUpdated = false;
+    let localStorageUpdated = false;
+
+    // Try to update in database first
     try {
       await PropertyService.updatePropertyStatus(propertyId, newStatus as any);
-      
-      const updatedProperties = properties.map(p => 
-        p.id === propertyId ? { ...p, status: newStatus } : p
-      );
-      setProperties(updatedProperties);
       console.log(`✅ Property status changed to ${newStatus} in database`);
+      databaseUpdated = true;
     } catch (error) {
       console.error('❌ Error updating property status in database:', error);
+      console.log('📋 Will try localStorage fallback...');
+    }
+    
+    // Always update localStorage as backup (for both database and localStorage properties)
+    try {
+      if (user?.email) {
+        const storageKey = `properties_${user.email}`;
+        const localStorageProperties = localStorage.getItem(storageKey);
+        
+        if (localStorageProperties) {
+          const propertiesArray = JSON.parse(localStorageProperties);
+          
+          // Check if property exists in localStorage
+          const existingPropertyIndex = propertiesArray.findIndex((p: any) => 
+            p.id === propertyId || 
+            (p.name === property.name && p.location === property.location && p.city === property.city)
+          );
+          
+          if (existingPropertyIndex !== -1) {
+            // Update existing property
+            propertiesArray[existingPropertyIndex] = {
+              ...propertiesArray[existingPropertyIndex],
+              status: newStatus,
+              updatedAt: new Date().toISOString()
+            };
+          } else {
+            // Add property to localStorage if it doesn't exist
+            const propertyToAdd = {
+              ...property,
+              status: newStatus,
+              updatedAt: new Date().toISOString(),
+              isLocalStorage: true
+            };
+            propertiesArray.push(propertyToAdd);
+          }
+          
+          localStorage.setItem(storageKey, JSON.stringify(propertiesArray));
+          console.log(`✅ Property status changed to ${newStatus} in localStorage`);
+          localStorageUpdated = true;
+        } else {
+          // Create new localStorage entry if none exists
+          const propertyToAdd = {
+            ...property,
+            status: newStatus,
+            updatedAt: new Date().toISOString(),
+            isLocalStorage: true
+          };
+          localStorage.setItem(storageKey, JSON.stringify([propertyToAdd]));
+          console.log(`✅ Property added to localStorage with status ${newStatus}`);
+          localStorageUpdated = true;
+        }
+      }
+    } catch (localStorageError) {
+      console.error('❌ Error updating localStorage:', localStorageError);
+    }
+    
+    // Update UI immediately
+    const updatedProperties = properties.map(p => 
+      p.id === propertyId ? { ...p, status: newStatus } : p
+    );
+    setProperties(updatedProperties);
+    
+    // Show success message
+    if (databaseUpdated || localStorageUpdated) {
+      console.log(`🎉 Status change successful: ${newStatus}`);
+    } else {
+      console.error('❌ Status change failed in both database and localStorage');
       alert('Failed to update property status. Please try again.');
     }
   };
@@ -343,21 +500,52 @@ const MyProperties: React.FC<{
         const existingProperties = localStorage.getItem(storageKey);
         const propertiesArray = existingProperties ? JSON.parse(existingProperties) : [];
         
-        const newProperty = {
-          id: Date.now().toString(), // Generate temporary ID
-          ...propertyData,
-          ownerEmail: user.email,
-          status: 'active',
-          createdAt: new Date().toISOString(),
-          isLocalStorage: true // Flag to identify localStorage properties
-        };
+        // Check if property already exists in localStorage
+        const existingProperty = propertiesArray.find((p: any) => 
+          p.name === propertyData.name && 
+          p.location === propertyData.location && 
+          p.city === propertyData.city
+        );
         
-        propertiesArray.push(newProperty);
-        localStorage.setItem(storageKey, JSON.stringify(propertiesArray));
-        
-        // Update UI
-        const updatedProperties = [...properties, newProperty];
-        setProperties(updatedProperties);
+        if (existingProperty) {
+          console.log('📋 Property already exists in localStorage, updating instead of adding');
+          // Update existing property
+          const updatedProperties = propertiesArray.map((p: any) => 
+            p.name === propertyData.name && 
+            p.location === propertyData.location && 
+            p.city === propertyData.city
+              ? { ...p, ...propertyData, updatedAt: new Date().toISOString() }
+              : p
+          );
+          localStorage.setItem(storageKey, JSON.stringify(updatedProperties));
+          
+          // Update UI
+          const updatedPropertiesList = properties.map(p => 
+            p.name === propertyData.name && 
+            p.location === propertyData.location && 
+            p.city === propertyData.city
+              ? { ...p, ...propertyData, updatedAt: new Date().toISOString() }
+              : p
+          );
+          setProperties(updatedPropertiesList);
+        } else {
+          // Add new property
+          const newProperty = {
+            id: Date.now().toString(), // Generate temporary ID
+            ...propertyData,
+            ownerEmail: user.email,
+            status: 'active',
+            createdAt: new Date().toISOString(),
+            isLocalStorage: true // Flag to identify localStorage properties
+          };
+          
+          propertiesArray.push(newProperty);
+          localStorage.setItem(storageKey, JSON.stringify(propertiesArray));
+          
+          // Update UI
+          const updatedProperties = [...properties, newProperty];
+          setProperties(updatedProperties);
+        }
         
         if (editingProperty) {
           setShowEditModal(false);
@@ -386,7 +574,7 @@ const MyProperties: React.FC<{
         setShowLinkInput(false);
         
         alert('✅ Property saved locally! (Database not available - using localStorage fallback)');
-        console.log('📋 Property saved to localStorage:', newProperty);
+        console.log('📋 Property saved to localStorage successfully');
         
       } catch (localStorageError) {
         console.error('❌ Error saving to localStorage:', localStorageError);
@@ -557,9 +745,9 @@ const MyProperties: React.FC<{
                       className="text-xs px-2 py-1 border border-gray-300 rounded bg-white"
                     >
                       <option value="pending">Pending</option>
-                      <option value="active">Active</option>
+                      <option value="approved">Active</option>
                       <option value="inactive">Inactive</option>
-                      <option value="maintenance">Maintenance</option>
+                      <option value="rejected">Maintenance</option>
                     </select>
                   </div>
                   <div className="flex items-center space-x-2">

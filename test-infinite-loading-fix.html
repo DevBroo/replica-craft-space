@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Infinite Loading Fix</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .test-card {
+            background: white;
+            border-radius: 8px;
+            padding: 20px;
+            margin: 20px 0;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .success {
+            color: #4caf50;
+            font-weight: bold;
+        }
+        .error {
+            color: #f44336;
+            font-weight: bold;
+        }
+        .info {
+            background: #e3f2fd;
+            border-left: 4px solid #2196f3;
+            padding: 15px;
+            margin: 15px 0;
+        }
+        .fix {
+            background: #e8f5e8;
+            border-left: 4px solid #4caf50;
+            padding: 15px;
+            margin: 15px 0;
+        }
+    </style>
+</head>
+<body>
+    <h1>🔧 Test Infinite Loading Fix</h1>
+    
+    <div class="test-card">
+        <h2>🚨 Issue Fixed</h2>
+        
+        <div class="info">
+            <strong>Problem:</strong> Infinite loading after page refresh on dashboard
+        </div>
+        
+        <div class="fix">
+            <strong>Root Cause:</strong> Race condition between auth state listener and initial session check
+        </div>
+        
+        <div class="fix">
+            <strong>Fix Applied:</strong> 
+            <ul>
+                <li>✅ Simplified auth state management in AuthContext</li>
+                <li>✅ Prevented duplicate loading states</li>
+                <li>✅ Added initialization flag to prevent conflicts</li>
+                <li>✅ Improved loading state handling in OwnerDashboardView</li>
+            </ul>
+        </div>
+    </div>
+
+    <div class="test-card">
+        <h2>🧪 Test Steps</h2>
+        
+        <div class="info">
+            <h3>Step 1: Login Test</h3>
+            <ol>
+                <li><a href="http://localhost:8082/owner/login" target="_blank">Open Owner Login</a></li>
+                <li>Login with your credentials</li>
+                <li>Should redirect to dashboard smoothly</li>
+            </ol>
+        </div>
+        
+        <div class="info">
+            <h3>Step 2: Refresh Test</h3>
+            <ol>
+                <li>Once on dashboard, refresh the page (F5)</li>
+                <li>Should show brief loading then dashboard</li>
+                <li>No infinite loading spinner</li>
+            </ol>
+        </div>
+        
+        <div class="info">
+            <h3>Step 3: Direct Access Test</h3>
+            <ol>
+                <li><a href="http://localhost:8082/owner/view" target="_blank">Open Dashboard Directly</a></li>
+                <li>If logged in: Should show dashboard</li>
+                <li>If not logged in: Should redirect to login</li>
+            </ol>
+        </div>
+    </div>
+
+    <div class="test-card">
+        <h2>✅ Expected Results</h2>
+        
+        <div class="success">
+            <h3>After Fix:</h3>
+            <ul>
+                <li>✅ Login works smoothly</li>
+                <li>✅ Dashboard loads quickly after refresh</li>
+                <li>✅ No infinite loading spinner</li>
+                <li>✅ Auth state persists correctly</li>
+                <li>✅ No console errors</li>
+            </ul>
+        </div>
+        
+        <div class="info">
+            <h3>Console Logs to Watch:</h3>
+            <ul>
+                <li>📋 "Checking for existing session..."</li>
+                <li>✅ "Existing session found" (if logged in)</li>
+                <li>✅ "Initial user profile loaded"</li>
+                <li>🔄 "Initial loading state: false"</li>
+                <li>✅ "User authenticated, showing dashboard"</li>
+            </ul>
+        </div>
+    </div>
+
+    <div class="test-card">
+        <h2>🔍 Debug Info</h2>
+        
+        <div class="info">
+            <h3>Key Changes Made:</h3>
+            <ul>
+                <li><strong>AuthContext.tsx:</strong> Added initialization flag to prevent duplicate loading states</li>
+                <li><strong>OwnerDashboardView.tsx:</strong> Simplified auth state handling</li>
+                <li><strong>Loading Logic:</strong> Only show loading during initial auth check</li>
+            </ul>
+        </div>
+        
+        <div class="info">
+            <h3>If Still Having Issues:</h3>
+            <ul>
+                <li>Clear browser cache and localStorage</li>
+                <li>Check browser console for errors</li>
+                <li>Try incognito/private browsing mode</li>
+                <li>Restart the development server</li>
+            </ul>
+        </div>
+    </div>
+
+    <script>
+        console.log('🔧 Infinite Loading Fix Test Tool Loaded');
+        console.log('📋 Ready to test the authentication refresh fix');
+        
+        // Add some helpful console messages
+        window.addEventListener('load', function() {
+            console.log('✅ Page loaded successfully');
+            console.log('🔍 Check browser console for auth-related logs');
+        });
+    </script>
+</body>
+</html>
