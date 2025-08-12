@@ -35,23 +35,12 @@ const OwnerLogin: React.FC = () => {
     }
   }, [location.state]);
 
-  // Redirect if already authenticated as owner
+  // Redirect if already authenticated
   useEffect(() => {
     console.log('🔍 OwnerLogin - isAuthenticated:', isAuthenticated, 'user:', user);
     if (isAuthenticated && user) {
-      if (user.role === 'owner') {
-        console.log('✅ User is owner, redirecting to dashboard');
-        navigate('/owner/view', { replace: true });
-      } else {
-        console.log('⚠️ User is not owner, redirecting to appropriate page');
-        if (user.role === 'admin') {
-          navigate('/admin/dashboard');
-        } else if (user.role === 'agent') {
-          navigate('/agent/dashboard');
-        } else {
-          navigate('/');
-        }
-      }
+      console.log('✅ User is authenticated, redirecting to dashboard');
+      navigate('/owner/view', { replace: true });
     }
   }, [isAuthenticated, user, navigate]);
 

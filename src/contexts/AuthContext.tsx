@@ -100,7 +100,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         .upsert({
           id: authUser.id,
           email: authUser.email || '',
-          role: userRole || 'user',
+          role: userRole || 'property_owner',
           full_name: authUser.user_metadata?.full_name || '',
           avatar_url: authUser.user_metadata?.avatar_url || null,
           phone: authUser.user_metadata?.phone || null,
