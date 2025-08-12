@@ -35,8 +35,6 @@ const Index: React.FC = () => {
 const [searchLocation, setSearchLocation] = useState('');
 const [searchDate, setSearchDate] = useState('');
 const [groupSize, setGroupSize] = useState('');
-const [priceRange, setPriceRange] = useState('');
-const [selectedPropertyType, setSelectedPropertyType] = useState('day-picnic');
 const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 const isMobile = useIsMobile();
 const navigate = useNavigate();
@@ -430,9 +428,8 @@ Where you create beautiful memories with your loved ones
 ].map((category, index) => (
 <button
 key={index}
-onClick={() => setSelectedPropertyType(category.value)}
 className={`flex items-center gap-2 px-6 py-3 rounded-xl transition-all duration-300 ${
-selectedPropertyType === category.value
+category.value === 'day-picnic'
 ? 'bg-gradient-to-r from-brand-red to-brand-orange text-white shadow-lg'
 : 'bg-gray-50 text-gray-600 hover:bg-gray-100'
 }`}
@@ -511,8 +508,6 @@ onChange={(e) => setGroupSize(e.target.value)}
 <i className="fas fa-rupee-sign text-green-500 text-lg"></i>
 </div>
 <select
-value={priceRange}
-onChange={(e) => setPriceRange(e.target.value)}
 className="w-full pl-12 pr-12 py-4 text-gray-800 border-2 border-gray-200 rounded-xl outline-none focus:border-green-500 focus:ring-4 focus:ring-green-500/20 transition-all duration-300 text-base appearance-none cursor-pointer"
 style={{ minWidth: '240px' }}
 >
@@ -529,29 +524,7 @@ style={{ minWidth: '240px' }}
 </div>
 </div>
 <div className="flex justify-center mt-6">
-<button 
-onClick={() => {
-  console.log('🔍 Search button clicked with filters:', {
-    location: searchLocation,
-    date: searchDate,
-    groupSize,
-    priceRange,
-    propertyType: selectedPropertyType
-  });
-  
-  // Navigate to properties page with search parameters
-  const searchParams = new URLSearchParams();
-  if (searchLocation) searchParams.set('location', searchLocation);
-  if (searchDate) searchParams.set('date', searchDate);
-  if (groupSize) searchParams.set('guests', groupSize);
-  if (priceRange) searchParams.set('price', priceRange);
-  if (selectedPropertyType) searchParams.set('type', selectedPropertyType);
-  
-  const queryString = searchParams.toString();
-  navigate(`/properties${queryString ? `?${queryString}` : ''}`);
-}}
-className="bg-gradient-to-r from-red-600 to-orange-600 text-white px-8 py-4 rounded-xl hover:from-red-700 hover:to-orange-700 transition-all duration-300 cursor-pointer whitespace-nowrap rounded-button font-bold text-lg shadow-xl hover:shadow-2xl transform hover:scale-105 flex items-center justify-center gap-3 h-[56px] w-full max-w-md"
->
+<button className="bg-gradient-to-r from-red-600 to-orange-600 text-white px-8 py-4 rounded-xl hover:from-red-700 hover:to-orange-700 transition-all duration-300 cursor-pointer whitespace-nowrap rounded-button font-bold text-lg shadow-xl hover:shadow-2xl transform hover:scale-105 flex items-center justify-center gap-3 h-[56px] w-full max-w-md">
 <i className="fas fa-search text-xl"></i>
 <span>Search</span>
 </button>
@@ -559,28 +532,9 @@ className="bg-gradient-to-r from-red-600 to-orange-600 text-white px-8 py-4 roun
 <div className="mt-6 pt-4 border-t border-gray-200">
 <div className="flex flex-wrap items-center gap-4">
 <span className="text-gray-600 font-medium">Popular:</span>
-{[
-  { name: 'Goa Beach Villas', location: 'Goa', type: 'villa' },
-  { name: 'Himalayan Retreats', location: 'Himachal Pradesh', type: 'resort' },
-  { name: 'Rajasthan Palaces', location: 'Rajasthan', type: 'heritage' },
-  { name: 'Kerala Backwaters', location: 'Kerala', type: 'homestay' }
-].map((search, index) => (
-<button 
-  key={index} 
-  onClick={() => {
-    console.log('🔥 Popular search clicked:', search);
-    setSearchLocation(search.location);
-    setSelectedPropertyType(search.type);
-    
-    // Navigate to properties page with popular search filters
-    const searchParams = new URLSearchParams();
-    searchParams.set('location', search.location);
-    searchParams.set('type', search.type);
-    navigate(`/properties?${searchParams.toString()}`);
-  }}
-  className="bg-gray-50 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-100 transition-colors duration-200 text-sm font-medium cursor-pointer"
->
-{search.name}
+{['Goa Beach Villas', 'Himalayan Retreats', 'Rajasthan Palaces', 'Kerala Backwaters'].map((search, index) => (
+<button key={index} className="bg-gray-50 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-100 transition-colors duration-200 text-sm font-medium">
+{search}
 </button>
 ))}
 </div>
