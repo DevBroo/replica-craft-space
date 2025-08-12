@@ -122,38 +122,61 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
         console.log('🔐 Auth state changed:', event, session?.user?.email);
+        console.log('🔄 Auth loading state: true (starting profile sync)');
         
+        setLoading(true); // Keep loading until everything is synchronized
         setSession(session);
         
         if (session?.user) {
-          // Ensure user profile exists
-          await ensureUserProfile(session.user);
-          
-          // Get user profile data
-          const userProfile = await getUserProfile(session.user.id);
-          setUser(userProfile);
+          try {
+            console.log('👤 Ensuring user profile exists...');
+            // Ensure user profile exists
+            await ensureUserProfile(session.user);
+            
+            console.log('📝 Fetching user profile data...');
+            // Get user profile data
+            const userProfile = await getUserProfile(session.user.id);
+            console.log('✅ User profile loaded:', userProfile?.email, 'role:', userProfile?.role);
+            setUser(userProfile);
+          } catch (error) {
+            console.error('❌ Error during profile sync:', error);
+            setUser(null);
+          }
         } else {
+          console.log('🚫 No session user, clearing user state');
           setUser(null);
         }
         
+        console.log('🔄 Auth loading state: false (profile sync complete)');
         setLoading(false);
       }
     );
 
     // THEN check for existing session
-    supabase.auth.getSession().then(({ data: { session } }) => {
+    supabase.auth.getSession().then(async ({ data: { session } }) => {
+      console.log('📋 Checking for existing session...');
       if (session) {
-        console.log('📋 Existing session found:', session.user?.email);
+        console.log('✅ Existing session found:', session.user?.email);
+        console.log('🔄 Initial loading state: true (syncing existing session)');
+        setLoading(true);
         setSession(session);
         
-        // Defer profile fetching to avoid blocking
-        setTimeout(async () => {
+        try {
           await ensureUserProfile(session.user);
           const userProfile = await getUserProfile(session.user.id);
+          console.log('✅ Initial user profile loaded:', userProfile?.email, 'role:', userProfile?.role);
           setUser(userProfile);
-        }, 0);
+        } catch (error) {
+          console.error('❌ Error during initial profile sync:', error);
+          setUser(null);
+        }
+        
+        console.log('🔄 Initial loading state: false (sync complete)');
+        setLoading(false);
+      } else {
+        console.log('🚫 No existing session found');
+        setLoading(false);
       }
-      setLoading(false);
     });
 
     return () => subscription.unsubscribe();

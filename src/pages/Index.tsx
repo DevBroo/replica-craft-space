@@ -38,7 +38,7 @@ const [groupSize, setGroupSize] = useState('');
 const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 const isMobile = useIsMobile();
 const navigate = useNavigate();
-const { user, isAuthenticated, logout } = useAuth();
+const { loading, user, isAuthenticated, logout } = useAuth();
 
 // Debug authentication state
 useEffect(() => {
@@ -95,22 +95,29 @@ return (
                       onClick={(e) => {
                         e.preventDefault();
                         e.stopPropagation();
-                        console.log('🚀 Property Owner Portal clicked');
-                        console.log('🔍 Current user state:', { 
-                          isAuthenticated, 
-                          user: user ? { email: user.email, role: user.role } : null 
-                        });
-                        
-                        // Smart navigation based on user state
-                        if (isAuthenticated && user) {
-                          console.log('✅ User is authenticated, navigating to dashboard');
-                          console.log('🔍 User role:', user.role);
-                          // Navigate directly to /owner/view regardless of role for testing
-                          navigate('/owner/view');
-                        } else {
-                          console.log('❌ User not authenticated, navigating to login');
-                          navigate('/owner/login');
-                        }
+                         console.log('🚀 Property Owner Portal clicked');
+                         console.log('🔍 Current auth state:', { 
+                           loading,
+                           isAuthenticated, 
+                           user: user ? { email: user.email, role: user.role } : null 
+                         });
+                         
+                         // Wait for auth state to stabilize before navigation
+                         if (loading) {
+                           console.log('⏳ Auth still loading, waiting...');
+                           return;
+                         }
+                         
+                         // Smart navigation based on user state
+                         if (isAuthenticated && user) {
+                           console.log('✅ User is authenticated, navigating to dashboard');
+                           console.log('🔍 User role:', user.role);
+                           // Navigate directly to /owner/view regardless of role for testing
+                           navigate('/owner/view');
+                         } else {
+                           console.log('❌ User not authenticated, navigating to login');
+                           navigate('/owner/login');
+                         }
            }}
            className="w-full text-left px-4 py-3 text-sm text-gray-700 hover:bg-gray-50 hover:text-brand-orange transition-colors duration-200 border-b border-gray-100"
          >

@@ -37,12 +37,19 @@ const OwnerLogin: React.FC = () => {
 
   // Redirect if already authenticated
   useEffect(() => {
-    console.log('🔍 OwnerLogin - isAuthenticated:', isAuthenticated, 'user:', user);
+    console.log('🔍 OwnerLogin - loading:', loading, 'isAuthenticated:', isAuthenticated, 'user:', user);
+    
+    // Wait for auth state to stabilize
+    if (loading) {
+      console.log('⏳ Auth still loading, waiting before redirect...');
+      return;
+    }
+    
     if (isAuthenticated && user) {
       console.log('✅ User is authenticated, redirecting to dashboard');
       navigate('/owner/view', { replace: true });
     }
-  }, [isAuthenticated, user, navigate]);
+  }, [loading, isAuthenticated, user, navigate]);
 
   // OTP timer effect
   useEffect(() => {
