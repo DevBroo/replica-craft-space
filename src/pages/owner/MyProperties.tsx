@@ -191,6 +191,13 @@ const MyProperties: React.FC<{
       description: property.description || '',
       amenities: property.amenities || []
     });
+    
+    // Initialize image state with existing property images
+    const existingImages = property.images || [];
+    setImageLinks(existingImages);
+    setImagePreviewUrls([]);
+    setSelectedImages([]);
+    
     setShowEditModal(true);
   };
 
