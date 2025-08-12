@@ -27,6 +27,20 @@ export class PropertyService {
   static async addProperty(propertyData: PropertyFormData, ownerId: string): Promise<Property | null> {
     try {
       console.log('💾 Adding property to database:', propertyData);
+      console.log('🔐 Owner ID:', ownerId);
+      
+      // Verify user session exists
+      const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+      if (sessionError || !session) {
+        throw new Error('Authentication required. Please log in again.');
+      }
+      
+      console.log('✅ Session verified for user:', session.user.id);
+      
+      // Ensure the owner_id matches the authenticated user
+      if (session.user.id !== ownerId) {
+        throw new Error('User ID mismatch. Please log in again.');
+      }
       
       const propertyInsert: PropertyInsert = {
         owner_id: ownerId,
@@ -54,6 +68,8 @@ export class PropertyService {
         review_count: 0
       };
 
+      console.log('📝 Property insert object:', propertyInsert);
+
       const { data, error } = await supabase
         .from('properties')
         .insert(propertyInsert)
@@ -62,7 +78,21 @@ export class PropertyService {
 
       if (error) {
         console.error('❌ Error adding property to database:', error);
-        throw error;
+        console.error('❌ Error details:', {
+          message: error.message,
+          code: error.code,
+          details: error.details,
+          hint: error.hint
+        });
+        
+        // Provide user-friendly error messages
+        if (error.message.includes('row-level security')) {
+          throw new Error('Permission denied. Please ensure you are logged in and have the correct permissions.');
+        } else if (error.message.includes('violates')) {
+          throw new Error('Data validation failed. Please check all required fields are filled correctly.');
+        } else {
+          throw new Error(`Database error: ${error.message}`);
+        }
       }
 
       console.log('✅ Property added to database successfully:', data);
