@@ -99,6 +99,21 @@ All colors MUST be HSL.
   * {
     @apply border-border;
   }
+  
+  /* Prevent layout shifts during font loading */
+  html {
+    font-display: swap;
+  }
+  
+  /* Ensure stable header layout */
+  header {
+    contain: layout;
+  }
+  
+  /* Prevent icon shifts */
+  .fas, .fab, .far {
+    font-display: swap;
+  }
 
   body {
     @apply bg-background text-foreground;

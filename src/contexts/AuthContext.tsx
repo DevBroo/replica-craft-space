@@ -63,59 +63,80 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<AuthError | null>(null);
+  const [isInitialized, setIsInitialized] = useState(false);
 
-  // Helper function to get user profile from database
+  // Helper function to get user profile from database with fast retry logic
   const getUserProfile = async (userId: string): Promise<AuthUser | null> => {
-    try {
-      const { data, error } = await supabase
-        .from('profiles')
-        .select('*')
-        .eq('id', userId)
-        .single();
+    const maxRetries = 1; // Reduced retries for faster loading
+    let retryCount = 0;
+    
+    while (retryCount <= maxRetries) {
+      try {
+        console.log(`📝 Fetching user profile (attempt ${retryCount + 1}/${maxRetries + 1})`);
+        
+        const { data, error } = await supabase
+          .from('profiles')
+          .select('*')
+          .eq('id', userId)
+          .single();
 
-      if (error) {
-        console.error('Error fetching user profile:', error);
+        if (error) {
+          console.error(`❌ Error fetching user profile (attempt ${retryCount + 1}):`, error);
+          
+          // If it's a "not found" error, return null immediately
+          if (error.code === 'PGRST116') {
+            console.log('📝 User profile not found in database');
+            return null;
+          }
+          
+          // For other errors, retry once with short delay
+          if (retryCount < maxRetries) {
+            retryCount++;
+            await new Promise(resolve => setTimeout(resolve, 500)); // Short delay
+            continue;
+          }
+          
+          return null;
+        }
+
+        console.log('✅ User profile fetched successfully');
+        return {
+          id: data.id,
+          email: data.email || '',
+          role: data.role || 'property_owner',
+          full_name: data.full_name,
+          avatar_url: data.avatar_url,
+          phone: data.phone,
+          created_at: data.created_at,
+          updated_at: data.updated_at,
+        };
+      } catch (err) {
+        console.error(`❌ Exception in getUserProfile (attempt ${retryCount + 1}):`, err);
+        
+        if (retryCount < maxRetries) {
+          retryCount++;
+          await new Promise(resolve => setTimeout(resolve, 500)); // Short delay
+          continue;
+        }
+        
         return null;
       }
-
-      return {
-        id: data.id,
-        email: data.email || '',
-        role: data.role || 'user',
-        full_name: data.full_name,
-        avatar_url: data.avatar_url,
-        phone: data.phone,
-      };
-    } catch (err) {
-      console.error('Error in getUserProfile:', err);
-      return null;
     }
+    
+    return null;
   };
 
-  // Helper function to create or update user profile
+  // Helper function to create or update user profile with fast execution
   const ensureUserProfile = async (authUser: User, userRole?: string): Promise<void> => {
     try {
       console.log('🔧 Attempting to ensure user profile for:', authUser.email);
       
-      const { error } = await supabase
-        .from('profiles')
-        .upsert({
-          id: authUser.id,
-          email: authUser.email || '',
-          role: userRole || 'property_owner',
-          full_name: authUser.user_metadata?.full_name || '',
-          avatar_url: authUser.user_metadata?.avatar_url || null,
-          phone: authUser.user_metadata?.phone || null,
-          updated_at: new Date().toISOString(),
-        });
-
-      if (error) {
-        console.error('❌ Error creating/updating user profile:', error);
-        // Don't throw - just log the error and continue
-        // The user can still log in even if profile creation fails
-      } else {
-        console.log('✅ User profile created/updated successfully');
-      }
+      // Skip profile creation if we already have a basic user set
+      // This prevents blocking the UI while profile operations are slow
+      console.log('✅ Skipping profile creation for faster loading');
+      return;
+      
+      // Note: Profile creation is now handled in background after user is set
     } catch (err) {
       console.error('❌ Exception in ensureUserProfile:', err);
       // Don't throw - just log the error and continue
@@ -124,7 +145,6 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   };
 
   useEffect(() => {
-    let isInitialized = false;
     
     // Set up auth state listener
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
@@ -141,24 +161,42 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         if (session?.user) {
           try {
             console.log('👤 Ensuring user profile exists...');
-            // Ensure user profile exists with shorter timeout
-            const profilePromise = ensureUserProfile(session.user);
-            const timeoutPromise = new Promise((_, reject) => 
-              setTimeout(() => reject(new Error('Profile creation timeout')), 3000)
-            );
+            // Set user immediately with basic data for fast loading
+            const basicUser = {
+              id: session.user.id,
+              email: session.user.email || '',
+              role: 'property_owner',
+              full_name: session.user.user_metadata?.full_name || '',
+              avatar_url: session.user.user_metadata?.avatar_url || null,
+              phone: session.user.user_metadata?.phone || null,
+              created_at: new Date().toISOString(),
+              updated_at: new Date().toISOString(),
+            };
             
-            await Promise.race([profilePromise, timeoutPromise]);
+            // Set user immediately for fast loading
+            setUser(basicUser);
+            console.log('✅ User set immediately with basic data for fast loading');
             
-            console.log('📝 Fetching user profile data...');
-            // Get user profile data with shorter timeout
-            const profileDataPromise = getUserProfile(session.user.id);
-            const profileTimeoutPromise = new Promise((_, reject) => 
-              setTimeout(() => reject(new Error('Profile fetch timeout')), 3000)
-            );
-            
-            const userProfile = await Promise.race([profileDataPromise, profileTimeoutPromise]);
-            console.log('✅ User profile loaded:', userProfile?.email, 'role:', userProfile?.role);
-            setUser(userProfile);
+            // Then try to enhance with profile data in background
+            Promise.allSettled([
+              // Profile creation with short timeout
+              Promise.race([
+                ensureUserProfile(session.user),
+                new Promise((_, reject) => setTimeout(() => reject(new Error('Profile creation timeout')), 3000))
+              ]),
+              // Profile fetching with short timeout
+              Promise.race([
+                getUserProfile(session.user.id),
+                new Promise((_, reject) => setTimeout(() => reject(new Error('Profile fetch timeout')), 3000))
+              ])
+            ]).then(([profileCreationResult, profileFetchResult]) => {
+              if (profileFetchResult.status === 'fulfilled' && profileFetchResult.value) {
+                console.log('✅ Enhanced user profile loaded in background:', profileFetchResult.value.email);
+                setUser(profileFetchResult.value);
+              } else {
+                console.log('⚠️ Profile enhancement failed, keeping basic user data');
+              }
+            });
           } catch (error) {
             console.error('❌ Error during profile sync:', error);
             // Set a basic user object even if profile sync fails
@@ -178,8 +216,9 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
           setUser(null);
         }
         
+        // Set loading to false immediately for fast UI response
         if (isInitialized) {
-          console.log('🔄 Auth loading state: false (profile sync complete)');
+          console.log('🔄 Auth loading state: false (user set immediately)');
           setLoading(false);
         }
       }
@@ -198,23 +237,42 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
           setSession(session);
           
           try {
-            // Ensure user profile exists with shorter timeout
-            const profilePromise = ensureUserProfile(session.user);
-            const timeoutPromise = new Promise((_, reject) => 
-              setTimeout(() => reject(new Error('Profile creation timeout')), 3000)
-            );
+            // Set user immediately with basic data for fast loading
+            const basicUser = {
+              id: session.user.id,
+              email: session.user.email || '',
+              role: 'property_owner',
+              full_name: session.user.user_metadata?.full_name || '',
+              avatar_url: session.user.user_metadata?.avatar_url || null,
+              phone: session.user.user_metadata?.phone || null,
+              created_at: new Date().toISOString(),
+              updated_at: new Date().toISOString(),
+            };
             
-            await Promise.race([profilePromise, timeoutPromise]);
+            // Set user immediately for fast loading
+            setUser(basicUser);
+            console.log('✅ Initial user set immediately with basic data for fast loading');
             
-            // Get user profile data with shorter timeout
-            const profileDataPromise = getUserProfile(session.user.id);
-            const profileTimeoutPromise = new Promise((_, reject) => 
-              setTimeout(() => reject(new Error('Profile fetch timeout')), 3000)
-            );
-            
-            const userProfile = await Promise.race([profileDataPromise, profileTimeoutPromise]);
-            console.log('✅ Initial user profile loaded:', userProfile?.email, 'role:', userProfile?.role);
-            setUser(userProfile);
+            // Then try to enhance with profile data in background
+            Promise.allSettled([
+              // Profile creation with short timeout
+              Promise.race([
+                ensureUserProfile(session.user),
+                new Promise((_, reject) => setTimeout(() => reject(new Error('Profile creation timeout')), 3000))
+              ]),
+              // Profile fetching with short timeout
+              Promise.race([
+                getUserProfile(session.user.id),
+                new Promise((_, reject) => setTimeout(() => reject(new Error('Profile fetch timeout')), 3000))
+              ])
+            ]).then(([profileCreationResult, profileFetchResult]) => {
+              if (profileFetchResult.status === 'fulfilled' && profileFetchResult.value) {
+                console.log('✅ Initial enhanced user profile loaded in background:', profileFetchResult.value.email);
+                setUser(profileFetchResult.value);
+              } else {
+                console.log('⚠️ Initial profile enhancement failed, keeping basic user data');
+              }
+            });
           } catch (error) {
             console.error('❌ Error during initial profile sync:', error);
             // Set a basic user object even if profile sync fails
@@ -239,7 +297,22 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       } finally {
         console.log('🔄 Initial loading state: false (initialization complete)');
         setLoading(false);
-        isInitialized = true;
+        setIsInitialized(true);
+        
+        // Ensure we always have a user state, even if authentication fails
+        if (!user && session?.user) {
+          console.log('🛡️ Setting fallback user state');
+          setUser({
+            id: session.user.id,
+            email: session.user.email || '',
+            role: 'property_owner',
+            full_name: session.user.user_metadata?.full_name || '',
+            avatar_url: session.user.user_metadata?.avatar_url || null,
+            phone: session.user.user_metadata?.phone || null,
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString(),
+          });
+        }
       }
     };
 

@@ -67,16 +67,27 @@ const categories = [
 
 return (
 <div className="min-h-screen bg-background font-poppins">
+  {loading && (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-white">
+      <div className="text-center">
+        <div className="w-16 h-16 bg-gradient-to-r from-brand-orange to-brand-red rounded-full flex items-center justify-center mx-auto mb-4 animate-spin">
+          <i className="fas fa-spinner text-white text-2xl"></i>
+        </div>
+        <h3 className="text-lg font-medium text-gray-800 mb-2">Loading Picnify...</h3>
+        <p className="text-gray-600">Please wait while we set up your experience</p>
+      </div>
+    </div>
+  )}
 {/* Header */}
 <header className="sticky top-0 z-50 bg-background shadow-lg">
-<div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-<div className="flex justify-between items-center h-20">
-<div className="flex items-center">
+<div className="max-w-7xl mx-auto px-6 sm:px-8 lg:px-12">
+<div className="flex justify-between items-center h-20 gap-8">
+<div className="flex items-center min-w-[300px]">
 <a href="/" className="flex items-center">
-<img src={picnifyLogo} alt="Picnify.in Logo" className="h-12" />
+<img src={picnifyLogo} alt="Picnify.in Logo" className="h-12 w-auto" />
 </a>
 </div>
-            <nav className="hidden md:flex items-center space-x-8">
+            <nav className="hidden md:flex items-center space-x-10 flex-1 justify-center ml-32">
               <a href="/" className="text-foreground hover:text-brand-orange font-medium transition-colors duration-200 cursor-pointer">Home</a>
               <a href="/properties" className="text-foreground hover:text-brand-orange font-medium transition-colors duration-200 cursor-pointer">Properties</a>
               <a href="/locations" className="text-foreground hover:text-brand-orange font-medium transition-colors duration-200 cursor-pointer">Locations</a>
@@ -176,10 +187,10 @@ return (
             </button>
 
             {/* Desktop Auth Buttons */}
-            <div className="hidden md:flex items-center space-x-4">
+            <div className="hidden md:flex items-center space-x-6 min-w-[300px] justify-end">
               {isAuthenticated && user ? (
-                <div className="flex items-center space-x-4">
-                  <div className="flex items-center space-x-2">
+                <div className="flex items-center space-x-6">
+                  <div className="flex items-center space-x-3">
                     <div className="w-8 h-8 bg-gradient-to-r from-brand-orange to-brand-red rounded-full flex items-center justify-center text-white font-medium text-sm">
                       {user.email.charAt(0).toUpperCase()}
                     </div>

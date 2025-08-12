@@ -1,0 +1,397 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Header Stability Test</title>
+    <style>
+        body { 
+            font-family: 'Poppins', sans-serif; 
+            margin: 0; 
+            padding: 0; 
+            background: #f5f5f5; 
+        }
+        .container { 
+            max-width: 1200px; 
+            margin: 0 auto; 
+            padding: 20px; 
+        }
+        .test-section { 
+            margin: 20px 0; 
+            padding: 20px; 
+            background: white; 
+            border-radius: 8px; 
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1); 
+        }
+        .header-simulation {
+            background: white;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            padding: 0 20px;
+            position: sticky;
+            top: 0;
+            z-index: 50;
+        }
+        .header-content {
+            max-width: 1200px;
+            margin: 0 auto;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            height: 80px;
+            width: 100%;
+        }
+        .logo-section {
+            display: flex;
+            align-items: center;
+            min-width: 200px;
+        }
+        .logo {
+            height: 48px;
+            width: auto;
+            background: #f0f0f0;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            color: #666;
+        }
+        .nav-section {
+            display: flex;
+            align-items: center;
+            gap: 32px;
+            flex: 1;
+            justify-content: center;
+        }
+        .nav-link {
+            color: #333;
+            text-decoration: none;
+            font-weight: 500;
+            transition: color 0.2s;
+        }
+        .nav-link:hover {
+            color: #ff6b35;
+        }
+        .auth-section {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            min-width: 200px;
+            justify-content: flex-end;
+        }
+        .loading-placeholder {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+        .placeholder-avatar {
+            width: 32px;
+            height: 32px;
+            background: #e0e0e0;
+            border-radius: 50%;
+            animation: pulse 2s infinite;
+        }
+        .placeholder-text {
+            width: 96px;
+            height: 24px;
+            background: #e0e0e0;
+            border-radius: 4px;
+            animation: pulse 2s infinite;
+        }
+        .placeholder-button {
+            width: 80px;
+            height: 40px;
+            background: #e0e0e0;
+            border-radius: 8px;
+            animation: pulse 2s infinite;
+        }
+        .auth-button {
+            padding: 8px 24px;
+            border: none;
+            border-radius: 8px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .login-btn {
+            background: #f0f0f0;
+            color: #333;
+        }
+        .login-btn:hover {
+            background: #e0e0e0;
+        }
+        .signup-btn {
+            background: linear-gradient(135deg, #ff6b35, #f7931e);
+            color: white;
+        }
+        .signup-btn:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 8px rgba(255, 107, 53, 0.3);
+        }
+        .user-info {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .user-avatar {
+            width: 32px;
+            height: 32px;
+            background: linear-gradient(135deg, #ff6b35, #f7931e);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: bold;
+            font-size: 14px;
+        }
+        .user-email {
+            font-size: 14px;
+            font-weight: 500;
+            color: #333;
+        }
+        .logout-btn {
+            background: #f0f0f0;
+            color: #333;
+        }
+        .logout-btn:hover {
+            background: #e0e0e0;
+        }
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+        .test-controls {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+        .test-btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 6px;
+            background: #007bff;
+            color: white;
+            cursor: pointer;
+            font-weight: 500;
+        }
+        .test-btn:hover {
+            background: #0056b3;
+        }
+        .status-indicator {
+            padding: 10px;
+            border-radius: 6px;
+            margin: 10px 0;
+            font-weight: 500;
+        }
+        .status-loading {
+            background: #fff3cd;
+            color: #856404;
+            border: 1px solid #ffeaa7;
+        }
+        .status-authenticated {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        .status-unauthenticated {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+    </style>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+    <div class="container">
+        <h1>🔧 Header Stability Test</h1>
+        
+        <div class="test-section">
+            <h2>Test Controls</h2>
+            <div class="test-controls">
+                <button class="test-btn" onclick="simulateLoading()">Simulate Loading</button>
+                <button class="test-btn" onclick="simulateAuthenticated()">Simulate Authenticated</button>
+                <button class="test-btn" onclick="simulateUnauthenticated()">Simulate Unauthenticated</button>
+                <button class="test-btn" onclick="toggleIcons()">Toggle Icons</button>
+            </div>
+            <div id="statusIndicator" class="status-indicator status-unauthenticated">
+                Status: Unauthenticated
+            </div>
+        </div>
+
+        <div class="header-simulation">
+            <div class="header-content">
+                <!-- Logo Section -->
+                <div class="logo-section">
+                    <div class="logo">LOGO</div>
+                </div>
+                
+                <!-- Navigation Section -->
+                <nav class="nav-section">
+                    <a href="#" class="nav-link">
+                        <i class="fas fa-home"></i> Home
+                    </a>
+                    <a href="#" class="nav-link">
+                        <i class="fas fa-building"></i> Properties
+                    </a>
+                    <a href="#" class="nav-link">
+                        <i class="fas fa-map-marker-alt"></i> Locations
+                    </a>
+                    <a href="#" class="nav-link">
+                        <i class="fas fa-info-circle"></i> About
+                    </a>
+                    <a href="#" class="nav-link">
+                        <i class="fas fa-envelope"></i> Contact
+                    </a>
+                    <div class="nav-link">
+                        <i class="fas fa-door-open"></i> Portals
+                    </div>
+                </nav>
+                
+                <!-- Auth Section -->
+                <div class="auth-section" id="authSection">
+                    <div class="user-info">
+                        <div class="user-avatar">U</div>
+                        <span class="user-email">user@example.com</span>
+                    </div>
+                    <button class="auth-button logout-btn">
+                        <i class="fas fa-sign-out-alt"></i> Logout
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <div class="test-section">
+            <h2>Layout Analysis</h2>
+            <div id="layoutAnalysis">
+                <p><strong>Header Width:</strong> <span id="headerWidth">-</span></p>
+                <p><strong>Logo Section Width:</strong> <span id="logoWidth">-</span></p>
+                <p><strong>Nav Section Width:</strong> <span id="navWidth">-</span></p>
+                <p><strong>Auth Section Width:</strong> <span id="authWidth">-</span></p>
+                <p><strong>Total Width:</strong> <span id="totalWidth">-</span></p>
+                <p><strong>Layout Shift Detected:</strong> <span id="layoutShift">-</span></p>
+            </div>
+        </div>
+
+        <div class="test-section">
+            <h2>Instructions</h2>
+            <ol>
+                <li>Click "Simulate Loading" to see the loading state with placeholders</li>
+                <li>Click "Simulate Authenticated" to see the authenticated user state</li>
+                <li>Click "Simulate Unauthenticated" to see the login/signup state</li>
+                <li>Click "Toggle Icons" to test icon loading stability</li>
+                <li>Watch for any layout shifts in the header</li>
+                <li>Check the layout analysis section for measurements</li>
+            </ol>
+        </div>
+    </div>
+
+    <script>
+        let currentState = 'unauthenticated';
+        let previousWidths = {};
+
+        function updateLayoutAnalysis() {
+            const header = document.querySelector('.header-content');
+            const logo = document.querySelector('.logo-section');
+            const nav = document.querySelector('.nav-section');
+            const auth = document.querySelector('.auth-section');
+            
+            const headerWidth = header.offsetWidth;
+            const logoWidth = logo.offsetWidth;
+            const navWidth = nav.offsetWidth;
+            const authWidth = auth.offsetWidth;
+            const totalWidth = logoWidth + navWidth + authWidth;
+            
+            document.getElementById('headerWidth').textContent = headerWidth + 'px';
+            document.getElementById('logoWidth').textContent = logoWidth + 'px';
+            document.getElementById('navWidth').textContent = navWidth + 'px';
+            document.getElementById('authWidth').textContent = authWidth + 'px';
+            document.getElementById('totalWidth').textContent = totalWidth + 'px';
+            
+            // Check for layout shift
+            const currentWidths = { headerWidth, logoWidth, navWidth, authWidth };
+            const hasShift = Object.keys(previousWidths).length > 0 && 
+                           (Math.abs(currentWidths.headerWidth - previousWidths.headerWidth) > 5 ||
+                            Math.abs(currentWidths.logoWidth - previousWidths.logoWidth) > 5 ||
+                            Math.abs(currentWidths.navWidth - previousWidths.navWidth) > 5 ||
+                            Math.abs(currentWidths.authWidth - previousWidths.authWidth) > 5);
+            
+            document.getElementById('layoutShift').textContent = hasShift ? 'YES - Layout Shift Detected!' : 'No - Stable Layout';
+            document.getElementById('layoutShift').style.color = hasShift ? 'red' : 'green';
+            
+            previousWidths = currentWidths;
+        }
+
+        function simulateLoading() {
+            currentState = 'loading';
+            const authSection = document.getElementById('authSection');
+            authSection.innerHTML = `
+                <div class="loading-placeholder">
+                    <div class="placeholder-avatar"></div>
+                    <div class="placeholder-text"></div>
+                    <div class="placeholder-button"></div>
+                </div>
+            `;
+            
+            document.getElementById('statusIndicator').className = 'status-indicator status-loading';
+            document.getElementById('statusIndicator').textContent = 'Status: Loading...';
+            
+            setTimeout(updateLayoutAnalysis, 100);
+        }
+
+        function simulateAuthenticated() {
+            currentState = 'authenticated';
+            const authSection = document.getElementById('authSection');
+            authSection.innerHTML = `
+                <div class="user-info">
+                    <div class="user-avatar">U</div>
+                    <span class="user-email">user@example.com</span>
+                </div>
+                <button class="auth-button logout-btn">
+                    <i class="fas fa-sign-out-alt"></i> Logout
+                </button>
+            `;
+            
+            document.getElementById('statusIndicator').className = 'status-indicator status-authenticated';
+            document.getElementById('statusIndicator').textContent = 'Status: Authenticated';
+            
+            setTimeout(updateLayoutAnalysis, 100);
+        }
+
+        function simulateUnauthenticated() {
+            currentState = 'unauthenticated';
+            const authSection = document.getElementById('authSection');
+            authSection.innerHTML = `
+                <button class="auth-button login-btn">
+                    <i class="fas fa-user"></i> Login
+                </button>
+                <button class="auth-button signup-btn">
+                    <i class="fas fa-arrow-right-to-bracket"></i> Sign Up
+                </button>
+            `;
+            
+            document.getElementById('statusIndicator').className = 'status-indicator status-unauthenticated';
+            document.getElementById('statusIndicator').textContent = 'Status: Unauthenticated';
+            
+            setTimeout(updateLayoutAnalysis, 100);
+        }
+
+        function toggleIcons() {
+            const icons = document.querySelectorAll('.fas, .fab, .far');
+            icons.forEach(icon => {
+                icon.style.opacity = icon.style.opacity === '0' ? '1' : '0';
+            });
+            
+            setTimeout(updateLayoutAnalysis, 100);
+        }
+
+        // Initial analysis
+        window.addEventListener('load', () => {
+            setTimeout(updateLayoutAnalysis, 500);
+        });
+
+        // Monitor for window resize
+        window.addEventListener('resize', updateLayoutAnalysis);
+    </script>
+</body>
+</html>

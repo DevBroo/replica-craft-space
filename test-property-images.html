@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Property Images</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .container { max-width: 800px; margin: 0 auto; }
+        .test-section { margin: 20px 0; padding: 20px; border: 1px solid #ccc; border-radius: 8px; }
+        .result { background: #f0f0f0; padding: 10px; margin: 10px 0; border-radius: 4px; }
+        button { padding: 10px 20px; margin: 5px; background: #007bff; color: white; border: none; border-radius: 4px; cursor: pointer; }
+        button:hover { background: #0056b3; }
+        .error { background: #ffebee; color: #c62828; }
+        .success { background: #e8f5e8; color: #2e7d32; }
+        .property-card { border: 1px solid #ddd; padding: 15px; margin: 10px 0; border-radius: 8px; }
+        .property-image { max-width: 200px; max-height: 150px; object-fit: cover; border-radius: 4px; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔍 Property Images Test</h1>
+        
+        <div class="test-section">
+            <h2>1. Check Current Properties</h2>
+            <button onclick="checkProperties()">Check All Properties</button>
+            <div id="propertiesResult" class="result"></div>
+        </div>
+
+        <div class="test-section">
+            <h2>2. Add Test Property with Image</h2>
+            <button onclick="addTestProperty()">Add Property with Image</button>
+            <div id="addResult" class="result"></div>
+        </div>
+
+        <div class="test-section">
+            <h2>3. Test Image URLs</h2>
+            <button onclick="testImageUrls()">Test Image URLs</button>
+            <div id="imageTestResult" class="result"></div>
+        </div>
+
+        <div class="test-section">
+            <h2>4. Display Properties with Images</h2>
+            <button onclick="displayProperties()">Display Properties</button>
+            <div id="displayResult"></div>
+        </div>
+    </div>
+
+    <script>
+        // Supabase configuration
+        const SUPABASE_URL = 'https://riqsgtuzccwpplbodwbd.supabase.co';
+        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJpcXNndHV6Y2N3cHBsYm9kd2JkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MzQ5NzI4NzQsImV4cCI6MjA1MDU0ODg3NH0.Ej8Ej8Ej8Ej8Ej8Ej8Ej8Ej8Ej8Ej8Ej8Ej8Ej8Ej8';
+
+        // Initialize Supabase client
+        const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+        async function checkProperties() {
+            const resultDiv = document.getElementById('propertiesResult');
+            resultDiv.innerHTML = 'Loading...';
+            
+            try {
+                const { data, error } = await supabase
+                    .from('properties')
+                    .select('*')
+                    .order('created_at', { ascending: false });
+
+                if (error) throw error;
+
+                resultDiv.innerHTML = `
+                    <h3>Found ${data.length} properties:</h3>
+                    ${data.map(prop => `
+                        <div class="property-card">
+                            <strong>${prop.title}</strong><br>
+                            ID: ${prop.id}<br>
+                            Images: ${prop.images ? prop.images.length : 0}<br>
+                            Image URLs: ${prop.images ? prop.images.join(', ') : 'None'}<br>
+                            Status: ${prop.status}<br>
+                            Created: ${new Date(prop.created_at).toLocaleString()}
+                        </div>
+                    `).join('')}
+                `;
+            } catch (error) {
+                resultDiv.innerHTML = `<div class="error">Error: ${error.message}</div>`;
+            }
+        }
+
+        async function addTestProperty() {
+            const resultDiv = document.getElementById('addResult');
+            resultDiv.innerHTML = 'Adding test property...';
+            
+            try {
+                // Test image URL (a placeholder image)
+                const testImageUrl = 'https://images.unsplash.com/photo-1564013799919-ab600027ffc6?w=400&h=300&fit=crop';
+                
+                const { data, error } = await supabase
+                    .from('properties')
+                    .insert({
+                        title: 'Test Property with Image',
+                        description: 'This is a test property with an image',
+                        address: '123 Test Street, Bangalore, Karnataka',
+                        property_type: 'Villa',
+                        max_guests: 4,
+                        bedrooms: 2,
+                        bathrooms: 2,
+                        amenities: ['Pool', 'WiFi', 'Parking'],
+                        pricing: { daily_rate: 2500 },
+                        location: { city: 'Bangalore', state: 'Karnataka' },
+                        images: [testImageUrl],
+                        status: 'pending',
+                        owner_id: '67af3277-e025-4cca-a504-b4f2d723f7ca' // Use existing owner ID
+                    })
+                    .select()
+                    .single();
+
+                if (error) throw error;
+
+                resultDiv.innerHTML = `
+                    <div class="success">
+                        ✅ Test property added successfully!<br>
+                        ID: ${data.id}<br>
+                        Title: ${data.title}<br>
+                        Images: ${data.images ? data.images.length : 0}<br>
+                        Image URL: ${data.images ? data.images[0] : 'None'}
+                    </div>
+                `;
+            } catch (error) {
+                resultDiv.innerHTML = `<div class="error">Error: ${error.message}</div>`;
+            }
+        }
+
+        async function testImageUrls() {
+            const resultDiv = document.getElementById('imageTestResult');
+            resultDiv.innerHTML = 'Testing image URLs...';
+            
+            const testUrls = [
+                'https://images.unsplash.com/photo-1564013799919-ab600027ffc6?w=400&h=300&fit=crop',
+                'https://images.unsplash.com/photo-1571896349842-33c89424de2d?w=400&h=300&fit=crop',
+                'https://images.unsplash.com/photo-1582268611958-ebfd161ef9cf?w=400&h=300&fit=crop'
+            ];
+
+            let results = '<h3>Image URL Test Results:</h3>';
+            
+            for (const url of testUrls) {
+                try {
+                    const response = await fetch(url, { method: 'HEAD' });
+                    const status = response.ok ? '✅ Working' : '❌ Failed';
+                    results += `<div>${url}: ${status}</div>`;
+                } catch (error) {
+                    results += `<div class="error">${url}: ❌ Error - ${error.message}</div>`;
+                }
+            }
+            
+            resultDiv.innerHTML = results;
+        }
+
+        async function displayProperties() {
+            const resultDiv = document.getElementById('displayResult');
+            resultDiv.innerHTML = 'Loading properties...';
+            
+            try {
+                const { data, error } = await supabase
+                    .from('properties')
+                    .select('*')
+                    .order('created_at', { ascending: false });
+
+                if (error) throw error;
+
+                resultDiv.innerHTML = `
+                    <h3>Properties Display (${data.length} found):</h3>
+                    ${data.map(prop => `
+                        <div class="property-card">
+                            <h4>${prop.title}</h4>
+                            <p><strong>Location:</strong> ${prop.address}</p>
+                            <p><strong>Price:</strong> ₹${prop.pricing?.daily_rate || 0}</p>
+                            <p><strong>Status:</strong> ${prop.status}</p>
+                            ${prop.images && prop.images.length > 0 ? 
+                                `<img src="${prop.images[0]}" alt="${prop.title}" class="property-image" onerror="this.style.display='none'">` : 
+                                '<p><em>No image available</em></p>'
+                            }
+                        </div>
+                    `).join('')}
+                `;
+            } catch (error) {
+                resultDiv.innerHTML = `<div class="error">Error: ${error.message}</div>`;
+            }
+        }
+    </script>
+    
+    <!-- Supabase JS Client -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+</body>
+</html>

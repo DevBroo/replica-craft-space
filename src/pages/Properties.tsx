@@ -43,50 +43,135 @@ const Properties: React.FC = () => {
   const [viewMode, setViewMode] = useState('grid');
   const [currentPage, setCurrentPage] = useState(1);
   const [showFilters, setShowFilters] = useState(false);
+  
+  // Dropdown states for search functionality
+  const [showGuestsDropdown, setShowGuestsDropdown] = useState(false);
+  const [showPriceDropdown, setShowPriceDropdown] = useState(false);
+  const [showLocationDropdown, setShowLocationDropdown] = useState(false);
+
+  // Close dropdowns when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      const target = event.target as Element;
+      if (!target.closest('.dropdown-container')) {
+        setShowGuestsDropdown(false);
+        setShowPriceDropdown(false);
+        setShowLocationDropdown(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
   const { user, isAuthenticated, logout } = useAuth();
   const navigate = useNavigate();
 
-  // Load properties from database
+  // Load properties from database with caching
   const [dbProperties, setDbProperties] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [propertiesLoaded, setPropertiesLoaded] = useState(false);
+  const [cacheDisabled, setCacheDisabled] = useState(() => {
+    // Check if caching was disabled in a previous session
+    return localStorage.getItem('cache_disabled') === 'true';
+  });
 
   useEffect(() => {
     let isMounted = true;
-    let retryCount = 0;
-    const maxRetries = 3;
+    
+    // Prevent multiple loads on initial render
+    if (propertiesLoaded && dbProperties.length > 0) {
+      return;
+    }
     
     const loadProperties = async () => {
+      // Check cache first
+      const cacheKey = 'properties_cache';
+      const cacheTimestamp = localStorage.getItem('properties_cache_timestamp');
+      const now = Date.now();
+      const cacheAge = cacheTimestamp ? now - parseInt(cacheTimestamp) : Infinity;
+      
+                 // Use cache if it's less than 5 minutes old and caching is not disabled
+           if (!cacheDisabled && cacheAge < 5 * 60 * 1000) {
+        const cachedProperties = localStorage.getItem(cacheKey);
+        if (cachedProperties) {
+          try {
+            const parsed = JSON.parse(cachedProperties);
+            if (isMounted) {
+              setDbProperties(parsed);
+              setPropertiesLoaded(true);
+              setLoading(false);
+              console.log('✅ Properties loaded from cache:', parsed.length);
+              return;
+            }
+          } catch (error) {
+            console.warn('⚠️ Cache parsing failed, fetching fresh data');
+          }
+        }
+      }
+      
+      // Only fetch if not already loaded
+      if (propertiesLoaded) {
+        console.log('✅ Properties already loaded, skipping fetch');
+        setLoading(false);
+        return;
+      }
+      
       try {
-        console.log(`🔍 Loading properties from database... (attempt ${retryCount + 1})`);
+        console.log('🔍 Loading properties from database...');
         setLoading(true);
         
         const activeProperties = await PropertyService.getActiveProperties();
         
-        if (!isMounted) return; // Prevent setting state if component unmounted
-        
-        // Use the raw database properties directly instead of convertToFrontendFormat
-        setDbProperties(activeProperties);
-        console.log('✅ Properties loaded from database:', activeProperties.length);
-        console.log('✅ Raw properties data:', activeProperties);
-        
-        // Reset retry count on success
-        retryCount = 0;
-      } catch (error) {
-        console.error(`❌ Error loading properties from database (attempt ${retryCount + 1}):`, error);
-        
         if (!isMounted) return;
         
-        // Retry logic
-        if (retryCount < maxRetries) {
-          retryCount++;
-          console.log(`🔄 Retrying... (${retryCount}/${maxRetries})`);
-          setTimeout(() => {
-            if (isMounted) {
-              loadProperties();
-            }
-          }, 1000 * retryCount); // Exponential backoff
-          return;
+
+
+        // Skip caching entirely if disabled or if we've had previous storage issues
+        if (cacheDisabled) {
+          console.log('⚠️ Caching disabled for this session, skipping cache');
+        } else {
+          try {
+            // Store only essential data to reduce storage size
+            const essentialProperties = activeProperties.map(property => ({
+              id: property.id,
+              name: property.title || 'Unnamed Property',
+              location: typeof property.location === 'string' ? property.location : 
+                       (property.location && typeof property.location === 'object' && 'city' in property.location) ? 
+                       (property.location as any).city : property.address || 'Unknown Location',
+              price: typeof property.pricing === 'object' && property.pricing && 'daily_rate' in property.pricing ? 
+                     (property.pricing as any).daily_rate : 0,
+              image: property.images && property.images.length > 0 ? property.images[0] : '',
+              type: property.property_type || 'Property',
+              status: property.status || 'pending',
+              rating: property.rating || 0,
+              guests: property.max_guests || 1,
+              bedrooms: property.bedrooms || 1,
+              bathrooms: property.bathrooms || 1
+            }));
+            
+            const propertiesJson = JSON.stringify(essentialProperties);
+            localStorage.setItem(cacheKey, propertiesJson);
+            localStorage.setItem('properties_cache_timestamp', now.toString());
+            console.log('✅ Properties cached successfully (compressed data)');
+          } catch (cacheError) {
+            console.warn('⚠️ Cache storage failed (quota exceeded), continuing without cache:', cacheError);
+            // Clear all cache to free space
+            clearAllCache();
+            // Disable caching for this session to prevent repeated errors
+            setCacheDisabled(true);
+            localStorage.setItem('cache_disabled', 'true');
+            console.warn('⚠️ Caching disabled for this session due to storage issues');
+          }
         }
+        
+        setDbProperties(activeProperties);
+        setPropertiesLoaded(true);
+        console.log('✅ Properties loaded from database:', activeProperties.length);
+        
+      } catch (error) {
+        console.error('❌ Error loading properties from database:', error);
+        
+        if (!isMounted) return;
         
         // Fallback to localStorage for existing data
         try {
@@ -96,6 +181,7 @@ const Properties: React.FC = () => {
             const parsedProperties = JSON.parse(savedProperties);
             const activeProperties = parsedProperties.filter((property: any) => property.status === 'active');
             setDbProperties(activeProperties);
+            setPropertiesLoaded(true);
             console.log('📋 Properties loaded from localStorage fallback:', activeProperties.length);
           } else {
             setDbProperties([]);
@@ -117,23 +203,163 @@ const Properties: React.FC = () => {
     return () => {
       isMounted = false;
     };
-  }, []);
+  }, [propertiesLoaded]);
 
-  console.log('🔍 Database properties loaded:', dbProperties.length);
-  console.log('🔍 Raw database properties:', dbProperties);
-  dbProperties.forEach((prop: any) => {
-    console.log(`📸 Property "${prop.name || prop.title}":`, {
-      id: prop.id,
-      name: prop.name || prop.title,
-      images: prop.images ? prop.images.length : 0,
-      firstImage: prop.images && prop.images.length > 0 ? prop.images[0].substring(0, 50) + '...' : 'No images'
-    });
+  // Cache management functions
+  const clearPropertiesCache = () => {
+    localStorage.removeItem('properties_cache');
+    localStorage.removeItem('properties_cache_timestamp');
+    setPropertiesLoaded(false);
+    console.log('🗑️ Properties cache cleared');
+  };
+
+  const clearAllCache = () => {
+    try {
+      const keys = Object.keys(localStorage);
+      // Clear all localStorage data to free maximum space
+      keys.forEach(key => localStorage.removeItem(key));
+      console.log('🗑️ All localStorage cleared to free storage space');
+    } catch (error) {
+      console.warn('⚠️ Error clearing localStorage:', error);
+    }
+  };
+
+  const reEnableCaching = () => {
+    setCacheDisabled(false);
+    localStorage.removeItem('cache_disabled');
+    console.log('✅ Caching re-enabled');
+  };
+
+  const refreshProperties = () => {
+    clearPropertiesCache();
+    setLoading(true);
+    setDbProperties([]);
+    setPropertiesLoaded(false);
+    // This will trigger the useEffect to reload properties
+  };
+
+  // Only log once when properties change to reduce console spam
+  useEffect(() => {
+    if (dbProperties.length > 0) {
+      console.log('✅ Properties loaded successfully:', dbProperties.length);
+    }
+  }, [dbProperties.length]);
+
+  // Apply filters to database properties
+  const filteredProperties = dbProperties.filter((property: any) => {
+    let passesFilter = true;
+    const filterReasons = [];
+
+    // Filter by location (destination)
+    if (searchLocation && searchLocation.trim() !== '') {
+      const propertyLocation = (property.city || property.location?.city || property.address || '').toLowerCase();
+      const searchLocationLower = searchLocation.toLowerCase();
+      if (!propertyLocation.includes(searchLocationLower)) {
+        passesFilter = false;
+        filterReasons.push(`Location mismatch: ${propertyLocation} vs ${searchLocationLower}`);
+      }
+    }
+
+    // Filter by date (if implemented)
+    // if (searchDate && searchDate.trim() !== '') {
+    //   // Add date filtering logic here if needed
+    // }
+
+    // Filter by guests
+    if (groupSize && groupSize !== '') {
+      const propertyGuests = property.max_guests || property.capacity || 1;
+      const requiredGuests = parseInt(groupSize);
+      if (groupSize === '9+' && propertyGuests < 9) {
+        passesFilter = false;
+        filterReasons.push(`Guest capacity: ${propertyGuests} < 9`);
+      } else if (groupSize !== '9+' && propertyGuests < requiredGuests) {
+        passesFilter = false;
+        filterReasons.push(`Guest capacity: ${propertyGuests} < ${requiredGuests}`);
+      }
+    }
+
+    // Filter by price range
+    if (priceRange && priceRange !== '') {
+      const propertyPrice = property.pricing?.daily_rate || property.price || 0;
+      if (priceRange === '0-2000' && propertyPrice > 2000) {
+        passesFilter = false;
+        filterReasons.push(`Price ${propertyPrice} > 2000`);
+      } else if (priceRange === '2000-3000' && (propertyPrice < 2000 || propertyPrice > 3000)) {
+        passesFilter = false;
+        filterReasons.push(`Price ${propertyPrice} not in 2000-3000 range`);
+      } else if (priceRange === '3000-4000' && (propertyPrice < 3000 || propertyPrice > 4000)) {
+        passesFilter = false;
+        filterReasons.push(`Price ${propertyPrice} not in 3000-4000 range`);
+      } else if (priceRange === '4000+' && propertyPrice < 4000) {
+        passesFilter = false;
+        filterReasons.push(`Price ${propertyPrice} < 4000`);
+      }
+    }
+
+    // Filter by property type
+    if (propertyType && propertyType !== '') {
+      const propertyTypeValue = property.property_type || property.type || '';
+      if (propertyTypeValue.toLowerCase() !== propertyType.toLowerCase()) {
+        passesFilter = false;
+        filterReasons.push(`Type mismatch: ${propertyTypeValue} vs ${propertyType}`);
+      }
+    }
+
+    // Filter by amenities
+    if (amenities.length > 0) {
+      const propertyAmenities = Array.isArray(property.amenities) 
+        ? property.amenities.map((a: string) => a.toLowerCase())
+        : [];
+      
+      // Check if at least one selected amenity is present
+      const hasMatchingAmenity = amenities.some(amenity => 
+        propertyAmenities.includes(amenity.toLowerCase())
+      );
+      
+      if (!hasMatchingAmenity) {
+        passesFilter = false;
+        filterReasons.push(`No matching amenities: ${amenities.join(', ')} vs ${propertyAmenities.join(', ')}`);
+      }
+    }
+
+    if (!passesFilter && (searchLocation || groupSize || priceRange || propertyType || amenities.length > 0)) {
+      console.log(`❌ Property "${property.name || property.title}" filtered out:`, filterReasons.join(', '));
+    }
+
+    return passesFilter;
   });
 
-  // Only show database properties - no dummy data
-  const properties = dbProperties.map((property: any, index: number) => {
-    console.log(`🔍 Mapping property ${index}:`, property);
-    
+  // Log filtering results
+  if (searchLocation || groupSize || priceRange || propertyType || amenities.length > 0) {
+    console.log(`🔍 Filtering results: ${filteredProperties.length}/${dbProperties.length} properties match criteria`);
+    console.log(`📍 Active filters:`, {
+      location: searchLocation || 'Any',
+      guests: groupSize || 'Any',
+      priceRange: priceRange || 'Any',
+      propertyType: propertyType || 'Any',
+      amenities: amenities.length > 0 ? amenities.join(', ') : 'Any'
+    });
+  }
+
+  // Apply sorting to filtered properties
+  const sortedProperties = [...filteredProperties].sort((a, b) => {
+    switch (sortBy) {
+      case 'price-asc':
+        return (a.pricing?.daily_rate || a.price || 0) - (b.pricing?.daily_rate || b.price || 0);
+      case 'price-desc':
+        return (b.pricing?.daily_rate || b.price || 0) - (a.pricing?.daily_rate || a.price || 0);
+      case 'rating-desc':
+        return (b.rating || 0) - (a.rating || 0);
+      case 'newest':
+        return new Date(b.created_at || 0).getTime() - new Date(a.created_at || 0).getTime();
+      case 'popularity':
+      default:
+        return (b.totalBookings || b.review_count || 0) - (a.totalBookings || a.review_count || 0);
+    }
+  });
+
+  // Only show filtered and sorted database properties - no dummy data
+  const properties = sortedProperties.map((property: any, index: number) => {
     // Add error handling for missing properties
     const mappedProperty = {
       id: property.id || `property-${index}`,
@@ -143,7 +369,23 @@ const Properties: React.FC = () => {
       reviews: property.totalBookings || property.review_count || 0,
       price: property.price || (property.pricing?.daily_rate) || 0,
       originalPrice: (property.price || (property.pricing?.daily_rate) || 0) * 1.1, // 10% markup for original price
-      image: property.images && property.images.length > 0 ? property.images[0] : beachsideParadise, // Use uploaded image or default
+      image: property.images && property.images.length > 0 ? property.images[0] : 
+             property.image_url || 
+             property.image || 
+             property.firstImage || 
+             (() => {
+               // Provide default images based on property type
+               const defaultImages = {
+                 'villa': 'https://images.unsplash.com/photo-1564013799919-ab600027ffc6?w=400&h=300&fit=crop',
+                 'cottage': 'https://images.unsplash.com/photo-1571896349842-33c89424de2d?w=400&h=300&fit=crop',
+                 'resort': 'https://images.unsplash.com/photo-1582268611958-ebfd161ef9cf?w=400&h=300&fit=crop',
+                 'estate': 'https://images.unsplash.com/photo-1564013799919-ab600027ffc6?w=400&h=300&fit=crop',
+                 'heritage': 'https://images.unsplash.com/photo-1571896349842-33c89424de2d?w=400&h=300&fit=crop',
+                 'retreat': 'https://images.unsplash.com/photo-1582268611958-ebfd161ef9cf?w=400&h=300&fit=crop'
+               };
+               const propertyType = (property.property_type || property.type || 'villa').toLowerCase();
+               return defaultImages[propertyType] || defaultImages['villa'];
+             })(), // Use uploaded image or fallback to type-specific default
       amenities: Array.isArray(property.amenities) ? property.amenities.map((a: string) => a.charAt(0).toUpperCase() + a.slice(1)) : [],
       type: property.type || property.property_type || 'Property',
       guests: property.capacity || property.max_guests || 1,
@@ -162,11 +404,8 @@ const Properties: React.FC = () => {
       mappedProperty.type = 'Property';
     }
     
-    console.log(`✅ Mapped property ${index}:`, mappedProperty);
     return mappedProperty;
   });
-  
-  console.log('🔍 Final mapped properties:', properties);
 
   const filterOptions = {
     priceRanges: [
@@ -190,6 +429,38 @@ const Properties: React.FC = () => {
     ]
   };
 
+  // Search dropdown options
+  const searchOptions = {
+    locations: [
+      'Mumbai, Maharashtra',
+      'Delhi, NCR',
+      'Bangalore, Karnataka',
+      'Chennai, Tamil Nadu',
+      'Kolkata, West Bengal',
+      'Hyderabad, Telangana',
+      'Pune, Maharashtra',
+      'Ahmedabad, Gujarat',
+      'Jaipur, Rajasthan',
+      'Goa',
+      'Kerala',
+      'Himachal Pradesh',
+      'Uttarakhand',
+      'Rajasthan',
+      'Gujarat'
+    ],
+    guests: [
+      { value: '1', label: '1 Guest' },
+      { value: '2', label: '2 Guests' },
+      { value: '3', label: '3 Guests' },
+      { value: '4', label: '4 Guests' },
+      { value: '5', label: '5 Guests' },
+      { value: '6', label: '6 Guests' },
+      { value: '7', label: '7 Guests' },
+      { value: '8', label: '8 Guests' },
+      { value: '9+', label: '9+ Guests' }
+    ]
+  };
+
   const toggleAmenity = (amenity: string) => {
     setAmenities(prev =>
       prev.includes(amenity)
@@ -210,14 +481,6 @@ const Properties: React.FC = () => {
     (currentPage - 1) * propertiesPerPage,
     currentPage * propertiesPerPage
   );
-  
-  console.log('🔍 Current properties to display:', currentProperties);
-  console.log('🔍 Properties array length:', properties.length);
-  console.log('🔍 Current page:', currentPage);
-  console.log('🔍 Properties per page:', propertiesPerPage);
-  console.log('🔍 Total pages:', totalPages);
-  console.log('🔍 Slice start:', (currentPage - 1) * propertiesPerPage);
-  console.log('🔍 Slice end:', currentPage * propertiesPerPage);
 
   return (
     <div className="min-h-screen bg-background font-poppins">
@@ -290,7 +553,7 @@ const Properties: React.FC = () => {
 
           {/* Enhanced Search Bar */}
           <div className="bg-background rounded-3xl p-8 shadow-xl max-w-6xl mx-auto border">
-            <div className="grid grid-cols-1 md:grid-cols-5 gap-6 items-end">
+            <div className="grid grid-cols-1 md:grid-cols-5 gap-6 items-end dropdown-container">
               <div className="space-y-2">
                 <label className="text-foreground font-semibold text-sm uppercase tracking-wide">Destination</label>
                 <div className="relative">
@@ -301,9 +564,33 @@ const Properties: React.FC = () => {
                     type="text"
                     placeholder="Search destination..."
                     value={searchLocation}
-                    onChange={(e) => setSearchLocation(e.target.value)}
+                    onChange={(e) => {
+                      setSearchLocation(e.target.value);
+                      setShowLocationDropdown(true);
+                    }}
+                    onFocus={() => setShowLocationDropdown(true)}
                     className="w-full pl-12 pr-4 py-4 text-foreground placeholder-muted-foreground border-2 border-border rounded-xl outline-none focus:border-brand-red focus:ring-4 focus:ring-brand-red/20 transition-all duration-300 text-sm font-medium"
                   />
+                  {showLocationDropdown && (
+                    <div className="absolute top-full left-0 right-0 mt-1 bg-background border-2 border-border rounded-xl shadow-lg z-50 max-h-60 overflow-y-auto">
+                      {searchOptions.locations
+                        .filter(location => 
+                          location.toLowerCase().includes(searchLocation.toLowerCase())
+                        )
+                        .map((location, index) => (
+                          <button
+                            key={index}
+                            onClick={() => {
+                              setSearchLocation(location);
+                              setShowLocationDropdown(false);
+                            }}
+                            className="w-full px-4 py-3 text-left text-foreground hover:bg-secondary transition-colors duration-200 cursor-pointer"
+                          >
+                            {location}
+                          </button>
+                        ))}
+                    </div>
+                  )}
                 </div>
               </div>
 
@@ -331,9 +618,28 @@ const Properties: React.FC = () => {
                   <div className="absolute inset-y-0 right-0 pr-4 flex items-center pointer-events-none">
                     <i className="fas fa-chevron-down text-muted-foreground"></i>
                   </div>
-                  <button className="w-full pl-12 pr-12 py-4 text-left text-foreground border-2 border-border rounded-xl outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-500/20 transition-all duration-300 text-sm font-medium cursor-pointer">
-                    {groupSize || 'Select guests'}
+                  <button 
+                    onClick={() => setShowGuestsDropdown(!showGuestsDropdown)}
+                    className="w-full pl-12 pr-12 py-4 text-left text-foreground border-2 border-border rounded-xl outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-500/20 transition-all duration-300 text-sm font-medium cursor-pointer"
+                  >
+                    {groupSize ? searchOptions.guests.find(g => g.value === groupSize)?.label || groupSize : 'Select guests'}
                   </button>
+                  {showGuestsDropdown && (
+                    <div className="absolute top-full left-0 right-0 mt-1 bg-background border-2 border-border rounded-xl shadow-lg z-50">
+                      {searchOptions.guests.map((guest, index) => (
+                        <button
+                          key={index}
+                          onClick={() => {
+                            setGroupSize(guest.value);
+                            setShowGuestsDropdown(false);
+                          }}
+                          className="w-full px-4 py-3 text-left text-foreground hover:bg-secondary transition-colors duration-200 cursor-pointer"
+                        >
+                          {guest.label}
+                        </button>
+                      ))}
+                    </div>
+                  )}
                 </div>
               </div>
 
@@ -346,13 +652,48 @@ const Properties: React.FC = () => {
                   <div className="absolute inset-y-0 right-0 pr-4 flex items-center pointer-events-none">
                     <i className="fas fa-chevron-down text-muted-foreground"></i>
                   </div>
-                  <button className="w-full pl-12 pr-12 py-4 text-left text-foreground border-2 border-border rounded-xl outline-none focus:border-green-500 focus:ring-4 focus:ring-green-500/20 transition-all duration-300 text-sm font-medium cursor-pointer">
-                    {priceRange || 'Any price'}
+                  <button 
+                    onClick={() => setShowPriceDropdown(!showPriceDropdown)}
+                    className="w-full pl-12 pr-12 py-4 text-left text-foreground border-2 border-border rounded-xl outline-none focus:border-green-500 focus:ring-4 focus:ring-green-500/20 transition-all duration-300 text-sm font-medium cursor-pointer"
+                  >
+                    {priceRange ? filterOptions.priceRanges.find(p => p.value === priceRange)?.label || priceRange : 'Any price'}
                   </button>
+                  {showPriceDropdown && (
+                    <div className="absolute top-full left-0 right-0 mt-1 bg-background border-2 border-border rounded-xl shadow-lg z-50">
+                      {filterOptions.priceRanges.map((range, index) => (
+                        <button
+                          key={index}
+                          onClick={() => {
+                            setPriceRange(range.value);
+                            setShowPriceDropdown(false);
+                          }}
+                          className="w-full px-4 py-3 text-left text-foreground hover:bg-secondary transition-colors duration-200 cursor-pointer"
+                        >
+                          {range.label}
+                        </button>
+                      ))}
+                    </div>
+                  )}
                 </div>
               </div>
 
-              <button className="bg-gradient-to-r from-brand-red to-brand-orange text-white px-8 py-4 rounded-xl hover:from-red-700 hover:to-orange-700 transition-all duration-300 cursor-pointer whitespace-nowrap rounded-button font-bold text-lg shadow-xl hover:shadow-2xl transform hover:scale-105 flex items-center justify-center gap-3">
+              <button 
+                onClick={() => {
+                  console.log('🔍 Search triggered with:', {
+                    location: searchLocation,
+                    date: searchDate,
+                    guests: groupSize,
+                    priceRange: priceRange
+                  });
+                  // Close all dropdowns
+                  setShowLocationDropdown(false);
+                  setShowGuestsDropdown(false);
+                  setShowPriceDropdown(false);
+                  // The filtering is now handled automatically by the filter logic above
+                  console.log('✅ Filters applied automatically');
+                }}
+                className="bg-gradient-to-r from-brand-red to-brand-orange text-white px-8 py-4 rounded-xl hover:from-red-700 hover:to-orange-700 transition-all duration-300 cursor-pointer whitespace-nowrap rounded-button font-bold text-lg shadow-xl hover:shadow-2xl transform hover:scale-105 flex items-center justify-center gap-3"
+              >
                 <i className="fas fa-search text-xl"></i>
                 <span>Search</span>
               </button>
@@ -403,6 +744,28 @@ const Properties: React.FC = () => {
 
             <div className="flex items-center gap-4">
               <span className="text-muted-foreground">Showing {properties.length} properties</span>
+                      <button
+          onClick={refreshProperties}
+          disabled={loading}
+          className="flex items-center gap-2 px-4 py-2 border border-border rounded-lg hover:border-brand-red transition-colors duration-200 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+          title="Refresh properties"
+        >
+          <i className={`fas fa-sync-alt ${loading ? 'animate-spin' : ''} text-brand-red`}></i>
+          <span className="text-foreground">Refresh</span>
+        </button>
+        {cacheDisabled && (
+          <div className="flex items-center gap-2 px-3 py-1 bg-yellow-100 text-yellow-800 rounded-lg text-sm">
+            <i className="fas fa-exclamation-triangle"></i>
+            <span>Caching disabled (storage full)</span>
+            <button
+              onClick={reEnableCaching}
+              className="ml-2 px-2 py-1 bg-yellow-600 text-white rounded text-xs hover:bg-yellow-700 transition-colors"
+              title="Re-enable caching"
+            >
+              <i className="fas fa-redo"></i> Re-enable
+            </button>
+          </div>
+        )}
               <button
                 className="flex items-center gap-2 px-4 py-2 border border-border rounded-lg hover:border-muted-foreground transition-colors duration-200 cursor-pointer lg:hidden"
                 onClick={() => setShowFilters(!showFilters)}
@@ -521,8 +884,30 @@ const Properties: React.FC = () => {
                 </div>
               ) : (
                 <div className={`grid gap-8 ${viewMode === 'grid' ? 'grid-cols-1 md:grid-cols-2 xl:grid-cols-3' : 'grid-cols-1'}`}>
-                  {currentProperties.map((property, index) => (
-                      <div key={property.id} className="bg-background rounded-2xl shadow-lg border border-border p-6">
+                                    {currentProperties.map((property, index) => (
+                    <div key={property.id} className="bg-background rounded-2xl shadow-lg border border-border overflow-hidden">
+                      {/* Image Section */}
+                      <div className="relative h-48 bg-gray-200 flex items-center justify-center">
+                        {property.image && property.image !== '/placeholder.svg' ? (
+                          <img
+                            src={property.image}
+                            alt={property.name}
+                            className="w-full h-full object-cover"
+                            onError={(e) => {
+                              console.log('Image failed to load:', property.image);
+                              e.currentTarget.src = '/placeholder.svg';
+                            }}
+                          />
+                        ) : (
+                          <div className="text-center text-gray-500">
+                            <i className="fas fa-image text-4xl mb-2"></i>
+                            <p className="text-sm">No Image Available</p>
+                          </div>
+                        )}
+                      </div>
+                      
+                      {/* Content Section */}
+                      <div className="p-6">
                         <h3 className="text-lg font-bold text-foreground mb-2">{property.name}</h3>
                         <p className="text-muted-foreground mb-2">
                           <i className="fas fa-map-marker-alt text-brand-red mr-2"></i>
@@ -533,7 +918,8 @@ const Properties: React.FC = () => {
                           Book Now
                         </button>
                       </div>
-                    ))}
+                    </div>
+                  ))}
                 </div>
               )}
 

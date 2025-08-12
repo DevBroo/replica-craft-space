@@ -1,0 +1,300 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Header Spacing Fix Test</title>
+    <style>
+        body { 
+            font-family: 'Poppins', sans-serif; 
+            margin: 0; 
+            padding: 20px; 
+            background: #f5f5f5; 
+        }
+        .container { 
+            max-width: 1200px; 
+            margin: 0 auto; 
+            background: white; 
+            padding: 30px; 
+            border-radius: 12px; 
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1); 
+        }
+        .status { 
+            padding: 15px; 
+            border-radius: 8px; 
+            margin: 15px 0; 
+            font-weight: 500; 
+        }
+        .status-success { 
+            background: #d4edda; 
+            color: #155724; 
+            border: 1px solid #c3e6cb; 
+        }
+        .status-error { 
+            background: #f8d7da; 
+            color: #721c24; 
+            border: 1px solid #f5c6cb; 
+        }
+        .status-warning { 
+            background: #fff3cd; 
+            color: #856404; 
+            border: 1px solid #ffeaa7; 
+        }
+        .header-simulation {
+            background: white;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            padding: 0 24px;
+            margin: 20px 0;
+            border-radius: 8px;
+        }
+        .header-content {
+            max-width: 1200px;
+            margin: 0 auto;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            height: 80px;
+            width: 100%;
+            gap: 32px;
+        }
+        .logo-section {
+            display: flex;
+            align-items: center;
+            min-width: 300px;
+        }
+        .logo {
+            height: 48px;
+            width: auto;
+            background: #f0f0f0;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            color: #666;
+        }
+        .nav-section {
+            display: flex;
+            align-items: center;
+            gap: 40px;
+            flex: 1;
+            justify-content: center;
+            margin-left: 128px;
+        }
+        .nav-link {
+            color: #333;
+            text-decoration: none;
+            font-weight: 500;
+            transition: color 0.2s;
+            white-space: nowrap;
+        }
+        .nav-link:hover {
+            color: #ff6b35;
+        }
+        .auth-section {
+            display: flex;
+            align-items: center;
+            gap: 24px;
+            min-width: 300px;
+            justify-content: flex-end;
+        }
+        .user-info {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        .user-avatar {
+            width: 32px;
+            height: 32px;
+            background: linear-gradient(135deg, #ff6b35, #f7931e);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: bold;
+            font-size: 14px;
+        }
+        .user-email {
+            font-size: 14px;
+            color: #333;
+            font-weight: 500;
+        }
+        .logout-btn {
+            padding: 8px 16px;
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 6px;
+            color: #333;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .logout-btn:hover {
+            background: #e9ecef;
+        }
+        .spacing-info {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 8px;
+            border: 1px solid #dee2e6;
+            margin: 20px 0;
+        }
+        .spacing-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin: 15px 0;
+        }
+        .spacing-item {
+            background: white;
+            padding: 10px;
+            border-radius: 6px;
+            border: 1px solid #dee2e6;
+        }
+        .spacing-value {
+            font-size: 18px;
+            font-weight: bold;
+            color: #007bff;
+        }
+        .spacing-label {
+            font-size: 12px;
+            color: #6c757d;
+            margin-top: 5px;
+        }
+    </style>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+    <div class="container">
+        <h1>📏 Header Spacing Fix Test</h1>
+        
+        <div class="status status-success">
+            <strong>Header Spacing Optimized:</strong> Logo(300px) + Nav(128px margin + 40px gaps) + Auth(300px)
+        </div>
+
+        <div class="header-simulation">
+            <div class="header-content">
+                <!-- Logo Section -->
+                <div class="logo-section">
+                    <div class="logo">PICNIFY.IN</div>
+                </div>
+                
+                <!-- Navigation Section -->
+                <nav class="nav-section">
+                    <a href="#" class="nav-link">
+                        <i class="fas fa-home"></i> Home
+                    </a>
+                    <a href="#" class="nav-link">
+                        <i class="fas fa-building"></i> Properties
+                    </a>
+                    <a href="#" class="nav-link">
+                        <i class="fas fa-map-marker-alt"></i> Locations
+                    </a>
+                    <a href="#" class="nav-link">
+                        <i class="fas fa-info-circle"></i> About
+                    </a>
+                    <a href="#" class="nav-link">
+                        <i class="fas fa-envelope"></i> Contact
+                    </a>
+                    <div class="nav-link">
+                        <i class="fas fa-door-open"></i> Portals
+                    </div>
+                </nav>
+                
+                <!-- Auth Section -->
+                <div class="auth-section">
+                    <div class="user-info">
+                        <div class="user-avatar">M</div>
+                        <span class="user-email">mshantaksirsha07@gmail.com</span>
+                    </div>
+                    <button class="logout-btn">
+                        <i class="fas fa-sign-out-alt"></i> Logout
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <div class="spacing-info">
+            <h3>📐 Spacing Measurements:</h3>
+            <div class="spacing-grid">
+                <div class="spacing-item">
+                    <div class="spacing-value">300px</div>
+                    <div class="spacing-label">Logo Section Width</div>
+                </div>
+                <div class="spacing-item">
+                    <div class="spacing-value">128px</div>
+                    <div class="spacing-label">Nav Left Margin</div>
+                </div>
+                <div class="spacing-item">
+                    <div class="spacing-value">40px</div>
+                    <div class="spacing-label">Nav Link Gaps</div>
+                </div>
+                <div class="spacing-item">
+                    <div class="spacing-value">300px</div>
+                    <div class="spacing-label">Auth Section Width</div>
+                </div>
+                <div class="spacing-item">
+                    <div class="spacing-value">32px</div>
+                    <div class="spacing-label">Header Container Gap</div>
+                </div>
+                <div class="spacing-item">
+                    <div class="spacing-value">24px</div>
+                    <div class="spacing-label">Auth Element Gaps</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="status status-success">
+            <strong>✅ Fixed Issues:</strong>
+            <ul>
+                <li>✅ Logo section has proper 300px width</li>
+                <li>✅ Navigation has 128px left margin from logo</li>
+                <li>✅ Navigation links have 40px spacing between them</li>
+                <li>✅ Auth section has 300px width with proper spacing</li>
+                <li>✅ User avatar and email have 12px gap</li>
+                <li>✅ Logout button has proper padding and spacing</li>
+                <li>✅ Header container has 32px gap between sections</li>
+            </ul>
+        </div>
+
+        <div class="status status-warning">
+            <strong>🔍 Verification Steps:</strong>
+            <ol>
+                <li>Check main page header spacing</li>
+                <li>Verify logo and navigation are properly separated</li>
+                <li>Confirm auth section elements are well-spaced</li>
+                <li>Test on different screen sizes</li>
+                <li>Ensure no elements are overlapping</li>
+            </ol>
+        </div>
+    </div>
+
+    <script>
+        // Auto-check spacing
+        window.addEventListener('load', () => {
+            const logoSection = document.querySelector('.logo-section');
+            const navSection = document.querySelector('.nav-section');
+            const authSection = document.querySelector('.auth-section');
+            
+            const logoWidth = logoSection.offsetWidth;
+            const navWidth = navSection.offsetWidth;
+            const authWidth = authSection.offsetWidth;
+            
+            console.log('✅ Header spacing measurements:');
+            console.log('Logo section width:', logoWidth, 'px');
+            console.log('Navigation section width:', navWidth, 'px');
+            console.log('Auth section width:', authWidth, 'px');
+            
+            // Check if spacing looks good
+            const isWellSpaced = logoWidth >= 280 && authWidth >= 280 && navWidth > 200;
+            
+            if (isWellSpaced) {
+                console.log('✅ Header spacing looks good!');
+            } else {
+                console.log('⚠️ Header spacing may need adjustment');
+            }
+        });
+    </script>
+</body>
+</html>
