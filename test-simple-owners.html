@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Simple Property Owners</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            line-height: 1.6;
+        }
+        .test-section {
+            background: #f5f5f5;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 8px;
+        }
+        .test-button {
+            display: inline-block;
+            background: #007bff;
+            color: white;
+            padding: 10px 20px;
+            text-decoration: none;
+            border-radius: 5px;
+            margin: 5px;
+        }
+        .test-button:hover {
+            background: #0056b3;
+        }
+        .success {
+            color: #28a745;
+        }
+        .error {
+            color: #dc3545;
+        }
+    </style>
+</head>
+<body>
+    <h1>🧪 Test Simple Property Owners</h1>
+    
+    <div class="test-section">
+        <h2>✅ What This Does</h2>
+        <ul>
+            <li><strong>Simple Approach:</strong> Gets all unique owner IDs from properties table</li>
+            <li><strong>No Complex RLS:</strong> Just reads from properties table</li>
+            <li><strong>Shows Everyone:</strong> Anyone who has properties will appear</li>
+            <li><strong>Property Count:</strong> Shows how many properties each owner has</li>
+        </ul>
+    </div>
+
+    <div class="test-section">
+        <h2>🔍 Expected Results</h2>
+        <ul>
+            <li><strong>Total Owners:</strong> Should show 1 (the owner with 4 properties)</li>
+            <li><strong>Properties Count:</strong> Should show 4 properties</li>
+            <li><strong>Owner ID:</strong> Should show 67af3277-e025-4cca-a504-b4f2d723f7ca</li>
+            <li><strong>Email:</strong> Should show owner-67af3277@picnify.com</li>
+        </ul>
+    </div>
+
+    <div class="test-section">
+        <h2>🚀 Test Links</h2>
+        <a href="http://localhost:8082/admin/owner-management" class="test-button" target="_blank">Admin Panel - Owner Management</a>
+        <a href="http://localhost:8082/admin/dashboard" class="test-button" target="_blank">Admin Dashboard</a>
+    </div>
+
+    <div class="test-section">
+        <h2>📝 Test Instructions</h2>
+        <ol>
+            <li>Click "Admin Panel - Owner Management" above</li>
+            <li>Wait for the page to load</li>
+            <li>Verify that it shows <strong>1 property owner</strong></li>
+            <li>Check that the owner has <strong>4 properties</strong></li>
+            <li>Verify the owner ID matches: <strong>67af3277-e025-4cca-a504-b4f2d723f7ca</strong></li>
+        </ol>
+    </div>
+
+    <div class="test-section">
+        <h2>🔧 How It Works</h2>
+        <p><strong>Step 1:</strong> Get all properties from database</p>
+        <p><strong>Step 2:</strong> Extract unique owner IDs</p>
+        <p><strong>Step 3:</strong> Count properties for each owner</p>
+        <p><strong>Step 4:</strong> Display in admin panel</p>
+        <p><strong>No RLS Issues:</strong> Just reading from properties table</p>
+    </div>
+
+    <script>
+        console.log('🧪 Test Simple Property Owners Page Loaded');
+        console.log('📋 This should now show the property owner with 4 properties');
+        
+        // Check if admin panel is accessible
+        fetch('http://localhost:8082/admin/owner-management')
+            .then(response => {
+                if (response.ok) {
+                    console.log('✅ Admin panel is accessible');
+                } else {
+                    console.log('❌ Admin panel returned status:', response.status);
+                }
+            })
+            .catch(error => {
+                console.log('❌ Error accessing admin panel:', error);
+            });
+    </script>
+</body>
+</html>

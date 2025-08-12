@@ -9,15 +9,15 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children }) => {
   const navigate = useNavigate();
 
   useEffect(() => {
-    const isAuthenticated = localStorage.getItem('isAuthenticated');
-    if (!isAuthenticated) {
-      navigate('/login');
+    const isAdminAuthenticated = localStorage.getItem('adminAuthenticated');
+    if (!isAdminAuthenticated) {
+      navigate('/admin/login');
     }
   }, [navigate]);
 
-  const isAuthenticated = localStorage.getItem('isAuthenticated');
+  const isAdminAuthenticated = localStorage.getItem('adminAuthenticated');
   
-  if (!isAuthenticated) {
+  if (!isAdminAuthenticated) {
     return null; // or a loading spinner
   }
 

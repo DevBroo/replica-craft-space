@@ -1,0 +1,284 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Data Test - Picnify</title>
+    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+    <style>
+        body {
+            font-family: 'Poppins', sans-serif;
+            margin: 0;
+            padding: 20px;
+            background: #f8fafc;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        
+        .test-section {
+            background: white;
+            border-radius: 12px;
+            padding: 24px;
+            margin-bottom: 20px;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+        }
+        
+        .test-title {
+            color: #ea580c;
+            font-size: 1.5rem;
+            font-weight: 600;
+            margin-bottom: 16px;
+        }
+        
+        .test-button {
+            background: linear-gradient(135deg, #ea580c, #dc2626);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin: 8px;
+        }
+        
+        .test-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(234, 88, 12, 0.3);
+        }
+        
+        .data-display {
+            background: #f8fafc;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            padding: 16px;
+            margin: 16px 0;
+            font-family: monospace;
+            font-size: 14px;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+        
+        .error {
+            background: #fee2e2;
+            border: 1px solid #fecaca;
+            color: #991b1b;
+            padding: 12px;
+            border-radius: 8px;
+            margin: 8px 0;
+        }
+        
+        .success {
+            background: #dcfce7;
+            border: 1px solid #bbf7d0;
+            color: #166534;
+            padding: 12px;
+            border-radius: 8px;
+            margin: 8px 0;
+        }
+        
+        .info {
+            background: #dbeafe;
+            border: 1px solid #bfdbfe;
+            color: #1e40af;
+            padding: 12px;
+            border-radius: 8px;
+            margin: 8px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1 style="color: #ea580c; text-align: center; margin-bottom: 40px;">Admin Data Test - Picnify</h1>
+        
+        <div class="test-section">
+            <h2 class="test-title">Database Connection Test</h2>
+            <p>This test will check what data exists in your Supabase database to help debug the admin panel issue.</p>
+            
+            <button class="test-button" onclick="testDatabaseConnection()">
+                🔍 Test Database Connection
+            </button>
+            
+            <button class="test-button" onclick="loadAllProfiles()">
+                👥 Load All Profiles
+            </button>
+            
+            <button class="test-button" onclick="loadAllProperties()">
+                🏠 Load All Properties
+            </button>
+            
+            <button class="test-button" onclick="loadOwnersOnly()">
+                👤 Load Owners Only
+            </button>
+            
+            <div id="results"></div>
+        </div>
+        
+        <div class="test-section">
+            <h2 class="test-title">Expected Results</h2>
+            <div class="info">
+                <strong>What we're looking for:</strong>
+                <ul>
+                    <li>At least 1 user in the profiles table</li>
+                    <li>Users with role 'owner' or users who have properties</li>
+                    <li>Properties with valid owner_id references</li>
+                    <li>Proper data structure and relationships</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Supabase configuration
+        const SUPABASE_URL = "https://riqsgtuzccwpplbodwbd.supabase.co";
+        const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJpcXNndHV6Y2N3cHBsYm9kd2JkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTQyOTY2NTUsImV4cCI6MjA2OTg3MjY1NX0.qkSVWoVi8cStB1WZdqtapc8O6jc_aAiYEm0Y5Lqp1-s";
+        
+        const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+        
+        function displayResult(title, data, type = 'info') {
+            const resultsDiv = document.getElementById('results');
+            const div = document.createElement('div');
+            div.className = type;
+            div.innerHTML = `
+                <h3>${title}</h3>
+                <div class="data-display">${JSON.stringify(data, null, 2)}</div>
+            `;
+            resultsDiv.appendChild(div);
+        }
+        
+        function clearResults() {
+            document.getElementById('results').innerHTML = '';
+        }
+        
+        async function testDatabaseConnection() {
+            clearResults();
+            displayResult('Testing Database Connection...', 'Connecting...', 'info');
+            
+            try {
+                // Test basic connection
+                const { data, error } = await supabase.from('profiles').select('count').limit(1);
+                
+                if (error) {
+                    displayResult('❌ Database Connection Failed', error, 'error');
+                } else {
+                    displayResult('✅ Database Connection Successful', { message: 'Connected to Supabase successfully' }, 'success');
+                }
+            } catch (err) {
+                displayResult('❌ Connection Error', err, 'error');
+            }
+        }
+        
+        async function loadAllProfiles() {
+            clearResults();
+            displayResult('Loading All Profiles...', 'Loading...', 'info');
+            
+            try {
+                const { data, error } = await supabase.from('profiles').select('*');
+                
+                if (error) {
+                    displayResult('❌ Error Loading Profiles', error, 'error');
+                } else {
+                    displayResult(`✅ All Profiles (${data.length} found)`, data, 'success');
+                    
+                    // Analyze the data
+                    const analysis = {
+                        totalProfiles: data.length,
+                        roles: data.reduce((acc, profile) => {
+                            acc[profile.role || 'no-role'] = (acc[profile.role || 'no-role'] || 0) + 1;
+                            return acc;
+                        }, {}),
+                        profilesWithNames: data.filter(p => p.full_name || p.first_name).length,
+                        profilesWithEmails: data.filter(p => p.email).length
+                    };
+                    
+                    displayResult('📊 Profile Analysis', analysis, 'info');
+                }
+            } catch (err) {
+                displayResult('❌ Error', err, 'error');
+            }
+        }
+        
+        async function loadAllProperties() {
+            clearResults();
+            displayResult('Loading All Properties...', 'Loading...', 'info');
+            
+            try {
+                const { data, error } = await supabase.from('properties').select('*');
+                
+                if (error) {
+                    displayResult('❌ Error Loading Properties', error, 'error');
+                } else {
+                    displayResult(`✅ All Properties (${data.length} found)`, data, 'success');
+                    
+                    // Analyze the data
+                    const analysis = {
+                        totalProperties: data.length,
+                        statuses: data.reduce((acc, property) => {
+                            acc[property.status || 'no-status'] = (acc[property.status || 'no-status'] || 0) + 1;
+                            return acc;
+                        }, {}),
+                        uniqueOwners: [...new Set(data.map(p => p.owner_id))].length,
+                        propertiesWithTitles: data.filter(p => p.title).length
+                    };
+                    
+                    displayResult('📊 Property Analysis', analysis, 'info');
+                }
+            } catch (err) {
+                displayResult('❌ Error', err, 'error');
+            }
+        }
+        
+        async function loadOwnersOnly() {
+            clearResults();
+            displayResult('Loading Owners Only...', 'Loading...', 'info');
+            
+            try {
+                // Try different approaches to find owners
+                const approaches = [
+                    { name: 'Role = owner', query: supabase.from('profiles').select('*').eq('role', 'owner') },
+                    { name: 'Role = customer', query: supabase.from('profiles').select('*').eq('role', 'customer') },
+                    { name: 'All profiles', query: supabase.from('profiles').select('*') }
+                ];
+                
+                for (const approach of approaches) {
+                    const { data, error } = await approach.query;
+                    
+                    if (error) {
+                        displayResult(`❌ Error with ${approach.name}`, error, 'error');
+                    } else {
+                        displayResult(`✅ ${approach.name} (${data.length} found)`, data, 'success');
+                    }
+                }
+                
+                // Also check properties to see what owner_ids exist
+                const { data: properties, error: propertiesError } = await supabase.from('properties').select('owner_id');
+                
+                if (!propertiesError && properties.length > 0) {
+                    const uniqueOwnerIds = [...new Set(properties.map(p => p.owner_id))];
+                    displayResult('🏠 Unique Owner IDs from Properties', uniqueOwnerIds, 'info');
+                    
+                    // Try to find these owners
+                    for (const ownerId of uniqueOwnerIds.slice(0, 5)) { // Limit to first 5
+                        const { data: owner, error: ownerError } = await supabase
+                            .from('profiles')
+                            .select('*')
+                            .eq('id', ownerId);
+                        
+                        if (ownerError) {
+                            displayResult(`❌ Error finding owner ${ownerId}`, ownerError, 'error');
+                        } else {
+                            displayResult(`✅ Owner ${ownerId}`, owner, 'success');
+                        }
+                    }
+                }
+                
+            } catch (err) {
+                displayResult('❌ Error', err, 'error');
+            }
+        }
+    </script>
+</body>
+</html>

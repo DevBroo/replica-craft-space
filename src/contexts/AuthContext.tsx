@@ -163,11 +163,16 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         if (session?.user) {
           try {
             console.log('👤 Ensuring user profile exists...');
+            
+            // Get the role from user metadata (set during registration)
+            const userRole = session.user.user_metadata?.role || 'customer';
+            console.log('🎭 User role from metadata:', userRole);
+            
             // Set user immediately with basic data for fast loading
             const basicUser = {
               id: session.user.id,
               email: session.user.email || '',
-              role: 'property_owner',
+              role: userRole,
               full_name: session.user.user_metadata?.full_name || '',
               avatar_url: session.user.user_metadata?.avatar_url || null,
               phone: session.user.user_metadata?.phone || null,
@@ -203,10 +208,11 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
           } catch (error) {
             console.error('❌ Error during profile sync:', error);
             // Set a basic user object even if profile sync fails
+            const userRole = session.user.user_metadata?.role || 'customer';
             setUser({
               id: session.user.id,
               email: session.user.email || '',
-              role: 'property_owner',
+              role: userRole,
               full_name: session.user.user_metadata?.full_name || '',
               avatar_url: session.user.user_metadata?.avatar_url || null,
               phone: session.user.user_metadata?.phone || null,
@@ -369,8 +375,11 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         options: {
           emailRedirectTo: redirectUrl,
           data: {
-            full_name: data.full_name || '',
-            role: data.role || 'user',
+            full_name: `${data.firstName || ''} ${data.lastName || ''}`.trim(),
+            role: data.role || 'customer',
+            phone: data.phone || '',
+            first_name: data.firstName || '',
+            last_name: data.lastName || '',
           }
         }
       });

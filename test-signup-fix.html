@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Signup Fix Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            line-height: 1.6;
+        }
+        .test-section {
+            background: #f5f5f5;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 8px;
+        }
+        .test-button {
+            display: inline-block;
+            background: #007bff;
+            color: white;
+            padding: 10px 20px;
+            text-decoration: none;
+            border-radius: 5px;
+            margin: 5px;
+        }
+        .test-button:hover {
+            background: #0056b3;
+        }
+        .success {
+            color: #28a745;
+        }
+        .error {
+            color: #dc3545;
+        }
+        .info {
+            color: #17a2b8;
+        }
+    </style>
+</head>
+<body>
+    <h1>🔧 Signup Fix Test</h1>
+    
+    <div class="test-section">
+        <h2>✅ What Was Fixed</h2>
+        <ul>
+            <li><strong>Auth State Listener:</strong> Now properly reads the role from user metadata instead of hardcoding 'property_owner'</li>
+            <li><strong>Registration Function:</strong> Now properly sets all user metadata including role, phone, first_name, last_name</li>
+            <li><strong>Success Handling:</strong> Now handles both immediate authentication and email verification required cases</li>
+            <li><strong>User Feedback:</strong> Shows appropriate success messages and redirects based on authentication status</li>
+            <li><strong>Success State Bug:</strong> Fixed issue where success message appeared without actually signing up</li>
+        </ul>
+    </div>
+
+    <div class="test-section">
+        <h2>🧪 Test Scenarios</h2>
+        
+        <h3>1. Property Owner Signup (Email Verification Required)</h3>
+        <p>This should now show a success message and redirect to login after 3 seconds.</p>
+        <a href="http://localhost:8080/owner/signup" class="test-button" target="_blank">
+            Test Property Owner Signup
+        </a>
+        
+        <h3>2. Check Console Logs</h3>
+        <p>Open browser console and look for these log messages:</p>
+        <ul>
+            <li><code>🎭 User role from metadata: owner</code> - Should show correct role</li>
+            <li><code>✅ Registration successful, email verification required</code> - Should show when email verification is needed</li>
+            <li><code>✅ Registration successful and user authenticated</code> - Should show when user is immediately authenticated</li>
+        </ul>
+        
+        <h3>3. Expected Behavior</h3>
+        <ul>
+            <li>✅ Form submission should show loading state</li>
+            <li>✅ Success message should appear after registration</li>
+            <li>✅ Should redirect to appropriate page after 3 seconds</li>
+            <li>✅ Console should show correct role in user metadata</li>
+        </ul>
+    </div>
+
+    <div class="test-section">
+        <h2>🔍 Debug Information</h2>
+        
+        <h3>Test Data</h3>
+        <pre>
+First Name: Test
+Last Name: User
+Email: test.user@example.com
+Phone: +1 555 123 4567
+Password: TestPass123!
+Role: Property Owner (should be pre-selected)
+Terms: ✅ Accept Terms of Service
+        </pre>
+        
+        <h3>Expected Console Output</h3>
+        <pre>
+🏠 Signup component mounted at path: /owner/signup
+🔐 Attempting registration for: test.user@example.com
+✅ User registered successfully: test.user@example.com
+🔐 Auth state changed: SIGNED_UP [user object]
+🎭 User role from metadata: owner
+✅ Registration successful, email verification required
+✅ All conditions met, redirecting in 3 seconds
+        </pre>
+    </div>
+
+    <div class="test-section">
+        <h2>🚀 Quick Test Links</h2>
+        <a href="http://localhost:8080/owner/signup" class="test-button" target="_blank">Owner Signup</a>
+        <a href="http://localhost:8080/signup?role=owner" class="test-button" target="_blank">General Signup (Owner)</a>
+        <a href="http://localhost:8080/signup?role=customer" class="test-button" target="_blank">Customer Signup</a>
+        <a href="http://localhost:8080/signup?role=agent" class="test-button" target="_blank">Agent Signup</a>
+    </div>
+
+    <div class="test-section">
+        <h2>📝 Test Instructions</h2>
+        <ol>
+            <li>Click one of the test links above</li>
+            <li>Fill out the form with the test data</li>
+            <li>Click "Create Account"</li>
+            <li>Watch for the loading state and success message</li>
+            <li>Check the console for the expected log messages</li>
+            <li>Verify the redirect happens after 3 seconds</li>
+        </ol>
+    </div>
+
+    <script>
+        console.log('🧪 Signup Fix Test Page Loaded');
+        console.log('📋 Test the signup functionality with the links above');
+    </script>
+</body>
+</html>

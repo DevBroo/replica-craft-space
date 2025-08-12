@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Check Property Owners Count</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            line-height: 1.6;
+        }
+        .test-section {
+            background: #f5f5f5;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 8px;
+        }
+        .test-button {
+            display: inline-block;
+            background: #007bff;
+            color: white;
+            padding: 10px 20px;
+            text-decoration: none;
+            border-radius: 5px;
+            margin: 5px;
+        }
+        .test-button:hover {
+            background: #0056b3;
+        }
+        .success {
+            color: #28a745;
+        }
+        .error {
+            color: #dc3545;
+        }
+        .info {
+            color: #17a2b8;
+        }
+        .result {
+            background: white;
+            padding: 15px;
+            border-radius: 5px;
+            margin: 10px 0;
+            border-left: 4px solid #007bff;
+        }
+    </style>
+</head>
+<body>
+    <h1>🏢 Property Owners Database Check</h1>
+    
+    <div class="test-section">
+        <h2>📊 Check Property Owners Count</h2>
+        <p>This will query your Supabase database to see how many property owners are currently registered.</p>
+        
+        <button onclick="checkPropertyOwners()" class="test-button">Check Property Owners</button>
+        <button onclick="checkAllUsers()" class="test-button">Check All Users</button>
+        <button onclick="checkProperties()" class="test-button">Check Properties</button>
+        
+        <div id="results"></div>
+    </div>
+
+    <div class="test-section">
+        <h2>🔗 Quick Links</h2>
+        <a href="http://localhost:8082/admin/owner-management" class="test-button" target="_blank">Admin Panel - Owner Management</a>
+        <a href="http://localhost:8082/owner/signup" class="test-button" target="_blank">Create New Property Owner</a>
+        <a href="http://localhost:8082/admin/dashboard" class="test-button" target="_blank">Admin Dashboard</a>
+    </div>
+
+    <script>
+        const SUPABASE_URL = "https://riqsgtuzccwpplbodwbd.supabase.co";
+        const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJpcXNndHV6Y2N3cHBsYm9kd2JkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTQyOTY2NTUsImV4cCI6MjA2OTg3MjY1NX0.qkSVWoVi8cStB1WZdqtapc8O6jc_aAiYEm0Y5Lqp1-s";
+
+        function logResult(message, type = 'info') {
+            const resultsDiv = document.getElementById('results');
+            const resultDiv = document.createElement('div');
+            resultDiv.className = 'result';
+            resultDiv.innerHTML = `
+                <strong>${type === 'success' ? '✅' : type === 'error' ? '❌' : 'ℹ️'} ${message}</strong>
+                <div id="details-${Date.now()}"></div>
+            `;
+            resultsDiv.appendChild(resultDiv);
+            return resultDiv;
+        }
+
+        async function checkPropertyOwners() {
+            try {
+                logResult('Checking property owners in database...', 'info');
+                
+                const response = await fetch(`${SUPABASE_URL}/rest/v1/profiles?role=eq.property_owner&select=*`, {
+                    headers: {
+                        'apikey': SUPABASE_ANON_KEY,
+                        'Authorization': `Bearer ${SUPABASE_ANON_KEY}`
+                    }
+                });
+
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+
+                const owners = await response.json();
+                
+                logResult(`Found ${owners.length} property owners in database`, 'success');
+                
+                if (owners.length > 0) {
+                    const detailsDiv = document.querySelector('#results .result:last-child #details-' + Date.now());
+                    detailsDiv.innerHTML = `
+                        <h3>Property Owners List:</h3>
+                        <table style="width: 100%; border-collapse: collapse; margin-top: 10px;">
+                            <thead>
+                                <tr style="background: #f8f9fa;">
+                                    <th style="border: 1px solid #ddd; padding: 8px; text-align: left;">Name</th>
+                                    <th style="border: 1px solid #ddd; padding: 8px; text-align: left;">Email</th>
+                                    <th style="border: 1px solid #ddd; padding: 8px; text-align: left;">Phone</th>
+                                    <th style="border: 1px solid #ddd; padding: 8px; text-align: left;">Created</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                ${owners.map(owner => `
+                                    <tr>
+                                        <td style="border: 1px solid #ddd; padding: 8px;">${owner.full_name || 'Unnamed'}</td>
+                                        <td style="border: 1px solid #ddd; padding: 8px;">${owner.email || 'No email'}</td>
+                                        <td style="border: 1px solid #ddd; padding: 8px;">${owner.phone || 'No phone'}</td>
+                                        <td style="border: 1px solid #ddd; padding: 8px;">${new Date(owner.created_at).toLocaleDateString()}</td>
+                                    </tr>
+                                `).join('')}
+                            </tbody>
+                        </table>
+                    `;
+                }
+            } catch (error) {
+                logResult(`Error checking property owners: ${error.message}`, 'error');
+            }
+        }
+
+        async function checkAllUsers() {
+            try {
+                logResult('Checking all users in database...', 'info');
+                
+                const response = await fetch(`${SUPABASE_URL}/rest/v1/profiles?select=role,count`, {
+                    headers: {
+                        'apikey': SUPABASE_ANON_KEY,
+                        'Authorization': `Bearer ${SUPABASE_ANON_KEY}`
+                    }
+                });
+
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+
+                const users = await response.json();
+                
+                // Count by role
+                const roleCounts = {};
+                users.forEach(user => {
+                    const role = user.role || 'unknown';
+                    roleCounts[role] = (roleCounts[role] || 0) + 1;
+                });
+                
+                logResult(`Found ${users.length} total users in database`, 'success');
+                
+                const detailsDiv = document.querySelector('#results .result:last-child #details-' + Date.now());
+                detailsDiv.innerHTML = `
+                    <h3>Users by Role:</h3>
+                    <ul>
+                        ${Object.entries(roleCounts).map(([role, count]) => 
+                            `<li><strong>${role}:</strong> ${count} users</li>`
+                        ).join('')}
+                    </ul>
+                `;
+            } catch (error) {
+                logResult(`Error checking all users: ${error.message}`, 'error');
+            }
+        }
+
+        async function checkProperties() {
+            try {
+                logResult('Checking properties in database...', 'info');
+                
+                const response = await fetch(`${SUPABASE_URL}/rest/v1/properties?select=*`, {
+                    headers: {
+                        'apikey': SUPABASE_ANON_KEY,
+                        'Authorization': `Bearer ${SUPABASE_ANON_KEY}`
+                    }
+                });
+
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+
+                const properties = await response.json();
+                
+                logResult(`Found ${properties.length} properties in database`, 'success');
+                
+                if (properties.length > 0) {
+                    const detailsDiv = document.querySelector('#results .result:last-child #details-' + Date.now());
+                    detailsDiv.innerHTML = `
+                        <h3>Properties List:</h3>
+                        <table style="width: 100%; border-collapse: collapse; margin-top: 10px;">
+                            <thead>
+                                <tr style="background: #f8f9fa;">
+                                    <th style="border: 1px solid #ddd; padding: 8px; text-align: left;">Title</th>
+                                    <th style="border: 1px solid #ddd; padding: 8px; text-align: left;">Type</th>
+                                    <th style="border: 1px solid #ddd; padding: 8px; text-align: left;">Status</th>
+                                    <th style="border: 1px solid #ddd; padding: 8px; text-align: left;">Created</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                ${properties.map(property => `
+                                    <tr>
+                                        <td style="border: 1px solid #ddd; padding: 8px;">${property.title || 'Untitled'}</td>
+                                        <td style="border: 1px solid #ddd; padding: 8px;">${property.property_type || 'Unknown'}</td>
+                                        <td style="border: 1px solid #ddd; padding: 8px;">${property.status || 'Unknown'}</td>
+                                        <td style="border: 1px solid #ddd; padding: 8px;">${new Date(property.created_at).toLocaleDateString()}</td>
+                                    </tr>
+                                `).join('')}
+                            </tbody>
+                        </table>
+                    `;
+                }
+            } catch (error) {
+                logResult(`Error checking properties: ${error.message}`, 'error');
+            }
+        }
+
+        console.log('🏢 Property Owners Check Page Loaded');
+        console.log('📋 Use the buttons above to check your database');
+    </script>
+</body>
+</html>

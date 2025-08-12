@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Panel - Property Owners Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 20px;
+            line-height: 1.6;
+        }
+        .test-section {
+            background: #f5f5f5;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 8px;
+        }
+        .test-button {
+            display: inline-block;
+            background: #007bff;
+            color: white;
+            padding: 10px 20px;
+            text-decoration: none;
+            border-radius: 5px;
+            margin: 5px;
+        }
+        .test-button:hover {
+            background: #0056b3;
+        }
+        .success {
+            color: #28a745;
+        }
+        .error {
+            color: #dc3545;
+        }
+        .info {
+            color: #17a2b8;
+        }
+        .warning {
+            color: #ffc107;
+        }
+    </style>
+</head>
+<body>
+    <h1>🏢 Admin Panel - Property Owners Test</h1>
+    
+    <div class="test-section">
+        <h2>✅ What's New</h2>
+        <ul>
+            <li><strong>Real Data Integration:</strong> Now fetches actual property owners from the database</li>
+            <li><strong>Property Counts:</strong> Shows how many properties each owner has</li>
+            <li><strong>Owner Details Modal:</strong> Click the eye icon to view detailed owner information</li>
+            <li><strong>Status Management:</strong> Approve/block owners with real database updates</li>
+            <li><strong>Search & Filter:</strong> Search by name, email, or ID and filter by status</li>
+            <li><strong>Refresh Functionality:</strong> Manual refresh button to reload data</li>
+            <li><strong>Error Handling:</strong> Proper error messages and retry functionality</li>
+        </ul>
+    </div>
+
+    <div class="test-section">
+        <h2>🧪 Test Scenarios</h2>
+        
+        <h3>1. Access Admin Panel</h3>
+        <p>Navigate to the admin panel and check the Owner Management section.</p>
+        <a href="http://localhost:8080/admin/owner-management" class="test-button" target="_blank">
+            Open Owner Management
+        </a>
+        
+        <h3>2. Check Data Loading</h3>
+        <p>Verify that real property owners are loaded from the database.</p>
+        <ul>
+            <li>✅ Should show loading spinner initially</li>
+            <li>✅ Should display actual property owners from database</li>
+            <li>✅ Should show property counts for each owner</li>
+            <li>✅ Should display registration dates</li>
+        </ul>
+        
+        <h3>3. Test Search & Filter</h3>
+        <p>Test the search functionality and status filters.</p>
+        <ul>
+            <li>✅ Search by owner name</li>
+            <li>✅ Search by email address</li>
+            <li>✅ Filter by status (All, Active, Pending, Blocked)</li>
+            <li>✅ Date range filtering</li>
+        </ul>
+        
+        <h3>4. Test Owner Actions</h3>
+        <p>Test the action buttons for each owner.</p>
+        <ul>
+            <li>✅ View Details (eye icon) - opens modal with owner info</li>
+            <li>✅ Edit owner (pencil icon)</li>
+            <li>✅ Approve/Block owner (check/ban icon)</li>
+            <li>✅ Refresh data (refresh button)</li>
+        </ul>
+    </div>
+
+    <div class="test-section">
+        <h2>🔍 Expected Features</h2>
+        
+        <h3>Owner Table Columns</h3>
+        <ul>
+            <li><strong>Owner ID:</strong> Truncated UUID for readability</li>
+            <li><strong>Name:</strong> Full name with avatar initial</li>
+            <li><strong>Contact:</strong> Email and phone number</li>
+            <li><strong>Properties:</strong> Count of properties owned</li>
+            <li><strong>Registration Date:</strong> When they signed up</li>
+            <li><strong>Status:</strong> Active, Pending, or Blocked</li>
+            <li><strong>Actions:</strong> View, Edit, Approve/Block</li>
+        </ul>
+        
+        <h3>Owner Details Modal</h3>
+        <ul>
+            <li>✅ Full owner information</li>
+            <li>✅ Complete UUID</li>
+            <li>✅ Registration and update timestamps</li>
+            <li>✅ Property count</li>
+            <li>✅ Contact details</li>
+        </ul>
+    </div>
+
+    <div class="test-section">
+        <h2>📊 Database Integration</h2>
+        
+        <h3>Data Source</h3>
+        <ul>
+            <li><strong>Table:</strong> <code>profiles</code></li>
+            <li><strong>Filter:</strong> <code>role = 'property_owner'</code></li>
+            <li><strong>Properties Count:</strong> Joined with <code>properties</code> table</li>
+            <li><strong>Ordering:</strong> Most recent registrations first</li>
+        </ul>
+        
+        <h3>API Endpoints Used</h3>
+        <pre>
+GET /rest/v1/profiles?role=eq.property_owner
+GET /rest/v1/properties?owner_id=eq.{id}&select=*&count=exact
+PUT /rest/v1/profiles?id=eq.{id}&role=eq.property_owner
+        </pre>
+    </div>
+
+    <div class="test-section">
+        <h2>🚀 Quick Test Links</h2>
+        <a href="http://localhost:8080/admin/owner-management" class="test-button" target="_blank">Owner Management</a>
+        <a href="http://localhost:8080/admin/dashboard" class="test-button" target="_blank">Admin Dashboard</a>
+        <a href="http://localhost:8080/owner/signup" class="test-button" target="_blank">Create Test Owner</a>
+        <a href="http://localhost:8080/admin/property-approval" class="test-button" target="_blank">Property Approval</a>
+    </div>
+
+    <div class="test-section">
+        <h2>📝 Test Instructions</h2>
+        <ol>
+            <li>Open the Owner Management page</li>
+            <li>Wait for the data to load (should see loading spinner)</li>
+            <li>Verify that real property owners are displayed</li>
+            <li>Test the search functionality</li>
+            <li>Click the eye icon to view owner details</li>
+            <li>Test the approve/block functionality</li>
+            <li>Use the refresh button to reload data</li>
+            <li>Check that property counts are accurate</li>
+        </ol>
+    </div>
+
+    <div class="test-section">
+        <h2>⚠️ Troubleshooting</h2>
+        
+        <h3>If No Data Shows</h3>
+        <ul>
+            <li>Check if there are any property owners in the database</li>
+            <li>Verify the database connection</li>
+            <li>Check browser console for errors</li>
+            <li>Ensure RLS policies allow admin access</li>
+        </ul>
+        
+        <h3>If Actions Don't Work</h3>
+        <ul>
+            <li>Check if you're logged in as admin</li>
+            <li>Verify database permissions</li>
+            <li>Check browser console for error messages</li>
+        </ul>
+    </div>
+
+    <script>
+        console.log('🏢 Admin Panel Property Owners Test Page Loaded');
+        console.log('📋 Test the admin panel functionality with the links above');
+        
+        // Check if admin panel is accessible
+        fetch('http://localhost:8080/admin/owner-management')
+            .then(response => {
+                if (response.ok) {
+                    console.log('✅ Admin panel is accessible');
+                } else {
+                    console.log('❌ Admin panel returned status:', response.status);
+                }
+            })
+            .catch(error => {
+                console.log('❌ Error accessing admin panel:', error);
+            });
+    </script>
+</body>
+</html>

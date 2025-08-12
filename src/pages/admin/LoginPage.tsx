@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Eye, EyeOff, Lock, Mail } from 'lucide-react';
+import { useAdminAuth } from '@/contexts/AdminAuthContext';
 
 const LoginPage: React.FC = () => {
   const [email, setEmail] = useState('');
@@ -8,18 +9,17 @@ const LoginPage: React.FC = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
   const navigate = useNavigate();
+  const { adminLogin } = useAdminAuth();
 
   const handleLogin = (e: React.FormEvent) => {
     e.preventDefault();
     
-    // Mock authentication - accept any email/password combination
-    if (email && password) {
-      // Set mock authentication
-      localStorage.setItem('isAuthenticated', 'true');
-      // Redirect to dashboard
-      navigate('/super-admin-dashboard');
+    // Use admin authentication context
+    const success = adminLogin(email, password);
+    if (success) {
+      navigate('/admin/dashboard');
     } else {
-      setError('Please enter both email and password');
+      setError('Invalid email or password. Please try again.');
     }
   };
 

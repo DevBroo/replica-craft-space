@@ -1,0 +1,504 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Panel Test - Picnify</title>
+    <style>
+        body {
+            font-family: 'Poppins', sans-serif;
+            margin: 0;
+            padding: 0;
+            background: #f8fafc;
+        }
+        
+        .test-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        
+        .test-section {
+            background: white;
+            border-radius: 12px;
+            padding: 24px;
+            margin-bottom: 20px;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+        }
+        
+        .test-title {
+            color: #ea580c;
+            font-size: 1.5rem;
+            font-weight: 600;
+            margin-bottom: 16px;
+        }
+        
+        .test-description {
+            color: #64748b;
+            margin-bottom: 16px;
+            line-height: 1.6;
+        }
+        
+        .test-button {
+            background: linear-gradient(135deg, #ea580c, #dc2626);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-decoration: none;
+            display: inline-block;
+            margin: 8px;
+        }
+        
+        .test-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(234, 88, 12, 0.3);
+        }
+        
+        .credentials-box {
+            background: #f0f9ff;
+            border: 2px solid #0ea5e9;
+            border-radius: 8px;
+            padding: 16px;
+            margin: 20px 0;
+        }
+        
+        .credentials-title {
+            color: #0c4a6e;
+            font-weight: 600;
+            margin-bottom: 12px;
+        }
+        
+        .credential-item {
+            display: flex;
+            align-items: center;
+            margin: 8px 0;
+            padding: 8px;
+            background: white;
+            border-radius: 6px;
+            border: 1px solid #e0f2fe;
+        }
+        
+        .credential-label {
+            font-weight: 500;
+            color: #0c4a6e;
+            min-width: 80px;
+        }
+        
+        .credential-value {
+            color: #0369a1;
+            font-family: monospace;
+            background: #f1f5f9;
+            padding: 4px 8px;
+            border-radius: 4px;
+            margin-left: 12px;
+        }
+        
+        .feature-list {
+            list-style: none;
+            padding: 0;
+        }
+        
+        .feature-list li {
+            padding: 8px 0;
+            border-bottom: 1px solid #e5e7eb;
+            display: flex;
+            align-items: center;
+        }
+        
+        .feature-list li:before {
+            content: "✅";
+            margin-right: 12px;
+            color: #10b981;
+        }
+        
+        .status-badge {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 500;
+            margin-left: 12px;
+        }
+        
+        .status-success {
+            background: #d1fae5;
+            color: #065f46;
+        }
+        
+        .status-warning {
+            background: #fef3c7;
+            color: #92400e;
+        }
+        
+        .admin-preview {
+            background: white;
+            border: 2px solid #e2e8f0;
+            border-radius: 12px;
+            padding: 20px;
+            margin: 20px 0;
+        }
+        
+        .admin-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 16px;
+            background: #f8fafc;
+            border-radius: 8px;
+            margin-bottom: 16px;
+        }
+        
+        .admin-title {
+            font-size: 1.25rem;
+            font-weight: 600;
+            color: #1e293b;
+        }
+        
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 16px;
+            margin-bottom: 20px;
+        }
+        
+        .stat-card {
+            background: white;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            padding: 16px;
+            text-align: center;
+        }
+        
+        .stat-number {
+            font-size: 1.5rem;
+            font-weight: 600;
+            color: #1e293b;
+        }
+        
+        .stat-label {
+            font-size: 0.875rem;
+            color: #64748b;
+            margin-top: 4px;
+        }
+        
+        .tab-navigation {
+            display: flex;
+            border-bottom: 1px solid #e2e8f0;
+            margin-bottom: 16px;
+        }
+        
+        .tab-button {
+            padding: 12px 24px;
+            border: none;
+            background: none;
+            cursor: pointer;
+            border-bottom: 2px solid transparent;
+            color: #64748b;
+            font-weight: 500;
+        }
+        
+        .tab-button.active {
+            color: #0ea5e9;
+            border-bottom-color: #0ea5e9;
+        }
+        
+        .table-preview {
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            overflow: hidden;
+        }
+        
+        .table-header {
+            background: #f8fafc;
+            padding: 12px 16px;
+            font-weight: 600;
+            color: #374151;
+            border-bottom: 1px solid #e2e8f0;
+        }
+        
+        .table-row {
+            padding: 12px 16px;
+            border-bottom: 1px solid #f1f5f9;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .table-row:last-child {
+            border-bottom: none;
+        }
+        
+        .action-button {
+            padding: 4px 12px;
+            border: none;
+            border-radius: 4px;
+            font-size: 0.75rem;
+            cursor: pointer;
+            margin-left: 8px;
+        }
+        
+        .btn-approve {
+            background: #dcfce7;
+            color: #166534;
+        }
+        
+        .btn-reject {
+            background: #fee2e2;
+            color: #991b1b;
+        }
+        
+        .btn-deactivate {
+            background: #fef3c7;
+            color: #92400e;
+        }
+    </style>
+</head>
+<body>
+    <div class="test-container">
+        <h1 style="color: #ea580c; text-align: center; margin-bottom: 40px;">Admin Panel Test - Picnify</h1>
+        
+        <div class="test-section">
+            <h2 class="test-title">Admin Panel Overview</h2>
+            <p class="test-description">
+                A comprehensive admin panel has been created to control all property owners and manage the entire Picnify platform. 
+                The admin panel provides full control over owners, properties, and platform management.
+            </p>
+            
+            <div class="credentials-box">
+                <div class="credentials-title">🔐 Admin Login Credentials:</div>
+                <div class="credential-item">
+                    <span class="credential-label">Username:</span>
+                    <span class="credential-value">admin@picnify.in</span>
+                </div>
+                <div class="credential-item">
+                    <span class="credential-label">Password:</span>
+                    <span class="credential-value">Alliance@8</span>
+                </div>
+                <div class="credential-item">
+                    <span class="credential-label">Access URL:</span>
+                    <span class="credential-value">/admin/login</span>
+                </div>
+            </div>
+        </div>
+        
+        <div class="test-section">
+            <h2 class="test-title">Admin Panel Features</h2>
+            <ul class="feature-list">
+                <li>
+                    <strong>Secure Authentication:</strong> Hardcoded admin credentials with localStorage session management
+                    <span class="status-badge status-success">Implemented</span>
+                </li>
+                <li>
+                    <strong>Owner Management:</strong> View, activate/deactivate, and delete property owners
+                    <span class="status-badge status-success">Implemented</span>
+                </li>
+                <li>
+                    <strong>Property Approval:</strong> Approve, reject, or change status of properties
+                    <span class="status-badge status-success">Implemented</span>
+                </li>
+                <li>
+                    <strong>Dashboard Statistics:</strong> Real-time stats for owners, properties, and pending approvals
+                    <span class="status-badge status-success">Implemented</span>
+                </li>
+                <li>
+                    <strong>Search & Filter:</strong> Search owners/properties and filter by status
+                    <span class="status-badge status-success">Implemented</span>
+                </li>
+                <li>
+                    <strong>Responsive Design:</strong> Works on desktop, tablet, and mobile devices
+                    <span class="status-badge status-success">Implemented</span>
+                </li>
+                <li>
+                    <strong>Real-time Updates:</strong> Changes reflect immediately without page refresh
+                    <span class="status-badge status-success">Implemented</span>
+                </li>
+                <li>
+                    <strong>Database Integration:</strong> Direct Supabase integration for all operations
+                    <span class="status-badge status-success">Implemented</span>
+                </li>
+            </ul>
+        </div>
+        
+        <div class="test-section">
+            <h2 class="test-title">Admin Dashboard Preview</h2>
+            <div class="admin-preview">
+                <div class="admin-header">
+                    <div class="admin-title">Picnify Admin Panel</div>
+                    <div style="color: #64748b; font-size: 0.875rem;">Welcome, Admin</div>
+                </div>
+                
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <div class="stat-number">12</div>
+                        <div class="stat-label">Total Owners</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-number">45</div>
+                        <div class="stat-label">Total Properties</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-number">8</div>
+                        <div class="stat-label">Pending Approval</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-number">10</div>
+                        <div class="stat-label">Active Owners</div>
+                    </div>
+                </div>
+                
+                <div class="tab-navigation">
+                    <button class="tab-button active">Property Owners</button>
+                    <button class="tab-button">Properties</button>
+                </div>
+                
+                <div class="table-preview">
+                    <div class="table-header">Property Owners Management</div>
+                    <div class="table-row">
+                        <div>
+                            <div style="font-weight: 500;">john.doe@example.com</div>
+                            <div style="color: #64748b; font-size: 0.875rem;">John Doe</div>
+                        </div>
+                        <div style="color: #64748b;">5 properties</div>
+                        <div style="color: #10b981; font-weight: 500;">Active</div>
+                        <div style="color: #64748b;">2024-01-15</div>
+                        <div>
+                            <button class="action-button btn-deactivate">Deactivate</button>
+                            <button class="action-button" style="background: #fee2e2; color: #991b1b;">Delete</button>
+                        </div>
+                    </div>
+                    <div class="table-row">
+                        <div>
+                            <div style="font-weight: 500;">jane.smith@example.com</div>
+                            <div style="color: #64748b; font-size: 0.875rem;">Jane Smith</div>
+                        </div>
+                        <div style="color: #64748b;">3 properties</div>
+                        <div style="color: #10b981; font-weight: 500;">Active</div>
+                        <div style="color: #64748b;">2024-01-20</div>
+                        <div>
+                            <button class="action-button btn-deactivate">Deactivate</button>
+                            <button class="action-button" style="background: #fee2e2; color: #991b1b;">Delete</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="test-section">
+            <h2 class="test-title">Technical Implementation</h2>
+            <div style="background: #f8fafc; padding: 16px; border-radius: 8px; font-family: monospace; font-size: 14px;">
+                <p><strong>Files Created/Modified:</strong></p>
+                <ul style="margin: 8px 0; padding-left: 20px;">
+                    <li>src/pages/admin/AdminDashboard.tsx (new)</li>
+                    <li>src/contexts/AdminAuthContext.tsx (new)</li>
+                    <li>src/pages/admin/LoginPage.tsx (updated)</li>
+                    <li>src/App.tsx (updated with routing)</li>
+                </ul>
+                
+                <p><strong>Key Features:</strong></p>
+                <ul style="margin: 8px 0; padding-left: 20px;">
+                    <li>Hardcoded admin credentials: admin@picnify.in / Alliance@8</li>
+                    <li>LocalStorage-based session management</li>
+                    <li>Supabase integration for data operations</li>
+                    <li>Real-time property status updates</li>
+                    <li>Owner activation/deactivation</li>
+                    <li>Property approval/rejection workflow</li>
+                    <li>Search and filter functionality</li>
+                    <li>Responsive admin dashboard</li>
+                </ul>
+                
+                <p><strong>Security Features:</strong></p>
+                <ul style="margin: 8px 0; padding-left: 20px;">
+                    <li>Hardcoded credentials (no database storage)</li>
+                    <li>Session-based authentication</li>
+                    <li>Automatic logout on session expiry</li>
+                    <li>Protected admin routes</li>
+                </ul>
+            </div>
+        </div>
+        
+        <div class="test-section">
+            <h2 class="test-title">Test the Admin Panel</h2>
+            <p class="test-description">
+                Click the buttons below to test the admin panel functionality:
+            </p>
+            
+            <a href="http://localhost:8080/admin/login" class="test-button" target="_blank">
+                🔐 Test Admin Login
+            </a>
+            
+            <a href="http://localhost:8080/admin/dashboard" class="test-button" target="_blank">
+                📊 Test Admin Dashboard
+            </a>
+            
+            <button class="test-button" onclick="testAdminLogin()">
+                🧪 Test Login Credentials
+            </button>
+            
+            <button class="test-button" onclick="testAdminFeatures()">
+                ⚙️ Test Admin Features
+            </button>
+        </div>
+        
+        <div class="test-section">
+            <h2 class="test-title">Expected Results</h2>
+            <div style="background: #f0f9ff; border-left: 4px solid #0ea5e9; padding: 16px; border-radius: 0 8px 8px 0;">
+                <p style="margin: 0; color: #0c4a6e;"><strong>✅ Admin Panel should:</strong></p>
+                <ul style="margin: 8px 0 0 0; padding-left: 20px; color: #0c4a6e;">
+                    <li>Accept only the specified credentials (admin@picnify.in / Alliance@8)</li>
+                    <li>Show comprehensive dashboard with statistics</li>
+                    <li>Display all property owners in a table format</li>
+                    <li>Allow property approval/rejection with one click</li>
+                    <li>Enable owner activation/deactivation</li>
+                    <li>Provide search and filter functionality</li>
+                    <li>Show real-time updates when actions are performed</li>
+                    <li>Maintain session across page refreshes</li>
+                    <li>Redirect to login if not authenticated</li>
+                </ul>
+            </div>
+        </div>
+        
+        <div class="test-section">
+            <h2 class="test-title">Admin Panel Access</h2>
+            <div style="background: #fef3c7; border-left: 4px solid #f59e0b; padding: 16px; border-radius: 0 8px 8px 0;">
+                <p style="margin: 0; color: #92400e;"><strong>🔑 How to Access:</strong></p>
+                <ol style="margin: 8px 0 0 0; padding-left: 20px; color: #92400e;">
+                    <li>Navigate to <code>http://localhost:8080/admin/login</code></li>
+                    <li>Enter username: <code>admin@picnify.in</code></li>
+                    <li>Enter password: <code>Alliance@8</code></li>
+                    <li>Click "Sign In" to access the admin dashboard</li>
+                    <li>You'll be redirected to <code>/admin/dashboard</code></li>
+                </ol>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function testAdminLogin() {
+            alert('Admin Login Test:\n\n1. Go to http://localhost:8080/admin/login\n2. Try wrong credentials - should show error\n3. Use correct credentials:\n   - Username: admin@picnify.in\n   - Password: Alliance@8\n4. Should redirect to dashboard successfully');
+        }
+        
+        function testAdminFeatures() {
+            alert('Admin Features Test:\n\n1. Login with admin credentials\n2. Check dashboard statistics\n3. Switch between "Property Owners" and "Properties" tabs\n4. Test search functionality\n5. Try approving/rejecting properties\n6. Test owner activation/deactivation\n7. Verify real-time updates\n8. Test logout functionality');
+        }
+        
+        // Add some interactive elements
+        document.querySelectorAll('.tab-button').forEach(button => {
+            button.addEventListener('click', function() {
+                document.querySelectorAll('.tab-button').forEach(btn => btn.classList.remove('active'));
+                this.classList.add('active');
+            });
+        });
+        
+        document.querySelectorAll('.action-button').forEach(button => {
+            button.addEventListener('click', function() {
+                const action = this.textContent;
+                alert(`Action "${action}" would be performed in the real admin panel.`);
+            });
+        });
+    </script>
+</body>
+</html>

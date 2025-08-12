@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Fix Missing User Profile</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            line-height: 1.6;
+        }
+        .test-section {
+            background: #f5f5f5;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 8px;
+        }
+        .test-button {
+            display: inline-block;
+            background: #007bff;
+            color: white;
+            padding: 10px 20px;
+            text-decoration: none;
+            border-radius: 5px;
+            margin: 5px;
+        }
+        .test-button:hover {
+            background: #0056b3;
+        }
+        .success {
+            color: #28a745;
+        }
+        .error {
+            color: #dc3545;
+        }
+        .info {
+            color: #17a2b8;
+        }
+        .result {
+            background: white;
+            padding: 15px;
+            border-radius: 5px;
+            margin: 10px 0;
+            border-left: 4px solid #007bff;
+        }
+    </style>
+</head>
+<body>
+    <h1>🔧 Fix Missing User Profile</h1>
+    
+    <div class="test-section">
+        <h2>📊 Current Situation</h2>
+        <ul>
+            <li><strong>User Email:</strong> mshimavarsha07@gmail.com</li>
+            <li><strong>User ID:</strong> 67af3277-e025-4cca-a504-b4f2d723f7ca</li>
+            <li><strong>Properties:</strong> 4 properties exist and are owned by this user</li>
+            <li><strong>Profile:</strong> ❌ Missing from profiles table</li>
+            <li><strong>Auth:</strong> ✅ User exists in Supabase Auth</li>
+        </ul>
+    </div>
+
+    <div class="test-section">
+        <h2>🛠️ Fix Missing Profile</h2>
+        <p>This will create the missing user profile in the profiles table.</p>
+        
+        <button onclick="fixMissingProfile()" class="test-button">Create Missing Profile</button>
+        <button onclick="checkAfterFix()" class="test-button">Check After Fix</button>
+        
+        <div id="results"></div>
+    </div>
+
+    <div class="test-section">
+        <h2>🔗 Quick Links</h2>
+        <a href="http://localhost:8082/admin/owner-management" class="test-button" target="_blank">Admin Panel - Owner Management</a>
+        <a href="http://localhost:8082/owner/dashboard" class="test-button" target="_blank">Property Owner Dashboard</a>
+        <a href="check-property-owners.html" class="test-button" target="_blank">Check Property Owners</a>
+    </div>
+
+    <script>
+        const SUPABASE_URL = "https://riqsgtuzccwpplbodwbd.supabase.co";
+        const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJpcXNndHV6Y2N3cHBsYm9kd2JkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTQyOTY2NTUsImV4cCI6MjA2OTg3MjY1NX0.qkSVWoVi8cStB1WZdqtapc8O6jc_aAiYEm0Y5Lqp1-s";
+
+        function logResult(message, type = 'info') {
+            const resultsDiv = document.getElementById('results');
+            const resultDiv = document.createElement('div');
+            resultDiv.className = 'result';
+            resultDiv.innerHTML = `
+                <strong>${type === 'success' ? '✅' : type === 'error' ? '❌' : 'ℹ️'} ${message}</strong>
+                <div id="details-${Date.now()}"></div>
+            `;
+            resultsDiv.appendChild(resultDiv);
+            return resultDiv;
+        }
+
+        async function fixMissingProfile() {
+            try {
+                logResult('Creating missing user profile...', 'info');
+                
+                const userProfile = {
+                    id: "67af3277-e025-4cca-a504-b4f2d723f7ca",
+                    email: "mshimavarsha07@gmail.com",
+                    full_name: "Mshimavarsha",
+                    role: "property_owner",
+                    phone: null,
+                    avatar_url: null,
+                    created_at: new Date().toISOString(),
+                    updated_at: new Date().toISOString()
+                };
+
+                const response = await fetch(`${SUPABASE_URL}/rest/v1/profiles`, {
+                    method: 'POST',
+                    headers: {
+                        'apikey': SUPABASE_ANON_KEY,
+                        'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
+                        'Content-Type': 'application/json',
+                        'Prefer': 'return=minimal'
+                    },
+                    body: JSON.stringify(userProfile)
+                });
+
+                if (!response.ok) {
+                    const errorData = await response.json();
+                    throw new Error(`HTTP error! status: ${response.status}, message: ${JSON.stringify(errorData)}`);
+                }
+
+                logResult('✅ User profile created successfully!', 'success');
+                
+                // Check if it was created
+                setTimeout(() => {
+                    checkAfterFix();
+                }, 1000);
+                
+            } catch (error) {
+                logResult(`❌ Error creating profile: ${error.message}`, 'error');
+            }
+        }
+
+        async function checkAfterFix() {
+            try {
+                logResult('Checking if profile was created...', 'info');
+                
+                // Check the specific user
+                const userResponse = await fetch(`${SUPABASE_URL}/rest/v1/profiles?id=eq.67af3277-e025-4cca-a504-b4f2d723f7ca&select=*`, {
+                    headers: {
+                        'apikey': SUPABASE_ANON_KEY,
+                        'Authorization': `Bearer ${SUPABASE_ANON_KEY}`
+                    }
+                });
+
+                if (!userResponse.ok) {
+                    throw new Error(`HTTP error! status: ${userResponse.status}`);
+                }
+
+                const user = await userResponse.json();
+                
+                if (user.length > 0) {
+                    logResult(`✅ User profile found: ${user[0].email} (Role: ${user[0].role})`, 'success');
+                } else {
+                    logResult('❌ User profile still not found', 'error');
+                }
+
+                // Check property owners count
+                const ownersResponse = await fetch(`${SUPABASE_URL}/rest/v1/profiles?role=eq.property_owner&select=*`, {
+                    headers: {
+                        'apikey': SUPABASE_ANON_KEY,
+                        'Authorization': `Bearer ${SUPABASE_ANON_KEY}`
+                    }
+                });
+
+                if (!ownersResponse.ok) {
+                    throw new Error(`HTTP error! status: ${ownersResponse.status}`);
+                }
+
+                const owners = await ownersResponse.json();
+                logResult(`✅ Total property owners: ${owners.length}`, 'success');
+                
+            } catch (error) {
+                logResult(`❌ Error checking: ${error.message}`, 'error');
+            }
+        }
+
+        console.log('🔧 Fix Missing User Profile Page Loaded');
+        console.log('📋 Use the buttons above to fix the missing profile');
+    </script>
+</body>
+</html>

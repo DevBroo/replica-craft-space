@@ -4,6 +4,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "@/contexts/AuthContext";
+import { AdminAuthProvider } from "@/contexts/AdminAuthContext";
 import Index from "./pages/Index";
 import Properties from "./pages/Properties";
 import PropertyDetails from "./pages/PropertyDetails";
@@ -21,6 +22,7 @@ import NotFound from "./pages/NotFound";
 // Admin Panel Imports
 import ProtectedRoute from "./components/admin/ProtectedRoute";
 import SuperAdminDashboard from "./pages/admin/SuperAdminDashboard";
+import AdminDashboard from "./pages/admin/AdminDashboard";
 import OwnerManagement from "./pages/admin/OwnerManagement";
 import AgentManagement from "./pages/admin/AgentManagement";
 import PropertyApproval from "./pages/admin/PropertyApproval";
@@ -48,10 +50,11 @@ const queryClient = new QueryClient();
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <AuthProvider>
-      <TooltipProvider>
-        <Toaster />
-        <Sonner />
-        <BrowserRouter>
+      <AdminAuthProvider>
+        <TooltipProvider>
+          <Toaster />
+          <Sonner />
+          <BrowserRouter>
           <Routes>
           {/* Main App Routes */}
           <Route path="/" element={<Index />} />
@@ -84,11 +87,7 @@ const App = () => (
           
           {/* Admin Panel Routes */}
           <Route path="/admin/login" element={<AdminLoginPage />} />
-          <Route path="/admin/dashboard" element={
-            <ProtectedRoute>
-              <SuperAdminDashboard />
-            </ProtectedRoute>
-          } />
+          <Route path="/admin/dashboard" element={<AdminDashboard />} />
           <Route path="/admin/super-admin-dashboard" element={
             <ProtectedRoute>
               <SuperAdminDashboard />
@@ -144,7 +143,8 @@ const App = () => (
           <Route path="*" element={<NotFound />} />
         </Routes>
       </BrowserRouter>
-    </TooltipProvider>
+        </TooltipProvider>
+      </AdminAuthProvider>
     </AuthProvider>
   </QueryClientProvider>
 );

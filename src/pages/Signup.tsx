@@ -35,6 +35,7 @@ const Signup: React.FC = () => {
   const [agreeToTerms, setAgreeToTerms] = useState(false);
   const [formErrors, setFormErrors] = useState<{ [key: string]: string }>({});
   const [signupSuccess, setSignupSuccess] = useState(false);
+  const [hasAttemptedRegistration, setHasAttemptedRegistration] = useState(false);
 
   const getDefaultRedirect = useCallback((userRole: string) => {
     switch (userRole) {
@@ -56,43 +57,71 @@ const Signup: React.FC = () => {
     console.log('🔄 Success effect triggered:', { signupSuccess, loading, error: error?.message });
     
     if (signupSuccess && !loading && !error) {
-      console.log('✅ All conditions met, redirecting immediately');
+      console.log('✅ All conditions met, redirecting in 3 seconds');
       
-      // Use the authenticated user's role instead of the form role state
-      const userRole = user?.role || role;
-      const dashboardPath = userRole === 'owner' ? '/owner/dashboard' : 
-                           userRole === 'agent' ? '/agent/dashboard' : '/';
+      // Wait 3 seconds before redirecting to show the success message
+      const timer = setTimeout(() => {
+        if (isAuthenticated && user) {
+          // User is authenticated, redirect to dashboard
+          const userRole = user.role || role;
+          const dashboardPath = userRole === 'owner' ? '/owner/dashboard' : 
+                               userRole === 'agent' ? '/agent/dashboard' : '/';
+          
+          console.log('🚀 Redirecting to dashboard:', dashboardPath, 'for role:', userRole);
+          navigate(dashboardPath, { 
+            state: { 
+              message: 'Account created successfully! Welcome to Picnify!',
+              email: email 
+            },
+            replace: true 
+          });
+        } else {
+          // User needs email verification, redirect to login
+          const loginPath = role === 'owner' ? '/owner/login' : 
+                           role === 'agent' ? '/agent/login' : '/login';
+          
+          console.log('🚀 Redirecting to login:', loginPath, 'for role:', role);
+          navigate(loginPath, { 
+            state: { 
+              message: 'Account created successfully! Please check your email to verify your account.',
+              email: email 
+            },
+            replace: true 
+          });
+        }
+      }, 3000);
       
-      console.log('🚀 Redirecting to:', dashboardPath, 'for role:', userRole);
-      navigate(dashboardPath, { 
-        state: { 
-          message: 'Account created successfully! Welcome to Picnify!',
-          email: email 
-        },
-        replace: true 
-      });
+      return () => clearTimeout(timer);
     }
-  }, [signupSuccess, loading, error, navigate, email, role, user]);
+  }, [signupSuccess, loading, error, navigate, email, role, user, isAuthenticated]);
 
-  // Set success state when registration completes and user is authenticated
+  // Set success state when registration completes (either authenticated or email verification required)
   useEffect(() => {
     console.log('🔄 Registration state check:', { 
       loading, 
       error: error?.message, 
       signupSuccess, 
+      hasAttemptedRegistration,
       isAuthenticated, 
       user: user ? { email: user.email, role: user.role } : null 
     });
     
-    if (!loading && !error && !signupSuccess && isAuthenticated && user) {
-      console.log('✅ Registration successful and user authenticated, setting success state');
-      setSignupSuccess(true);
+    // Only show success if a registration has actually been attempted
+    if (hasAttemptedRegistration && !loading && !error && !signupSuccess) {
+      if (isAuthenticated && user) {
+        console.log('✅ Registration successful and user authenticated, setting success state');
+        setSignupSuccess(true);
+      } else if (!isAuthenticated && !user) {
+        // Registration succeeded but email verification required
+        console.log('✅ Registration successful, email verification required');
+        setSignupSuccess(true);
+      }
     } else if (error && signupSuccess) {
       // If there's an error and we previously set success, clear it
       console.log('❌ Error occurred, clearing success state');
       setSignupSuccess(false);
     }
-  }, [loading, error, signupSuccess, isAuthenticated, user]);
+  }, [loading, error, signupSuccess, hasAttemptedRegistration, isAuthenticated, user]);
 
   // Pre-select role from URL params or path
   useEffect(() => {
@@ -121,9 +150,14 @@ const Signup: React.FC = () => {
     }
   }, [location.search, location.pathname]);
 
-  // Debug component mount
+  // Debug component mount and reset registration state
   useEffect(() => {
     console.log('🏠 Signup component mounted at path:', location.pathname);
+    
+    // Reset registration state when component mounts
+    setSignupSuccess(false);
+    setHasAttemptedRegistration(false);
+    setFormErrors({});
   }, [location.pathname]);
 
   // Redirect if already authenticated
@@ -218,6 +252,7 @@ const Signup: React.FC = () => {
     
     console.log('✅ Form validation passed, starting registration');
     clearError();
+    setHasAttemptedRegistration(true);
     console.log('🚀 Starting registration for:', { email, role });
     
     try {
@@ -316,18 +351,36 @@ const Signup: React.FC = () => {
                       🎉 Account Created Successfully!
                     </div>
                     <div className="text-sm text-green-700">
-                      <p>✅ Your account has been created and a confirmation email has been sent to <strong>{email}</strong></p>
-                      <p className="mt-2">
-                        <strong>Next Steps:</strong>
-                      </p>
-                      <ol className="list-decimal list-inside space-y-1 mt-1">
-                        <li>Check your email and click the verification link</li>
-                        <li>You're automatically logged in and ready to go!</li>
-                        <li>{location.pathname === '/owner/signup' ? 'Start listing your properties!' : 'Start exploring amazing properties!'}</li>
-                      </ol>
-                      <p className="mt-2 text-blue-600">
-                        Redirecting to login page in 3 seconds...
-                      </p>
+                      {isAuthenticated && user ? (
+                        <>
+                          <p>✅ Your account has been created successfully!</p>
+                          <p className="mt-2">
+                            <strong>Next Steps:</strong>
+                          </p>
+                          <ol className="list-decimal list-inside space-y-1 mt-1">
+                            <li>You're automatically logged in and ready to go!</li>
+                            <li>{location.pathname === '/owner/signup' ? 'Start listing your properties!' : 'Start exploring amazing properties!'}</li>
+                          </ol>
+                          <p className="mt-2 text-blue-600">
+                            Redirecting to dashboard in 3 seconds...
+                          </p>
+                        </>
+                      ) : (
+                        <>
+                          <p>✅ Your account has been created and a confirmation email has been sent to <strong>{email}</strong></p>
+                          <p className="mt-2">
+                            <strong>Next Steps:</strong>
+                          </p>
+                          <ol className="list-decimal list-inside space-y-1 mt-1">
+                            <li>Check your email and click the verification link</li>
+                            <li>Once verified, you can log in to your account</li>
+                            <li>{location.pathname === '/owner/signup' ? 'Start listing your properties!' : 'Start exploring amazing properties!'}</li>
+                          </ol>
+                          <p className="mt-2 text-blue-600">
+                            Redirecting to login page in 3 seconds...
+                          </p>
+                        </>
+                      )}
                     </div>
                   </AlertDescription>
                 </Alert>

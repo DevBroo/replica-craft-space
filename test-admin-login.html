@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Admin Login</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            line-height: 1.6;
+        }
+        .test-section {
+            background: #f5f5f5;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 8px;
+        }
+        .test-button {
+            display: inline-block;
+            background: #007bff;
+            color: white;
+            padding: 10px 20px;
+            text-decoration: none;
+            border-radius: 5px;
+            margin: 5px;
+        }
+        .test-button:hover {
+            background: #0056b3;
+        }
+        .success { color: #28a745; }
+        .error { color: #dc3545; }
+        .info { color: #17a2b8; }
+    </style>
+</head>
+<body>
+    <h1>🧪 Test Admin Login</h1>
+    
+    <div class="test-section">
+        <h2>✅ Admin Credentials</h2>
+        <p><strong>Email:</strong> admin@picnify.in</p>
+        <p><strong>Password:</strong> Alliance@8</p>
+    </div>
+
+    <div class="test-section">
+        <h2>🚀 Test Steps</h2>
+        <ol>
+            <li>Click "Admin Login" below</li>
+            <li>Login with the credentials above</li>
+            <li>After login, click "Owner Management"</li>
+            <li>Check if it shows the property owner</li>
+        </ol>
+    </div>
+
+    <div class="test-section">
+        <h2>🔗 Test Links</h2>
+        <a href="http://localhost:8082/admin/login" class="test-button" target="_blank">Admin Login</a>
+        <a href="http://localhost:8082/admin/owner-management" class="test-button" target="_blank">Owner Management (after login)</a>
+        <a href="http://localhost:8082/admin/dashboard" class="test-button" target="_blank">Admin Dashboard</a>
+    </div>
+
+    <div class="test-section">
+        <h2>🔧 Manual Login Test</h2>
+        <button onclick="testAdminLogin()">Test Admin Login</button>
+        <button onclick="checkAdminAuth()">Check Admin Auth Status</button>
+        <button onclick="clearAdminAuth()">Clear Admin Auth</button>
+        <div id="results"></div>
+    </div>
+
+    <script>
+        function log(message, type = 'info') {
+            const results = document.getElementById('results');
+            const div = document.createElement('div');
+            div.className = type;
+            div.textContent = message;
+            results.appendChild(div);
+        }
+
+        function testAdminLogin() {
+            log('🔍 Testing admin login...', 'info');
+            
+            // Simulate admin login
+            const adminUser = {
+                email: 'admin@picnify.in',
+                role: 'admin',
+                name: 'Picnify Admin'
+            };
+            
+            localStorage.setItem('adminAuthenticated', 'true');
+            localStorage.setItem('adminUser', JSON.stringify(adminUser));
+            
+            log('✅ Admin login successful!', 'success');
+            log('📋 Admin user data: ' + JSON.stringify(adminUser), 'info');
+        }
+
+        function checkAdminAuth() {
+            log('🔍 Checking admin auth status...', 'info');
+            
+            const isAdminAuth = localStorage.getItem('adminAuthenticated');
+            const adminUser = localStorage.getItem('adminUser');
+            
+            if (isAdminAuth === 'true') {
+                log('✅ Admin is authenticated', 'success');
+                log('📋 Admin user: ' + adminUser, 'info');
+            } else {
+                log('❌ Admin is not authenticated', 'error');
+            }
+        }
+
+        function clearAdminAuth() {
+            log('🧹 Clearing admin auth...', 'info');
+            
+            localStorage.removeItem('adminAuthenticated');
+            localStorage.removeItem('adminUser');
+            
+            log('✅ Admin auth cleared', 'success');
+        }
+
+        // Check current status on load
+        window.onload = function() {
+            log('🚀 Page loaded, checking admin auth status...', 'info');
+            checkAdminAuth();
+        };
+    </script>
+</body>
+</html>
