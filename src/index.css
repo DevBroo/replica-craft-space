@@ -108,6 +108,38 @@ All colors MUST be HSL.
   /* Ensure stable header layout */
   header {
     contain: layout;
+    will-change: transform;
+  }
+
+  /* Ensure header elements don't shift */
+  header * {
+    contain: layout;
+  }
+
+  /* Smooth transitions for header interactions */
+  header a,
+  header button {
+    transition: all 0.2s ease-in-out;
+  }
+
+  /* Prevent text wrapping in header */
+  header .truncate {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  /* Responsive header adjustments */
+  @media (max-width: 1024px) {
+    header nav {
+      display: none;
+    }
+  }
+
+  @media (max-width: 768px) {
+    header .min-w-[280px] {
+      min-width: auto;
+    }
   }
   
   /* Prevent icon shifts */

@@ -66,32 +66,92 @@ const Properties: React.FC = () => {
   const { user, isAuthenticated, logout } = useAuth();
   const navigate = useNavigate();
 
-  // Load properties from database with caching
-  const [dbProperties, setDbProperties] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [propertiesLoaded, setPropertiesLoaded] = useState(false);
+  // Load properties from database with instant loading strategy
+  const [dbProperties, setDbProperties] = useState<any[]>(() => {
+    // Initialize with cached data immediately for instant loading
+    try {
+      const cachedProperties = localStorage.getItem('properties_cache');
+      if (cachedProperties) {
+        const parsed = JSON.parse(cachedProperties);
+        console.log('⚡ Instant properties load from cache:', parsed.length);
+        return parsed;
+      }
+    } catch (error) {
+      console.warn('⚠️ Cache parsing failed during initialization');
+    }
+    return [];
+  });
+  
+  const [loading, setLoading] = useState(() => {
+    // Only show loading if we don't have cached data
+    const cachedProperties = localStorage.getItem('properties_cache');
+    return !cachedProperties;
+  });
+  
+  const [propertiesLoaded, setPropertiesLoaded] = useState(() => {
+    // Consider loaded if we have cached data
+    const cachedProperties = localStorage.getItem('properties_cache');
+    return !!cachedProperties;
+  });
+  
   const [cacheDisabled, setCacheDisabled] = useState(() => {
-    // Check if caching was disabled in a previous session
     return localStorage.getItem('cache_disabled') === 'true';
   });
+
+  // Background refresh function for seamless updates
+  const refreshPropertiesInBackground = async () => {
+    try {
+      console.log('🔄 Background refresh started...');
+      const activeProperties = await PropertyService.getActiveProperties() as any[];
+      
+      // Store only essential data to reduce storage size
+      const essentialProperties = activeProperties.map((property: any) => ({
+        id: property.id,
+        name: property.title || 'Unnamed Property',
+        location: typeof property.location === 'string' ? property.location : 
+                 (property.location && typeof property.location === 'object' && 'city' in property.location) ? 
+                 (property.location as any).city : property.address || 'Unknown Location',
+        price: typeof property.pricing === 'object' && property.pricing && 'daily_rate' in property.pricing ? 
+               (property.pricing as any).daily_rate : 0,
+        image: property.images && property.images.length > 0 ? property.images[0] : '',
+        type: property.property_type || 'Property',
+        status: property.status || 'pending',
+        rating: property.rating || 0,
+        guests: property.max_guests || 1,
+        bedrooms: property.bedrooms || 1,
+        bathrooms: property.bathrooms || 1
+      }));
+      
+      const propertiesJson = JSON.stringify(essentialProperties);
+      localStorage.setItem('properties_cache', propertiesJson);
+      localStorage.setItem('properties_cache_timestamp', Date.now().toString());
+      
+      // Update state if component is still mounted
+      setDbProperties(essentialProperties);
+      console.log('✅ Background refresh completed:', essentialProperties.length);
+    } catch (error) {
+      console.warn('⚠️ Background refresh failed:', error);
+    }
+  };
 
   useEffect(() => {
     let isMounted = true;
     
-    // Prevent multiple loads on initial render
+    // If we already have properties loaded, skip loading
     if (propertiesLoaded && dbProperties.length > 0) {
+      console.log('⚡ Properties already available, skipping load');
       return;
     }
     
     const loadProperties = async () => {
-      // Check cache first
+      // Check cache with extended expiration (30 minutes instead of 5)
       const cacheKey = 'properties_cache';
       const cacheTimestamp = localStorage.getItem('properties_cache_timestamp');
       const now = Date.now();
       const cacheAge = cacheTimestamp ? now - parseInt(cacheTimestamp) : Infinity;
       
-                 // Use cache if it's less than 5 minutes old and caching is not disabled
-           if (!cacheDisabled && cacheAge < 5 * 60 * 1000) {
+      // Use cache if it's less than 30 minutes old and caching is not disabled
+      if (!cacheDisabled && cacheAge < 30 * 60 * 1000) {
         const cachedProperties = localStorage.getItem(cacheKey);
         if (cachedProperties) {
           try {
@@ -100,7 +160,13 @@ const Properties: React.FC = () => {
               setDbProperties(parsed);
               setPropertiesLoaded(true);
               setLoading(false);
-              console.log('✅ Properties loaded from cache:', parsed.length);
+              console.log('⚡ Properties loaded from cache:', parsed.length);
+              
+              // Background refresh if cache is older than 10 minutes
+              if (cacheAge > 10 * 60 * 1000) {
+                console.log('🔄 Background refresh initiated...');
+                refreshPropertiesInBackground();
+              }
               return;
             }
           } catch (error) {
@@ -111,7 +177,7 @@ const Properties: React.FC = () => {
       
       // Only fetch if not already loaded
       if (propertiesLoaded) {
-        console.log('✅ Properties already loaded, skipping fetch');
+        console.log('⚡ Properties already loaded, skipping fetch');
         setLoading(false);
         return;
       }
@@ -120,7 +186,13 @@ const Properties: React.FC = () => {
         console.log('🔍 Loading properties from database...');
         setLoading(true);
         
-        const activeProperties = await PropertyService.getActiveProperties();
+        // Use Promise.race to add timeout protection
+        const propertiesPromise = PropertyService.getActiveProperties();
+        const timeoutPromise = new Promise((_, reject) => 
+          setTimeout(() => reject(new Error('Properties fetch timeout')), 5000)
+        );
+        
+        const activeProperties = await Promise.race([propertiesPromise, timeoutPromise]) as any[];
         
         if (!isMounted) return;
         

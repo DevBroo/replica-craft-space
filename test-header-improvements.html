@@ -1,0 +1,431 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Header Improvements Test - Picnify</title>
+    <style>
+        body {
+            font-family: 'Poppins', sans-serif;
+            margin: 0;
+            padding: 0;
+            background: #f8fafc;
+        }
+        
+        .test-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        
+        .test-section {
+            background: white;
+            border-radius: 12px;
+            padding: 24px;
+            margin-bottom: 20px;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+        }
+        
+        .test-title {
+            color: #ea580c;
+            font-size: 1.5rem;
+            font-weight: 600;
+            margin-bottom: 16px;
+        }
+        
+        .test-description {
+            color: #64748b;
+            margin-bottom: 16px;
+            line-height: 1.6;
+        }
+        
+        .test-button {
+            background: linear-gradient(135deg, #ea580c, #dc2626);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-decoration: none;
+            display: inline-block;
+            margin: 8px;
+        }
+        
+        .test-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(234, 88, 12, 0.3);
+        }
+        
+        .header-preview {
+            background: white;
+            border: 2px solid #e2e8f0;
+            border-radius: 12px;
+            padding: 20px;
+            margin: 20px 0;
+        }
+        
+        .header-mockup {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            height: 80px;
+            background: #f8fafc;
+            border-radius: 8px;
+            padding: 0 24px;
+            margin-bottom: 16px;
+        }
+        
+        .logo-section {
+            min-width: 200px;
+            display: flex;
+            align-items: center;
+        }
+        
+        .logo {
+            height: 40px;
+            width: auto;
+            background: linear-gradient(135deg, #ea580c, #dc2626);
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: bold;
+            padding: 0 16px;
+        }
+        
+        .nav-section {
+            display: flex;
+            align-items: center;
+            gap: 32px;
+            flex: 1;
+            justify-content: center;
+        }
+        
+        .nav-link {
+            color: #374151;
+            text-decoration: none;
+            font-weight: 500;
+            padding: 8px 16px;
+            border-radius: 6px;
+            transition: all 0.2s ease;
+        }
+        
+        .nav-link:hover {
+            color: #ea580c;
+            background: rgba(234, 88, 12, 0.1);
+        }
+        
+        .auth-section {
+            min-width: 280px;
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            justify-content: flex-end;
+        }
+        
+        .user-info {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        
+        .user-avatar {
+            width: 32px;
+            height: 32px;
+            background: linear-gradient(135deg, #ea580c, #dc2626);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: 500;
+            font-size: 14px;
+        }
+        
+        .user-email {
+            font-size: 14px;
+            font-weight: 500;
+            color: #374151;
+            max-width: 180px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+        
+        .auth-button {
+            background: #f3f4f6;
+            color: #374151;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 6px;
+            font-weight: 500;
+            font-size: 14px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+        
+        .auth-button.primary {
+            background: linear-gradient(135deg, #ea580c, #dc2626);
+            color: white;
+        }
+        
+        .auth-button:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+        }
+        
+        .mobile-menu-button {
+            display: none;
+            flex-direction: column;
+            gap: 4px;
+            cursor: pointer;
+            padding: 8px;
+        }
+        
+        .mobile-menu-button span {
+            width: 24px;
+            height: 2px;
+            background: #374151;
+            transition: all 0.3s ease;
+        }
+        
+        @media (max-width: 1024px) {
+            .nav-section {
+                display: none;
+            }
+            
+            .mobile-menu-button {
+                display: flex;
+            }
+            
+            .auth-section {
+                min-width: auto;
+            }
+        }
+        
+        .improvement-list {
+            list-style: none;
+            padding: 0;
+        }
+        
+        .improvement-list li {
+            padding: 8px 0;
+            border-bottom: 1px solid #e5e7eb;
+            display: flex;
+            align-items: center;
+        }
+        
+        .improvement-list li:before {
+            content: "✅";
+            margin-right: 12px;
+            color: #10b981;
+        }
+        
+        .status-badge {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 500;
+            margin-left: 12px;
+        }
+        
+        .status-success {
+            background: #d1fae5;
+            color: #065f46;
+        }
+        
+        .status-warning {
+            background: #fef3c7;
+            color: #92400e;
+        }
+    </style>
+</head>
+<body>
+    <div class="test-container">
+        <h1 style="color: #ea580c; text-align: center; margin-bottom: 40px;">Header Improvements Test</h1>
+        
+        <div class="test-section">
+            <h2 class="test-title">Header Layout Improvements</h2>
+            <p class="test-description">
+                The header has been optimized to prevent text overlapping and improve user experience with better spacing and responsive design.
+            </p>
+            
+            <div class="header-preview">
+                <h3 style="margin-bottom: 16px; color: #374151;">Desktop Header Preview:</h3>
+                <div class="header-mockup">
+                    <div class="logo-section">
+                        <div class="logo">PICNIFY</div>
+                    </div>
+                    
+                    <div class="nav-section">
+                        <a href="#" class="nav-link">Home</a>
+                        <a href="#" class="nav-link">Properties</a>
+                        <a href="#" class="nav-link">Locations</a>
+                        <a href="#" class="nav-link">About</a>
+                        <a href="#" class="nav-link">Contact</a>
+                        <a href="#" class="nav-link">Portals ▼</a>
+                    </div>
+                    
+                    <div class="auth-section">
+                        <div class="user-avatar" title="john.doe@example.com">J</div>
+                        <button class="auth-button">Logout</button>
+                    </div>
+                </div>
+                
+                <h3 style="margin-bottom: 16px; color: #374151;">Mobile Header Preview:</h3>
+                <div class="header-mockup">
+                    <div class="logo-section">
+                        <div class="logo">PICNIFY</div>
+                    </div>
+                    
+                    <div class="mobile-menu-button">
+                        <span></span>
+                        <span></span>
+                        <span></span>
+                    </div>
+                    
+                    <div class="auth-section">
+                        <button class="auth-button">Login</button>
+                        <button class="auth-button primary">Sign Up</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="test-section">
+            <h2 class="test-title">Key Improvements Made</h2>
+            <ul class="improvement-list">
+                <li>
+                    <strong>Fixed Text Overlapping:</strong> Proper spacing between navigation items and auth section
+                    <span class="status-badge status-success">Fixed</span>
+                </li>
+                <li>
+                    <strong>Responsive Design:</strong> Header adapts smoothly to different screen sizes
+                    <span class="status-badge status-success">Fixed</span>
+                </li>
+                <li>
+                    <strong>Better Touch Targets:</strong> Increased padding and hover areas for mobile users
+                    <span class="status-badge status-success">Fixed</span>
+                </li>
+                <li>
+                    <strong>Email Privacy:</strong> Email addresses are hidden, only user avatar icon is shown
+                    <span class="status-badge status-success">Updated</span>
+                </li>
+                <li>
+                    <strong>Smooth Transitions:</strong> All interactions have smooth hover and click animations
+                    <span class="status-badge status-success">Fixed</span>
+                </li>
+                <li>
+                    <strong>Layout Stability:</strong> Header elements don't shift during page load or interactions
+                    <span class="status-badge status-success">Fixed</span>
+                </li>
+                <li>
+                    <strong>Mobile Menu:</strong> Improved mobile menu with better spacing and touch targets
+                    <span class="status-badge status-success">Fixed</span>
+                </li>
+            </ul>
+        </div>
+        
+        <div class="test-section">
+            <h2 class="test-title">Technical Changes</h2>
+            <div style="background: #f8fafc; padding: 16px; border-radius: 8px; font-family: monospace; font-size: 14px;">
+                <p><strong>Index.tsx Changes:</strong></p>
+                <ul style="margin: 8px 0; padding-left: 20px;">
+                    <li>Reduced container padding: px-4 sm:px-6 lg:px-8</li>
+                    <li>Optimized logo section: min-w-[200px] lg:min-w-[250px]</li>
+                    <li>Improved navigation spacing: space-x-8 xl:space-x-10</li>
+                    <li>Added hover effects: hover:bg-orange-50</li>
+                    <li>Better auth section: min-w-[200px] with proper spacing</li>
+                    <li>Email privacy: hidden email, only avatar icon shown</li>
+                    <li>Responsive breakpoints: lg:hidden for mobile menu</li>
+                </ul>
+                
+                <p><strong>CSS Improvements:</strong></p>
+                <ul style="margin: 8px 0; padding-left: 20px;">
+                    <li>Header stability: contain: layout, will-change: transform</li>
+                    <li>Smooth transitions: transition: all 0.2s ease-in-out</li>
+                    <li>Avatar hover effect: hover:scale-110 for better interaction</li>
+                    <li>Responsive media queries for different screen sizes</li>
+                </ul>
+            </div>
+        </div>
+        
+        <div class="test-section">
+            <h2 class="test-title">Test the Improvements</h2>
+            <p class="test-description">
+                Click the buttons below to test the header improvements on the actual application:
+            </p>
+            
+            <a href="http://localhost:8080" class="test-button" target="_blank">
+                <i class="fas fa-home"></i> Test Homepage Header
+            </a>
+            
+            <a href="http://localhost:8080/properties" class="test-button" target="_blank">
+                <i class="fas fa-building"></i> Test Properties Page Header
+            </a>
+            
+            <button class="test-button" onclick="testResponsive()">
+                <i class="fas fa-mobile-alt"></i> Test Responsive Design
+            </button>
+            
+            <button class="test-button" onclick="testInteractions()">
+                <i class="fas fa-mouse-pointer"></i> Test Interactions
+            </button>
+        </div>
+        
+        <div class="test-section">
+            <h2 class="test-title">Expected Results</h2>
+            <div style="background: #f0f9ff; border-left: 4px solid #0ea5e9; padding: 16px; border-radius: 0 8px 8px 0;">
+                <p style="margin: 0; color: #0c4a6e;"><strong>✅ Header should now:</strong></p>
+                <ul style="margin: 8px 0 0 0; padding-left: 20px; color: #0c4a6e;">
+                                    <li>Have no text overlapping between navigation and auth sections</li>
+                <li>Display smoothly on all screen sizes without layout shifts</li>
+                <li>Show proper hover effects and smooth transitions</li>
+                <li>Hide email addresses for privacy, show only user avatar icon</li>
+                <li>Have improved mobile menu with better touch targets</li>
+                <li>Load instantly without any visual glitches</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function testResponsive() {
+            alert('To test responsive design:\n\n1. Open the homepage in your browser\n2. Right-click and select "Inspect"\n3. Click the device toggle button (mobile icon)\n4. Test different screen sizes\n5. Verify header adapts properly without overlapping');
+        }
+        
+        function testInteractions() {
+            alert('To test interactions:\n\n1. Hover over navigation items - should show orange background\n2. Click on Portals dropdown - should open smoothly\n3. Test mobile menu on small screens\n4. Verify all buttons have proper hover effects\n5. Check that email truncation works for long addresses');
+        }
+        
+        // Add some interactive elements to the preview
+        document.querySelectorAll('.nav-link').forEach(link => {
+            link.addEventListener('mouseenter', function() {
+                this.style.color = '#ea580c';
+                this.style.background = 'rgba(234, 88, 12, 0.1)';
+            });
+            
+            link.addEventListener('mouseleave', function() {
+                this.style.color = '#374151';
+                this.style.background = 'transparent';
+            });
+        });
+        
+        document.querySelectorAll('.auth-button').forEach(button => {
+            button.addEventListener('mouseenter', function() {
+                this.style.transform = 'translateY(-1px)';
+                this.style.boxShadow = '0 4px 12px rgba(0, 0, 0, 0.15)';
+            });
+            
+            button.addEventListener('mouseleave', function() {
+                this.style.transform = 'translateY(0)';
+                this.style.boxShadow = 'none';
+            });
+        });
+    </script>
+</body>
+</html>
