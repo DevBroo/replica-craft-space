@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
+import { usePropertyCache } from '@/contexts/PropertyCacheContext';
 import { PropertyService } from '@/lib/propertyService';
 
 const MyProperties: React.FC<{
@@ -11,8 +12,7 @@ const MyProperties: React.FC<{
 }> = ({ sidebarCollapsed, toggleSidebar, activeTab, setActiveTab }) => {
   const navigate = useNavigate();
   const { user, isAuthenticated, loading } = useAuth();
-  
-  const [properties, setProperties] = useState<any[]>([]);
+  const { ownerProperties: properties, isOwnerLoading, refreshOwnerProperties } = usePropertyCache();
   const [showAddModal, setShowAddModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
   const [showViewModal, setShowViewModal] = useState(false);

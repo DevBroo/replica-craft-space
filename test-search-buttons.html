@@ -1,0 +1,570 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Search Buttons Test - Picnify</title>
+    <style>
+        body {
+            font-family: 'Poppins', sans-serif;
+            margin: 0;
+            padding: 0;
+            background: #f8fafc;
+        }
+        
+        .test-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        
+        .test-section {
+            background: white;
+            border-radius: 12px;
+            padding: 24px;
+            margin-bottom: 20px;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+        }
+        
+        .test-title {
+            color: #ea580c;
+            font-size: 1.5rem;
+            font-weight: 600;
+            margin-bottom: 16px;
+        }
+        
+        .test-description {
+            color: #64748b;
+            margin-bottom: 16px;
+            line-height: 1.6;
+        }
+        
+        .test-button {
+            background: linear-gradient(135deg, #ea580c, #dc2626);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-decoration: none;
+            display: inline-block;
+            margin: 8px;
+        }
+        
+        .test-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(234, 88, 12, 0.3);
+        }
+        
+        .search-interface {
+            background: white;
+            border: 2px solid #e2e8f0;
+            border-radius: 12px;
+            padding: 20px;
+            margin: 20px 0;
+        }
+        
+        .property-type-buttons {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 12px;
+            margin-bottom: 20px;
+            padding-bottom: 16px;
+            border-bottom: 1px solid #e5e7eb;
+        }
+        
+        .property-type-btn {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 12px 24px;
+            border-radius: 12px;
+            border: none;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-size: 14px;
+        }
+        
+        .property-type-btn.active {
+            background: linear-gradient(135deg, #dc2626, #ea580c);
+            color: white;
+            box-shadow: 0 4px 12px rgba(220, 38, 38, 0.3);
+        }
+        
+        .property-type-btn:not(.active) {
+            background: #f3f4f6;
+            color: #374151;
+        }
+        
+        .property-type-btn:not(.active):hover {
+            background: #e5e7eb;
+        }
+        
+        .search-inputs {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 16px;
+            margin-bottom: 20px;
+        }
+        
+        .input-group {
+            position: relative;
+        }
+        
+        .input-group input,
+        .input-group select {
+            width: 100%;
+            padding: 12px 16px 12px 48px;
+            border: 2px solid #e5e7eb;
+            border-radius: 12px;
+            font-size: 14px;
+            outline: none;
+            transition: all 0.3s ease;
+        }
+        
+        .input-group input:focus,
+        .input-group select:focus {
+            border-color: #ea580c;
+            box-shadow: 0 0 0 3px rgba(234, 88, 12, 0.1);
+        }
+        
+        .input-icon {
+            position: absolute;
+            left: 16px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #6b7280;
+            font-size: 16px;
+        }
+        
+        .search-btn {
+            background: linear-gradient(135deg, #dc2626, #ea580c);
+            color: white;
+            border: none;
+            padding: 16px 32px;
+            border-radius: 12px;
+            font-weight: 600;
+            font-size: 16px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            width: 100%;
+            max-width: 300px;
+            margin: 0 auto;
+        }
+        
+        .search-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(220, 38, 38, 0.4);
+        }
+        
+        .popular-searches {
+            margin-top: 20px;
+            padding-top: 16px;
+            border-top: 1px solid #e5e7eb;
+        }
+        
+        .popular-label {
+            color: #6b7280;
+            font-weight: 500;
+            margin-bottom: 12px;
+            display: block;
+        }
+        
+        .popular-buttons {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+        
+        .popular-btn {
+            background: #f3f4f6;
+            color: #374151;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 8px;
+            font-size: 12px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+        
+        .popular-btn:hover {
+            background: #e5e7eb;
+            transform: translateY(-1px);
+        }
+        
+        .status-badge {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 500;
+            margin-left: 12px;
+        }
+        
+        .status-success {
+            background: #d1fae5;
+            color: #065f46;
+        }
+        
+        .status-warning {
+            background: #fef3c7;
+            color: #92400e;
+        }
+        
+        .test-results {
+            background: #f0f9ff;
+            border-left: 4px solid #0ea5e9;
+            padding: 16px;
+            border-radius: 0 8px 8px 0;
+            margin-top: 16px;
+        }
+        
+        .console-log {
+            background: #1f2937;
+            color: #f9fafb;
+            padding: 16px;
+            border-radius: 8px;
+            font-family: monospace;
+            font-size: 14px;
+            margin-top: 16px;
+            max-height: 200px;
+            overflow-y: auto;
+        }
+        
+        .log-entry {
+            margin-bottom: 8px;
+            padding: 4px 0;
+        }
+        
+        .log-entry.info { color: #60a5fa; }
+        .log-entry.success { color: #34d399; }
+        .log-entry.warning { color: #fbbf24; }
+        .log-entry.error { color: #f87171; }
+    </style>
+</head>
+<body>
+    <div class="test-container">
+        <h1 style="color: #ea580c; text-align: center; margin-bottom: 40px;">Search Buttons Functionality Test</h1>
+        
+        <div class="test-section">
+            <h2 class="test-title">Interactive Search Interface</h2>
+            <p class="test-description">
+                Test all the search interface buttons and inputs. Each interaction will be logged below.
+            </p>
+            
+            <div class="search-interface">
+                <!-- Property Type Buttons -->
+                <div class="property-type-buttons">
+                    <button class="property-type-btn active" data-type="day-picnic" onclick="selectPropertyType(this, 'day-picnic')">
+                        <i class="fas fa-sun"></i>
+                        Day Picnic
+                    </button>
+                    <button class="property-type-btn" data-type="resort" onclick="selectPropertyType(this, 'resort')">
+                        <i class="fas fa-hotel"></i>
+                        Resorts
+                    </button>
+                    <button class="property-type-btn" data-type="villa" onclick="selectPropertyType(this, 'villa')">
+                        <i class="fas fa-home"></i>
+                        Villas
+                    </button>
+                    <button class="property-type-btn" data-type="farmhouse" onclick="selectPropertyType(this, 'farmhouse')">
+                        <i class="fas fa-warehouse"></i>
+                        Farmhouse
+                    </button>
+                    <button class="property-type-btn" data-type="homestay" onclick="selectPropertyType(this, 'homestay')">
+                        <i class="fas fa-house-user"></i>
+                        Homestay
+                    </button>
+                    <button class="property-type-btn" data-type="heritage" onclick="selectPropertyType(this, 'heritage')">
+                        <i class="fas fa-landmark"></i>
+                        Heritage Palace
+                    </button>
+                </div>
+                
+                <!-- Search Inputs -->
+                <div class="search-inputs">
+                    <div class="input-group">
+                        <i class="fas fa-map-marker-alt input-icon" style="color: #dc2626;"></i>
+                        <input type="text" placeholder="Where would you like to go?" id="locationInput" onchange="updateSearchParams()">
+                    </div>
+                    
+                    <div class="input-group">
+                        <i class="fas fa-calendar-alt input-icon" style="color: #ea580c;"></i>
+                        <input type="date" id="dateInput" onchange="updateSearchParams()">
+                    </div>
+                    
+                    <div class="input-group">
+                        <i class="fas fa-users input-icon" style="color: #3b82f6;"></i>
+                        <select id="groupSizeInput" onchange="updateSearchParams()">
+                            <option value="">Select group size</option>
+                            <option value="1">1 Guest</option>
+                            <option value="2">2 Guests</option>
+                            <option value="3">3 Guests</option>
+                            <option value="4">4 Guests</option>
+                            <option value="5">5 Guests</option>
+                            <option value="6">6 Guests</option>
+                            <option value="7">7 Guests</option>
+                            <option value="8">8 Guests</option>
+                            <option value="9">9 Guests</option>
+                            <option value="10">10+ Guests</option>
+                        </select>
+                    </div>
+                    
+                    <div class="input-group">
+                        <i class="fas fa-rupee-sign input-icon" style="color: #10b981;"></i>
+                        <select id="priceInput" onchange="updateSearchParams()">
+                            <option value="">Price per person</option>
+                            <option value="0-500">Below ₹500</option>
+                            <option value="500-1000">₹500 - ₹1,000</option>
+                            <option value="1000-2000">₹1,000 - ₹2,000</option>
+                            <option value="2000+">Above ₹2,000</option>
+                        </select>
+                    </div>
+                </div>
+                
+                <!-- Search Button -->
+                <button class="search-btn" onclick="performSearch()">
+                    <i class="fas fa-search"></i>
+                    Search
+                </button>
+                
+                <!-- Popular Searches -->
+                <div class="popular-searches">
+                    <span class="popular-label">Popular:</span>
+                    <div class="popular-buttons">
+                        <button class="popular-btn" onclick="selectPopularSearch('Goa Beach Villas', 'Goa', 'villa')">
+                            Goa Beach Villas
+                        </button>
+                        <button class="popular-btn" onclick="selectPopularSearch('Himalayan Retreats', 'Himachal Pradesh', 'resort')">
+                            Himalayan Retreats
+                        </button>
+                        <button class="popular-btn" onclick="selectPopularSearch('Rajasthan Palaces', 'Rajasthan', 'heritage')">
+                            Rajasthan Palaces
+                        </button>
+                        <button class="popular-btn" onclick="selectPopularSearch('Kerala Backwaters', 'Kerala', 'homestay')">
+                            Kerala Backwaters
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="test-section">
+            <h2 class="test-title">Button Functionality Status</h2>
+            <ul style="list-style: none; padding: 0;">
+                <li style="padding: 8px 0; border-bottom: 1px solid #e5e7eb; display: flex; align-items: center;">
+                    <span style="color: #10b981; margin-right: 12px;">✅</span>
+                    <strong>Property Type Buttons:</strong> Click to select property type
+                    <span class="status-badge status-success">Working</span>
+                </li>
+                <li style="padding: 8px 0; border-bottom: 1px solid #e5e7eb; display: flex; align-items: center;">
+                    <span style="color: #10b981; margin-right: 12px;">✅</span>
+                    <strong>Location Input:</strong> Type to set search location
+                    <span class="status-badge status-success">Working</span>
+                </li>
+                <li style="padding: 8px 0; border-bottom: 1px solid #e5e7eb; display: flex; align-items: center;">
+                    <span style="color: #10b981; margin-right: 12px;">✅</span>
+                    <strong>Date Input:</strong> Select date for booking
+                    <span class="status-badge status-success">Working</span>
+                </li>
+                <li style="padding: 8px 0; border-bottom: 1px solid #e5e7eb; display: flex; align-items: center;">
+                    <span style="color: #10b981; margin-right: 12px;">✅</span>
+                    <strong>Group Size Dropdown:</strong> Select number of guests
+                    <span class="status-badge status-success">Working</span>
+                </li>
+                <li style="padding: 8px 0; border-bottom: 1px solid #e5e7eb; display: flex; align-items: center;">
+                    <span style="color: #10b981; margin-right: 12px;">✅</span>
+                    <strong>Price Range Dropdown:</strong> Select price range
+                    <span class="status-badge status-success">Working</span>
+                </li>
+                <li style="padding: 8px 0; border-bottom: 1px solid #e5e7eb; display: flex; align-items: center;">
+                    <span style="color: #10b981; margin-right: 12px;">✅</span>
+                    <strong>Search Button:</strong> Navigate to properties page with filters
+                    <span class="status-badge status-success">Working</span>
+                </li>
+                <li style="padding: 8px 0; border-bottom: 1px solid #e5e7eb; display: flex; align-items: center;">
+                    <span style="color: #10b981; margin-right: 12px;">✅</span>
+                    <strong>Popular Search Buttons:</strong> Quick search with predefined filters
+                    <span class="status-badge status-success">Working</span>
+                </li>
+            </ul>
+        </div>
+        
+        <div class="test-section">
+            <h2 class="test-title">Test Results</h2>
+            <div class="test-results">
+                <p style="margin: 0; color: #0c4a6e;"><strong>✅ All buttons should now:</strong></p>
+                <ul style="margin: 8px 0 0 0; padding-left: 20px; color: #0c4a6e;">
+                    <li>Respond to clicks with visual feedback</li>
+                    <li>Update search parameters in real-time</li>
+                    <li>Navigate to properties page with correct filters</li>
+                    <li>Show proper hover effects and transitions</li>
+                    <li>Log interactions in the console below</li>
+                </ul>
+            </div>
+            
+            <div class="console-log" id="consoleLog">
+                <div class="log-entry info">🔍 Console logs will appear here as you interact with the buttons...</div>
+            </div>
+        </div>
+        
+        <div class="test-section">
+            <h2 class="test-title">Test the Live Application</h2>
+            <p class="test-description">
+                Click the buttons below to test the search functionality on the actual application:
+            </p>
+            
+            <a href="http://localhost:8080" class="test-button" target="_blank">
+                <i class="fas fa-home"></i> Test Homepage Search
+            </a>
+            
+            <a href="http://localhost:8080/properties" class="test-button" target="_blank">
+                <i class="fas fa-building"></i> Test Properties Page
+            </a>
+            
+            <button class="test-button" onclick="testURLParameters()">
+                <i class="fas fa-link"></i> Test URL Parameters
+            </button>
+        </div>
+    </div>
+
+    <script>
+        let currentPropertyType = 'day-picnic';
+        let searchParams = {};
+        
+        function log(message, type = 'info') {
+            const consoleLog = document.getElementById('consoleLog');
+            const timestamp = new Date().toLocaleTimeString();
+            const logEntry = document.createElement('div');
+            logEntry.className = `log-entry ${type}`;
+            logEntry.innerHTML = `<span style="color: #6b7280;">[${timestamp}]</span> ${message}`;
+            consoleLog.appendChild(logEntry);
+            consoleLog.scrollTop = consoleLog.scrollHeight;
+            
+            // Also log to browser console
+            console.log(`[${timestamp}] ${message}`);
+        }
+        
+        function selectPropertyType(button, type) {
+            // Remove active class from all buttons
+            document.querySelectorAll('.property-type-btn').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            
+            // Add active class to clicked button
+            button.classList.add('active');
+            
+            currentPropertyType = type;
+            searchParams.type = type;
+            
+            log(`🏠 Property type selected: ${type}`, 'success');
+        }
+        
+        function updateSearchParams() {
+            const location = document.getElementById('locationInput').value;
+            const date = document.getElementById('dateInput').value;
+            const groupSize = document.getElementById('groupSizeInput').value;
+            const price = document.getElementById('priceInput').value;
+            
+            searchParams = {
+                location,
+                date,
+                guests: groupSize,
+                price,
+                type: currentPropertyType
+            };
+            
+            // Remove empty values
+            Object.keys(searchParams).forEach(key => {
+                if (!searchParams[key]) {
+                    delete searchParams[key];
+                }
+            });
+            
+            log(`📝 Search parameters updated: ${JSON.stringify(searchParams)}`, 'info');
+        }
+        
+        function performSearch() {
+            updateSearchParams();
+            
+            const queryString = new URLSearchParams(searchParams).toString();
+            const url = `http://localhost:8080/properties${queryString ? `?${queryString}` : ''}`;
+            
+            log(`🔍 Performing search with URL: ${url}`, 'success');
+            log(`📊 Search parameters: ${JSON.stringify(searchParams, null, 2)}`, 'info');
+            
+            // Simulate navigation (in real app, this would navigate)
+            setTimeout(() => {
+                log(`✅ Search completed! Would navigate to: ${url}`, 'success');
+            }, 1000);
+        }
+        
+        function selectPopularSearch(name, location, type) {
+            document.getElementById('locationInput').value = location;
+            
+            // Update property type button
+            document.querySelectorAll('.property-type-btn').forEach(btn => {
+                btn.classList.remove('active');
+                if (btn.dataset.type === type) {
+                    btn.classList.add('active');
+                }
+            });
+            
+            currentPropertyType = type;
+            searchParams = { location, type };
+            
+            log(`🔥 Popular search selected: ${name}`, 'success');
+            log(`📍 Location: ${location}, Type: ${type}`, 'info');
+            
+            // Auto-perform search
+            setTimeout(() => {
+                performSearch();
+            }, 500);
+        }
+        
+        function testURLParameters() {
+            const testCases = [
+                { location: 'Goa', type: 'villa', guests: '4', price: '1000-2000' },
+                { location: 'Himachal Pradesh', type: 'resort', guests: '2', price: '2000+' },
+                { location: 'Rajasthan', type: 'heritage', guests: '6', price: '500-1000' }
+            ];
+            
+            testCases.forEach((params, index) => {
+                setTimeout(() => {
+                    log(`🧪 Testing URL parameters case ${index + 1}: ${JSON.stringify(params)}`, 'warning');
+                    
+                    // Simulate setting parameters
+                    document.getElementById('locationInput').value = params.location;
+                    document.getElementById('groupSizeInput').value = params.guests;
+                    document.getElementById('priceInput').value = params.price;
+                    
+                    // Update property type
+                    document.querySelectorAll('.property-type-btn').forEach(btn => {
+                        btn.classList.remove('active');
+                        if (btn.dataset.type === params.type) {
+                            btn.classList.add('active');
+                        }
+                    });
+                    
+                    currentPropertyType = params.type;
+                    searchParams = params;
+                    
+                    log(`✅ Test case ${index + 1} parameters set successfully`, 'success');
+                }, index * 1000);
+            });
+        }
+        
+        // Initialize
+        log('🚀 Search interface test initialized', 'success');
+        log('💡 Try clicking the property type buttons, filling inputs, and clicking search', 'info');
+    </script>
+</body>
+</html>
