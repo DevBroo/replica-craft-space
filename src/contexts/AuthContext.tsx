@@ -193,8 +193,9 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
               ])
             ]).then(([profileCreationResult, profileFetchResult]) => {
               if (profileFetchResult.status === 'fulfilled' && profileFetchResult.value) {
-                console.log('✅ Enhanced user profile loaded in background:', profileFetchResult.value.email);
-                setUser(profileFetchResult.value);
+                const profile = profileFetchResult.value as AuthUser;
+                console.log('✅ Enhanced user profile loaded in background:', profile.email);
+                setUser(profile);
               } else {
                 console.log('⚠️ Profile enhancement failed, keeping basic user data');
               }
@@ -269,8 +270,9 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
               ])
             ]).then(([profileCreationResult, profileFetchResult]) => {
               if (profileFetchResult.status === 'fulfilled' && profileFetchResult.value) {
-                console.log('✅ Initial enhanced user profile loaded in background:', profileFetchResult.value.email);
-                setUser(profileFetchResult.value);
+                const profile = profileFetchResult.value as AuthUser;
+                console.log('✅ Initial enhanced user profile loaded in background:', profile.email);
+                setUser(profile);
               } else {
                 console.log('⚠️ Initial profile enhancement failed, keeping basic user data');
               }
