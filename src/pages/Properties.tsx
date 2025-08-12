@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import picnifyLogo from '/lovable-uploads/f7960b1f-407a-4738-b8f6-067ea4600889.png';
 import { useAuth } from '@/contexts/AuthContext';
 import { PropertyService } from '@/lib/propertyService';
+import ImageCarousel from '@/components/owner/ImageCarousel';
 
 // Scroll animation hook
 const useScrollAnimation = () => {
@@ -43,6 +44,8 @@ const Properties: React.FC = () => {
   const [viewMode, setViewMode] = useState('grid');
   const [currentPage, setCurrentPage] = useState(1);
   const [showFilters, setShowFilters] = useState(false);
+  const [selectedProperty, setSelectedProperty] = useState<any>(null);
+  const [showViewModal, setShowViewModal] = useState(false);
   
   // Dropdown states for search functionality
   const [showGuestsDropdown, setShowGuestsDropdown] = useState(false);
@@ -554,6 +557,17 @@ const Properties: React.FC = () => {
     currentPage * propertiesPerPage
   );
 
+  // Modal handlers
+  const handleViewProperty = (property: any) => {
+    setSelectedProperty(property);
+    setShowViewModal(true);
+  };
+
+  const closeViewModal = () => {
+    setShowViewModal(false);
+    setSelectedProperty(null);
+  };
+
   return (
     <div className="min-h-screen bg-background font-poppins">
       {/* Header */}
@@ -956,39 +970,74 @@ const Properties: React.FC = () => {
                 </div>
               ) : (
                 <div className={`grid gap-8 ${viewMode === 'grid' ? 'grid-cols-1 md:grid-cols-2 xl:grid-cols-3' : 'grid-cols-1'}`}>
-                                    {currentProperties.map((property, index) => (
-                    <div key={property.id} className="bg-background rounded-2xl shadow-lg border border-border overflow-hidden">
-                      {/* Image Section */}
-                      <div className="relative h-48 bg-gray-200 flex items-center justify-center">
-                        {property.image && property.image !== '/placeholder.svg' ? (
-                          <img
-                            src={property.image}
-                            alt={property.name}
-                            className="w-full h-full object-cover"
-                            onError={(e) => {
-                              console.log('Image failed to load:', property.image);
-                              e.currentTarget.src = '/placeholder.svg';
-                            }}
-                          />
-                        ) : (
-                          <div className="text-center text-gray-500">
-                            <i className="fas fa-image text-4xl mb-2"></i>
-                            <p className="text-sm">No Image Available</p>
+                  {currentProperties.map((property, index) => (
+                    <div key={property.id} className="bg-background rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 border border-border overflow-hidden transform hover:scale-[1.02]">
+                      {/* Image Carousel */}
+                      <div className="relative">
+                        <ImageCarousel
+                          images={property.image ? [property.image] : [beachsideParadise]}
+                          alt={property.name}
+                        />
+                        <div className="absolute top-3 left-3">
+                          <span className="bg-gradient-to-r from-brand-red to-brand-orange text-white px-3 py-1 rounded-full text-sm font-semibold">
+                            {property.type || 'Villa'}
+                          </span>
+                        </div>
+                        {property.rating > 0 && (
+                          <div className="absolute top-3 right-3 bg-black/70 text-white px-2 py-1 rounded-full text-sm flex items-center gap-1">
+                            <i className="fas fa-star text-yellow-400 text-xs"></i>
+                            {property.rating.toFixed(1)}
                           </div>
                         )}
                       </div>
                       
                       {/* Content Section */}
                       <div className="p-6">
-                        <h3 className="text-lg font-bold text-foreground mb-2">{property.name}</h3>
-                        <p className="text-muted-foreground mb-2">
+                        <div className="flex items-start justify-between mb-3">
+                          <h3 className="text-xl font-bold text-foreground line-clamp-2">{property.name}</h3>
+                        </div>
+                        
+                        <div className="flex items-center text-muted-foreground mb-3">
                           <i className="fas fa-map-marker-alt text-brand-red mr-2"></i>
-                          {property.location}
-                        </p>
-                        <p className="text-xl font-black text-foreground mb-4">₹{property.price.toLocaleString()}</p>
-                        <button className="w-full bg-gradient-to-r from-brand-red to-brand-orange text-white py-2 rounded-lg font-bold">
-                          Book Now
-                        </button>
+                          <span className="text-sm">{property.location}</span>
+                        </div>
+
+                        {/* Property Stats */}
+                        <div className="grid grid-cols-3 gap-4 mb-4 text-sm text-muted-foreground">
+                          <div className="flex items-center gap-1">
+                            <i className="fas fa-users text-brand-red"></i>
+                            <span>{property.guests || 1} guests</span>
+                          </div>
+                          <div className="flex items-center gap-1">
+                            <i className="fas fa-bed text-brand-red"></i>
+                            <span>{property.bedrooms || 1} beds</span>
+                          </div>
+                          <div className="flex items-center gap-1">
+                            <i className="fas fa-bath text-brand-red"></i>
+                            <span>{property.bathrooms || 1} baths</span>
+                          </div>
+                        </div>
+
+                        <div className="flex items-center justify-between mb-4">
+                          <div className="text-2xl font-bold text-foreground">
+                            ₹{property.price.toLocaleString()}
+                            <span className="text-sm font-normal text-muted-foreground">/night</span>
+                          </div>
+                        </div>
+
+                        {/* Action Buttons */}
+                        <div className="flex gap-3">
+                          <button
+                            onClick={() => handleViewProperty(property)}
+                            className="flex-1 bg-gradient-to-r from-brand-red to-brand-orange text-white py-3 rounded-lg font-semibold hover:scale-105 transition-transform duration-200 flex items-center justify-center gap-2"
+                          >
+                            <i className="fas fa-eye"></i>
+                            View Details
+                          </button>
+                          <button className="px-4 py-3 border border-brand-red text-brand-red rounded-lg font-semibold hover:bg-brand-red hover:text-white transition-colors duration-200">
+                            <i className="fas fa-heart"></i>
+                          </button>
+                        </div>
                       </div>
                     </div>
                   ))}
@@ -1111,6 +1160,153 @@ const Properties: React.FC = () => {
           </div>
         </div>
       </footer>
+
+      {/* View Property Modal */}
+      {showViewModal && selectedProperty && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-background rounded-2xl shadow-2xl max-w-4xl w-full max-h-[90vh] overflow-y-auto">
+            {/* Modal Header */}
+            <div className="sticky top-0 bg-background border-b border-border p-6 flex justify-between items-center">
+              <h2 className="text-2xl font-bold text-foreground">Property Details</h2>
+              <button
+                onClick={closeViewModal}
+                className="w-10 h-10 rounded-full bg-muted hover:bg-muted/80 flex items-center justify-center transition-colors"
+              >
+                <i className="fas fa-times text-muted-foreground"></i>
+              </button>
+            </div>
+
+            <div className="p-6">
+              {/* Property Images */}
+              <div className="mb-6">
+                <ImageCarousel
+                  images={selectedProperty.image ? [selectedProperty.image] : [beachsideParadise]}
+                  alt={selectedProperty.name}
+                />
+              </div>
+
+              {/* Property Info Grid */}
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                {/* Left Column */}
+                <div>
+                  <div className="mb-6">
+                    <div className="flex items-start justify-between mb-3">
+                      <h1 className="text-3xl font-bold text-foreground">{selectedProperty.name}</h1>
+                      <span className="bg-gradient-to-r from-brand-red to-brand-orange text-white px-3 py-1 rounded-full text-sm font-semibold">
+                        {selectedProperty.type || 'Villa'}
+                      </span>
+                    </div>
+                    
+                    <div className="flex items-center text-muted-foreground mb-4">
+                      <i className="fas fa-map-marker-alt text-brand-red mr-2"></i>
+                      <span>{selectedProperty.location}</span>
+                    </div>
+
+                    {selectedProperty.rating > 0 && (
+                      <div className="flex items-center gap-2 mb-4">
+                        <div className="flex text-yellow-400">
+                          {[...Array(5)].map((_, i) => (
+                            <i key={i} className={`fas fa-star ${i < Math.floor(selectedProperty.rating) ? 'text-yellow-400' : 'text-gray-300'}`}></i>
+                          ))}
+                        </div>
+                        <span className="text-sm text-muted-foreground">
+                          {selectedProperty.rating.toFixed(1)} ({selectedProperty.reviewCount || 0} reviews)
+                        </span>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Property Stats */}
+                  <div className="grid grid-cols-2 gap-4 mb-6">
+                    <div className="bg-muted rounded-lg p-4 text-center">
+                      <div className="text-2xl font-bold text-brand-red mb-1">
+                        {selectedProperty.guests || 1}
+                      </div>
+                      <div className="text-sm text-muted-foreground">Max Guests</div>
+                    </div>
+                    <div className="bg-muted rounded-lg p-4 text-center">
+                      <div className="text-2xl font-bold text-brand-red mb-1">
+                        {selectedProperty.bedrooms || 1}
+                      </div>
+                      <div className="text-sm text-muted-foreground">Bedrooms</div>
+                    </div>
+                    <div className="bg-muted rounded-lg p-4 text-center">
+                      <div className="text-2xl font-bold text-brand-red mb-1">
+                        {selectedProperty.bathrooms || 1}
+                      </div>
+                      <div className="text-sm text-muted-foreground">Bathrooms</div>
+                    </div>
+                    <div className="bg-muted rounded-lg p-4 text-center">
+                      <div className="text-2xl font-bold text-brand-red mb-1">
+                        ₹{selectedProperty.price.toLocaleString()}
+                      </div>
+                      <div className="text-sm text-muted-foreground">Per Night</div>
+                    </div>
+                  </div>
+
+                  {/* Description */}
+                  {selectedProperty.description && (
+                    <div className="mb-6">
+                      <h3 className="text-lg font-semibold text-foreground mb-3">Description</h3>
+                      <p className="text-muted-foreground leading-relaxed">
+                        {selectedProperty.description}
+                      </p>
+                    </div>
+                  )}
+                </div>
+
+                {/* Right Column */}
+                <div>
+                  {/* Amenities */}
+                  {selectedProperty.amenities && selectedProperty.amenities.length > 0 && (
+                    <div className="mb-6">
+                      <h3 className="text-lg font-semibold text-foreground mb-3">Amenities</h3>
+                      <div className="grid grid-cols-2 gap-3">
+                        {selectedProperty.amenities.map((amenity: string, index: number) => (
+                          <div key={index} className="flex items-center gap-2 text-sm text-muted-foreground">
+                            <i className="fas fa-check text-green-500"></i>
+                            {amenity}
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Pricing Details */}
+                  <div className="bg-muted rounded-lg p-6 mb-6">
+                    <h3 className="text-lg font-semibold text-foreground mb-4">Pricing</h3>
+                    <div className="space-y-3">
+                      <div className="flex justify-between">
+                        <span className="text-muted-foreground">Base price</span>
+                        <span className="font-semibold">₹{selectedProperty.price.toLocaleString()}</span>
+                      </div>
+                      <div className="flex justify-between text-sm text-muted-foreground">
+                        <span>Service fee</span>
+                        <span>₹{Math.round(selectedProperty.price * 0.1).toLocaleString()}</span>
+                      </div>
+                      <div className="border-t border-border pt-3 flex justify-between font-semibold text-lg">
+                        <span>Total</span>
+                        <span>₹{Math.round(selectedProperty.price * 1.1).toLocaleString()}</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Action Buttons */}
+                  <div className="space-y-3">
+                    <button className="w-full bg-gradient-to-r from-brand-red to-brand-orange text-white py-4 rounded-lg font-semibold text-lg hover:scale-105 transition-transform duration-200">
+                      Book Now
+                    </button>
+                    <button className="w-full border border-brand-red text-brand-red py-3 rounded-lg font-semibold hover:bg-brand-red hover:text-white transition-colors duration-200">
+                      <i className="fas fa-heart mr-2"></i>
+                      Add to Wishlist
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
