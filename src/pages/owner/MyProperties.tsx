@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { PropertyService } from '@/lib/propertyService';
+import ImageCarousel from '@/components/owner/ImageCarousel';
 
 const MyProperties: React.FC<{
   sidebarCollapsed: boolean;
@@ -139,11 +140,13 @@ const MyProperties: React.FC<{
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case 'active': return 'bg-green-100 text-green-800';
-      case 'inactive': return 'bg-gray-100 text-gray-800';
-      case 'pending': return 'bg-yellow-100 text-yellow-800';
-      case 'maintenance': return 'bg-red-100 text-red-800';
-      default: return 'bg-gray-100 text-gray-800';
+      case 'active': 
+      case 'approved': return 'bg-green-100 text-green-800 border border-green-200';
+      case 'inactive': return 'bg-muted text-muted-foreground border border-border';
+      case 'pending': return 'bg-yellow-100 text-yellow-800 border border-yellow-200';
+      case 'maintenance': 
+      case 'rejected': return 'bg-red-100 text-red-800 border border-red-200';
+      default: return 'bg-muted text-muted-foreground border border-border';
     }
   };
 
@@ -676,107 +679,124 @@ const MyProperties: React.FC<{
         {/* Content */}
         <main className="p-6">
           {/* Properties Grid */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
             {properties.map((property) => (
-              <div key={property.id} className="bg-white rounded-lg shadow-sm hover:shadow-lg transition-shadow">
+              <div key={property.id} className="bg-card rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 overflow-hidden group border border-border">
                 <div className="relative">
-                  <img
-                    src={property.images[0] || '/placeholder.svg'}
+                  <ImageCarousel
+                    images={property.images || ['/placeholder.svg']}
                     alt={property.name}
-                    className="w-full h-48 object-cover rounded-t-lg"
                   />
                   <div className="absolute top-4 left-4">
-                    <span className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(property.status)}`}>
+                    <span className={`px-3 py-1 rounded-full text-xs font-semibold ${getStatusColor(property.status)}`}>
                       {property.status.charAt(0).toUpperCase() + property.status.slice(1)}
                     </span>
                   </div>
                   <div className="absolute top-4 right-4">
-                    <span className="bg-white/90 text-gray-800 px-2 py-1 rounded-full text-xs font-medium">
+                    <span className="bg-card/95 text-card-foreground px-3 py-1 rounded-full text-xs font-medium border border-border backdrop-blur-sm">
                       {getTypeLabel(property.type)}
                     </span>
                   </div>
                 </div>
                 <div className="p-6">
-                  <div className="flex items-start justify-between mb-3">
-                    <h3 className="text-lg font-semibold text-gray-800">{property.name}</h3>
-                    <div className="flex items-center space-x-1">
+                  <div className="flex items-start justify-between mb-4">
+                    <div className="flex-1">
+                      <h3 className="text-xl font-bold text-card-foreground mb-1 line-clamp-1">{property.name}</h3>
+                      <div className="flex items-center text-muted-foreground mb-2">
+                        <i className="fas fa-map-marker-alt mr-1 text-sm"></i>
+                        <span className="text-sm">{property.location}, {property.city}</span>
+                      </div>
+                    </div>
+                    <div className="flex items-center space-x-1 ml-2">
                       <i className="fas fa-star text-yellow-400"></i>
-                      <span className="text-sm font-medium">{property.rating}</span>
-                    </div>
-                  </div>
-                  
-                  <div className="flex items-center text-gray-600 mb-3">
-                    <i className="fas fa-map-marker-alt mr-1"></i>
-                    <span className="text-sm">{property.location}, {property.city}</span>
-                  </div>
-
-                  <div className="flex items-center justify-between mb-4">
-                    <div className="flex items-center space-x-4 text-sm text-gray-600">
-                      <div className="flex items-center">
-                        <i className="fas fa-users mr-1"></i>
-                        {property.capacity}
-                      </div>
-                      <div className="flex items-center">
-                        <i className="fas fa-bed mr-1"></i>
-                        {property.bedrooms}
-                      </div>
-                      <div className="flex items-center">
-                        <i className="fas fa-bath mr-1"></i>
-                        {property.bathrooms}
-                      </div>
-                    </div>
-                    <div className="text-lg font-bold text-gray-800">
-                      ₹{(property.price || 0).toLocaleString()}
+                      <span className="text-sm font-semibold text-card-foreground">{property.rating}</span>
                     </div>
                   </div>
 
-                  <div className="flex items-center justify-between mb-4">
-                    <div className="text-sm text-gray-600">
-                      <div className="flex items-center">
-                        <i className="fas fa-calendar mr-1"></i>
-                        {property.totalBookings} bookings
+                  <div className="grid grid-cols-3 gap-4 mb-4 p-3 bg-muted/50 rounded-lg">
+                    <div className="text-center">
+                      <div className="flex items-center justify-center text-muted-foreground mb-1">
+                        <i className="fas fa-users text-sm"></i>
                       </div>
+                      <span className="text-sm font-medium text-card-foreground">{property.capacity}</span>
+                      <p className="text-xs text-muted-foreground">Guests</p>
                     </div>
-                    <div className="text-sm text-gray-600">
-                      <div className="flex items-center">
-                        <i className="fas fa-dollar-sign mr-1"></i>
-                        ₹{(property.totalEarnings || 0).toLocaleString()}
+                    <div className="text-center">
+                      <div className="flex items-center justify-center text-muted-foreground mb-1">
+                        <i className="fas fa-bed text-sm"></i>
                       </div>
+                      <span className="text-sm font-medium text-card-foreground">{property.bedrooms}</span>
+                      <p className="text-xs text-muted-foreground">Bedrooms</p>
+                    </div>
+                    <div className="text-center">
+                      <div className="flex items-center justify-center text-muted-foreground mb-1">
+                        <i className="fas fa-bath text-sm"></i>
+                      </div>
+                      <span className="text-sm font-medium text-card-foreground">{property.bathrooms}</span>
+                      <p className="text-xs text-muted-foreground">Bathrooms</p>
                     </div>
                   </div>
 
-                  <div className="flex items-center space-x-2 mb-3">
+                  <div className="flex items-center justify-between mb-6">
+                    <div className="space-y-1">
+                      <div className="flex items-center text-muted-foreground">
+                        <i className="fas fa-calendar mr-2 text-sm"></i>
+                        <span className="text-sm">{property.totalBookings} bookings</span>
+                      </div>
+                      <div className="flex items-center text-muted-foreground">
+                        <i className="fas fa-rupee-sign mr-2 text-sm"></i>
+                        <span className="text-sm">₹{(property.totalEarnings || 0).toLocaleString()} earned</span>
+                      </div>
+                    </div>
+                    <div className="text-right">
+                      <div className="text-2xl font-bold text-card-foreground">
+                        ₹{(property.price || 0).toLocaleString()}
+                      </div>
+                      <p className="text-xs text-muted-foreground">per night</p>
+                    </div>
+                  </div>
+
+                  <div className="mb-4">
+                    <label className="block text-xs font-medium text-muted-foreground mb-2">Status</label>
                     <select
                       value={property.status}
                       onChange={(e) => handleStatusChange(property.id, e.target.value)}
-                      className="text-xs px-2 py-1 border border-gray-300 rounded bg-white"
+                      className="w-full text-xs px-3 py-2 border border-border rounded-lg bg-card focus:outline-none focus:ring-2 focus:ring-ring"
                     >
-                      <option value="pending">Pending</option>
+                      <option value="pending">Pending Review</option>
                       <option value="approved">Active</option>
                       <option value="inactive">Inactive</option>
                       <option value="rejected">Maintenance</option>
                     </select>
                   </div>
-                  <div className="flex items-center space-x-2">
+
+                  {/* Action Buttons */}
+                  <div className="space-y-3">
+                    {/* Primary Action - View Details */}
                     <button 
                       onClick={() => handleViewProperty(property)}
-                      className="flex-1 bg-gray-100 hover:bg-gray-200 text-gray-700 px-3 py-2 rounded text-sm"
+                      className="w-full bg-gradient-to-r from-brand-red to-brand-orange hover:from-brand-red/90 hover:to-brand-orange/90 text-white px-4 py-3 rounded-lg font-semibold transition-all duration-200 shadow-md hover:shadow-lg transform hover:-translate-y-0.5"
                     >
-                      <i className="fas fa-eye mr-1"></i>
-                      View
+                      <i className="fas fa-eye mr-2"></i>
+                      View Property Details
                     </button>
-                    <button 
-                      onClick={() => handleEditProperty(property)}
-                      className="bg-gray-100 hover:bg-gray-200 text-gray-700 px-3 py-2 rounded text-sm"
-                    >
-                      <i className="fas fa-edit"></i>
-                    </button>
-                    <button 
-                      onClick={() => handleDeleteProperty(property.id)}
-                      className="bg-gray-100 hover:bg-gray-200 text-red-600 px-3 py-2 rounded text-sm"
-                    >
-                      <i className="fas fa-trash"></i>
-                    </button>
+                    
+                    {/* Secondary Actions */}
+                    <div className="flex items-center space-x-2">
+                      <button 
+                        onClick={() => handleEditProperty(property)}
+                        className="flex-1 bg-secondary hover:bg-secondary/80 text-secondary-foreground px-4 py-2 rounded-lg font-medium transition-colors duration-200 border border-border"
+                      >
+                        <i className="fas fa-edit mr-2"></i>
+                        Edit
+                      </button>
+                      <button 
+                        onClick={() => handleDeleteProperty(property.id)}
+                        className="bg-destructive/10 hover:bg-destructive/20 text-destructive px-4 py-2 rounded-lg font-medium transition-colors duration-200 border border-destructive/20"
+                      >
+                        <i className="fas fa-trash"></i>
+                      </button>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -1372,84 +1392,163 @@ const MyProperties: React.FC<{
         </div>
       )}
 
-      {/* View Property Modal */}
+      {/* Enhanced View Property Modal */}
       {showViewModal && selectedProperty && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-6 w-full max-w-4xl max-h-[90vh] overflow-y-auto">
-            <div className="flex items-center justify-between mb-6">
-              <h2 className="text-2xl font-semibold text-gray-800">{selectedProperty.name}</h2>
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div className="bg-card rounded-2xl shadow-2xl w-full max-w-6xl max-h-[95vh] overflow-hidden">
+            {/* Modal Header */}
+            <div className="flex items-center justify-between p-6 border-b border-border bg-gradient-to-r from-brand-red/5 to-brand-orange/5">
+              <div>
+                <h2 className="text-3xl font-bold text-card-foreground">{selectedProperty.name}</h2>
+                <div className="flex items-center mt-2 space-x-4">
+                  <div className="flex items-center text-muted-foreground">
+                    <i className="fas fa-map-marker-alt mr-2"></i>
+                    <span>{selectedProperty.location}, {selectedProperty.city}, {selectedProperty.state}</span>
+                  </div>
+                  <div className="flex items-center">
+                    <i className="fas fa-star text-yellow-400 mr-1"></i>
+                    <span className="font-semibold text-card-foreground">{selectedProperty.rating}/5</span>
+                  </div>
+                </div>
+              </div>
               <button
                 onClick={() => setShowViewModal(false)}
-                className="text-gray-400 hover:text-gray-600"
+                className="p-2 rounded-full hover:bg-muted/50 text-muted-foreground hover:text-card-foreground transition-colors"
               >
                 <i className="fas fa-times text-xl"></i>
               </button>
             </div>
-            <div className="space-y-6">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div>
-                  <img
-                    src={selectedProperty.images[0] || '/placeholder.svg'}
-                    alt={selectedProperty.name}
-                    className="w-full h-64 object-cover rounded-lg"
-                  />
-                </div>
-                <div className="space-y-4">
-                  <div>
-                    <h3 className="text-lg font-semibold">{selectedProperty.name}</h3>
-                    <p className="text-gray-600">{selectedProperty.location}, {selectedProperty.city}</p>
-                  </div>
-                  <div className="flex items-center space-x-4">
-                    <span className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(selectedProperty.status)}`}>
-                      {selectedProperty.status.charAt(0).toUpperCase() + selectedProperty.status.slice(1)}
-                    </span>
-                    <span className="bg-gray-100 text-gray-800 px-2 py-1 rounded-full text-xs font-medium">
-                      {getTypeLabel(selectedProperty.type)}
-                    </span>
-                  </div>
-                  <div className="grid grid-cols-2 gap-4 text-sm">
-                    <div>
-                      <span className="font-medium">Price:</span> ₹{(selectedProperty.price || 0).toLocaleString()}/day
-                    </div>
-                    <div>
-                      <span className="font-medium">Capacity:</span> {selectedProperty.capacity} guests
-                    </div>
-                    <div>
-                      <span className="font-medium">Bedrooms:</span> {selectedProperty.bedrooms}
-                    </div>
-                    <div>
-                      <span className="font-medium">Bathrooms:</span> {selectedProperty.bathrooms}
+
+            {/* Modal Content */}
+            <div className="overflow-y-auto max-h-[calc(95vh-100px)]">
+              <div className="p-6 space-y-8">
+                {/* Image Gallery and Key Info */}
+                <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                  <div className="lg:col-span-2">
+                    <div className="h-96 rounded-xl overflow-hidden">
+                      <ImageCarousel
+                        images={selectedProperty.images || ['/placeholder.svg']}
+                        alt={selectedProperty.name}
+                      />
                     </div>
                   </div>
-                  <div className="text-sm">
-                    <span className="font-medium">Rating:</span> {selectedProperty.rating}/5
+                  <div className="space-y-6">
+                    {/* Status and Type */}
+                    <div className="flex flex-wrap gap-3">
+                      <span className={`px-4 py-2 rounded-full text-sm font-semibold ${getStatusColor(selectedProperty.status)}`}>
+                        {selectedProperty.status.charAt(0).toUpperCase() + selectedProperty.status.slice(1)}
+                      </span>
+                      <span className="bg-muted text-muted-foreground px-4 py-2 rounded-full text-sm font-medium border border-border">
+                        {getTypeLabel(selectedProperty.type)}
+                      </span>
+                    </div>
+
+                    {/* Pricing */}
+                    <div className="bg-gradient-to-r from-brand-red/10 to-brand-orange/10 p-6 rounded-xl border border-brand-red/20">
+                      <div className="text-center">
+                        <div className="text-4xl font-bold text-card-foreground mb-2">
+                          ₹{(selectedProperty.price || 0).toLocaleString()}
+                        </div>
+                        <p className="text-muted-foreground">per night</p>
+                      </div>
+                    </div>
+
+                    {/* Key Stats */}
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="bg-muted/50 p-4 rounded-lg text-center">
+                        <div className="text-2xl font-bold text-card-foreground">{selectedProperty.capacity}</div>
+                        <p className="text-sm text-muted-foreground">Guests</p>
+                      </div>
+                      <div className="bg-muted/50 p-4 rounded-lg text-center">
+                        <div className="text-2xl font-bold text-card-foreground">{selectedProperty.bedrooms}</div>
+                        <p className="text-sm text-muted-foreground">Bedrooms</p>
+                      </div>
+                      <div className="bg-muted/50 p-4 rounded-lg text-center">
+                        <div className="text-2xl font-bold text-card-foreground">{selectedProperty.bathrooms}</div>
+                        <p className="text-sm text-muted-foreground">Bathrooms</p>
+                      </div>
+                      <div className="bg-muted/50 p-4 rounded-lg text-center">
+                        <div className="text-2xl font-bold text-card-foreground">{selectedProperty.totalBookings}</div>
+                        <p className="text-sm text-muted-foreground">Bookings</p>
+                      </div>
+                    </div>
                   </div>
                 </div>
-              </div>
-              <div>
-                <h4 className="font-medium mb-2">Description</h4>
-                <p className="text-gray-600">{selectedProperty.description}</p>
-              </div>
-              <div>
-                <h4 className="font-medium mb-2">Amenities</h4>
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
-                  {selectedProperty.amenities.map((amenity: string) => (
-                    <div key={amenity} className="flex items-center space-x-2 text-sm">
-                      <i className="fas fa-check text-green-500"></i>
-                      <span className="capitalize">{amenity}</span>
+
+                {/* Description */}
+                <div className="bg-muted/30 p-6 rounded-xl">
+                  <h4 className="text-xl font-bold text-card-foreground mb-4">
+                    <i className="fas fa-align-left mr-2 text-brand-red"></i>
+                    Description
+                  </h4>
+                  <p className="text-muted-foreground leading-relaxed">{selectedProperty.description}</p>
+                </div>
+
+                {/* Amenities */}
+                <div>
+                  <h4 className="text-xl font-bold text-card-foreground mb-6">
+                    <i className="fas fa-star mr-2 text-brand-orange"></i>
+                    Amenities & Features
+                  </h4>
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                    {selectedProperty.amenities.map((amenity: string) => (
+                      <div key={amenity} className="flex items-center space-x-3 bg-muted/50 p-3 rounded-lg">
+                        <div className="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center">
+                          <i className="fas fa-check text-green-600 text-sm"></i>
+                        </div>
+                        <span className="capitalize font-medium text-card-foreground">{amenity}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Performance Metrics */}
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                  <div className="bg-green-50 border border-green-200 p-6 rounded-xl text-center">
+                    <div className="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-3">
+                      <i className="fas fa-chart-line text-green-600"></i>
                     </div>
-                  ))}
+                    <div className="text-2xl font-bold text-green-800 mb-1">
+                      ₹{(selectedProperty.totalEarnings || 0).toLocaleString()}
+                    </div>
+                    <p className="text-sm text-green-600 font-medium">Total Earnings</p>
+                  </div>
+                  <div className="bg-blue-50 border border-blue-200 p-6 rounded-xl text-center">
+                    <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-3">
+                      <i className="fas fa-calendar-check text-blue-600"></i>
+                    </div>
+                    <div className="text-2xl font-bold text-blue-800 mb-1">{selectedProperty.totalBookings}</div>
+                    <p className="text-sm text-blue-600 font-medium">Total Bookings</p>
+                  </div>
+                  <div className="bg-purple-50 border border-purple-200 p-6 rounded-xl text-center">
+                    <div className="w-12 h-12 bg-purple-100 rounded-full flex items-center justify-center mx-auto mb-3">
+                      <i className="fas fa-calendar text-purple-600"></i>
+                    </div>
+                    <div className="text-2xl font-bold text-purple-800 mb-1">
+                      {new Date(selectedProperty.createdAt).toLocaleDateString()}
+                    </div>
+                    <p className="text-sm text-purple-600 font-medium">Date Added</p>
+                  </div>
                 </div>
-              </div>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
-                <div>
-                  <span className="font-medium">Total Bookings:</span> {selectedProperty.totalBookings}
-                </div>
-                <div>
-                  <span className="font-medium">Total Earnings:</span> ₹{(selectedProperty.totalEarnings || 0).toLocaleString()}
-                </div>
-                <div>
-                  <span className="font-medium">Created:</span> {new Date(selectedProperty.createdAt).toLocaleDateString()}
+
+                {/* Action Buttons */}
+                <div className="flex flex-col sm:flex-row gap-4 pt-6 border-t border-border">
+                  <button 
+                    onClick={() => {
+                      setShowViewModal(false);
+                      handleEditProperty(selectedProperty);
+                    }}
+                    className="flex-1 bg-gradient-to-r from-brand-red to-brand-orange hover:from-brand-red/90 hover:to-brand-orange/90 text-white px-6 py-3 rounded-lg font-semibold transition-all duration-200 shadow-md hover:shadow-lg"
+                  >
+                    <i className="fas fa-edit mr-2"></i>
+                    Edit Property
+                  </button>
+                  <button 
+                    onClick={() => setShowViewModal(false)}
+                    className="px-6 py-3 bg-secondary hover:bg-secondary/80 text-secondary-foreground rounded-lg font-medium transition-colors duration-200 border border-border"
+                  >
+                    Close
+                  </button>
                 </div>
               </div>
             </div>
