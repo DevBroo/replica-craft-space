@@ -402,23 +402,50 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       setLoading(true);
       setError(null);
       
+      console.log('🚪 Starting logout process...');
+      
+      // Clear local state immediately for better UX
+      setUser(null);
+      setSession(null);
+      
+      // Attempt Supabase logout
       const { error } = await supabase.auth.signOut();
       
-      if (error) {
-        setError({
-          message: error.message,
-          code: error.name,
-        });
-        return;
+      // Handle session not found error gracefully (this is common and not a real error)
+      if (error && error.message !== 'Session not found') {
+        console.log('⚠️ Logout warning (continuing anyway):', error.message);
+        // Don't set error state for session not found - it's expected behavior
+      }
+
+      // Force clear all auth data from localStorage
+      try {
+        const authKeys = Object.keys(localStorage).filter(key => 
+          key.startsWith('supabase.auth.token') || 
+          key.startsWith('sb-') ||
+          key.includes('supabase')
+        );
+        authKeys.forEach(key => localStorage.removeItem(key));
+        console.log('🧹 Cleared auth data from localStorage');
+      } catch (storageError) {
+        console.log('⚠️ Could not clear localStorage:', storageError);
       }
 
       console.log('✅ User logged out successfully');
     } catch (err: unknown) {
       const errorMessage = err instanceof Error ? err.message : 'Logout failed';
-      setError({
-        message: errorMessage,
-        code: 'LOGOUT_ERROR',
-      });
+      console.error('❌ Logout error:', errorMessage);
+      
+      // Even if logout fails, clear local state
+      setUser(null);
+      setSession(null);
+      
+      // Only set error for unexpected errors, not session issues
+      if (!errorMessage.includes('Session not found')) {
+        setError({
+          message: errorMessage,
+          code: 'LOGOUT_ERROR',
+        });
+      }
     } finally {
       setLoading(false);
     }

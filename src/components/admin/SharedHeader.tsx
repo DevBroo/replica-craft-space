@@ -17,11 +17,26 @@ const SharedHeader: React.FC<SharedHeaderProps> = ({
 }) => {
   const navigate = useNavigate();
 
-  const handleLogout = () => {
-    // Clear mock authentication
-    localStorage.removeItem('isAuthenticated');
-    // Redirect to login
-    navigate('/login');
+  const handleLogout = async () => {
+    try {
+      // Clear admin auth data
+      localStorage.removeItem('isAuthenticated');
+      
+      // Also clear any Supabase auth data
+      const authKeys = Object.keys(localStorage).filter(key => 
+        key.startsWith('supabase.auth.token') || 
+        key.startsWith('sb-') ||
+        key.includes('supabase')
+      );
+      authKeys.forEach(key => localStorage.removeItem(key));
+      
+      console.log('🚪 Admin logged out successfully');
+      navigate('/login');
+    } catch (error) {
+      console.error('Admin logout error:', error);
+      // Force redirect even if error occurs
+      navigate('/login');
+    }
   };
   return (
     <header className="bg-white shadow-sm border-b px-6 py-4">
