@@ -859,7 +859,7 @@ const Properties: React.FC = () => {
 
                         {/* Action Buttons */}
                         <div className="property-card-actions flex gap-3 mt-auto">
-                          <button onClick={() => handleViewProperty(property)} className="flex-1 bg-white/20 backdrop-blur-md border border-white/30 text-white py-3 rounded-lg font-semibold hover:bg-white/30 hover:scale-105 transition-all duration-200 flex items-center justify-center gap-2 shadow-lg">
+                          <button onClick={() => handleViewProperty(property)} className="flex-1 bg-gradient-to-r from-brand-red to-brand-orange text-white py-3 rounded-lg font-semibold hover:scale-105 transition-transform duration-200 flex items-center justify-center gap-2 backdrop-blur-sm">
                             <i className="fas fa-eye"></i>
                             View Details
                           </button>
