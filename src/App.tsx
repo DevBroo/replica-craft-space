@@ -19,6 +19,7 @@ import ForgotPassword from "./pages/ForgotPassword";
 import ResendVerification from "./pages/ResendVerification";
 import ResetPassword from "./pages/ResetPassword";
 import NotFound from "./pages/NotFound";
+import CustomerDashboard from "./pages/CustomerDashboard";
 import HowItWorks from "./pages/HowItWorks";
 import SafetyGuidelines from "./pages/SafetyGuidelines";
 import PrivacyPolicy from "./pages/PrivacyPolicy";
@@ -73,6 +74,7 @@ const App = () => (
           <Route path="/about" element={<About />} />
           <Route path="/contact" element={<Contact />} />
           <Route path="/login" element={<CustomerLogin />} />
+          <Route path="/customer/dashboard" element={<CustomerDashboard />} />
           <Route path="/booking-details" element={<BookingDetails />} />
           <Route path="/signup" element={<Signup />} />
           <Route path="/forgot-password" element={<ForgotPassword />} />
