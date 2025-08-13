@@ -20,8 +20,15 @@ import {
   Play,
   Edit,
   ChevronDown,
-  Search
+  Search,
+  Monitor,
+  Shield,
+  ArrowUpDown,
+  Clock,
+  Calendar,
+  ExternalLink
 } from 'lucide-react';
+import { Tabs, TabsList, TabsTrigger, TabsContent } from '../../components/admin/ui/tabs';
 import SharedSidebar from '../../components/admin/SharedSidebar';
 import SharedHeader from '../../components/admin/SharedHeader';
 
@@ -219,6 +226,125 @@ const CMSManagement: React.FC = () => {
     }
   ];
 
+  const homepageBannersData = [
+    {
+      id: 'HB001',
+      title: 'Summer Sale - 40% Off',
+      subtitle: 'Discover Amazing Deals on Premium Properties',
+      status: 'Active',
+      position: 'Hero',
+      startDate: '2025-07-01',
+      endDate: '2025-08-31',
+      ctaText: 'Book Now',
+      ctaLink: '/properties',
+      backgroundImage: 'https://readdy.ai/api/search-image?query=luxury%20summer%20vacation%20banner%20with%20tropical%20resort%20and%20sale%20promotion%20professional%20marketing%20design&width=800&height=400&seq=banner-001&orientation=landscape',
+      displayLocation: 'Homepage Hero',
+      targetAudience: 'All Users',
+      clicks: 1250,
+      impressions: 8900
+    },
+    {
+      id: 'HB002',
+      title: 'New Property Launch',
+      subtitle: 'Exclusive Beachfront Villas Now Available',
+      status: 'Scheduled',
+      position: 'Secondary',
+      startDate: '2025-08-15',
+      endDate: '2025-09-15',
+      ctaText: 'Explore',
+      ctaLink: '/properties/beachfront',
+      backgroundImage: 'https://readdy.ai/api/search-image?query=stunning%20beachfront%20villa%20banner%20with%20ocean%20view%20and%20modern%20architecture%20professional%20real%20estate%20photography&width=800&height=400&seq=banner-002&orientation=landscape',
+      displayLocation: 'Homepage Secondary',
+      targetAudience: 'Registered Users',
+      clicks: 0,
+      impressions: 0
+    },
+    {
+      id: 'HB003',
+      title: 'Welcome Back!',
+      subtitle: 'Special Offers for Returning Guests',
+      status: 'Active',
+      position: 'Footer',
+      startDate: '2025-07-10',
+      endDate: '2025-12-31',
+      ctaText: 'View Offers',
+      ctaLink: '/special-offers',
+      backgroundImage: 'https://readdy.ai/api/search-image?query=welcome%20back%20banner%20with%20luxury%20hotel%20interior%20and%20warm%20hospitality%20theme%20professional%20hospitality%20photography&width=800&height=300&seq=banner-003&orientation=landscape',
+      displayLocation: 'Footer Banner',
+      targetAudience: 'Returning Customers',
+      clicks: 340,
+      impressions: 2100
+    }
+  ];
+
+  const legalContentData = [
+    {
+      id: 'LC001',
+      type: 'Terms of Service',
+      title: 'Terms of Service',
+      status: 'Published',
+      version: '2.1',
+      lastUpdated: '2025-07-15',
+      author: 'Legal Team',
+      wordCount: 3250,
+      readingTime: '13 min',
+      sections: ['User Agreement', 'Property Booking', 'Cancellation Policy', 'Liability'],
+      approvalStatus: 'Approved'
+    },
+    {
+      id: 'LC002',
+      type: 'Privacy Policy',
+      title: 'Privacy Policy',
+      status: 'Published',
+      version: '1.8',
+      lastUpdated: '2025-07-20',
+      author: 'Legal Team',
+      wordCount: 2890,
+      readingTime: '12 min',
+      sections: ['Data Collection', 'Data Usage', 'Cookies', 'Third Parties'],
+      approvalStatus: 'Approved'
+    },
+    {
+      id: 'LC003',
+      type: 'FAQ',
+      title: 'Frequently Asked Questions',
+      status: 'Draft',
+      version: '3.2',
+      lastUpdated: '2025-07-28',
+      author: 'Support Team',
+      wordCount: 1450,
+      readingTime: '6 min',
+      sections: ['Booking', 'Payments', 'Cancellations', 'Property Features'],
+      approvalStatus: 'Pending Review'
+    },
+    {
+      id: 'LC004',
+      type: 'Refund Policy',
+      title: 'Refund and Cancellation Policy',
+      status: 'Published',
+      version: '1.5',
+      lastUpdated: '2025-07-12',
+      author: 'Legal Team',
+      wordCount: 1890,
+      readingTime: '8 min',
+      sections: ['Cancellation Rules', 'Refund Process', 'Exceptions', 'Timeline'],
+      approvalStatus: 'Approved'
+    },
+    {
+      id: 'LC005',
+      type: 'Cookie Policy',
+      title: 'Cookie Policy',
+      status: 'Published',
+      version: '1.2',
+      lastUpdated: '2025-07-18',
+      author: 'Legal Team',
+      wordCount: 980,
+      readingTime: '4 min',
+      sections: ['Cookie Types', 'Usage', 'Management', 'Third Party Cookies'],
+      approvalStatus: 'Approved'
+    }
+  ];
+
   const settingsData = [
     {
       id: 'ST001',
@@ -277,6 +403,8 @@ const CMSManagement: React.FC = () => {
       case 'pages': return pagesData;
       case 'blog': return blogPostsData;
       case 'media': return mediaData;
+      case 'banners': return homepageBannersData;
+      case 'legal': return legalContentData;
       case 'settings': return settingsData;
       default: return pagesData;
     }
@@ -289,6 +417,10 @@ const CMSManagement: React.FC = () => {
       ? [item.title, item.slug, item.author, item.category]
       : activeSection === 'media'
       ? [item.name, item.type]
+      : activeSection === 'banners'
+      ? [item.title, item.subtitle, item.position, item.displayLocation]
+      : activeSection === 'legal'
+      ? [item.title, item.type, item.author]
       : [item.setting, item.value, item.category];
 
     const matchesSearch = searchFields.some((field: string) =>
@@ -329,6 +461,198 @@ const CMSManagement: React.FC = () => {
     setSelectedItem(item);
     setShowEditModal(true);
   };
+
+  const renderBannersTable = () => (
+    <div className="overflow-x-auto">
+      <table className="w-full">
+        <thead className="bg-gray-50">
+          <tr>
+            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+              <input
+                type="checkbox"
+                checked={selectedItems.length === paginatedData.length && paginatedData.length > 0}
+                onChange={(e) => handleSelectAll(e.target.checked)}
+                className="rounded border-gray-300 text-blue-600 focus:ring-blue-500 cursor-pointer"
+              />
+            </th>
+            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Banner</th>
+            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Position</th>
+            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Schedule</th>
+            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Performance</th>
+            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+          </tr>
+        </thead>
+        <tbody className="bg-white divide-y divide-gray-200">
+          {paginatedData.map((banner: any) => (
+            <tr key={banner.id} className="hover:bg-gray-50">
+              <td className="px-6 py-4 whitespace-nowrap">
+                <input
+                  type="checkbox"
+                  checked={selectedItems.includes(banner.id)}
+                  onChange={(e) => handleSelectItem(banner.id, e.target.checked)}
+                  className="rounded border-gray-300 text-blue-600 focus:ring-blue-500 cursor-pointer"
+                />
+              </td>
+              <td className="px-6 py-4 whitespace-nowrap">
+                <div className="flex items-center">
+                  <img 
+                    className="h-12 w-20 object-cover rounded border" 
+                    src={banner.backgroundImage} 
+                    alt={banner.title}
+                  />
+                  <div className="ml-3">
+                    <div className="text-sm font-medium text-gray-900">{banner.title}</div>
+                    <div className="text-sm text-gray-500">{banner.subtitle}</div>
+                  </div>
+                </div>
+              </td>
+              <td className="px-6 py-4 whitespace-nowrap">
+                <span className="text-sm text-gray-900">{banner.position}</span>
+                <div className="text-xs text-gray-500">{banner.displayLocation}</div>
+              </td>
+              <td className="px-6 py-4 whitespace-nowrap">
+                <span className={`px-2 py-1 text-xs font-medium rounded-full ${getStatusColor(banner.status)}`}>
+                  {banner.status}
+                </span>
+              </td>
+              <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                <div className="flex items-center text-xs">
+                  <Calendar className="w-3 h-3 mr-1" />
+                  {new Date(banner.startDate).toLocaleDateString()} - {new Date(banner.endDate).toLocaleDateString()}
+                </div>
+              </td>
+              <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                <div className="text-xs">
+                  <div>Clicks: {banner.clicks.toLocaleString()}</div>
+                  <div>Views: {banner.impressions.toLocaleString()}</div>
+                </div>
+              </td>
+              <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                <div className="flex space-x-2">
+                  <button
+                    onClick={() => handleEdit(banner)}
+                    className="text-blue-600 hover:text-blue-800 cursor-pointer p-1"
+                    title="Edit Banner"
+                  >
+                    <Edit className="w-4 h-4" />
+                  </button>
+                  <button className="text-green-600 hover:text-green-800 cursor-pointer p-1" title="Preview Banner">
+                    <Eye className="w-4 h-4" />
+                  </button>
+                  <button className="text-purple-600 hover:text-purple-800 cursor-pointer p-1" title="Reorder">
+                    <ArrowUpDown className="w-4 h-4" />
+                  </button>
+                  <button className="text-red-600 hover:text-red-800 cursor-pointer p-1" title="Delete">
+                    <Trash2 className="w-4 h-4" />
+                  </button>
+                </div>
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  );
+
+  const renderLegalTable = () => (
+    <div className="overflow-x-auto">
+      <table className="w-full">
+        <thead className="bg-gray-50">
+          <tr>
+            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+              <input
+                type="checkbox"
+                checked={selectedItems.length === paginatedData.length && paginatedData.length > 0}
+                onChange={(e) => handleSelectAll(e.target.checked)}
+                className="rounded border-gray-300 text-blue-600 focus:ring-blue-500 cursor-pointer"
+              />
+            </th>
+            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Document</th>
+            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Type</th>
+            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Version</th>
+            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Last Updated</th>
+            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Details</th>
+            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+          </tr>
+        </thead>
+        <tbody className="bg-white divide-y divide-gray-200">
+          {paginatedData.map((document: any) => (
+            <tr key={document.id} className="hover:bg-gray-50">
+              <td className="px-6 py-4 whitespace-nowrap">
+                <input
+                  type="checkbox"
+                  checked={selectedItems.includes(document.id)}
+                  onChange={(e) => handleSelectItem(document.id, e.target.checked)}
+                  className="rounded border-gray-300 text-blue-600 focus:ring-blue-500 cursor-pointer"
+                />
+              </td>
+              <td className="px-6 py-4 whitespace-nowrap">
+                <div>
+                  <div className="text-sm font-medium text-gray-900">{document.title}</div>
+                  <div className="text-sm text-gray-500">{document.author}</div>
+                </div>
+              </td>
+              <td className="px-6 py-4 whitespace-nowrap">
+                <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                  {document.type}
+                </span>
+              </td>
+              <td className="px-6 py-4 whitespace-nowrap">
+                <span className={`px-2 py-1 text-xs font-medium rounded-full ${getStatusColor(document.status)}`}>
+                  {document.status}
+                </span>
+              </td>
+              <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                v{document.version}
+                <div className="text-xs text-gray-500">{document.approvalStatus}</div>
+              </td>
+              <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                {new Date(document.lastUpdated).toLocaleDateString('en-US', {
+                  month: 'short',
+                  day: 'numeric',
+                  year: 'numeric'
+                })}
+              </td>
+              <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                <div className="text-xs">
+                  <div className="flex items-center">
+                    <FileText className="w-3 h-3 mr-1" />
+                    {document.wordCount} words
+                  </div>
+                  <div className="flex items-center mt-1">
+                    <Clock className="w-3 h-3 mr-1" />
+                    {document.readingTime}
+                  </div>
+                </div>
+              </td>
+              <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                <div className="flex space-x-2">
+                  <button
+                    onClick={() => handleEdit(document)}
+                    className="text-blue-600 hover:text-blue-800 cursor-pointer p-1"
+                    title="Edit Document"
+                  >
+                    <Edit className="w-4 h-4" />
+                  </button>
+                  <button className="text-green-600 hover:text-green-800 cursor-pointer p-1" title="Preview Document">
+                    <Eye className="w-4 h-4" />
+                  </button>
+                  <button className="text-purple-600 hover:text-purple-800 cursor-pointer p-1" title="Version History">
+                    <Clock className="w-4 h-4" />
+                  </button>
+                  <button className="text-gray-600 hover:text-gray-800 cursor-pointer p-1" title="External Link">
+                    <ExternalLink className="w-4 h-4" />
+                  </button>
+                </div>
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  );
 
   const renderPagesTable = () => (
     <div className="overflow-x-auto">
@@ -414,6 +738,30 @@ const CMSManagement: React.FC = () => {
     </div>
   );
 
+  const renderCurrentTable = () => {
+    switch (activeSection) {
+      case 'pages': return renderPagesTable();
+      case 'blog': return renderPagesTable(); // Reuse for blog posts
+      case 'media': return renderPagesTable(); // Reuse for media
+      case 'banners': return renderBannersTable();
+      case 'legal': return renderLegalTable();
+      case 'settings': return renderPagesTable(); // Reuse for settings
+      default: return renderPagesTable();
+    }
+  };
+
+  const getCreateButtonText = () => {
+    switch (activeSection) {
+      case 'pages': return 'Create New Page';
+      case 'blog': return 'Create New Post';
+      case 'media': return 'Upload Media';
+      case 'banners': return 'Create New Banner';
+      case 'legal': return 'Create New Document';
+      case 'settings': return 'Add Setting';
+      default: return 'Create New';
+    }
+  };
+
   return (
     <div className="min-h-screen bg-gray-50 w-full">
       <SharedSidebar 
@@ -428,6 +776,40 @@ const CMSManagement: React.FC = () => {
           searchPlaceholder="Search content..."
         />
 
+        {/* Tabs Navigation */}
+        <div className="bg-white border-b">
+          <div className="px-6">
+            <Tabs value={activeSection} onValueChange={setActiveSection}>
+              <TabsList className="grid w-full grid-cols-6">
+                <TabsTrigger value="pages" className="flex items-center gap-2">
+                  <FileText className="w-4 h-4" />
+                  Pages
+                </TabsTrigger>
+                <TabsTrigger value="blog" className="flex items-center gap-2">
+                  <BookOpen className="w-4 h-4" />
+                  Blog
+                </TabsTrigger>
+                <TabsTrigger value="media" className="flex items-center gap-2">
+                  <Image className="w-4 h-4" />
+                  Media
+                </TabsTrigger>
+                <TabsTrigger value="banners" className="flex items-center gap-2">
+                  <Monitor className="w-4 h-4" />
+                  Banners
+                </TabsTrigger>
+                <TabsTrigger value="legal" className="flex items-center gap-2">
+                  <Shield className="w-4 h-4" />
+                  Legal
+                </TabsTrigger>
+                <TabsTrigger value="settings" className="flex items-center gap-2">
+                  <Cog className="w-4 h-4" />
+                  Settings
+                </TabsTrigger>
+              </TabsList>
+            </Tabs>
+          </div>
+        </div>
+
         {/* Action Bar */}
         <div className="bg-white border-b px-6 py-4">
           <div className="flex flex-wrap items-center justify-between gap-4">
@@ -437,7 +819,7 @@ const CMSManagement: React.FC = () => {
                 className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors cursor-pointer flex items-center"
               >
                 <Plus className="w-4 h-4 mr-2" />
-                Create New Page
+                {getCreateButtonText()}
               </button>
               
               <div className="relative">
@@ -502,7 +884,42 @@ const CMSManagement: React.FC = () => {
         {/* Content Area */}
         <main className="p-6">
           <div className="bg-white rounded-lg shadow-sm border">
-            {renderPagesTable()}
+            {/* Content Header */}
+            <div className="px-6 py-4 border-b border-gray-200">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h2 className="text-lg font-medium text-gray-900 capitalize">{activeSection}</h2>
+                  <p className="text-sm text-gray-500 mt-1">
+                    {activeSection === 'banners' && 'Manage homepage banners and promotional content'}
+                    {activeSection === 'legal' && 'Update terms, FAQs, policies and legal documents'}
+                    {activeSection !== 'banners' && activeSection !== 'legal' && `Manage your ${activeSection} content and settings`}
+                  </p>
+                </div>
+                <div className="flex items-center space-x-3">
+                  <div className="flex items-center bg-gray-100 rounded-lg p-1">
+                    <button
+                      onClick={() => setViewMode('list')}
+                      className={`p-2 rounded-md transition-colors ${
+                        viewMode === 'list' ? 'bg-white shadow-sm text-gray-900' : 'text-gray-500 hover:text-gray-700'
+                      }`}
+                    >
+                      <List className="w-4 h-4" />
+                    </button>
+                    <button
+                      onClick={() => setViewMode('grid')}
+                      className={`p-2 rounded-md transition-colors ${
+                        viewMode === 'grid' ? 'bg-white shadow-sm text-gray-900' : 'text-gray-500 hover:text-gray-700'
+                      }`}
+                    >
+                      <Grid3X3 className="w-4 h-4" />
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Table Content */}
+            {renderCurrentTable()}
 
             {/* Pagination */}
             <div className="bg-white px-6 py-3 border-t border-gray-200 flex items-center justify-between">
