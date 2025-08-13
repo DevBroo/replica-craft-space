@@ -437,7 +437,8 @@ const Properties: React.FC = () => {
       // Add status for pending indicator
       featured: true,
       ownerEmail: property.ownerEmail || property.owner_id || '',
-      description: property.description || ''
+      description: property.description || '',
+      rawData: property // Preserve the full database record for enhanced modal details
     };
 
     // Ensure type is a string and capitalize it
