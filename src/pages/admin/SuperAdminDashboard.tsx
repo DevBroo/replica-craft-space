@@ -20,18 +20,12 @@ const SuperAdminDashboard: React.FC = () => {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
 
   const dashboardStats = [
-    { title: 'Total Bookings', value: '2,847', change: '+12.5%', icon: Calendar, color: 'bg-blue-500' },
-    { title: 'Revenue', value: '₹89,432', change: '+8.2%', icon: DollarSign, color: 'bg-green-500' },
-    { title: 'Active Properties', value: '156', change: '+5.1%', icon: Home, color: 'bg-purple-500' },
-    { title: 'Pending Approvals', value: '23', change: '-2.3%', icon: Clock, color: 'bg-orange-500' },
+    { title: 'Total Properties', value: '0', description: 'Properties in system', icon: Home, color: 'bg-purple-500' },
+    { title: 'Property Owners', value: '0', description: 'Registered owners', icon: Calendar, color: 'bg-blue-500' },
+    { title: 'Pending Approvals', value: '0', description: 'Awaiting review', icon: Clock, color: 'bg-orange-500' },
   ];
 
-  const recentBookings = [
-    { id: 'BK001', property: 'Sunset Valley Resort', customer: 'John Smith', date: '2024-01-15', amount: '₹450', status: 'Confirmed' },
-    { id: 'BK002', property: 'Mountain View Lodge', customer: 'Sarah Johnson', date: '2024-01-14', amount: '₹320', status: 'Pending' },
-    { id: 'BK003', property: 'Lakeside Retreat', customer: 'Mike Davis', date: '2024-01-13', amount: '₹680', status: 'Confirmed' },
-    { id: 'BK004', property: 'Forest Camp Site', customer: 'Emma Wilson', date: '2024-01-12', amount: '₹280', status: 'Cancelled' },
-  ];
+  // No dummy bookings data
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -62,8 +56,8 @@ const SuperAdminDashboard: React.FC = () => {
                     <div>
                       <p className="text-sm font-medium text-gray-600">{stat.title}</p>
                       <p className="text-2xl font-bold text-gray-900 mt-1">{stat.value}</p>
-                      <p className={`text-sm mt-1 ${stat.change.startsWith('+') ? 'text-green-600' : 'text-red-600'}`}>
-                        {stat.change} from last month
+                      <p className="text-sm mt-1 text-gray-500">
+                        {stat.description}
                       </p>
                     </div>
                     <div className={`w-12 h-12 ${stat.color} rounded-lg flex items-center justify-center`}>
@@ -106,59 +100,21 @@ const SuperAdminDashboard: React.FC = () => {
             </div>
           </div>
 
-          {/* Recent Bookings */}
+          {/* System Status */}
           <div className="bg-white rounded-lg shadow-sm border">
             <div className="p-6 border-b">
               <div className="flex items-center justify-between">
-                <h3 className="text-lg font-semibold text-gray-800">Recent Bookings</h3>
-                <button className="text-blue-600 hover:text-blue-800 text-sm font-medium cursor-pointer">
-                  View All
-                </button>
+                <h3 className="text-lg font-semibold text-gray-800">System Status</h3>
               </div>
             </div>
-            <div className="overflow-x-auto">
-              <table className="w-full">
-                <thead className="bg-gray-50">
-                  <tr>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Booking ID</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Property</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Customer</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Amount</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
-                  </tr>
-                </thead>
-                <tbody className="bg-white divide-y divide-gray-200">
-                  {recentBookings.map((booking) => (
-                    <tr key={booking.id} className="hover:bg-gray-50">
-                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{booking.id}</td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{booking.property}</td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{booking.customer}</td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{booking.date}</td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{booking.amount}</td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <span className={`px-2 py-1 text-xs font-medium rounded-full ${getStatusColor(booking.status)}`}>
-                          {booking.status}
-                        </span>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                        <div className="flex space-x-2">
-                          <button className="text-blue-600 hover:text-blue-800 cursor-pointer">
-                            <Eye className="w-4 h-4" />
-                          </button>
-                          <button className="text-green-600 hover:text-green-800 cursor-pointer">
-                            <Edit className="w-4 h-4" />
-                          </button>
-                          <button className="text-red-600 hover:text-red-800 cursor-pointer">
-                            <Trash2 className="w-4 h-4" />
-                          </button>
-                        </div>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+            <div className="p-6">
+              <div className="text-center py-12">
+                <div className="flex items-center justify-center mb-4">
+                  <div className="w-3 h-3 bg-green-500 rounded-full mr-2"></div>
+                  <span className="text-lg font-medium text-gray-900">All Systems Operational</span>
+                </div>
+                <p className="text-gray-500">Platform is running smoothly</p>
+              </div>
             </div>
           </div>
 

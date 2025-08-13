@@ -137,10 +137,7 @@ const ModernAdminDashboard: React.FC = () => {
     totalProperties: properties.length,
     pendingProperties: properties.filter(p => p.status === 'pending').length,
     approvedProperties: properties.filter(p => p.status === 'approved').length,
-    rejectedProperties: properties.filter(p => p.status === 'rejected').length,
-    totalRevenue: 89432,
-    totalBookings: 2847,
-    avgRating: 4.7
+    rejectedProperties: properties.filter(p => p.status === 'rejected').length
   };
 
   const filteredOwners = owners.filter(owner =>
@@ -242,48 +239,37 @@ const ModernAdminDashboard: React.FC = () => {
         {activeTab === 'overview' && (
           <>
             {/* Modern Stats Grid */}
-            <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
-              <Card className="modern-card stats-card gradient-primary text-primary-foreground">
+            <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+              <Card className="modern-card stats-card">
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">Total Revenue</CardTitle>
-                  <DollarSign className="h-4 w-4" />
+                  <CardTitle className="text-sm font-medium">Total Owners</CardTitle>
+                  <Users className="h-4 w-4 text-muted-foreground" />
                 </CardHeader>
                 <CardContent>
-                  <div className="text-2xl font-bold">₹{stats.totalRevenue.toLocaleString()}</div>
-                  <p className="text-xs opacity-80">+8.2% from last month</p>
+                  <div className="text-2xl font-bold">{stats.totalOwners}</div>
+                  <p className="text-xs text-muted-foreground">Property owners registered</p>
                 </CardContent>
               </Card>
 
               <Card className="modern-card stats-card">
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">Total Bookings</CardTitle>
-                  <Calendar className="h-4 w-4 text-muted-foreground" />
-                </CardHeader>
-                <CardContent>
-                  <div className="text-2xl font-bold">{stats.totalBookings}</div>
-                  <p className="text-xs text-muted-foreground">+12.5% from last month</p>
-                </CardContent>
-              </Card>
-
-              <Card className="modern-card stats-card">
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">Active Properties</CardTitle>
+                  <CardTitle className="text-sm font-medium">Total Properties</CardTitle>
                   <Building className="h-4 w-4 text-muted-foreground" />
                 </CardHeader>
                 <CardContent>
-                  <div className="text-2xl font-bold">{stats.approvedProperties}</div>
-                  <p className="text-xs text-muted-foreground">+5.1% from last month</p>
+                  <div className="text-2xl font-bold">{stats.totalProperties}</div>
+                  <p className="text-xs text-muted-foreground">{stats.approvedProperties} approved, {stats.pendingProperties} pending</p>
                 </CardContent>
               </Card>
 
               <Card className="modern-card stats-card">
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">Average Rating</CardTitle>
-                  <Star className="h-4 w-4 text-muted-foreground" />
+                  <CardTitle className="text-sm font-medium">Active Owners</CardTitle>
+                  <CheckCircle className="h-4 w-4 text-muted-foreground" />
                 </CardHeader>
                 <CardContent>
-                  <div className="text-2xl font-bold">{stats.avgRating}</div>
-                  <p className="text-xs text-muted-foreground">+0.3 from last month</p>
+                  <div className="text-2xl font-bold">{stats.activeOwners}</div>
+                  <p className="text-xs text-muted-foreground">Currently active</p>
                 </CardContent>
               </Card>
             </div>
@@ -333,31 +319,33 @@ const ModernAdminDashboard: React.FC = () => {
               </Card>
             </div>
 
-            {/* Recent Activity */}
+            {/* Recent Property Submissions */}
             <Card className="modern-card">
               <CardHeader>
-                <CardTitle>Recent Activity</CardTitle>
-                <CardDescription>Latest updates across your platform</CardDescription>
+                <CardTitle>Recent Property Submissions</CardTitle>
+                <CardDescription>Latest property submissions awaiting review</CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
-                {[
-                  { action: 'New property approved', user: 'john@example.com', time: '2 minutes ago', type: 'success' },
-                  { action: 'Booking created', user: 'sarah@example.com', time: '5 minutes ago', type: 'info' },
-                  { action: 'Property rejected', user: 'mike@example.com', time: '10 minutes ago', type: 'warning' },
-                  { action: 'New owner registered', user: 'emma@example.com', time: '15 minutes ago', type: 'success' },
-                ].map((activity, index) => (
-                  <div key={index} className="flex items-center space-x-4 p-3 rounded-lg bg-muted/50">
-                    <div className={`w-2 h-2 rounded-full ${
-                      activity.type === 'success' ? 'bg-green-500' :
-                      activity.type === 'warning' ? 'bg-orange-500' : 'bg-blue-500'
-                    }`} />
-                    <div className="flex-1">
-                      <p className="text-sm font-medium">{activity.action}</p>
-                      <p className="text-xs text-muted-foreground">{activity.user}</p>
+                {properties
+                  .filter(p => p.status === 'pending')
+                  .slice(0, 5)
+                  .map((property) => (
+                    <div key={property.id} className="flex items-center space-x-4 p-3 rounded-lg bg-muted/50">
+                      <div className="w-2 h-2 rounded-full bg-orange-500" />
+                      <div className="flex-1">
+                        <p className="text-sm font-medium">{property.title}</p>
+                        <p className="text-xs text-muted-foreground">{property.owner_email}</p>
+                      </div>
+                      <span className="text-xs text-muted-foreground">
+                        {new Date(property.created_at).toLocaleDateString()}
+                      </span>
                     </div>
-                    <span className="text-xs text-muted-foreground">{activity.time}</span>
+                  ))}
+                {properties.filter(p => p.status === 'pending').length === 0 && (
+                  <div className="text-center py-8">
+                    <p className="text-muted-foreground">No pending submissions</p>
                   </div>
-                ))}
+                )}
               </CardContent>
             </Card>
           </>
