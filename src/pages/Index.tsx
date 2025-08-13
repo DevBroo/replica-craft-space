@@ -140,14 +140,14 @@ return (
                     return;
                   }
                   
-                  if (isAuthenticated && user) {
-                    console.log('✅ User is authenticated, navigating to dashboard');
-                    console.log('🔍 User role:', user.role);
-                    navigate('/owner/view');
-                  } else {
-                    console.log('❌ User not authenticated, navigating to login');
-                    navigate('/owner/login');
-                  }
+                   if (isAuthenticated && user) {
+                     console.log('✅ User is authenticated, navigating to dashboard');
+                     console.log('🔍 User role:', user.role);
+                     navigate('/host/dashboard');
+                   } else {
+                     console.log('❌ User not authenticated, navigating to login');
+                     navigate('/host/login');
+                   }
                 }}
                 className="w-full text-left px-4 py-3 text-sm text-gray-700 hover:bg-gray-50 hover:text-brand-orange transition-colors duration-200 border-b border-gray-100"
               >
@@ -315,14 +315,14 @@ return (
                       user: user ? { email: user.email, role: user.role } : null 
                     });
                     
-                    if (isAuthenticated && user) {
-                      console.log('✅ User is authenticated, navigating to dashboard');
-                      console.log('🔍 User role:', user.role);
-                      navigate('/owner/view');
-                    } else {
-                      console.log('❌ User not authenticated, navigating to login');
-                      navigate('/owner/login');
-                    }
+                     if (isAuthenticated && user) {
+                       console.log('✅ User is authenticated, navigating to dashboard');
+                       console.log('🔍 User role:', user.role);
+                       navigate('/host/dashboard');
+                     } else {
+                       console.log('❌ User not authenticated, navigating to login');
+                       navigate('/host/login');
+                     }
                     setIsMobileMenuOpen(false);
                   }}
                   className="flex items-center w-full text-left text-base text-muted-foreground hover:text-brand-orange transition-colors duration-200 py-3 px-3 rounded-lg hover:bg-orange-50"
