@@ -28,16 +28,16 @@ const SharedSidebar: React.FC<SharedSidebarProps> = ({ sidebarCollapsed, setSide
   };
 
   const menuItems = [
-    { id: 'dashboard', label: 'Dashboard', icon: Gauge, path: '/dashboard' },
-    { id: 'owners', label: 'Owner Management', icon: Users, path: '/owner-management' },
-    { id: 'agents', label: 'Agent Management', icon: User, path: '/agent-management' },
-    { id: 'properties', label: 'Property Approval', icon: Home, path: '/property-approval' },
-    { id: 'bookings', label: 'Booking Management', icon: Calendar, path: '/booking-management' },
-    { id: 'commission', label: 'Commission & Disbursement', icon: DollarSign, path: '/commission-disbursement' },
-    { id: 'cms', label: 'CMS Management', icon: Edit, path: '/cms-management' },
-    { id: 'notifications', label: 'Notifications', icon: Bell, path: '/notifications-management' },
-    { id: 'support', label: 'Support Tickets', icon: Headphones, path: '/support-tickets' },
-    { id: 'settings', label: 'Settings', icon: Settings, path: '/settings' },
+    { id: 'dashboard', label: 'Dashboard', icon: Gauge, path: '/admin/dashboard' },
+    { id: 'owners', label: 'Owner Management', icon: Users, path: '/admin/owner-management' },
+    { id: 'agents', label: 'Agent Management', icon: User, path: '/admin/agent-management' },
+    { id: 'properties', label: 'Property Approval', icon: Home, path: '/admin/property-approval' },
+    { id: 'bookings', label: 'Booking Management', icon: Calendar, path: '/admin/booking-management' },
+    { id: 'commission', label: 'Commission & Disbursement', icon: DollarSign, path: '/admin/commission-disbursement' },
+    { id: 'cms', label: 'CMS Management', icon: Edit, path: '/admin/cms-management' },
+    { id: 'notifications', label: 'Notifications', icon: Bell, path: '/admin/notifications-management' },
+    { id: 'support', label: 'Support Tickets', icon: Headphones, path: '/admin/support-tickets' },
+    { id: 'settings', label: 'Settings', icon: Settings, path: '/admin/settings' },
   ];
 
   const isActive = (path: string) => location.pathname === path;

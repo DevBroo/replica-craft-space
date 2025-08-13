@@ -22,7 +22,7 @@ import NotFound from "./pages/NotFound";
 // Admin Panel Imports
 import ProtectedRoute from "./components/admin/ProtectedRoute";
 import SuperAdminDashboard from "./pages/admin/SuperAdminDashboard";
-import AdminDashboard from "./pages/admin/AdminDashboard";
+import ModernAdminDashboard from "./pages/admin/ModernAdminDashboard";
 import OwnerManagement from "./pages/admin/OwnerManagement";
 import AgentManagement from "./pages/admin/AgentManagement";
 import PropertyApproval from "./pages/admin/PropertyApproval";
@@ -87,7 +87,7 @@ const App = () => (
           
           {/* Admin Panel Routes */}
           <Route path="/admin/login" element={<AdminLoginPage />} />
-          <Route path="/admin/dashboard" element={<AdminDashboard />} />
+          <Route path="/admin/dashboard" element={<ModernAdminDashboard />} />
           <Route path="/admin/super-admin-dashboard" element={
             <ProtectedRoute>
               <SuperAdminDashboard />
