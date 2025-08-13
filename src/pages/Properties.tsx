@@ -1042,13 +1042,123 @@ const Properties: React.FC = () => {
                     </div>
                   </div>
 
+                  {/* Property Information */}
+                  <div className="mb-6">
+                    <h3 className="text-lg font-semibold text-foreground mb-3">Property Information</h3>
+                    <div className="space-y-3">
+                      {selectedProperty.rawData?.postal_code && (
+                        <div className="flex items-center gap-2">
+                          <i className="fas fa-map-pin text-brand-red"></i>
+                          <span className="text-sm text-muted-foreground">
+                            Postal Code: {selectedProperty.rawData.postal_code}
+                          </span>
+                        </div>
+                      )}
+                      {selectedProperty.rawData?.license_number && (
+                        <div className="flex items-center gap-2">
+                          <i className="fas fa-certificate text-brand-red"></i>
+                          <span className="text-sm text-muted-foreground">
+                            License: {selectedProperty.rawData.license_number}
+                          </span>
+                        </div>
+                      )}
+                      {selectedProperty.rawData?.contact_phone && (
+                        <div className="flex items-center gap-2">
+                          <i className="fas fa-phone text-brand-red"></i>
+                          <a href={`tel:${selectedProperty.rawData.contact_phone}`} 
+                             className="text-sm text-brand-red hover:underline">
+                            {selectedProperty.rawData.contact_phone}
+                          </a>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Booking Policies */}
+                  <div className="mb-6">
+                    <h3 className="text-lg font-semibold text-foreground mb-3">Booking Information</h3>
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="flex items-center gap-2">
+                        <i className="fas fa-clock text-brand-red"></i>
+                        <div className="text-sm">
+                          <div className="text-muted-foreground">Check-in</div>
+                          <div className="font-medium">{selectedProperty.rawData?.check_in_time || '15:00'}</div>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <i className="fas fa-clock text-brand-red"></i>
+                        <div className="text-sm">
+                          <div className="text-muted-foreground">Check-out</div>
+                          <div className="font-medium">{selectedProperty.rawData?.check_out_time || '11:00'}</div>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <i className="fas fa-calendar text-brand-red"></i>
+                        <div className="text-sm">
+                          <div className="text-muted-foreground">Min Stay</div>
+                          <div className="font-medium">{selectedProperty.rawData?.minimum_stay || 1} night{(selectedProperty.rawData?.minimum_stay || 1) > 1 ? 's' : ''}</div>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <i className="fas fa-shield-alt text-brand-red"></i>
+                        <div className="text-sm">
+                          <div className="text-muted-foreground">Cancellation</div>
+                          <div className="font-medium capitalize">{selectedProperty.rawData?.cancellation_policy || 'Moderate'}</div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Payment Methods */}
+                  {selectedProperty.rawData?.payment_methods && selectedProperty.rawData.payment_methods.length > 0 && (
+                    <div className="mb-6">
+                      <h3 className="text-lg font-semibold text-foreground mb-3">Payment Methods</h3>
+                      <div className="flex gap-2 flex-wrap">
+                        {selectedProperty.rawData.payment_methods.map((method: string, index: number) => (
+                          <span key={index} className="px-3 py-1 bg-brand-red/10 text-brand-red rounded-full text-sm capitalize">
+                            <i className={`fas fa-${method === 'card' ? 'credit-card' : 'money-bill'} mr-1`}></i>
+                            {method}
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Meal Plans */}
+                  {selectedProperty.rawData?.meal_plans && selectedProperty.rawData.meal_plans.length > 0 && (
+                    <div className="mb-6">
+                      <h3 className="text-lg font-semibold text-foreground mb-3">Available Meal Plans</h3>
+                      <div className="flex gap-2 flex-wrap">
+                        {selectedProperty.rawData.meal_plans.map((meal: string, index: number) => (
+                          <span key={index} className="px-3 py-1 bg-green-100 text-green-700 rounded-full text-sm capitalize">
+                            <i className="fas fa-utensils mr-1"></i>
+                            {meal}
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
                   {/* Description */}
-                  {selectedProperty.description && <div className="mb-6">
+                  {selectedProperty.description && (
+                    <div className="mb-6">
                       <h3 className="text-lg font-semibold text-foreground mb-3">Description</h3>
                       <p className="text-muted-foreground leading-relaxed">
                         {selectedProperty.description}
                       </p>
-                    </div>}
+                    </div>
+                  )}
+
+                  {/* Arrival Instructions */}
+                  {selectedProperty.rawData?.arrival_instructions && (
+                    <div className="mb-6">
+                      <h3 className="text-lg font-semibold text-foreground mb-3">Arrival Instructions</h3>
+                      <p className="text-muted-foreground leading-relaxed bg-muted p-4 rounded-lg">
+                        <i className="fas fa-info-circle text-brand-red mr-2"></i>
+                        {selectedProperty.rawData.arrival_instructions}
+                      </p>
+                    </div>
+                  )}
                 </div>
 
                 {/* Right Column */}
