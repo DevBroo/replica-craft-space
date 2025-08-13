@@ -528,6 +528,12 @@ const Properties: React.FC = () => {
 
   // Modal handlers
   const handleViewProperty = (property: any) => {
+    console.log('🔍 Opening property details modal:', {
+      propertyId: property.id,
+      hasRawData: !!property.rawData,
+      rawDataKeys: property.rawData ? Object.keys(property.rawData) : [],
+      propertyData: property
+    });
     setSelectedProperty(property);
     setShowViewModal(true);
   };
@@ -1042,42 +1048,56 @@ const Properties: React.FC = () => {
                     </div>
                   </div>
 
-                  {/* Property Classification & Location */}
+                   {/* Property Classification & Location */}
                   <div className="mb-6">
                     <h3 className="text-lg font-semibold text-foreground mb-3">Property Details</h3>
                     <div className="space-y-3">
-                      {/* Property Type & Subtype */}
-                      {selectedProperty.rawData?.property_type && (
-                        <div className="flex items-center gap-2">
-                          <i className="fas fa-home text-brand-red"></i>
-                          <span className="text-sm text-muted-foreground">
-                            {selectedProperty.rawData.property_type}
-                            {selectedProperty.rawData.property_subtype && ` • ${selectedProperty.rawData.property_subtype}`}
+                      {/* Property Type & Subtype - Enhanced to show more info */}
+                      <div className="flex items-center gap-2">
+                        <i className="fas fa-home text-brand-red"></i>
+                        <span className="text-sm text-muted-foreground">
+                          {selectedProperty.rawData?.property_type || selectedProperty.type || 'Property'}
+                          {selectedProperty.rawData?.property_subtype && ` • ${selectedProperty.rawData.property_subtype}`}
+                        </span>
+                        {selectedProperty.rawData?.is_featured && (
+                          <span className="px-2 py-1 bg-brand-red/10 text-brand-red rounded-full text-xs font-medium">
+                            <i className="fas fa-star mr-1"></i>Featured
                           </span>
-                          {selectedProperty.rawData?.is_featured && (
-                            <span className="px-2 py-1 bg-brand-red/10 text-brand-red rounded-full text-xs font-medium">
-                              <i className="fas fa-star mr-1"></i>Featured
-                            </span>
-                          )}
+                        )}
+                      </div>
+
+                      {/* Status - Show property status */}
+                      {selectedProperty.rawData?.status && (
+                        <div className="flex items-center gap-2">
+                          <i className="fas fa-check-circle text-green-500"></i>
+                          <span className="text-sm text-muted-foreground capitalize">
+                            Status: {selectedProperty.rawData.status}
+                          </span>
                         </div>
                       )}
                       
-                      {/* Full Address */}
-                      {selectedProperty.address && (
-                        <div className="flex items-start gap-2">
-                          <i className="fas fa-map-marker-alt text-brand-red mt-1"></i>
-                          <div className="text-sm text-muted-foreground">
-                            <div>{selectedProperty.address}</div>
-                            {selectedProperty.rawData?.postal_code && (
-                              <div className="text-xs text-muted-foreground/70">
-                                {selectedProperty.rawData.postal_code}, {selectedProperty.rawData?.country || 'India'}
-                              </div>
-                            )}
-                          </div>
+                      {/* Full Address - Enhanced to show more location info */}
+                      <div className="flex items-start gap-2">
+                        <i className="fas fa-map-marker-alt text-brand-red mt-1"></i>
+                        <div className="text-sm text-muted-foreground">
+                          <div>{selectedProperty.rawData?.address || selectedProperty.address || selectedProperty.location}</div>
+                          {(selectedProperty.rawData?.postal_code || selectedProperty.rawData?.country) && (
+                            <div className="text-xs text-muted-foreground/70">
+                              {selectedProperty.rawData?.postal_code && `${selectedProperty.rawData.postal_code}, `}
+                              {selectedProperty.rawData?.country || 'India'}
+                            </div>
+                          )}
+                          {/* Show location JSON if available */}
+                          {selectedProperty.rawData?.location && typeof selectedProperty.rawData.location === 'object' && (
+                            <div className="text-xs text-muted-foreground/70 mt-1">
+                              {selectedProperty.rawData.location.city && `${selectedProperty.rawData.location.city}, `}
+                              {selectedProperty.rawData.location.state && `${selectedProperty.rawData.location.state}`}
+                            </div>
+                          )}
                         </div>
-                      )}
+                      </div>
 
-                      {/* Contact & License */}
+                      {/* Contact & License - Enhanced to show any available contact info */}
                       <div className="grid grid-cols-1 gap-3">
                         {selectedProperty.rawData?.contact_phone && (
                           <div className="flex items-center gap-2">
@@ -1096,6 +1116,13 @@ const Properties: React.FC = () => {
                             </span>
                           </div>
                         )}
+                        {/* Property ID for reference */}
+                        <div className="flex items-center gap-2">
+                          <i className="fas fa-tag text-brand-red"></i>
+                          <span className="text-xs text-muted-foreground/70">
+                            Property ID: {selectedProperty.id || selectedProperty.rawData?.id}
+                          </span>
+                        </div>
                       </div>
                     </div>
                   </div>
@@ -1150,20 +1177,21 @@ const Properties: React.FC = () => {
                     </div>
                   </div>
 
-                  {/* Payment Methods */}
-                  {selectedProperty.rawData?.payment_methods && selectedProperty.rawData.payment_methods.length > 0 && (
-                    <div className="mb-6">
-                      <h3 className="text-lg font-semibold text-foreground mb-3">Payment Methods</h3>
-                      <div className="flex gap-2 flex-wrap">
-                        {selectedProperty.rawData.payment_methods.map((method: string, index: number) => (
-                          <span key={index} className="px-3 py-1 bg-brand-red/10 text-brand-red rounded-full text-sm capitalize">
-                            <i className={`fas fa-${method === 'card' ? 'credit-card' : 'money-bill'} mr-1`}></i>
-                            {method}
-                          </span>
-                        ))}
-                      </div>
+                  {/* Payment Methods - Show default if none specified */}
+                  <div className="mb-6">
+                    <h3 className="text-lg font-semibold text-foreground mb-3">Payment Methods</h3>
+                    <div className="flex gap-2 flex-wrap">
+                      {(selectedProperty.rawData?.payment_methods && selectedProperty.rawData.payment_methods.length > 0 
+                        ? selectedProperty.rawData.payment_methods 
+                        : ['card', 'cash']
+                      ).map((method: string, index: number) => (
+                        <span key={index} className="px-3 py-1 bg-brand-red/10 text-brand-red rounded-full text-sm capitalize">
+                          <i className={`fas fa-${method === 'card' ? 'credit-card' : 'money-bill'} mr-1`}></i>
+                          {method}
+                        </span>
+                      ))}
                     </div>
-                  )}
+                  </div>
 
                   {/* Meal Plans */}
                   {selectedProperty.rawData?.meal_plans && selectedProperty.rawData.meal_plans.length > 0 && (
@@ -1275,13 +1303,27 @@ const Properties: React.FC = () => {
                         <span>₹{Math.round(selectedProperty.price * 1.1).toLocaleString()}</span>
                       </div>
                       
-                      {/* Property Age Info */}
-                      {selectedProperty.rawData?.created_at && (
-                        <div className="text-xs text-muted-foreground/70 pt-2 border-t border-border">
-                          <i className="fas fa-calendar-plus mr-1"></i>
-                          Listed: {new Date(selectedProperty.rawData.created_at).toLocaleDateString()}
-                        </div>
-                      )}
+                      {/* Property Age Info - Enhanced with more metadata */}
+                      <div className="text-xs text-muted-foreground/70 pt-2 border-t border-border space-y-1">
+                        {selectedProperty.rawData?.created_at && (
+                          <div>
+                            <i className="fas fa-calendar-plus mr-1"></i>
+                            Listed: {new Date(selectedProperty.rawData.created_at).toLocaleDateString()}
+                          </div>
+                        )}
+                        {selectedProperty.rawData?.updated_at && (
+                          <div>
+                            <i className="fas fa-sync mr-1"></i>
+                            Updated: {new Date(selectedProperty.rawData.updated_at).toLocaleDateString()}
+                          </div>
+                        )}
+                        {selectedProperty.rawData?.owner_id && (
+                          <div>
+                            <i className="fas fa-user mr-1"></i>
+                            Owner ID: {selectedProperty.rawData.owner_id.substring(0, 8)}...
+                          </div>
+                        )}
+                      </div>
                     </div>
                   </div>
 
@@ -1301,11 +1343,26 @@ const Properties: React.FC = () => {
           </div>
         </div>}
         
-        {/* Production Debug Component */}
-        {typeof window !== 'undefined' && !window.location.hostname.includes('localhost') && (
+        {/* Enhanced Debug Component */}
+        {typeof window !== 'undefined' && (
           <div className="fixed bottom-4 right-4 z-50">
             <details className="bg-black/80 text-white text-xs p-2 rounded max-w-xs">
-              <summary className="cursor-pointer">🔧 Debug</summary>
+              <summary className="cursor-pointer">🔧 Debug Info</summary>
+              <div className="mt-2 space-y-1">
+                <div>Properties: {properties.length}</div>
+                <div>Filtered: {filteredProperties.length}</div>
+                <div>Page: {currentPage}/{totalPages}</div>
+                <div>Cache: {localStorage.getItem('properties_cache') ? 'Active' : 'None'}</div>
+                {selectedProperty && (
+                  <div className="border-t border-gray-600 pt-2 mt-2">
+                    <div>Selected: {selectedProperty.name}</div>
+                    <div>Has rawData: {selectedProperty.rawData ? 'Yes' : 'No'}</div>
+                    {selectedProperty.rawData && (
+                      <div>Fields: {Object.keys(selectedProperty.rawData).length}</div>
+                    )}
+                  </div>
+                )}
+              </div>
               <pre className="mt-2 whitespace-pre-wrap text-[10px]">
                 {JSON.stringify({
                   hostname: window.location.hostname,
