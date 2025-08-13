@@ -120,37 +120,40 @@ export default function CustomerDashboard() {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="animate-spin h-32 w-32 border-4 border-primary border-t-transparent rounded-full"></div>
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 via-white to-indigo-50 dark:from-gray-900 dark:via-background dark:to-gray-800">
+        <div className="text-center">
+          <div className="animate-spin h-16 w-16 border-4 border-primary/20 border-t-primary rounded-full mx-auto mb-4"></div>
+          <p className="text-muted-foreground">Loading your dashboard...</p>
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-indigo-50 dark:from-gray-900 dark:via-background dark:to-gray-800">
       {/* Header */}
-      <header className="border-b border-border bg-card">
+      <header className="border-b border-border/20 bg-white/20 backdrop-blur-md glass-card-light">
         <div className="container mx-auto px-4 py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-4">
-              <Link to="/" className="text-xl font-bold text-primary">
+              <Link to="/" className="text-xl font-bold bg-gradient-to-r from-primary to-blue-600 bg-clip-text text-transparent">
                 Picnify
               </Link>
               <Separator orientation="vertical" className="h-6" />
-              <h1 className="text-lg font-semibold">Customer Dashboard</h1>
+              <h1 className="text-lg font-semibold text-foreground">Customer Dashboard</h1>
             </div>
             <div className="flex items-center space-x-4">
-              <Avatar>
+              <Avatar className="ring-2 ring-primary/20">
                 <AvatarImage src={user?.avatar_url} />
-                <AvatarFallback>
+                <AvatarFallback className="bg-gradient-to-r from-primary/10 to-blue-600/10">
                   {user?.email?.charAt(0).toUpperCase()}
                 </AvatarFallback>
               </Avatar>
               <div className="hidden md:block">
-                <p className="text-sm font-medium">{user?.full_name || 'Guest User'}</p>
+                <p className="text-sm font-medium text-foreground">{user?.full_name || 'Guest User'}</p>
                 <p className="text-xs text-muted-foreground">{user?.email}</p>
               </div>
-              <Button variant="outline" size="sm" onClick={handleLogout}>
+              <Button variant="outline" size="sm" onClick={handleLogout} className="hover-lift glass-card">
                 <LogOut className="h-4 w-4 mr-2" />
                 Logout
               </Button>
@@ -161,53 +164,59 @@ export default function CustomerDashboard() {
 
       <div className="container mx-auto px-4 py-8">
         {/* Welcome Section */}
-        <div className="mb-8">
-          <h2 className="text-3xl font-bold mb-2">
+        <div className="mb-8 text-center">
+          <h2 className="text-4xl font-bold mb-4 bg-gradient-to-r from-primary via-blue-600 to-purple-600 bg-clip-text text-transparent">
             Welcome back, {user?.full_name?.split(' ')[0] || 'Traveler'}!
           </h2>
-          <p className="text-muted-foreground">
-            Manage your bookings, explore new destinations, and plan your next adventure.
+          <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
+            Manage your bookings, explore new destinations, and plan your next adventure with our modern dashboard.
           </p>
         </div>
 
         {/* Quick Stats */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-          <Card className="stats-card">
+          <Card className="glass-card-light hover-lift border-0 shadow-elevated">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Total Bookings</CardTitle>
-              <Calendar className="h-4 w-4 text-muted-foreground" />
+              <CardTitle className="text-sm font-medium text-foreground/80">Total Bookings</CardTitle>
+              <div className="h-10 w-10 rounded-full bg-gradient-to-r from-blue-500/20 to-primary/20 flex items-center justify-center">
+                <Calendar className="h-5 w-5 text-primary" />
+              </div>
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{bookings.length}</div>
-              <p className="text-xs text-muted-foreground">
+              <div className="text-3xl font-bold text-foreground mb-1">{bookings.length}</div>
+              <p className="text-sm text-muted-foreground">
                 {bookings.filter(b => b.status === 'confirmed').length} confirmed
               </p>
             </CardContent>
           </Card>
 
-          <Card className="stats-card">
+          <Card className="glass-card-light hover-lift border-0 shadow-elevated">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Saved Properties</CardTitle>
-              <Heart className="h-4 w-4 text-muted-foreground" />
+              <CardTitle className="text-sm font-medium text-foreground/80">Saved Properties</CardTitle>
+              <div className="h-10 w-10 rounded-full bg-gradient-to-r from-pink-500/20 to-red-500/20 flex items-center justify-center">
+                <Heart className="h-5 w-5 text-pink-600" />
+              </div>
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{savedProperties.length}</div>
-              <p className="text-xs text-muted-foreground">
+              <div className="text-3xl font-bold text-foreground mb-1">{savedProperties.length}</div>
+              <p className="text-sm text-muted-foreground">
                 Ready to book
               </p>
             </CardContent>
           </Card>
 
-          <Card className="stats-card">
+          <Card className="glass-card-light hover-lift border-0 shadow-elevated">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Next Trip</CardTitle>
-              <MapPin className="h-4 w-4 text-muted-foreground" />
+              <CardTitle className="text-sm font-medium text-foreground/80">Next Trip</CardTitle>
+              <div className="h-10 w-10 rounded-full bg-gradient-to-r from-green-500/20 to-emerald-500/20 flex items-center justify-center">
+                <MapPin className="h-5 w-5 text-green-600" />
+              </div>
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">
+              <div className="text-3xl font-bold text-foreground mb-1">
                 {bookings.find(b => new Date(b.check_in_date) > new Date()) ? 'Soon' : 'None'}
               </div>
-              <p className="text-xs text-muted-foreground">
+              <p className="text-sm text-muted-foreground">
                 Upcoming bookings
               </p>
             </CardContent>
@@ -216,19 +225,19 @@ export default function CustomerDashboard() {
 
         {/* Main Dashboard Content */}
         <Tabs defaultValue="bookings" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-4">
-            <TabsTrigger value="bookings">My Bookings</TabsTrigger>
-            <TabsTrigger value="saved">Saved Properties</TabsTrigger>
-            <TabsTrigger value="profile">Profile</TabsTrigger>
-            <TabsTrigger value="settings">Settings</TabsTrigger>
+          <TabsList className="grid w-full grid-cols-4 glass-card-light h-12 p-1">
+            <TabsTrigger value="bookings" className="data-[state=active]:bg-white/40 data-[state=active]:shadow-sm transition-all">My Bookings</TabsTrigger>
+            <TabsTrigger value="saved" className="data-[state=active]:bg-white/40 data-[state=active]:shadow-sm transition-all">Saved Properties</TabsTrigger>
+            <TabsTrigger value="profile" className="data-[state=active]:bg-white/40 data-[state=active]:shadow-sm transition-all">Profile</TabsTrigger>
+            <TabsTrigger value="settings" className="data-[state=active]:bg-white/40 data-[state=active]:shadow-sm transition-all">Settings</TabsTrigger>
           </TabsList>
 
           {/* Bookings Tab */}
           <TabsContent value="bookings" className="space-y-4">
-            <Card>
+            <Card className="glass-card border-0 shadow-elevated">
               <CardHeader>
-                <CardTitle>My Bookings</CardTitle>
-                <CardDescription>
+                <CardTitle className="text-xl font-semibold bg-gradient-to-r from-primary to-blue-600 bg-clip-text text-transparent">My Bookings</CardTitle>
+                <CardDescription className="text-muted-foreground/80">
                   View and manage your current and past bookings
                 </CardDescription>
               </CardHeader>
@@ -249,7 +258,7 @@ export default function CustomerDashboard() {
                     {bookings.map((booking) => (
                       <div
                         key={booking.id}
-                        className="flex items-center justify-between p-4 border border-border rounded-lg hover:bg-accent/50 transition-colors"
+                        className="flex items-center justify-between p-6 glass-card-light rounded-xl hover-lift transition-all duration-300 border-0 shadow-elevated"
                       >
                         <div className="flex-1">
                           <h4 className="font-semibold">{booking.property_title}</h4>
@@ -276,10 +285,10 @@ export default function CustomerDashboard() {
 
           {/* Saved Properties Tab */}
           <TabsContent value="saved" className="space-y-4">
-            <Card>
+            <Card className="glass-card border-0 shadow-elevated">
               <CardHeader>
-                <CardTitle>Saved Properties</CardTitle>
-                <CardDescription>
+                <CardTitle className="text-xl font-semibold bg-gradient-to-r from-pink-600 to-red-600 bg-clip-text text-transparent">Saved Properties</CardTitle>
+                <CardDescription className="text-muted-foreground/80">
                   Properties you've saved for later consideration
                 </CardDescription>
               </CardHeader>
@@ -298,7 +307,7 @@ export default function CustomerDashboard() {
                 ) : (
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                     {savedProperties.map((property) => (
-                      <Card key={property.id} className="hover-lift">
+                      <Card key={property.id} className="glass-card-property hover-lift border-0 shadow-elevated">
                         <div className="aspect-video bg-muted rounded-t-lg">
                           {property.images?.[0] && (
                             <img
@@ -328,18 +337,18 @@ export default function CustomerDashboard() {
 
           {/* Profile Tab */}
           <TabsContent value="profile" className="space-y-4">
-            <Card>
+            <Card className="glass-card border-0 shadow-elevated">
               <CardHeader>
-                <CardTitle>Profile Information</CardTitle>
-                <CardDescription>
+                <CardTitle className="text-xl font-semibold bg-gradient-to-r from-green-600 to-emerald-600 bg-clip-text text-transparent">Profile Information</CardTitle>
+                <CardDescription className="text-muted-foreground/80">
                   Manage your personal information and preferences
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="flex items-center space-x-4">
-                  <Avatar className="h-20 w-20">
+                  <Avatar className="h-20 w-20 ring-4 ring-primary/20 shadow-lg">
                     <AvatarImage src={user?.avatar_url} />
-                    <AvatarFallback className="text-xl">
+                    <AvatarFallback className="text-xl bg-gradient-to-r from-primary/20 to-blue-600/20">
                       {user?.email?.charAt(0).toUpperCase()}
                     </AvatarFallback>
                   </Avatar>
@@ -371,10 +380,10 @@ export default function CustomerDashboard() {
 
           {/* Settings Tab */}
           <TabsContent value="settings" className="space-y-4">
-            <Card>
+            <Card className="glass-card border-0 shadow-elevated">
               <CardHeader>
-                <CardTitle>Account Settings</CardTitle>
-                <CardDescription>
+                <CardTitle className="text-xl font-semibold bg-gradient-to-r from-purple-600 to-indigo-600 bg-clip-text text-transparent">Account Settings</CardTitle>
+                <CardDescription className="text-muted-foreground/80">
                   Manage your account preferences and security
                 </CardDescription>
               </CardHeader>
@@ -423,28 +432,28 @@ export default function CustomerDashboard() {
 
         {/* Quick Actions */}
         <div className="mt-8">
-          <Card>
+          <Card className="glass-card border-0 shadow-elevated">
             <CardHeader>
-              <CardTitle>Quick Actions</CardTitle>
+              <CardTitle className="text-xl font-semibold bg-gradient-to-r from-orange-600 to-red-600 bg-clip-text text-transparent">Quick Actions</CardTitle>
             </CardHeader>
             <CardContent>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <Button asChild className="h-auto p-4 flex-col">
+                <Button asChild className="h-auto p-6 flex-col glass-card hover-lift bg-gradient-to-r from-primary to-blue-600 border-0 shadow-lg">
                   <Link to="/properties">
                     <Home className="h-8 w-8 mb-2" />
-                    <span>Browse Properties</span>
+                    <span className="font-medium">Browse Properties</span>
                   </Link>
                 </Button>
-                <Button variant="outline" asChild className="h-auto p-4 flex-col">
+                <Button variant="outline" asChild className="h-auto p-6 flex-col glass-card-light hover-lift border-0 shadow-elevated">
                   <Link to="/help">
-                    <Bell className="h-8 w-8 mb-2" />
-                    <span>Get Help</span>
+                    <User className="h-8 w-8 mb-2 text-blue-600" />
+                    <span className="font-medium">Get Help</span>
                   </Link>
                 </Button>
-                <Button variant="outline" asChild className="h-auto p-4 flex-col">
+                <Button variant="outline" asChild className="h-auto p-6 flex-col glass-card-light hover-lift border-0 shadow-elevated">
                   <Link to="/contact">
-                    <User className="h-8 w-8 mb-2" />
-                    <span>Contact Support</span>
+                    <Bell className="h-8 w-8 mb-2 text-green-600" />
+                    <span className="font-medium">Contact Support</span>
                   </Link>
                 </Button>
               </div>
