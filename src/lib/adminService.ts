@@ -29,6 +29,7 @@ export interface PropertyOwner {
   updated_at: string;
   properties_count?: number;
   status?: 'active' | 'inactive' | 'pending';
+  is_active?: boolean;
 }
 
 export interface AdminStats {
@@ -41,6 +42,7 @@ export interface AdminStats {
 }
 
 export const adminService = {
+  adminSupabase,
   // Fetch all property owners with their property counts
   async getPropertyOwners(): Promise<PropertyOwner[]> {
     try {
@@ -151,7 +153,8 @@ export const adminService = {
             created_at: profile?.created_at || firstProperty?.[0]?.created_at || new Date().toISOString(),
             updated_at: profile?.updated_at || new Date().toISOString(),
             properties_count: propertiesCount || 0,
-            status: 'active'
+            status: 'active' as const,
+            is_active: true
           };
 
           console.log('✅ Created owner data:', ownerData);

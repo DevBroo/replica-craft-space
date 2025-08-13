@@ -74,7 +74,8 @@ const AdminDashboard: React.FC = () => {
           owner_email: owner?.email || 'Unknown',
           status: property.status || 'pending',
           created_at: property.created_at,
-          property_type: property.property_type || 'Property'
+          property_type: property.property_type || 'Property',
+          location: property.location || null
         };
       }) || [];
 
@@ -188,7 +189,7 @@ const AdminDashboard: React.FC = () => {
 
   const stats = {
     totalOwners: owners.length,
-    activeOwners: owners.filter(o => o.is_active).length,
+    activeOwners: owners.filter(o => o.is_active === true).length,
     totalProperties: properties.length,
     pendingProperties: properties.filter(p => p.status === 'pending').length,
     approvedProperties: properties.filter(p => p.status === 'approved').length,
@@ -367,13 +368,13 @@ const AdminDashboard: React.FC = () => {
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                         {owner.properties_count} properties
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
+                       <td className="px-6 py-4 whitespace-nowrap">
                         <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
-                          owner.is_active 
+                          owner.is_active === true
                             ? 'bg-green-100 text-green-800' 
                             : 'bg-red-100 text-red-800'
                         }`}>
-                          {owner.is_active ? 'Active' : 'Inactive'}
+                          {owner.is_active === true ? 'Active' : 'Inactive'}
                         </span>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
@@ -381,14 +382,14 @@ const AdminDashboard: React.FC = () => {
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm font-medium space-x-2">
                         <button
-                          onClick={() => toggleOwnerStatus(owner.id, owner.is_active)}
+                          onClick={() => toggleOwnerStatus(owner.id, owner.is_active === true)}
                           className={`px-3 py-1 rounded-md text-xs ${
-                            owner.is_active
+                            owner.is_active === true
                               ? 'bg-red-100 text-red-700 hover:bg-red-200'
                               : 'bg-green-100 text-green-700 hover:bg-green-200'
                           }`}
                         >
-                          {owner.is_active ? 'Deactivate' : 'Activate'}
+                          {owner.is_active === true ? 'Deactivate' : 'Activate'}
                         </button>
                         <button
                           onClick={() => deleteOwner(owner.id)}
