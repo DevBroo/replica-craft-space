@@ -412,7 +412,7 @@ const MyProperties: React.FC<{
                 <div key={property.id} className="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow">
                   {/* Property Image */}
                   <div className="relative h-48">
-                    <ImageCarousel images={property.images || []} alt={property.name} />
+                    <ImageCarousel images={property.images || []} alt={property.title || property.name} />
                     <div className="absolute top-2 right-2">
                       <span className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(property.status)}`}>
                         {property.status || 'active'}
@@ -423,7 +423,7 @@ const MyProperties: React.FC<{
                   {/* Property Details */}
                   <div className="p-4">
                     <div className="flex justify-between items-start mb-2">
-                      <h3 className="font-semibold text-gray-900 truncate">{property.name}</h3>
+                      <h3 className="font-semibold text-gray-900 truncate">{property.title || property.name}</h3>
                       <span className="text-xs bg-gray-100 text-gray-600 px-2 py-1 rounded-full">
                         {getTypeLabel(property.type)}
                       </span>
