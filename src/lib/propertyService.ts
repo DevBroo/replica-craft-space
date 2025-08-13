@@ -348,10 +348,12 @@ export class PropertyService {
     return {
       id: dbProperty.id,
       name: dbProperty.title,
+      title: dbProperty.title,
       type: dbProperty.property_type,
       location: (dbProperty.location as any)?.address || '',
       city: (dbProperty.location as any)?.city || '',
       state: (dbProperty.location as any)?.state || '',
+      postal_code: dbProperty.postal_code || '',
       price: (dbProperty.pricing as any)?.daily_rate || 0,
       capacity: dbProperty.max_guests,
       bedrooms: dbProperty.bedrooms || 0,
@@ -363,6 +365,8 @@ export class PropertyService {
       images: dbProperty.images || [],
       amenities: dbProperty.amenities || [],
       description: dbProperty.description || '',
+      contact_phone: dbProperty.contact_phone || '',
+      license_number: dbProperty.license_number || '',
       createdAt: dbProperty.created_at,
       lastUpdated: dbProperty.updated_at,
       ownerEmail: dbProperty.owner_id // This would need to be joined with users table
