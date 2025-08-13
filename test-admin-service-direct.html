@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Direct Admin Service Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            line-height: 1.6;
+        }
+        .test-section {
+            background: #f5f5f5;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 8px;
+        }
+        .result {
+            background: white;
+            padding: 10px;
+            border-radius: 5px;
+            margin: 10px 0;
+            font-family: monospace;
+            white-space: pre-wrap;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+        .success { color: #28a745; }
+        .error { color: #dc3545; }
+        .info { color: #17a2b8; }
+        button {
+            background: #007bff;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            margin: 5px;
+            cursor: pointer;
+        }
+        button:hover {
+            background: #0056b3;
+        }
+    </style>
+</head>
+<body>
+    <h1>🔧 Direct Admin Service Test</h1>
+    
+    <div class="test-section">
+        <h2>🔍 Test Admin Service Step by Step</h2>
+        <button onclick="testStep1()">Step 1: Get Properties</button>
+        <button onclick="testStep2()">Step 2: Get Unique Owner IDs</button>
+        <button onclick="testStep3()">Step 3: Create Owner Data</button>
+        <button onclick="testAllSteps()">Test All Steps</button>
+        <div id="results"></div>
+    </div>
+
+    <div class="test-section">
+        <h2>🔍 Test React Component</h2>
+        <button onclick="testReactComponent()">Test React Component</button>
+        <div id="react-results"></div>
+    </div>
+
+    <script>
+        const SUPABASE_URL = 'https://riqsgtuzccwpplbodwbd.supabase.co';
+        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJpcXNndHV6Y2N3cHBsYm9kd2JkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTQyOTY2NTUsImV4cCI6MjA2OTg3MjY1NX0.qkSVWoVi8cStB1WZdqtapc8O6jc_aAiYEm0Y5Lqp1-s';
+
+        function log(elementId, message, type = 'info') {
+            const element = document.getElementById(elementId);
+            const div = document.createElement('div');
+            div.className = `result ${type}`;
+            div.textContent = message;
+            element.appendChild(div);
+        }
+
+        async function testStep1() {
+            log('results', '🔍 Step 1: Getting properties...', 'info');
+            try {
+                const response = await fetch(`${SUPABASE_URL}/rest/v1/properties?select=owner_id,created_at&limit=10`, {
+                    headers: {
+                        'apikey': SUPABASE_ANON_KEY,
+                        'Authorization': `Bearer ${SUPABASE_ANON_KEY}`
+                    }
+                });
+                
+                const data = await response.json();
+                log('results', `✅ Step 1: Found ${data.length} properties`, 'success');
+                log('results', `📋 Properties: ${JSON.stringify(data, null, 2)}`, 'info');
+                
+            } catch (error) {
+                log('results', `❌ Step 1 Error: ${error.message}`, 'error');
+            }
+        }
+
+        async function testStep2() {
+            log('results', '🔍 Step 2: Getting unique owner IDs...', 'info');
+            try {
+                const response = await fetch(`${SUPABASE_URL}/rest/v1/properties?select=owner_id,created_at&limit=10`, {
+                    headers: {
+                        'apikey': SUPABASE_ANON_KEY,
+                        'Authorization': `Bearer ${SUPABASE_ANON_KEY}`
+                    }
+                });
+                
+                const properties = await response.json();
+                const uniqueOwnerIds = [...new Set(properties.map(p => p.owner_id))];
+                
+                log('results', `✅ Step 2: Found ${uniqueOwnerIds.length} unique owner IDs`, 'success');
+                log('results', `📋 Unique Owner IDs: ${JSON.stringify(uniqueOwnerIds, null, 2)}`, 'info');
+                
+            } catch (error) {
+                log('results', `❌ Step 2 Error: ${error.message}`, 'error');
+            }
+        }
+
+        async function testStep3() {
+            log('results', '🔍 Step 3: Creating owner data...', 'info');
+            try {
+                const response = await fetch(`${SUPABASE_URL}/rest/v1/properties?select=owner_id,created_at&limit=10`, {
+                    headers: {
+                        'apikey': SUPABASE_ANON_KEY,
+                        'Authorization': `Bearer ${SUPABASE_ANON_KEY}`
+                    }
+                });
+                
+                const properties = await response.json();
+                const uniqueOwnerIds = [...new Set(properties.map(p => p.owner_id))];
+                
+                for (const ownerId of uniqueOwnerIds) {
+                    // Count properties for this owner
+                    const countResponse = await fetch(`${SUPABASE_URL}/rest/v1/properties?owner_id=eq.${ownerId}&select=*`, {
+                        headers: {
+                            'apikey': SUPABASE_ANON_KEY,
+                            'Authorization': `Bearer ${SUPABASE_ANON_KEY}`
+                        }
+                    });
+                    
+                    const ownerProperties = await countResponse.json();
+                    
+                    const ownerData = {
+                        id: ownerId,
+                        email: `owner-${ownerId.substring(0, 8)}@picnify.com`,
+                        full_name: `Property Owner (${ownerId.substring(0, 8)})`,
+                        role: 'property_owner',
+                        phone: null,
+                        avatar_url: null,
+                        created_at: properties[0]?.created_at || new Date().toISOString(),
+                        updated_at: new Date().toISOString(),
+                        properties_count: ownerProperties.length,
+                        status: 'active'
+                    };
+                    
+                    log('results', `✅ Step 3: Created owner data for ${ownerId}`, 'success');
+                    log('results', `📋 Owner Data: ${JSON.stringify(ownerData, null, 2)}`, 'info');
+                }
+                
+            } catch (error) {
+                log('results', `❌ Step 3 Error: ${error.message}`, 'error');
+            }
+        }
+
+        async function testAllSteps() {
+            log('results', '🚀 Testing all steps...', 'info');
+            await testStep1();
+            await testStep2();
+            await testStep3();
+        }
+
+        async function testReactComponent() {
+            log('react-results', '🔍 Testing React Component...', 'info');
+            try {
+                // Test if the admin panel is accessible
+                const response = await fetch('http://localhost:8082/admin/owner-management');
+                log('react-results', `✅ Admin panel accessible: ${response.status}`, 'success');
+                
+                // Check if admin is authenticated
+                const isAdminAuth = localStorage.getItem('adminAuthenticated');
+                log('react-results', `🔍 Admin authenticated: ${isAdminAuth}`, 'info');
+                
+                if (isAdminAuth !== 'true') {
+                    log('react-results', `⚠️ Admin not authenticated. Please login first.`, 'error');
+                    log('react-results', `🔗 Login at: http://localhost:8082/admin/login`, 'info');
+                } else {
+                    log('react-results', `✅ Admin is authenticated`, 'success');
+                }
+                
+                // Test the admin service directly
+                log('react-results', '🔍 Testing admin service directly...', 'info');
+                const propertiesResponse = await fetch(`${SUPABASE_URL}/rest/v1/properties?select=owner_id,created_at&limit=10`, {
+                    headers: {
+                        'apikey': SUPABASE_ANON_KEY,
+                        'Authorization': `Bearer ${SUPABASE_ANON_KEY}`
+                    }
+                });
+                
+                const properties = await propertiesResponse.json();
+                const uniqueOwnerIds = [...new Set(properties.map(p => p.owner_id))];
+                
+                log('react-results', `✅ Found ${properties.length} properties`, 'success');
+                log('react-results', `✅ Found ${uniqueOwnerIds.length} unique owner IDs`, 'success');
+                
+                if (uniqueOwnerIds.length > 0) {
+                    log('react-results', `✅ Should show ${uniqueOwnerIds.length} property owner(s)`, 'success');
+                } else {
+                    log('react-results', `❌ No property owners found`, 'error');
+                }
+                
+            } catch (error) {
+                log('react-results', `❌ Error: ${error.message}`, 'error');
+            }
+        }
+
+        // Auto-run tests
+        window.onload = function() {
+            log('results', '🚀 Starting direct admin service tests...', 'info');
+            setTimeout(testAllSteps, 1000);
+            setTimeout(testReactComponent, 2000);
+        };
+    </script>
+</body>
+</html>

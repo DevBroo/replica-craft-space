@@ -1,0 +1,447 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Profiles Debug</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .section {
+            margin-bottom: 30px;
+            padding: 20px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+        .result {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 4px;
+            margin: 10px 0;
+            white-space: pre-wrap;
+            font-family: monospace;
+            font-size: 12px;
+        }
+        .error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        .success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        .info {
+            background: #d1ecf1;
+            color: #0c5460;
+            border: 1px solid #bee5eb;
+        }
+        button {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        button:hover {
+            background: #0056b3;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 10px;
+        }
+        th, td {
+            border: 1px solid #ddd;
+            padding: 8px;
+            text-align: left;
+        }
+        th {
+            background-color: #f2f2f2;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔍 Admin Profiles Debug Tool</h1>
+        <p>This tool helps debug the admin panel property owners issue by checking database contents.</p>
+
+        <div class="section">
+            <h2>Database Configuration</h2>
+            <div id="config" class="result info"></div>
+        </div>
+
+        <div class="section">
+            <h2>Test Actions</h2>
+            <button onclick="checkAllProfiles()">Check All Profiles</button>
+            <button onclick="checkPropertyOwners()">Check Property Owners</button>
+            <button onclick="checkProperties()">Check Properties</button>
+            <button onclick="testAdminService()">Test Admin Service Logic</button>
+            <button onclick="checkAdminUser()">Check Admin User</button>
+        </div>
+
+        <div class="section">
+            <h2>Results</h2>
+            <div id="results"></div>
+        </div>
+    </div>
+
+    <script>
+        const SUPABASE_URL = 'https://riqsgtuzccwpplbodwbd.supabase.co';
+        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJpcXNndHV6Y2N3cHBsYm9kd2JkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTQyOTY2NTUsImV4cCI6MjA2OTg3MjY1NX0.qkSVWoVi8cStB1WZdqtapc8O6jc_aAiYEm0Y5Lqp1-s';
+
+        // Display configuration
+        document.getElementById('config').textContent = `Supabase URL: ${SUPABASE_URL}\nAPI Key: ${SUPABASE_ANON_KEY.substring(0, 20)}...`;
+
+        function logResult(message, type = 'info') {
+            const resultsDiv = document.getElementById('results');
+            const resultDiv = document.createElement('div');
+            resultDiv.className = `result ${type}`;
+            resultDiv.textContent = `[${new Date().toLocaleTimeString()}] ${message}`;
+            resultsDiv.appendChild(resultDiv);
+            resultsDiv.scrollTop = resultsDiv.scrollHeight;
+        }
+
+        async function checkAllProfiles() {
+            try {
+                logResult('Checking all profiles in database...', 'info');
+                
+                const response = await fetch(`${SUPABASE_URL}/rest/v1/profiles?select=*`, {
+                    headers: {
+                        'apikey': SUPABASE_ANON_KEY,
+                        'Authorization': `Bearer ${SUPABASE_ANON_KEY}`
+                    }
+                });
+
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+
+                const profiles = await response.json();
+                
+                logResult(`Found ${profiles.length} profiles in database`, 'success');
+                
+                if (profiles.length > 0) {
+                    const table = `
+                        <h3>All Profiles:</h3>
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>ID</th>
+                                    <th>Email</th>
+                                    <th>Full Name</th>
+                                    <th>Role</th>
+                                    <th>Phone</th>
+                                    <th>Created</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                ${profiles.map(profile => `
+                                    <tr>
+                                        <td>${profile.id.substring(0, 8)}...</td>
+                                        <td>${profile.email || 'No email'}</td>
+                                        <td>${profile.full_name || 'No name'}</td>
+                                        <td>${profile.role || 'No role'}</td>
+                                        <td>${profile.phone || 'No phone'}</td>
+                                        <td>${new Date(profile.created_at).toLocaleDateString()}</td>
+                                    </tr>
+                                `).join('')}
+                            </tbody>
+                        </table>
+                    `;
+                    
+                    const resultDiv = document.createElement('div');
+                    resultDiv.className = 'result success';
+                    resultDiv.innerHTML = table;
+                    document.getElementById('results').appendChild(resultDiv);
+                }
+            } catch (error) {
+                logResult(`Error checking profiles: ${error.message}`, 'error');
+            }
+        }
+
+        async function checkPropertyOwners() {
+            try {
+                logResult('Checking property owners specifically...', 'info');
+                
+                const response = await fetch(`${SUPABASE_URL}/rest/v1/profiles?role=eq.property_owner&select=*`, {
+                    headers: {
+                        'apikey': SUPABASE_ANON_KEY,
+                        'Authorization': `Bearer ${SUPABASE_ANON_KEY}`
+                    }
+                });
+
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+
+                const owners = await response.json();
+                
+                logResult(`Found ${owners.length} property owners`, 'success');
+                
+                if (owners.length > 0) {
+                    const table = `
+                        <h3>Property Owners:</h3>
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>ID</th>
+                                    <th>Email</th>
+                                    <th>Full Name</th>
+                                    <th>Phone</th>
+                                    <th>Created</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                ${owners.map(owner => `
+                                    <tr>
+                                        <td>${owner.id.substring(0, 8)}...</td>
+                                        <td>${owner.email || 'No email'}</td>
+                                        <td>${owner.full_name || 'No name'}</td>
+                                        <td>${owner.phone || 'No phone'}</td>
+                                        <td>${new Date(owner.created_at).toLocaleDateString()}</td>
+                                    </tr>
+                                `).join('')}
+                            </tbody>
+                        </table>
+                    `;
+                    
+                    const resultDiv = document.createElement('div');
+                    resultDiv.className = 'result success';
+                    resultDiv.innerHTML = table;
+                    document.getElementById('results').appendChild(resultDiv);
+                }
+            } catch (error) {
+                logResult(`Error checking property owners: ${error.message}`, 'error');
+            }
+        }
+
+        async function checkProperties() {
+            try {
+                logResult('Checking properties in database...', 'info');
+                
+                const response = await fetch(`${SUPABASE_URL}/rest/v1/properties?select=*`, {
+                    headers: {
+                        'apikey': SUPABASE_ANON_KEY,
+                        'Authorization': `Bearer ${SUPABASE_ANON_KEY}`
+                    }
+                });
+
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+
+                const properties = await response.json();
+                
+                logResult(`Found ${properties.length} properties`, 'success');
+                
+                if (properties.length > 0) {
+                    // Get unique owner IDs
+                    const uniqueOwnerIds = [...new Set(properties.map(p => p.owner_id))];
+                    logResult(`Found ${uniqueOwnerIds.length} unique owner IDs: ${uniqueOwnerIds.map(id => id.substring(0, 8)).join(', ')}`, 'info');
+                    
+                    const table = `
+                        <h3>Properties (showing first 10):</h3>
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>ID</th>
+                                    <th>Title</th>
+                                    <th>Owner ID</th>
+                                    <th>Status</th>
+                                    <th>Created</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                ${properties.slice(0, 10).map(property => `
+                                    <tr>
+                                        <td>${property.id.substring(0, 8)}...</td>
+                                        <td>${property.title || 'No title'}</td>
+                                        <td>${property.owner_id.substring(0, 8)}...</td>
+                                        <td>${property.status || 'No status'}</td>
+                                        <td>${new Date(property.created_at).toLocaleDateString()}</td>
+                                    </tr>
+                                `).join('')}
+                            </tbody>
+                        </table>
+                    `;
+                    
+                    const resultDiv = document.createElement('div');
+                    resultDiv.className = 'result success';
+                    resultDiv.innerHTML = table;
+                    document.getElementById('results').appendChild(resultDiv);
+                }
+            } catch (error) {
+                logResult(`Error checking properties: ${error.message}`, 'error');
+            }
+        }
+
+        async function testAdminService() {
+            try {
+                logResult('Testing admin service logic...', 'info');
+                
+                // Step 1: Get all properties
+                const propertiesResponse = await fetch(`${SUPABASE_URL}/rest/v1/properties?select=owner_id,created_at&order=created_at.desc`, {
+                    headers: {
+                        'apikey': SUPABASE_ANON_KEY,
+                        'Authorization': `Bearer ${SUPABASE_ANON_KEY}`
+                    }
+                });
+
+                if (!propertiesResponse.ok) {
+                    throw new Error(`HTTP error! status: ${propertiesResponse.status}`);
+                }
+
+                const properties = await propertiesResponse.json();
+                logResult(`Found ${properties.length} properties`, 'success');
+
+                // Step 2: Get unique owner IDs
+                const uniqueOwnerIds = [...new Set(properties.map(p => p.owner_id))];
+                logResult(`Found ${uniqueOwnerIds.length} unique owner IDs`, 'success');
+
+                if (uniqueOwnerIds.length === 0) {
+                    logResult('No unique owner IDs found', 'error');
+                    return;
+                }
+
+                // Step 3: Get profiles for these owner IDs
+                const profilesResponse = await fetch(`${SUPABASE_URL}/rest/v1/profiles?select=*&id=in.(${uniqueOwnerIds.map(id => `"${id}"`).join(',')})`, {
+                    headers: {
+                        'apikey': SUPABASE_ANON_KEY,
+                        'Authorization': `Bearer ${SUPABASE_ANON_KEY}`
+                    }
+                });
+
+                if (!profilesResponse.ok) {
+                    throw new Error(`HTTP error! status: ${profilesResponse.status}`);
+                }
+
+                const profiles = await profilesResponse.json();
+                logResult(`Found ${profiles.length} profiles for property owners`, 'success');
+
+                // Step 4: Create the final result
+                const ownersWithCounts = await Promise.all(
+                    uniqueOwnerIds.map(async (ownerId) => {
+                        // Count properties for this owner
+                        const countResponse = await fetch(`${SUPABASE_URL}/rest/v1/properties?owner_id=eq.${ownerId}&select=*`, {
+                            headers: {
+                                'apikey': SUPABASE_ANON_KEY,
+                                'Authorization': `Bearer ${SUPABASE_ANON_KEY}`
+                            }
+                        });
+                        
+                        const ownerProperties = await countResponse.json();
+                        const profile = profiles.find(p => p.id === ownerId);
+                        
+                        return {
+                            id: ownerId,
+                            email: profile?.email || `owner-${ownerId.substring(0, 8)}@picnify.com`,
+                            full_name: profile?.full_name || `Property Owner (${ownerId.substring(0, 8)})`,
+                            role: profile?.role || 'property_owner',
+                            phone: profile?.phone || null,
+                            avatar_url: profile?.avatar_url || null,
+                            created_at: profile?.created_at || new Date().toISOString(),
+                            updated_at: profile?.updated_at || new Date().toISOString(),
+                            properties_count: ownerProperties.length,
+                            status: 'active'
+                        };
+                    })
+                );
+
+                logResult(`Final result: ${ownersWithCounts.length} property owners with details`, 'success');
+                
+                const table = `
+                    <h3>Property Owners (Admin Service Result):</h3>
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Email</th>
+                                <th>Full Name</th>
+                                <th>Role</th>
+                                <th>Properties Count</th>
+                                <th>Created</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${ownersWithCounts.map(owner => `
+                                <tr>
+                                    <td>${owner.id.substring(0, 8)}...</td>
+                                    <td>${owner.email}</td>
+                                    <td>${owner.full_name}</td>
+                                    <td>${owner.role}</td>
+                                    <td>${owner.properties_count}</td>
+                                    <td>${new Date(owner.created_at).toLocaleDateString()}</td>
+                                </tr>
+                            `).join('')}
+                        </tbody>
+                    </table>
+                `;
+                
+                const resultDiv = document.createElement('div');
+                resultDiv.className = 'result success';
+                resultDiv.innerHTML = table;
+                document.getElementById('results').appendChild(resultDiv);
+
+            } catch (error) {
+                logResult(`Error testing admin service: ${error.message}`, 'error');
+            }
+        }
+
+        async function checkAdminUser() {
+            try {
+                logResult('Checking for admin user...', 'info');
+                
+                // Check for admin@picnify.com
+                const response1 = await fetch(`${SUPABASE_URL}/rest/v1/profiles?email=eq.admin@picnify.com&select=*`, {
+                    headers: {
+                        'apikey': SUPABASE_ANON_KEY,
+                        'Authorization': `Bearer ${SUPABASE_ANON_KEY}`
+                    }
+                });
+
+                const admin1 = await response1.json();
+                
+                // Check for admin@picnify.in
+                const response2 = await fetch(`${SUPABASE_URL}/rest/v1/profiles?email=eq.admin@picnify.in&select=*`, {
+                    headers: {
+                        'apikey': SUPABASE_ANON_KEY,
+                        'Authorization': `Bearer ${SUPABASE_ANON_KEY}`
+                    }
+                });
+
+                const admin2 = await response2.json();
+                
+                logResult(`Admin users found:`, 'info');
+                logResult(`admin@picnify.com: ${admin1.length > 0 ? 'Found' : 'Not found'}`, admin1.length > 0 ? 'success' : 'error');
+                logResult(`admin@picnify.in: ${admin2.length > 0 ? 'Found' : 'Not found'}`, admin2.length > 0 ? 'success' : 'error');
+                
+                if (admin1.length > 0) {
+                    logResult(`admin@picnify.com details: ${JSON.stringify(admin1[0], null, 2)}`, 'success');
+                }
+                
+                if (admin2.length > 0) {
+                    logResult(`admin@picnify.in details: ${JSON.stringify(admin2[0], null, 2)}`, 'success');
+                }
+                
+            } catch (error) {
+                logResult(`Error checking admin user: ${error.message}`, 'error');
+            }
+        }
+    </script>
+</body>
+</html>

@@ -217,102 +217,124 @@ const OwnerManagement: React.FC = () => {
                     </tr>
                   </thead>
                   <tbody className="bg-white divide-y divide-gray-200">
-                    {paginatedOwners.map((owner) => (
-                      <tr key={owner.id} className="hover:bg-gray-50">
-                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                          {owner.id.substring(0, 8)}...
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <div className="flex items-center">
-                            <div className="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center mr-3">
-                              <span className="text-white text-xs font-medium">
-                                {(owner.full_name || owner.email || 'U').charAt(0).toUpperCase()}
+                    {paginatedOwners.length > 0 ? (
+                      paginatedOwners.map((owner) => (
+                        <tr key={owner.id} className="hover:bg-gray-50">
+                          <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                            {owner.id.substring(0, 8)}...
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            <div className="flex items-center">
+                              <div className="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center mr-3">
+                                <span className="text-white text-xs font-medium">
+                                  {(owner.full_name || owner.email || 'U').charAt(0).toUpperCase()}
+                                </span>
+                              </div>
+                              <span className="text-sm font-medium text-gray-900">
+                                {owner.full_name || 'Unnamed Owner'}
                               </span>
                             </div>
-                            <span className="text-sm font-medium text-gray-900">
-                              {owner.full_name || 'Unnamed Owner'}
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                            <div>
+                              <div className="font-medium">
+                                {owner.email || 'No email'}
+                              </div>
+                              <div className="text-gray-500">{owner.phone || 'No phone'}</div>
+                            </div>
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                            <span className="bg-blue-100 text-blue-800 px-2 py-1 rounded-full text-xs font-medium">
+                              {owner.properties_count || 0} Properties
                             </span>
-                          </div>
-                        </td>
-                                              <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                        <div>
-                          <div className="font-medium">
-                            {owner.email || 'No email'}
-                          </div>
-                          <div className="text-gray-500">{owner.phone || 'No phone'}</div>
-                        </div>
-                      </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                          <span className="bg-blue-100 text-blue-800 px-2 py-1 rounded-full text-xs font-medium">
-                            {owner.properties_count || 0} Properties
-                          </span>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                          {new Date(owner.created_at).toLocaleDateString('en-US', {
-                            year: 'numeric',
-                            month: 'short',
-                            day: 'numeric'
-                          })}
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <span className={`px-2 py-1 text-xs font-medium rounded-full ${getStatusColor(owner.status || 'active')}`}>
-                            {owner.status || 'Active'}
-                          </span>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                          <div className="flex space-x-2">
-                            <button 
-                              className="text-blue-600 hover:text-blue-800 cursor-pointer p-1" 
-                              title="View Details"
-                              onClick={() => {
-                                setSelectedOwner(owner);
-                                setShowOwnerDetails(owner.id);
-                              }}
-                            >
-                              <Eye className="w-4 h-4" />
-                            </button>
-                            <button className="text-green-600 hover:text-green-800 cursor-pointer p-1" title="Edit">
-                              <Edit className="w-4 h-4" />
-                            </button>
-                            {(owner.status || 'active') === 'pending' ? (
-                              <button
-                                className="text-green-600 hover:text-green-800 cursor-pointer p-1"
-                                title="Approve"
-                                onClick={async () => {
-                                  try {
-                                    await adminService.updateOwnerStatus(owner.id, 'active');
-                                    alert('Owner approved successfully!');
-                                    fetchPropertyOwners();
-                                  } catch (err) {
-                                    alert('Failed to approve owner: ' + (err instanceof Error ? err.message : 'Unknown error'));
-                                  }
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                            {new Date(owner.created_at).toLocaleDateString('en-US', {
+                              year: 'numeric',
+                              month: 'short',
+                              day: 'numeric'
+                            })}
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            <span className={`px-2 py-1 text-xs font-medium rounded-full ${getStatusColor(owner.status || 'active')}`}>
+                              {owner.status || 'Active'}
+                            </span>
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                            <div className="flex space-x-2">
+                              <button 
+                                className="text-blue-600 hover:text-blue-800 cursor-pointer p-1" 
+                                title="View Details"
+                                onClick={() => {
+                                  setSelectedOwner(owner);
+                                  setShowOwnerDetails(owner.id);
                                 }}
                               >
-                                <CheckCircle className="w-4 h-4" />
+                                <Eye className="w-4 h-4" />
                               </button>
-                            ) : (
-                              <button 
-                                className="text-red-600 hover:text-red-800 cursor-pointer p-1" 
-                                title="Block"
-                                onClick={async () => {
-                                  if (confirm('Are you sure you want to block this owner?')) {
+                              <button className="text-green-600 hover:text-green-800 cursor-pointer p-1" title="Edit">
+                                <Edit className="w-4 h-4" />
+                              </button>
+                              {(owner.status || 'active') === 'pending' ? (
+                                <button
+                                  className="text-green-600 hover:text-green-800 cursor-pointer p-1"
+                                  title="Approve"
+                                  onClick={async () => {
                                     try {
-                                      await adminService.updateOwnerStatus(owner.id, 'inactive');
-                                      alert('Owner blocked successfully!');
+                                      await adminService.updateOwnerStatus(owner.id, 'active');
+                                      alert('Owner approved successfully!');
                                       fetchPropertyOwners();
                                     } catch (err) {
-                                      alert('Failed to block owner: ' + (err instanceof Error ? err.message : 'Unknown error'));
+                                      alert('Failed to approve owner: ' + (err instanceof Error ? err.message : 'Unknown error'));
                                     }
-                                  }
-                                }}
-                              >
-                                <Ban className="w-4 h-4" />
-                              </button>
-                            )}
+                                  }}
+                                >
+                                  <CheckCircle className="w-4 h-4" />
+                                </button>
+                              ) : (
+                                <button 
+                                  className="text-red-600 hover:text-red-800 cursor-pointer p-1" 
+                                  title="Block"
+                                  onClick={async () => {
+                                    if (confirm('Are you sure you want to block this owner?')) {
+                                      try {
+                                        await adminService.updateOwnerStatus(owner.id, 'inactive');
+                                        alert('Owner blocked successfully!');
+                                        fetchPropertyOwners();
+                                      } catch (err) {
+                                        alert('Failed to block owner: ' + (err instanceof Error ? err.message : 'Unknown error'));
+                                      }
+                                    }
+                                  }}
+                                >
+                                  <Ban className="w-4 h-4" />
+                                </button>
+                              )}
+                            </div>
+                          </td>
+                        </tr>
+                      ))
+                    ) : (
+                      <tr>
+                        <td colSpan={7} className="px-6 py-12 text-center">
+                          <div className="flex flex-col items-center">
+                            <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mb-4">
+                              <svg className="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197m13.5-9a2.5 2.5 0 11-5 0 2.5 2.5 0 015 0z" />
+                              </svg>
+                            </div>
+                            <h3 className="text-lg font-medium text-gray-900 mb-2">No owners found</h3>
+                            <p className="text-gray-500 mb-4">No property owners available yet.</p>
+                            <button
+                              onClick={fetchPropertyOwners}
+                              className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors"
+                            >
+                              Refresh
+                            </button>
                           </div>
                         </td>
                       </tr>
-                    ))}
+                    )}
                   </tbody>
                 </table>
               </div>

@@ -50,9 +50,9 @@ export const AdminAuthProvider: React.FC<AdminAuthProviderProps> = ({ children }
 
   const adminLogin = (email: string, password: string): boolean => {
     // Check against hardcoded admin credentials
-    if (email === 'admin@picnify.in' && password === 'Alliance@8') {
+    if (email === 'admin@picnify.com' && password === 'Alliance@8') {
       const user: AdminUser = {
-        email: 'admin@picnify.in',
+        email: 'admin@picnify.com',
         role: 'admin',
         name: 'Picnify Admin'
       };

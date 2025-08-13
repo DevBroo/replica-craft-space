@@ -1,0 +1,450 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Service Fix Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .section {
+            margin-bottom: 30px;
+            padding: 20px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+        .result {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 4px;
+            margin: 10px 0;
+            white-space: pre-wrap;
+            font-family: monospace;
+            font-size: 12px;
+        }
+        .error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        .success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        .info {
+            background: #d1ecf1;
+            color: #0c5460;
+            border: 1px solid #bee5eb;
+        }
+        button {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        button:hover {
+            background: #0056b3;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 10px;
+        }
+        th, td {
+            border: 1px solid #ddd;
+            padding: 8px;
+            text-align: left;
+        }
+        th {
+            background-color: #f2f2f2;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔧 Admin Service Fix Test</h1>
+        <p>This tool tests the fixed admin service to verify property owners are being fetched correctly.</p>
+
+        <div class="section">
+            <h2>Test Actions</h2>
+            <button onclick="testFixedAdminService()">Test Fixed Admin Service</button>
+            <button onclick="testDirectProfilesAccess()">Test Direct Profiles Access</button>
+            <button onclick="testPropertiesAccess()">Test Properties Access</button>
+            <button onclick="compareResults()">Compare Old vs New Results</button>
+        </div>
+
+        <div class="section">
+            <h2>Results</h2>
+            <div id="results"></div>
+        </div>
+    </div>
+
+    <script>
+        const SUPABASE_URL = 'https://riqsgtuzccwpplbodwbd.supabase.co';
+        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJpcXNndHV6Y2N3cHBsYm9kd2JkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTQyOTY2NTUsImV4cCI6MjA2OTg3MjY1NX0.qkSVWoVi8cStB1WZdqtapc8O6jc_aAiYEm0Y5Lqp1-s';
+
+        function logResult(message, type = 'info') {
+            const resultsDiv = document.getElementById('results');
+            const resultDiv = document.createElement('div');
+            resultDiv.className = `result ${type}`;
+            resultDiv.textContent = `[${new Date().toLocaleTimeString()}] ${message}`;
+            resultsDiv.appendChild(resultDiv);
+            resultsDiv.scrollTop = resultsDiv.scrollHeight;
+        }
+
+        async function testFixedAdminService() {
+            try {
+                logResult('Testing fixed admin service logic...', 'info');
+                
+                // Step 1: Get all properties
+                const propertiesResponse = await fetch(`${SUPABASE_URL}/rest/v1/properties?select=owner_id,created_at&order=created_at.desc`, {
+                    headers: {
+                        'apikey': SUPABASE_ANON_KEY,
+                        'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
+                        'X-Client-Info': 'picnify-admin'
+                    }
+                });
+
+                if (!propertiesResponse.ok) {
+                    throw new Error(`HTTP error! status: ${propertiesResponse.status}`);
+                }
+
+                const properties = await propertiesResponse.json();
+                logResult(`Found ${properties.length} properties`, 'success');
+
+                // Step 2: Get unique owner IDs
+                const uniqueOwnerIds = [...new Set(properties.map(p => p.owner_id))];
+                logResult(`Found ${uniqueOwnerIds.length} unique owner IDs: ${uniqueOwnerIds.map(id => id.substring(0, 8)).join(', ')}`, 'success');
+
+                if (uniqueOwnerIds.length === 0) {
+                    logResult('No unique owner IDs found', 'error');
+                    return;
+                }
+
+                // Step 3: Get profiles for these owner IDs (FIXED APPROACH)
+                const profilesResponse = await fetch(`${SUPABASE_URL}/rest/v1/profiles?select=*&id=in.(${uniqueOwnerIds.map(id => `"${id}"`).join(',')})`, {
+                    headers: {
+                        'apikey': SUPABASE_ANON_KEY,
+                        'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
+                        'X-Client-Info': 'picnify-admin'
+                    }
+                });
+
+                if (!profilesResponse.ok) {
+                    throw new Error(`HTTP error! status: ${profilesResponse.status}`);
+                }
+
+                const profiles = await profilesResponse.json();
+                logResult(`Found ${profiles.length} profiles for property owners`, 'success');
+
+                // Step 4: Create the final result with real profile data
+                const ownersWithCounts = await Promise.all(
+                    uniqueOwnerIds.map(async (ownerId) => {
+                        // Count properties for this owner
+                        const countResponse = await fetch(`${SUPABASE_URL}/rest/v1/properties?owner_id=eq.${ownerId}&select=*`, {
+                            headers: {
+                                'apikey': SUPABASE_ANON_KEY,
+                                'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
+                                'X-Client-Info': 'picnify-admin'
+                            }
+                        });
+                        
+                        const ownerProperties = await countResponse.json();
+                        const profile = profiles.find(p => p.id === ownerId);
+                        
+                        return {
+                            id: ownerId,
+                            email: profile?.email || `owner-${ownerId.substring(0, 8)}@picnify.com`,
+                            full_name: profile?.full_name || `Property Owner (${ownerId.substring(0, 8)})`,
+                            role: profile?.role || 'property_owner',
+                            phone: profile?.phone || null,
+                            avatar_url: profile?.avatar_url || null,
+                            created_at: profile?.created_at || new Date().toISOString(),
+                            updated_at: profile?.updated_at || new Date().toISOString(),
+                            properties_count: ownerProperties.length,
+                            status: 'active'
+                        };
+                    })
+                );
+
+                logResult(`Final result: ${ownersWithCounts.length} property owners with details`, 'success');
+                
+                const table = `
+                    <h3>Property Owners (Fixed Admin Service Result):</h3>
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Email</th>
+                                <th>Full Name</th>
+                                <th>Role</th>
+                                <th>Properties Count</th>
+                                <th>Created</th>
+                                <th>Has Real Profile</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${ownersWithCounts.map(owner => {
+                                const hasRealProfile = profiles.find(p => p.id === owner.id);
+                                return `
+                                    <tr>
+                                        <td>${owner.id.substring(0, 8)}...</td>
+                                        <td>${owner.email}</td>
+                                        <td>${owner.full_name}</td>
+                                        <td>${owner.role}</td>
+                                        <td>${owner.properties_count}</td>
+                                        <td>${new Date(owner.created_at).toLocaleDateString()}</td>
+                                        <td>${hasRealProfile ? '✅ Yes' : '❌ No'}</td>
+                                    </tr>
+                                `;
+                            }).join('')}
+                        </tbody>
+                    </table>
+                `;
+                
+                const resultDiv = document.createElement('div');
+                resultDiv.className = 'result success';
+                resultDiv.innerHTML = table;
+                document.getElementById('results').appendChild(resultDiv);
+
+            } catch (error) {
+                logResult(`Error testing fixed admin service: ${error.message}`, 'error');
+            }
+        }
+
+        async function testDirectProfilesAccess() {
+            try {
+                logResult('Testing direct access to profiles table...', 'info');
+                
+                const response = await fetch(`${SUPABASE_URL}/rest/v1/profiles?select=*&limit=10`, {
+                    headers: {
+                        'apikey': SUPABASE_ANON_KEY,
+                        'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
+                        'X-Client-Info': 'picnify-admin'
+                    }
+                });
+
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+
+                const profiles = await response.json();
+                logResult(`Successfully accessed ${profiles.length} profiles`, 'success');
+                
+                if (profiles.length > 0) {
+                    const table = `
+                        <h3>Sample Profiles:</h3>
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>ID</th>
+                                    <th>Email</th>
+                                    <th>Full Name</th>
+                                    <th>Role</th>
+                                    <th>Created</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                ${profiles.map(profile => `
+                                    <tr>
+                                        <td>${profile.id.substring(0, 8)}...</td>
+                                        <td>${profile.email || 'No email'}</td>
+                                        <td>${profile.full_name || 'No name'}</td>
+                                        <td>${profile.role || 'No role'}</td>
+                                        <td>${new Date(profile.created_at).toLocaleDateString()}</td>
+                                    </tr>
+                                `).join('')}
+                            </tbody>
+                        </table>
+                    `;
+                    
+                    const resultDiv = document.createElement('div');
+                    resultDiv.className = 'result success';
+                    resultDiv.innerHTML = table;
+                    document.getElementById('results').appendChild(resultDiv);
+                }
+                
+            } catch (error) {
+                logResult(`Error testing direct profiles access: ${error.message}`, 'error');
+            }
+        }
+
+        async function testPropertiesAccess() {
+            try {
+                logResult('Testing access to properties table...', 'info');
+                
+                const response = await fetch(`${SUPABASE_URL}/rest/v1/properties?select=*&limit=5`, {
+                    headers: {
+                        'apikey': SUPABASE_ANON_KEY,
+                        'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
+                        'X-Client-Info': 'picnify-admin'
+                    }
+                });
+
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+
+                const properties = await response.json();
+                logResult(`Successfully accessed ${properties.length} properties`, 'success');
+                
+                if (properties.length > 0) {
+                    const table = `
+                        <h3>Sample Properties:</h3>
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>ID</th>
+                                    <th>Title</th>
+                                    <th>Owner ID</th>
+                                    <th>Status</th>
+                                    <th>Created</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                ${properties.map(property => `
+                                    <tr>
+                                        <td>${property.id.substring(0, 8)}...</td>
+                                        <td>${property.title || 'No title'}</td>
+                                        <td>${property.owner_id.substring(0, 8)}...</td>
+                                        <td>${property.status || 'No status'}</td>
+                                        <td>${new Date(property.created_at).toLocaleDateString()}</td>
+                                    </tr>
+                                `).join('')}
+                            </tbody>
+                        </table>
+                    `;
+                    
+                    const resultDiv = document.createElement('div');
+                    resultDiv.className = 'result success';
+                    resultDiv.innerHTML = table;
+                    document.getElementById('results').appendChild(resultDiv);
+                }
+                
+            } catch (error) {
+                logResult(`Error testing properties access: ${error.message}`, 'error');
+            }
+        }
+
+        async function compareResults() {
+            try {
+                logResult('Comparing old vs new admin service results...', 'info');
+                
+                // Get properties first
+                const propertiesResponse = await fetch(`${SUPABASE_URL}/rest/v1/properties?select=owner_id,created_at&order=created_at.desc`, {
+                    headers: {
+                        'apikey': SUPABASE_ANON_KEY,
+                        'Authorization': `Bearer ${SUPABASE_ANON_KEY}`
+                    }
+                });
+
+                const properties = await propertiesResponse.json();
+                const uniqueOwnerIds = [...new Set(properties.map(p => p.owner_id))];
+                
+                logResult(`Found ${uniqueOwnerIds.length} unique owner IDs`, 'info');
+
+                // OLD APPROACH: Create fake data
+                const oldApproach = uniqueOwnerIds.map(ownerId => ({
+                    id: ownerId,
+                    email: `owner-${ownerId.substring(0, 8)}@picnify.com`,
+                    full_name: `Property Owner (${ownerId.substring(0, 8)})`,
+                    role: 'property_owner',
+                    phone: null,
+                    avatar_url: null,
+                    created_at: new Date().toISOString(),
+                    updated_at: new Date().toISOString(),
+                    properties_count: properties.filter(p => p.owner_id === ownerId).length,
+                    status: 'active'
+                }));
+
+                // NEW APPROACH: Get real profiles
+                const profilesResponse = await fetch(`${SUPABASE_URL}/rest/v1/profiles?select=*&id=in.(${uniqueOwnerIds.map(id => `"${id}"`).join(',')})`, {
+                    headers: {
+                        'apikey': SUPABASE_ANON_KEY,
+                        'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
+                        'X-Client-Info': 'picnify-admin'
+                    }
+                });
+
+                const profiles = await profilesResponse.json();
+                const profilesMap = new Map(profiles.map(p => [p.id, p]));
+
+                const newApproach = uniqueOwnerIds.map(ownerId => {
+                    const profile = profilesMap.get(ownerId);
+                    return {
+                        id: ownerId,
+                        email: profile?.email || `owner-${ownerId.substring(0, 8)}@picnify.com`,
+                        full_name: profile?.full_name || `Property Owner (${ownerId.substring(0, 8)})`,
+                        role: profile?.role || 'property_owner',
+                        phone: profile?.phone || null,
+                        avatar_url: profile?.avatar_url || null,
+                        created_at: profile?.created_at || new Date().toISOString(),
+                        updated_at: profile?.updated_at || new Date().toISOString(),
+                        properties_count: properties.filter(p => p.owner_id === ownerId).length,
+                        status: 'active'
+                    };
+                });
+
+                // Compare results
+                const comparisonTable = `
+                    <h3>Comparison: Old vs New Approach</h3>
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Owner ID</th>
+                                <th>Old Email</th>
+                                <th>New Email</th>
+                                <th>Old Name</th>
+                                <th>New Name</th>
+                                <th>Has Real Profile</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${uniqueOwnerIds.map(ownerId => {
+                                const oldOwner = oldApproach.find(o => o.id === ownerId);
+                                const newOwner = newApproach.find(o => o.id === ownerId);
+                                const hasRealProfile = profilesMap.has(ownerId);
+                                return `
+                                    <tr>
+                                        <td>${ownerId.substring(0, 8)}...</td>
+                                        <td>${oldOwner.email}</td>
+                                        <td>${newOwner.email}</td>
+                                        <td>${oldOwner.full_name}</td>
+                                        <td>${newOwner.full_name}</td>
+                                        <td>${hasRealProfile ? '✅ Yes' : '❌ No'}</td>
+                                    </tr>
+                                `;
+                            }).join('')}
+                        </tbody>
+                    </table>
+                `;
+                
+                const resultDiv = document.createElement('div');
+                resultDiv.className = 'result success';
+                resultDiv.innerHTML = comparisonTable;
+                document.getElementById('results').appendChild(resultDiv);
+
+                logResult(`Comparison complete. Found ${profiles.length} real profiles out of ${uniqueOwnerIds.length} owners.`, 'success');
+
+            } catch (error) {
+                logResult(`Error comparing results: ${error.message}`, 'error');
+            }
+        }
+    </script>
+</body>
+</html>

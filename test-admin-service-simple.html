@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Simple Admin Service Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            line-height: 1.6;
+        }
+        .test-section {
+            background: #f5f5f5;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 8px;
+        }
+        .result {
+            background: white;
+            padding: 10px;
+            border-radius: 5px;
+            margin: 10px 0;
+            font-family: monospace;
+            white-space: pre-wrap;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+        .success { color: #28a745; }
+        .error { color: #dc3545; }
+        .info { color: #17a2b8; }
+    </style>
+</head>
+<body>
+    <h1>🔧 Simple Admin Service Test</h1>
+    
+    <div class="test-section">
+        <h2>🔍 Replicating Admin Service Logic</h2>
+        <button onclick="testAdminService()">Test Admin Service</button>
+        <div id="results"></div>
+    </div>
+
+    <script>
+        const SUPABASE_URL = 'https://riqsgtuzccwpplbodwbd.supabase.co';
+        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJpcXNndHV6Y2N3cHBsYm9kd2JkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTQyOTY2NTUsImV4cCI6MjA2OTg3MjY1NX0.qkSVWoVi8cStB1WZdqtapc8O6jc_aAiYEm0Y5Lqp1-s';
+
+        function log(message, type = 'info') {
+            const results = document.getElementById('results');
+            const div = document.createElement('div');
+            div.className = `result ${type}`;
+            div.textContent = message;
+            results.appendChild(div);
+        }
+
+        async function testAdminService() {
+            try {
+                log('🔍 Fetching property owners...', 'info');
+                
+                // Step 1: Get all unique owner IDs from properties table
+                const propertiesResponse = await fetch(`${SUPABASE_URL}/rest/v1/properties?select=owner_id,created_at&limit=10`, {
+                    headers: {
+                        'apikey': SUPABASE_ANON_KEY,
+                        'Authorization': `Bearer ${SUPABASE_ANON_KEY}`
+                    }
+                });
+                
+                const properties = await propertiesResponse.json();
+                log(`✅ Found properties: ${properties.length}`, 'success');
+                log(`📋 Properties data: ${JSON.stringify(properties, null, 2)}`, 'info');
+
+                // Step 2: Get unique owner IDs
+                const uniqueOwnerIds = [...new Set(properties.map(p => p.owner_id))];
+                log(`✅ Found unique owner IDs: ${uniqueOwnerIds.length}`, 'success');
+                log(`📋 Unique Owner IDs: ${JSON.stringify(uniqueOwnerIds, null, 2)}`, 'info');
+
+                if (uniqueOwnerIds.length === 0) {
+                    log('⚠️ No unique owner IDs found', 'error');
+                    return;
+                }
+
+                // Step 3: For each owner ID, get their info
+                const ownersWithCounts = await Promise.all(
+                    uniqueOwnerIds.map(async (ownerId) => {
+                        log(`🔍 Processing owner ID: ${ownerId}`, 'info');
+                        
+                        // Count properties for this owner
+                        const countResponse = await fetch(`${SUPABASE_URL}/rest/v1/properties?owner_id=eq.${ownerId}&select=*`, {
+                            headers: {
+                                'apikey': SUPABASE_ANON_KEY,
+                                'Authorization': `Bearer ${SUPABASE_ANON_KEY}`
+                            }
+                        });
+                        
+                        const ownerProperties = await countResponse.json();
+                        log(`✅ Properties count for ${ownerId}: ${ownerProperties.length}`, 'success');
+
+                        // Get the first property to get creation date
+                        const firstPropertyResponse = await fetch(`${SUPABASE_URL}/rest/v1/properties?owner_id=eq.${ownerId}&select=created_at&limit=1`, {
+                            headers: {
+                                'apikey': SUPABASE_ANON_KEY,
+                                'Authorization': `Bearer ${SUPABASE_ANON_KEY}`
+                            }
+                        });
+                        
+                        const firstProperty = await firstPropertyResponse.json();
+
+                        const ownerData = {
+                            id: ownerId,
+                            email: `owner-${ownerId.substring(0, 8)}@picnify.com`,
+                            full_name: `Property Owner (${ownerId.substring(0, 8)})`,
+                            role: 'property_owner',
+                            phone: null,
+                            avatar_url: null,
+                            created_at: firstProperty?.[0]?.created_at || new Date().toISOString(),
+                            updated_at: new Date().toISOString(),
+                            properties_count: ownerProperties.length,
+                            status: 'active'
+                        };
+
+                        log(`✅ Created owner data: ${JSON.stringify(ownerData, null, 2)}`, 'success');
+                        return ownerData;
+                    })
+                );
+
+                log(`✅ Property owners with counts: ${ownersWithCounts.length}`, 'success');
+                log(`✅ Final owners data: ${JSON.stringify(ownersWithCounts, null, 2)}`, 'success');
+                
+                if (ownersWithCounts.length > 0) {
+                    log(`🎉 SUCCESS: Found ${ownersWithCounts.length} property owner(s)`, 'success');
+                } else {
+                    log(`❌ FAILED: No property owners found`, 'error');
+                }
+                
+            } catch (error) {
+                log(`💥 Error in getPropertyOwners: ${error.message}`, 'error');
+            }
+        }
+
+        // Auto-run test
+        window.onload = function() {
+            log('🚀 Starting admin service test...', 'info');
+            setTimeout(testAdminService, 1000);
+        };
+    </script>
+</body>
+</html>

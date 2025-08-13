@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Debug Admin Service</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 20px;
+            line-height: 1.6;
+        }
+        .debug-section {
+            background: #f5f5f5;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 8px;
+        }
+        .result {
+            background: white;
+            padding: 10px;
+            border-radius: 5px;
+            margin: 10px 0;
+            font-family: monospace;
+            white-space: pre-wrap;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+        .success { color: #28a745; }
+        .error { color: #dc3545; }
+        .info { color: #17a2b8; }
+        .warning { color: #ffc107; }
+        button {
+            background: #007bff;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            margin: 5px;
+            cursor: pointer;
+        }
+        button:hover {
+            background: #0056b3;
+        }
+    </style>
+</head>
+<body>
+    <h1>🐛 Debug Admin Service</h1>
+    
+    <div class="debug-section">
+        <h2>🔍 Step 1: Test Properties Table</h2>
+        <button onclick="testProperties()">Test Properties</button>
+        <div id="properties-result"></div>
+    </div>
+
+    <div class="debug-section">
+        <h2>🔍 Step 2: Test Admin Service Logic</h2>
+        <button onclick="testAdminServiceLogic()">Test Admin Service Logic</button>
+        <div id="admin-logic-result"></div>
+    </div>
+
+    <div class="debug-section">
+        <h2>🔍 Step 3: Test Owner Management Component</h2>
+        <button onclick="testOwnerManagement()">Test Owner Management</button>
+        <div id="owner-management-result"></div>
+    </div>
+
+    <div class="debug-section">
+        <h2>🔍 Step 4: Check Browser Console</h2>
+        <p>Open browser console (F12) and check for any errors when visiting:</p>
+        <a href="http://localhost:8082/admin/owner-management" target="_blank">Admin Owner Management</a>
+    </div>
+
+    <script>
+        const SUPABASE_URL = 'https://riqsgtuzccwpplbodwbd.supabase.co';
+        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJpcXNndHV6Y2N3cHBsYm9kd2JkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTQyOTY2NTUsImV4cCI6MjA2OTg3MjY1NX0.qkSVWoVi8cStB1WZdqtapc8O6jc_aAiYEm0Y5Lqp1-s';
+
+        function log(elementId, message, type = 'info') {
+            const element = document.getElementById(elementId);
+            const div = document.createElement('div');
+            div.className = `result ${type}`;
+            div.textContent = message;
+            element.appendChild(div);
+        }
+
+        async function testProperties() {
+            log('properties-result', '🔍 Testing Properties Table...', 'info');
+            try {
+                const response = await fetch(`${SUPABASE_URL}/rest/v1/properties?select=owner_id,created_at&limit=10`, {
+                    headers: {
+                        'apikey': SUPABASE_ANON_KEY,
+                        'Authorization': `Bearer ${SUPABASE_ANON_KEY}`
+                    }
+                });
+                
+                const data = await response.json();
+                log('properties-result', `✅ Properties found: ${data.length}`, 'success');
+                log('properties-result', `📋 Properties data: ${JSON.stringify(data, null, 2)}`, 'info');
+                
+                // Get unique owner IDs
+                const uniqueOwnerIds = [...new Set(data.map(p => p.owner_id))];
+                log('properties-result', `🔑 Unique owner IDs: ${uniqueOwnerIds.join(', ')}`, 'success');
+                
+                if (uniqueOwnerIds.length > 0) {
+                    log('properties-result', `✅ Found ${uniqueOwnerIds.length} unique property owners`, 'success');
+                } else {
+                    log('properties-result', `❌ No unique owner IDs found`, 'error');
+                }
+                
+            } catch (error) {
+                log('properties-result', `❌ Error: ${error.message}`, 'error');
+            }
+        }
+
+        async function testAdminServiceLogic() {
+            log('admin-logic-result', '🔍 Testing Admin Service Logic...', 'info');
+            try {
+                // Step 1: Get properties
+                const propertiesResponse = await fetch(`${SUPABASE_URL}/rest/v1/properties?select=owner_id,created_at&limit=10`, {
+                    headers: {
+                        'apikey': SUPABASE_ANON_KEY,
+                        'Authorization': `Bearer ${SUPABASE_ANON_KEY}`
+                    }
+                });
+                
+                const properties = await propertiesResponse.json();
+                log('admin-logic-result', `✅ Step 1: Found ${properties.length} properties`, 'success');
+                
+                // Step 2: Get unique owner IDs
+                const uniqueOwnerIds = [...new Set(properties.map(p => p.owner_id))];
+                log('admin-logic-result', `✅ Step 2: Found ${uniqueOwnerIds.length} unique owner IDs`, 'success');
+                
+                // Step 3: Process each owner
+                for (const ownerId of uniqueOwnerIds) {
+                    log('admin-logic-result', `🔍 Processing owner ID: ${ownerId}`, 'info');
+                    
+                    // Count properties for this owner
+                    const countResponse = await fetch(`${SUPABASE_URL}/rest/v1/properties?owner_id=eq.${ownerId}&select=*`, {
+                        headers: {
+                            'apikey': SUPABASE_ANON_KEY,
+                            'Authorization': `Bearer ${SUPABASE_ANON_KEY}`
+                        }
+                    });
+                    
+                    const ownerProperties = await countResponse.json();
+                    log('admin-logic-result', `✅ Owner ${ownerId} has ${ownerProperties.length} properties`, 'success');
+                    
+                    // Create owner data
+                    const ownerData = {
+                        id: ownerId,
+                        email: `owner-${ownerId.substring(0, 8)}@picnify.com`,
+                        full_name: `Property Owner (${ownerId.substring(0, 8)})`,
+                        role: 'property_owner',
+                        phone: null,
+                        avatar_url: null,
+                        created_at: properties[0]?.created_at || new Date().toISOString(),
+                        updated_at: new Date().toISOString(),
+                        properties_count: ownerProperties.length,
+                        status: 'active'
+                    };
+                    
+                    log('admin-logic-result', `✅ Created owner data: ${JSON.stringify(ownerData, null, 2)}`, 'success');
+                }
+                
+            } catch (error) {
+                log('admin-logic-result', `❌ Error: ${error.message}`, 'error');
+            }
+        }
+
+        async function testOwnerManagement() {
+            log('owner-management-result', '🔍 Testing Owner Management Component...', 'info');
+            try {
+                // Test if the admin panel is accessible
+                const response = await fetch('http://localhost:8082/admin/owner-management');
+                log('owner-management-result', `✅ Admin panel accessible: ${response.status}`, 'success');
+                
+                // Check if admin is authenticated
+                const isAdminAuth = localStorage.getItem('adminAuthenticated');
+                log('owner-management-result', `🔍 Admin authenticated: ${isAdminAuth}`, 'info');
+                
+                if (isAdminAuth !== 'true') {
+                    log('owner-management-result', `⚠️ Admin not authenticated. Please login first.`, 'warning');
+                    log('owner-management-result', `🔗 Login at: http://localhost:8082/admin/login`, 'info');
+                } else {
+                    log('owner-management-result', `✅ Admin is authenticated`, 'success');
+                }
+                
+            } catch (error) {
+                log('owner-management-result', `❌ Error: ${error.message}`, 'error');
+            }
+        }
+
+        // Auto-run tests
+        window.onload = function() {
+            log('properties-result', '🚀 Starting debug tests...', 'info');
+            setTimeout(testProperties, 1000);
+            setTimeout(testAdminServiceLogic, 2000);
+            setTimeout(testOwnerManagement, 3000);
+        };
+    </script>
+</body>
+</html>

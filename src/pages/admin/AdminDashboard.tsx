@@ -14,16 +14,7 @@ import {
   BarChart3,
   Shield
 } from 'lucide-react';
-import { supabase } from '@/integrations/supabase/client';
-
-interface Owner {
-  id: string;
-  email: string;
-  full_name?: string;
-  created_at: string;
-  is_active: boolean;
-  properties_count: number;
-}
+import { adminService, PropertyOwner } from '@/lib/adminService';
 
 interface Property {
   id: string;
@@ -38,7 +29,7 @@ interface Property {
 
 const AdminDashboard: React.FC = () => {
   const navigate = useNavigate();
-  const [owners, setOwners] = useState<Owner[]>([]);
+  const [owners, setOwners] = useState<PropertyOwner[]>([]);
   const [properties, setProperties] = useState<Property[]>([]);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('owners');
@@ -58,47 +49,20 @@ const AdminDashboard: React.FC = () => {
   const loadData = async () => {
     setLoading(true);
     try {
-      // First, let's check what users exist in the profiles table
-      const { data: allProfiles, error: profilesError } = await supabase
-        .from('profiles')
-        .select('*');
+      console.log('🔍 Loading admin dashboard data...');
+      
+      // Use adminService to get property owners
+      const ownersData = await adminService.getPropertyOwners();
+      console.log('✅ Property owners loaded:', ownersData);
 
-      if (profilesError) throw profilesError;
-
-      console.log('🔍 All profiles found:', allProfiles);
-
-      // Load all owners (users with role 'owner' or any user who has properties)
-      const { data: ownersData, error: ownersError } = await supabase
-        .from('profiles')
-        .select('*')
-        .or('role.eq.owner,role.eq.customer');
-
-      if (ownersError) throw ownersError;
-
-      console.log('🔍 Owners data:', ownersData);
-
-      // Load all properties with owner information
-      const { data: propertiesData, error: propertiesError } = await supabase
+      // Load all properties
+      const { data: propertiesData, error: propertiesError } = await adminService.adminSupabase
         .from('properties')
         .select('*');
 
       if (propertiesError) throw propertiesError;
 
-      console.log('🔍 Properties data:', propertiesData);
-
-      // Process owners data - include all users who have properties or are owners
-      const processedOwners = ownersData?.map(owner => {
-        const ownerProperties = propertiesData?.filter(p => p.owner_id === owner.id) || [];
-        return {
-          id: owner.id,
-          email: owner.email,
-          full_name: owner.full_name || owner.first_name || 'No name provided',
-          created_at: owner.created_at,
-          is_active: owner.is_active !== false, // Default to true if not set
-          properties_count: ownerProperties.length,
-          role: owner.role || 'customer'
-        };
-      }).filter(owner => owner.properties_count > 0 || owner.role === 'owner') || [];
+      console.log('✅ Properties data loaded:', propertiesData);
 
       // Process properties data
       const processedProperties = propertiesData?.map(property => {
@@ -114,10 +78,9 @@ const AdminDashboard: React.FC = () => {
         };
       }) || [];
 
-      console.log('✅ Processed owners:', processedOwners);
       console.log('✅ Processed properties:', processedProperties);
       
-      setOwners(processedOwners);
+      setOwners(ownersData);
       setProperties(processedProperties);
     } catch (error) {
       console.error('❌ Error loading admin data:', error);
@@ -134,7 +97,7 @@ const AdminDashboard: React.FC = () => {
 
   const updatePropertyStatus = async (propertyId: string, status: 'approved' | 'rejected') => {
     try {
-      const { error } = await supabase
+      const { error } = await adminService.adminSupabase
         .from('properties')
         .update({ status })
         .eq('id', propertyId);
@@ -158,7 +121,7 @@ const AdminDashboard: React.FC = () => {
 
   const toggleOwnerStatus = async (ownerId: string, isActive: boolean) => {
     try {
-      const { error } = await supabase
+      const { error } = await adminService.adminSupabase
         .from('profiles')
         .update({ is_active: !isActive })
         .eq('id', ownerId);
@@ -187,7 +150,7 @@ const AdminDashboard: React.FC = () => {
 
     try {
       // Delete owner's properties first
-      const { error: propertiesError } = await supabase
+      const { error: propertiesError } = await adminService.adminSupabase
         .from('properties')
         .delete()
         .eq('owner_id', ownerId);
@@ -195,7 +158,7 @@ const AdminDashboard: React.FC = () => {
       if (propertiesError) throw propertiesError;
 
       // Delete owner profile
-      const { error: ownerError } = await supabase
+      const { error: ownerError } = await adminService.adminSupabase
         .from('profiles')
         .delete()
         .eq('id', ownerId);

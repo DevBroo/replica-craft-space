@@ -1,0 +1,571 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Database Contents Debug</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .section {
+            margin-bottom: 30px;
+            padding: 20px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+        .result {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 4px;
+            margin: 10px 0;
+            white-space: pre-wrap;
+            font-family: monospace;
+            font-size: 12px;
+        }
+        .error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        .success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        .info {
+            background: #d1ecf1;
+            color: #0c5460;
+            border: 1px solid #bee5eb;
+        }
+        .warning {
+            background: #fff3cd;
+            color: #856404;
+            border: 1px solid #ffeaa7;
+        }
+        button {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        button:hover {
+            background: #0056b3;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 10px;
+        }
+        th, td {
+            border: 1px solid #ddd;
+            padding: 8px;
+            text-align: left;
+        }
+        th {
+            background-color: #f2f2f2;
+        }
+        .highlight {
+            background-color: #fff3cd;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔍 Database Contents Debug Tool</h1>
+        <p>This tool will help identify why property owners are not showing real data in the admin panel.</p>
+
+        <div class="section">
+            <h2>Database Configuration</h2>
+            <div id="config" class="result info"></div>
+        </div>
+
+        <div class="section">
+            <h2>Debug Actions</h2>
+            <button onclick="checkAllTables()">Check All Tables</button>
+            <button onclick="checkProfilesTable()">Check Profiles Table</button>
+            <button onclick="checkPropertiesTable()">Check Properties Table</button>
+            <button onclick="checkUsersTable()">Check Users Table</button>
+            <button onclick="checkAuthUsers()">Check Auth Users</button>
+            <button onclick="analyzeOwnerMismatch()">Analyze Owner Mismatch</button>
+            <button onclick="createMissingProfiles()">Create Missing Profiles</button>
+            <button onclick="createAdminUser()">Create Admin User</button>
+        </div>
+
+        <div class="section">
+            <h2>Results</h2>
+            <div id="results"></div>
+        </div>
+    </div>
+
+    <script>
+        const SUPABASE_URL = 'https://riqsgtuzccwpplbodwbd.supabase.co';
+        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJpcXNndHV6Y2N3cHBsYm9kd2JkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTQyOTY2NTUsImV4cCI6MjA2OTg3MjY1NX0.qkSVWoVi8cStB1WZdqtapc8O6jc_aAiYEm0Y5Lqp1-s';
+
+        // Display configuration
+        document.getElementById('config').textContent = `Supabase URL: ${SUPABASE_URL}\nAPI Key: ${SUPABASE_ANON_KEY.substring(0, 20)}...`;
+
+        function logResult(message, type = 'info') {
+            const resultsDiv = document.getElementById('results');
+            const resultDiv = document.createElement('div');
+            resultDiv.className = `result ${type}`;
+            resultDiv.textContent = `[${new Date().toLocaleTimeString()}] ${message}`;
+            resultsDiv.appendChild(resultDiv);
+            resultsDiv.scrollTop = resultsDiv.scrollHeight;
+        }
+
+        async function checkAllTables() {
+            try {
+                logResult('Checking all tables in database...', 'info');
+                
+                // Check profiles table
+                const profilesResponse = await fetch(`${SUPABASE_URL}/rest/v1/profiles?select=*&limit=5`, {
+                    headers: {
+                        'apikey': SUPABASE_ANON_KEY,
+                        'Authorization': `Bearer ${SUPABASE_ANON_KEY}`
+                    }
+                });
+                
+                const profiles = await profilesResponse.json();
+                logResult(`Profiles table: ${profiles.length} records found`, profiles.length > 0 ? 'success' : 'warning');
+                
+                // Check properties table
+                const propertiesResponse = await fetch(`${SUPABASE_URL}/rest/v1/properties?select=*&limit=5`, {
+                    headers: {
+                        'apikey': SUPABASE_ANON_KEY,
+                        'Authorization': `Bearer ${SUPABASE_ANON_KEY}`
+                    }
+                });
+                
+                const properties = await propertiesResponse.json();
+                logResult(`Properties table: ${properties.length} records found`, properties.length > 0 ? 'success' : 'warning');
+                
+                // Check users table (if it exists)
+                try {
+                    const usersResponse = await fetch(`${SUPABASE_URL}/rest/v1/users?select=*&limit=5`, {
+                        headers: {
+                            'apikey': SUPABASE_ANON_KEY,
+                            'Authorization': `Bearer ${SUPABASE_ANON_KEY}`
+                        }
+                    });
+                    
+                    if (usersResponse.ok) {
+                        const users = await usersResponse.json();
+                        logResult(`Users table: ${users.length} records found`, users.length > 0 ? 'success' : 'warning');
+                    } else {
+                        logResult(`Users table: Does not exist or not accessible (${usersResponse.status})`, 'warning');
+                    }
+                } catch (error) {
+                    logResult(`Users table: Error accessing - ${error.message}`, 'error');
+                }
+                
+            } catch (error) {
+                logResult(`Error checking tables: ${error.message}`, 'error');
+            }
+        }
+
+        async function checkProfilesTable() {
+            try {
+                logResult('Checking profiles table in detail...', 'info');
+                
+                const response = await fetch(`${SUPABASE_URL}/rest/v1/profiles?select=*`, {
+                    headers: {
+                        'apikey': SUPABASE_ANON_KEY,
+                        'Authorization': `Bearer ${SUPABASE_ANON_KEY}`
+                    }
+                });
+
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+
+                const profiles = await response.json();
+                logResult(`Found ${profiles.length} profiles in database`, 'success');
+                
+                if (profiles.length > 0) {
+                    const table = `
+                        <h3>All Profiles:</h3>
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>ID</th>
+                                    <th>Email</th>
+                                    <th>Full Name</th>
+                                    <th>Role</th>
+                                    <th>Phone</th>
+                                    <th>Created</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                ${profiles.map(profile => `
+                                    <tr>
+                                        <td>${profile.id.substring(0, 8)}...</td>
+                                        <td>${profile.email || 'No email'}</td>
+                                        <td>${profile.full_name || 'No name'}</td>
+                                        <td>${profile.role || 'No role'}</td>
+                                        <td>${profile.phone || 'No phone'}</td>
+                                        <td>${new Date(profile.created_at).toLocaleDateString()}</td>
+                                    </tr>
+                                `).join('')}
+                            </tbody>
+                        </table>
+                    `;
+                    
+                    const resultDiv = document.createElement('div');
+                    resultDiv.className = 'result success';
+                    resultDiv.innerHTML = table;
+                    document.getElementById('results').appendChild(resultDiv);
+                } else {
+                    logResult('No profiles found in database. This is the root cause of the issue!', 'error');
+                }
+                
+            } catch (error) {
+                logResult(`Error checking profiles: ${error.message}`, 'error');
+            }
+        }
+
+        async function checkPropertiesTable() {
+            try {
+                logResult('Checking properties table in detail...', 'info');
+                
+                const response = await fetch(`${SUPABASE_URL}/rest/v1/properties?select=*`, {
+                    headers: {
+                        'apikey': SUPABASE_ANON_KEY,
+                        'Authorization': `Bearer ${SUPABASE_ANON_KEY}`
+                    }
+                });
+
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+
+                const properties = await response.json();
+                logResult(`Found ${properties.length} properties in database`, 'success');
+                
+                if (properties.length > 0) {
+                    // Get unique owner IDs
+                    const uniqueOwnerIds = [...new Set(properties.map(p => p.owner_id))];
+                    logResult(`Found ${uniqueOwnerIds.length} unique owner IDs: ${uniqueOwnerIds.map(id => id.substring(0, 8)).join(', ')}`, 'info');
+                    
+                    const table = `
+                        <h3>Properties with Owner IDs:</h3>
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>ID</th>
+                                    <th>Title</th>
+                                    <th>Owner ID</th>
+                                    <th>Status</th>
+                                    <th>Created</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                ${properties.map(property => `
+                                    <tr>
+                                        <td>${property.id.substring(0, 8)}...</td>
+                                        <td>${property.title || 'No title'}</td>
+                                        <td>${property.owner_id.substring(0, 8)}...</td>
+                                        <td>${property.status || 'No status'}</td>
+                                        <td>${new Date(property.created_at).toLocaleDateString()}</td>
+                                    </tr>
+                                `).join('')}
+                            </tbody>
+                        </table>
+                    `;
+                    
+                    const resultDiv = document.createElement('div');
+                    resultDiv.className = 'result success';
+                    resultDiv.innerHTML = table;
+                    document.getElementById('results').appendChild(resultDiv);
+                }
+                
+            } catch (error) {
+                logResult(`Error checking properties: ${error.message}`, 'error');
+            }
+        }
+
+        async function checkUsersTable() {
+            try {
+                logResult('Checking users table (if it exists)...', 'info');
+                
+                const response = await fetch(`${SUPABASE_URL}/rest/v1/users?select=*`, {
+                    headers: {
+                        'apikey': SUPABASE_ANON_KEY,
+                        'Authorization': `Bearer ${SUPABASE_ANON_KEY}`
+                    }
+                });
+
+                if (response.ok) {
+                    const users = await response.json();
+                    logResult(`Found ${users.length} users in users table`, 'success');
+                    
+                    if (users.length > 0) {
+                        const table = `
+                            <h3>Users Table Contents:</h3>
+                            <table>
+                                <thead>
+                                    <tr>
+                                        <th>ID</th>
+                                        <th>Email</th>
+                                        <th>First Name</th>
+                                        <th>Last Name</th>
+                                        <th>Role</th>
+                                        <th>Created</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    ${users.map(user => `
+                                        <tr>
+                                            <td>${user.id.substring(0, 8)}...</td>
+                                            <td>${user.email || 'No email'}</td>
+                                            <td>${user.first_name || 'No first name'}</td>
+                                            <td>${user.last_name || 'No last name'}</td>
+                                            <td>${user.role || 'No role'}</td>
+                                            <td>${new Date(user.created_at).toLocaleDateString()}</td>
+                                        </tr>
+                                    `).join('')}
+                                </tbody>
+                            </table>
+                        `;
+                        
+                        const resultDiv = document.createElement('div');
+                        resultDiv.className = 'result success';
+                        resultDiv.innerHTML = table;
+                        document.getElementById('results').appendChild(resultDiv);
+                    }
+                } else {
+                    logResult(`Users table does not exist or is not accessible (${response.status})`, 'warning');
+                }
+                
+            } catch (error) {
+                logResult(`Error checking users table: ${error.message}`, 'error');
+            }
+        }
+
+        async function checkAuthUsers() {
+            try {
+                logResult('Checking auth.users table...', 'info');
+                
+                const response = await fetch(`${SUPABASE_URL}/rest/v1/auth/users?select=*`, {
+                    headers: {
+                        'apikey': SUPABASE_ANON_KEY,
+                        'Authorization': `Bearer ${SUPABASE_ANON_KEY}`
+                    }
+                });
+
+                if (response.ok) {
+                    const authUsers = await response.json();
+                    logResult(`Found ${authUsers.length} users in auth.users table`, 'success');
+                    
+                    if (authUsers.length > 0) {
+                        const table = `
+                            <h3>Auth Users:</h3>
+                            <table>
+                                <thead>
+                                    <tr>
+                                        <th>ID</th>
+                                        <th>Email</th>
+                                        <th>Created</th>
+                                        <th>Last Sign In</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    ${authUsers.map(user => `
+                                        <tr>
+                                            <td>${user.id.substring(0, 8)}...</td>
+                                            <td>${user.email || 'No email'}</td>
+                                            <td>${new Date(user.created_at).toLocaleDateString()}</td>
+                                            <td>${user.last_sign_in_at ? new Date(user.last_sign_in_at).toLocaleDateString() : 'Never'}</td>
+                                        </tr>
+                                    `).join('')}
+                                </tbody>
+                            </table>
+                        `;
+                        
+                        const resultDiv = document.createElement('div');
+                        resultDiv.className = 'result success';
+                        resultDiv.innerHTML = table;
+                        document.getElementById('results').appendChild(resultDiv);
+                    }
+                } else {
+                    logResult(`Auth users table not accessible (${response.status})`, 'warning');
+                }
+                
+            } catch (error) {
+                logResult(`Error checking auth users: ${error.message}`, 'error');
+            }
+        }
+
+        async function analyzeOwnerMismatch() {
+            try {
+                logResult('Analyzing owner mismatch between properties and profiles...', 'info');
+                
+                // Get properties
+                const propertiesResponse = await fetch(`${SUPABASE_URL}/rest/v1/properties?select=owner_id`, {
+                    headers: {
+                        'apikey': SUPABASE_ANON_KEY,
+                        'Authorization': `Bearer ${SUPABASE_ANON_KEY}`
+                    }
+                });
+                
+                const properties = await propertiesResponse.json();
+                const uniqueOwnerIds = [...new Set(properties.map(p => p.owner_id))];
+                
+                logResult(`Properties reference ${uniqueOwnerIds.length} unique owner IDs`, 'info');
+                
+                // Get profiles
+                const profilesResponse = await fetch(`${SUPABASE_URL}/rest/v1/profiles?select=id`, {
+                    headers: {
+                        'apikey': SUPABASE_ANON_KEY,
+                        'Authorization': `Bearer ${SUPABASE_ANON_KEY}`
+                    }
+                });
+                
+                const profiles = await profilesResponse.json();
+                const profileIds = profiles.map(p => p.id);
+                
+                logResult(`Profiles table has ${profileIds.length} records`, 'info');
+                
+                // Find mismatches
+                const missingProfiles = uniqueOwnerIds.filter(ownerId => !profileIds.includes(ownerId));
+                const orphanedProfiles = profileIds.filter(profileId => !uniqueOwnerIds.includes(profileId));
+                
+                logResult(`Missing profiles for ${missingProfiles.length} owner IDs: ${missingProfiles.map(id => id.substring(0, 8)).join(', ')}`, missingProfiles.length > 0 ? 'error' : 'success');
+                logResult(`Orphaned profiles (no properties): ${orphanedProfiles.length}`, orphanedProfiles.length > 0 ? 'warning' : 'success');
+                
+                if (missingProfiles.length > 0) {
+                    logResult('This is the root cause! Properties reference owner IDs that don\'t exist in the profiles table.', 'error');
+                }
+                
+            } catch (error) {
+                logResult(`Error analyzing mismatch: ${error.message}`, 'error');
+            }
+        }
+
+        async function createMissingProfiles() {
+            try {
+                logResult('Creating missing profiles for property owners...', 'info');
+                
+                // Get properties to find owner IDs
+                const propertiesResponse = await fetch(`${SUPABASE_URL}/rest/v1/properties?select=owner_id,created_at&order=created_at.desc`, {
+                    headers: {
+                        'apikey': SUPABASE_ANON_KEY,
+                        'Authorization': `Bearer ${SUPABASE_ANON_KEY}`
+                    }
+                });
+                
+                const properties = await propertiesResponse.json();
+                const uniqueOwnerIds = [...new Set(properties.map(p => p.owner_id))];
+                
+                // Get existing profiles
+                const profilesResponse = await fetch(`${SUPABASE_URL}/rest/v1/profiles?select=id`, {
+                    headers: {
+                        'apikey': SUPABASE_ANON_KEY,
+                        'Authorization': `Bearer ${SUPABASE_ANON_KEY}`
+                    }
+                });
+                
+                const profiles = await profilesResponse.json();
+                const existingProfileIds = profiles.map(p => p.id);
+                
+                // Find missing profiles
+                const missingOwnerIds = uniqueOwnerIds.filter(ownerId => !existingProfileIds.includes(ownerId));
+                
+                logResult(`Found ${missingOwnerIds.length} missing profiles to create`, 'info');
+                
+                // Create missing profiles
+                for (const ownerId of missingOwnerIds) {
+                    const profileData = {
+                        id: ownerId,
+                        email: `owner-${ownerId.substring(0, 8)}@picnify.com`,
+                        full_name: `Property Owner (${ownerId.substring(0, 8)})`,
+                        role: 'property_owner',
+                        phone: null,
+                        avatar_url: null,
+                        created_at: new Date().toISOString(),
+                        updated_at: new Date().toISOString()
+                    };
+                    
+                    const createResponse = await fetch(`${SUPABASE_URL}/rest/v1/profiles`, {
+                        method: 'POST',
+                        headers: {
+                            'apikey': SUPABASE_ANON_KEY,
+                            'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
+                            'Content-Type': 'application/json',
+                            'Prefer': 'return=minimal'
+                        },
+                        body: JSON.stringify(profileData)
+                    });
+                    
+                    if (createResponse.ok) {
+                        logResult(`✅ Created profile for owner ${ownerId.substring(0, 8)}...`, 'success');
+                    } else {
+                        logResult(`❌ Failed to create profile for owner ${ownerId.substring(0, 8)}... (${createResponse.status})`, 'error');
+                    }
+                }
+                
+                logResult('Profile creation process completed', 'success');
+                
+            } catch (error) {
+                logResult(`Error creating missing profiles: ${error.message}`, 'error');
+            }
+        }
+
+        async function createAdminUser() {
+            try {
+                logResult('Creating admin user in profiles table...', 'info');
+                
+                const adminProfileData = {
+                    id: 'admin-user-id', // This will be replaced with a real UUID
+                    email: 'admin@picnify.com',
+                    full_name: 'Picnify Admin',
+                    role: 'admin',
+                    phone: null,
+                    avatar_url: null,
+                    created_at: new Date().toISOString(),
+                    updated_at: new Date().toISOString()
+                };
+                
+                // Generate a UUID for the admin user
+                adminProfileData.id = crypto.randomUUID();
+                
+                const createResponse = await fetch(`${SUPABASE_URL}/rest/v1/profiles`, {
+                    method: 'POST',
+                    headers: {
+                        'apikey': SUPABASE_ANON_KEY,
+                        'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
+                        'Content-Type': 'application/json',
+                        'Prefer': 'return=minimal'
+                    },
+                    body: JSON.stringify(adminProfileData)
+                });
+                
+                if (createResponse.ok) {
+                    logResult(`✅ Created admin user with ID: ${adminProfileData.id}`, 'success');
+                    logResult(`Admin email: ${adminProfileData.email}`, 'success');
+                    logResult(`Admin name: ${adminProfileData.full_name}`, 'success');
+                } else {
+                    const errorText = await createResponse.text();
+                    logResult(`❌ Failed to create admin user (${createResponse.status}): ${errorText}`, 'error');
+                }
+                
+            } catch (error) {
+                logResult(`Error creating admin user: ${error.message}`, 'error');
+            }
+        }
+    </script>
+</body>
+</html>
