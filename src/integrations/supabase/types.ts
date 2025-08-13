@@ -108,63 +108,114 @@ export type Database = {
         Row: {
           address: string
           amenities: string[] | null
+          arrival_instructions: string | null
           bathrooms: number | null
+          bed_configuration: Json | null
           bedrooms: number | null
+          booking_rules: Json | null
+          cancellation_policy: string | null
+          check_in_time: string | null
+          check_out_time: string | null
+          contact_phone: string | null
+          coordinates: Json | null
+          country: string | null
           created_at: string
           description: string | null
+          house_rules: Json | null
           id: string
           images: string[] | null
           is_featured: boolean | null
+          license_number: string | null
           location: Json | null
           max_guests: number
+          meal_plans: string[] | null
+          minimum_stay: number | null
           owner_id: string
+          payment_methods: string[] | null
+          postal_code: string | null
           pricing: Json
+          property_subtype: string | null
           property_type: string
           rating: number | null
           review_count: number | null
           status: string | null
+          tax_information: Json | null
           title: string
           updated_at: string
         }
         Insert: {
           address: string
           amenities?: string[] | null
+          arrival_instructions?: string | null
           bathrooms?: number | null
+          bed_configuration?: Json | null
           bedrooms?: number | null
+          booking_rules?: Json | null
+          cancellation_policy?: string | null
+          check_in_time?: string | null
+          check_out_time?: string | null
+          contact_phone?: string | null
+          coordinates?: Json | null
+          country?: string | null
           created_at?: string
           description?: string | null
+          house_rules?: Json | null
           id?: string
           images?: string[] | null
           is_featured?: boolean | null
+          license_number?: string | null
           location?: Json | null
           max_guests?: number
+          meal_plans?: string[] | null
+          minimum_stay?: number | null
           owner_id: string
+          payment_methods?: string[] | null
+          postal_code?: string | null
           pricing?: Json
+          property_subtype?: string | null
           property_type: string
           rating?: number | null
           review_count?: number | null
           status?: string | null
+          tax_information?: Json | null
           title: string
           updated_at?: string
         }
         Update: {
           address?: string
           amenities?: string[] | null
+          arrival_instructions?: string | null
           bathrooms?: number | null
+          bed_configuration?: Json | null
           bedrooms?: number | null
+          booking_rules?: Json | null
+          cancellation_policy?: string | null
+          check_in_time?: string | null
+          check_out_time?: string | null
+          contact_phone?: string | null
+          coordinates?: Json | null
+          country?: string | null
           created_at?: string
           description?: string | null
+          house_rules?: Json | null
           id?: string
           images?: string[] | null
           is_featured?: boolean | null
+          license_number?: string | null
           location?: Json | null
           max_guests?: number
+          meal_plans?: string[] | null
+          minimum_stay?: number | null
           owner_id?: string
+          payment_methods?: string[] | null
+          postal_code?: string | null
           pricing?: Json
+          property_subtype?: string | null
           property_type?: string
           rating?: number | null
           review_count?: number | null
           status?: string | null
+          tax_information?: Json | null
           title?: string
           updated_at?: string
         }

@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import AddProperty from './AddProperty';
+import EnhancedAddProperty from './EnhancedAddProperty';
 
 interface PropertiesProps {
   sidebarCollapsed: boolean;
@@ -17,7 +18,7 @@ const Properties: React.FC<PropertiesProps> = ({ sidebarCollapsed, toggleSidebar
   const propertiesPerPage = 9;
 
   if (showAddProperty) {
-    return <AddProperty onBack={() => setShowAddProperty(false)} />;
+    return <EnhancedAddProperty onBack={() => setShowAddProperty(false)} />;
   }
 
   const menuItems = [
