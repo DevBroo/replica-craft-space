@@ -492,12 +492,16 @@ const PropertyDetails = () => {
                     <Button 
                       variant="outline" 
                       size="sm" 
-                      onClick={() => navigate('/customer-login', { 
-                        state: { 
-                          returnTo: `/property/${property.id}`,
-                          bookingData: { checkInDate, checkOutDate, guests }
-                        }
-                      })}
+                      onClick={() => {
+                        console.log('🔄 Navigating to customer login...');
+                        navigate('/customer-login', { 
+                          state: { 
+                            returnTo: `/property/${property?.id}`,
+                            bookingData: { checkInDate, checkOutDate, guests },
+                            message: "Please sign in to complete your booking"
+                          }
+                        });
+                      }}
                       className="w-full"
                     >
                       Sign In to Continue
