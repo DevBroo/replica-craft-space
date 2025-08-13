@@ -12,6 +12,7 @@ import Locations from "./pages/Locations";
 import About from "./pages/About";
 import Contact from "./pages/Contact";
 import OwnerLogin from "./pages/owner/OwnerLogin";
+import CustomerLogin from "./pages/CustomerLogin";
 import BookingDetails from "./pages/BookingDetails";
 import Signup from "./pages/Signup";
 import ForgotPassword from "./pages/ForgotPassword";
@@ -71,7 +72,7 @@ const App = () => (
           <Route path="/locations" element={<Locations />} />
           <Route path="/about" element={<About />} />
           <Route path="/contact" element={<Contact />} />
-          <Route path="/login" element={<OwnerLogin />} />
+          <Route path="/login" element={<CustomerLogin />} />
           <Route path="/booking-details" element={<BookingDetails />} />
           <Route path="/signup" element={<Signup />} />
           <Route path="/forgot-password" element={<ForgotPassword />} />

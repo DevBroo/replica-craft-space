@@ -102,16 +102,16 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         }
 
         console.log('✅ User profile fetched successfully');
-        return {
-          id: data.id,
-          email: data.email || '',
-          role: data.role || 'property_owner',
-          full_name: data.full_name,
-          avatar_url: data.avatar_url,
-          phone: data.phone,
-          created_at: data.created_at,
-          updated_at: data.updated_at,
-        };
+          return {
+            id: data.id,
+            email: data.email || '',
+            role: data.role === 'user' ? 'customer' : (data.role || 'customer'), // Normalize 'user' to 'customer'
+            full_name: data.full_name,
+            avatar_url: data.avatar_url,
+            phone: data.phone,
+            created_at: data.created_at,
+            updated_at: data.updated_at,
+          };
       } catch (err) {
         console.error(`❌ Exception in getUserProfile (attempt ${retryCount + 1}):`, err);
         
@@ -247,10 +247,12 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
           
           try {
             // Set user immediately with basic data for fast loading
+            const userRole = session.user.user_metadata?.role || 'customer';
+            const normalizedRole = userRole === 'user' ? 'customer' : userRole;
             const basicUser = {
               id: session.user.id,
               email: session.user.email || '',
-              role: 'property_owner',
+              role: normalizedRole,
               full_name: session.user.user_metadata?.full_name || '',
               avatar_url: session.user.user_metadata?.avatar_url || null,
               phone: session.user.user_metadata?.phone || null,
@@ -286,10 +288,12 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
           } catch (error) {
             console.error('❌ Error during initial profile sync:', error);
             // Set a basic user object even if profile sync fails
+            const userRole = session.user.user_metadata?.role || 'customer';
+            const normalizedRole = userRole === 'user' ? 'customer' : userRole;
             setUser({
               id: session.user.id,
               email: session.user.email || '',
-              role: 'property_owner',
+              role: normalizedRole,
               full_name: session.user.user_metadata?.full_name || '',
               avatar_url: session.user.user_metadata?.avatar_url || null,
               phone: session.user.user_metadata?.phone || null,
@@ -312,10 +316,12 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         // Ensure we always have a user state, even if authentication fails
         if (!user && session?.user) {
           console.log('🛡️ Setting fallback user state');
+          const userRole = session.user.user_metadata?.role || 'customer';
+          const normalizedRole = userRole === 'user' ? 'customer' : userRole;
           setUser({
             id: session.user.id,
             email: session.user.email || '',
-            role: 'property_owner',
+            role: normalizedRole,
             full_name: session.user.user_metadata?.full_name || '',
             avatar_url: session.user.user_metadata?.avatar_url || null,
             phone: session.user.user_metadata?.phone || null,
@@ -376,7 +382,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
           emailRedirectTo: redirectUrl,
           data: {
             full_name: `${data.firstName || ''} ${data.lastName || ''}`.trim(),
-            role: data.role || 'customer',
+            role: data.role === 'user' ? 'customer' : (data.role || 'customer'), // Normalize 'user' to 'customer'
             phone: data.phone || '',
             first_name: data.firstName || '',
             last_name: data.lastName || '',
