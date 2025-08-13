@@ -1353,9 +1353,22 @@ const Properties: React.FC = () => {
                     >
                       Book Now
                     </button>
-                    <button className="w-full border border-brand-red text-brand-red py-3 rounded-lg font-semibold hover:bg-brand-red hover:text-white transition-colors duration-200">
-                      <i className="fas fa-heart mr-2"></i>
-                      Add to Wishlist
+                    <button 
+                      className="w-full border border-brand-red text-brand-red py-3 rounded-lg font-semibold hover:bg-brand-red hover:text-white transition-colors duration-200"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        const propertyId = selectedProperty?.id;
+                        if (propertyId) {
+                          if (isPropertySaved(propertyId)) {
+                            removeFromWishlist(propertyId);
+                          } else {
+                            addToWishlist(propertyId);
+                          }
+                        }
+                      }}
+                    >
+                      <i className={`fas fa-heart mr-2 ${selectedProperty?.id && isPropertySaved(selectedProperty.id) ? 'text-brand-red' : ''}`}></i>
+                      {selectedProperty?.id && isPropertySaved(selectedProperty.id) ? 'Remove from Wishlist' : 'Add to Wishlist'}
                     </button>
                   </div>
                 </div>
