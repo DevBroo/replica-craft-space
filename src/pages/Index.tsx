@@ -3,7 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { useAuth } from '@/contexts/AuthContext';
 
-// Scroll animation hook
+// Enhanced scroll animation hook with fallback visibility
 const useScrollAnimation = () => {
   useEffect(() => {
     const observerOptions = {
@@ -19,10 +19,29 @@ const useScrollAnimation = () => {
       });
     }, observerOptions);
 
+    // Get all elements and ensure they're visible as fallback
     const elements = document.querySelectorAll('.fade-in-up, .fade-in');
-    elements.forEach(el => observer.observe(el));
+    elements.forEach(el => {
+      // Add fallback visibility immediately
+      const htmlElement = el as HTMLElement;
+      htmlElement.style.opacity = '1';
+      htmlElement.style.transform = 'translateY(0)';
+      observer.observe(el);
+    });
 
-    return () => observer.disconnect();
+    // Cleanup timeout for animations that don't trigger
+    const fallbackTimeout = setTimeout(() => {
+      elements.forEach(el => {
+        if (!el.classList.contains('animate')) {
+          el.classList.add('animate');
+        }
+      });
+    }, 1000);
+
+    return () => {
+      observer.disconnect();
+      clearTimeout(fallbackTimeout);
+    };
   }, []);
 };
 
@@ -597,9 +616,9 @@ Sign Up as Owner
 <div className="text-center mb-20 fade-in-up">
 <div className="inline-block">
 <span className="text-brand-orange font-bold text-lg mb-4 block uppercase tracking-wider">Handpicked Excellence</span>
-<h2 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-black text-gray-900 font-poppins mb-6 text-shadow">
-Top Picks for You
-</h2>
+                  <h2 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-black text-foreground font-poppins mb-6 text-shadow">
+                    Top Picks for You
+                  </h2>
 <div className="w-24 h-1 bg-gradient-to-r from-brand-red to-brand-orange mx-auto rounded-full"></div>
 </div>
 <p className="text-lg text-muted-foreground max-w-3xl mx-auto mt-6 leading-relaxed">
@@ -729,9 +748,9 @@ View All Categories
 <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative">
 <div className="text-center mb-20 fade-in-up">
 <span className="bg-gradient-to-r from-brand-red to-brand-orange bg-clip-text text-transparent font-bold text-lg mb-4 block uppercase tracking-wider">Premium Collection</span>
-<h2 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-black text-gray-900 font-poppins mb-6 text-shadow">
-Featured Properties
-</h2>
+                  <h2 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-black text-foreground font-poppins mb-6 text-shadow">
+                    Featured Properties
+                  </h2>
 <div className="w-24 h-1 bg-gradient-to-r from-brand-red to-brand-orange mx-auto rounded-full"></div>
 </div>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-10">

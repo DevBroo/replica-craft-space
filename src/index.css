@@ -9,27 +9,27 @@ All colors MUST be HSL.
 
 @layer base {
   :root {
-    /* Modern Admin Panel Color Palette */
-    --background: 240 10% 3.9%;
-    --foreground: 0 0% 98%;
-    --card: 240 10% 3.9%;
-    --card-foreground: 0 0% 98%;
-    --popover: 240 10% 3.9%;
-    --popover-foreground: 0 0% 98%;
+    /* Light Mode Color Palette */
+    --background: 0 0% 100%;
+    --foreground: 240 10% 3.9%;
+    --card: 0 0% 100%;
+    --card-foreground: 240 10% 3.9%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 240 10% 3.9%;
     
     /* Primary Gradient Colors - Modern Blue to Purple */
     --primary: 217 91% 60%;
-    --primary-foreground: 0 0% 98%;
+    --primary-foreground: 0 0% 100%;
     --primary-glow: 224 76% 48%;
-    --primary-dark: 229 84% 5%;
+    --primary-dark: 229 84% 20%;
     
     /* Secondary Modern Colors */
-    --secondary: 240 4% 16%;
-    --secondary-foreground: 0 0% 98%;
-    --muted: 240 5% 6%;
-    --muted-foreground: 240 5% 64.9%;
-    --accent: 240 4% 16%;
-    --accent-foreground: 0 0% 98%;
+    --secondary: 240 5% 96%;
+    --secondary-foreground: 240 10% 3.9%;
+    --muted: 240 5% 96%;
+    --muted-foreground: 240 3.8% 46.1%;
+    --accent: 240 5% 96%;
+    --accent-foreground: 240 10% 3.9%;
     
     /* Status Colors */
     --destructive: 0 84.2% 60.2%;
@@ -38,9 +38,9 @@ All colors MUST be HSL.
     --warning: 38 92% 50%;
     --info: 199 89% 48%;
     
-    /* Borders and Inputs */
-    --border: 240 4% 16%;
-    --input: 240 4% 16%;
+    /* Light Mode Borders */
+    --border: 240 5.9% 90%;
+    --input: 240 5.9% 90%;
     --ring: 217 91% 60%;
     --radius: 0.75rem;
     
@@ -51,14 +51,14 @@ All colors MUST be HSL.
     --chart-4: 271 91% 65%;
     --chart-5: 0 84% 60%;
 
-    /* Modern Sidebar */
-    --sidebar-background: 240 10% 3.9%;
-    --sidebar-foreground: 0 0% 98%;
+    /* Light Mode Sidebar */
+    --sidebar-background: 0 0% 100%;
+    --sidebar-foreground: 240 10% 3.9%;
     --sidebar-primary: 217 91% 60%;
-    --sidebar-primary-foreground: 0 0% 98%;
-    --sidebar-accent: 240 4% 16%;
-    --sidebar-accent-foreground: 0 0% 98%;
-    --sidebar-border: 240 4% 16%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 240 5% 96%;
+    --sidebar-accent-foreground: 240 10% 3.9%;
+    --sidebar-border: 240 5.9% 90%;
     --sidebar-ring: 217 91% 60%;
 
     /* Brand colors */
@@ -79,27 +79,27 @@ All colors MUST be HSL.
   }
 
   .dark {
-    /* Light Mode for Admin Panel */
-    --background: 0 0% 100%;
-    --foreground: 240 10% 3.9%;
-    --card: 0 0% 100%;
-    --card-foreground: 240 10% 3.9%;
-    --popover: 0 0% 100%;
-    --popover-foreground: 240 10% 3.9%;
+    /* Dark Mode Color Palette */
+    --background: 240 10% 3.9%;
+    --foreground: 0 0% 98%;
+    --card: 240 10% 3.9%;
+    --card-foreground: 0 0% 98%;
+    --popover: 240 10% 3.9%;
+    --popover-foreground: 0 0% 98%;
     
-    /* Primary Colors in Light Mode */
+    /* Primary Colors in Dark Mode */
     --primary: 217 91% 60%;
-    --primary-foreground: 0 0% 100%;
+    --primary-foreground: 0 0% 98%;
     --primary-glow: 224 76% 48%;
-    --primary-dark: 229 84% 20%;
+    --primary-dark: 229 84% 5%;
     
-    /* Light Mode Secondary Colors */
-    --secondary: 240 5% 96%;
-    --secondary-foreground: 240 10% 3.9%;
-    --muted: 240 5% 96%;
-    --muted-foreground: 240 3.8% 46.1%;
-    --accent: 240 5% 96%;
-    --accent-foreground: 240 10% 3.9%;
+    /* Dark Mode Secondary Colors */
+    --secondary: 240 4% 16%;
+    --secondary-foreground: 0 0% 98%;
+    --muted: 240 5% 6%;
+    --muted-foreground: 240 5% 64.9%;
+    --accent: 240 4% 16%;
+    --accent-foreground: 0 0% 98%;
     
     /* Status Colors in Light Mode */
     --destructive: 0 84.2% 60.2%;
@@ -108,26 +108,26 @@ All colors MUST be HSL.
     --warning: 38 92% 50%;
     --info: 199 89% 48%;
     
-    /* Light Mode Borders */
-    --border: 240 5.9% 90%;
-    --input: 240 5.9% 90%;
+    /* Dark Mode Borders */
+    --border: 240 4% 16%;
+    --input: 240 4% 16%;
     --ring: 217 91% 60%;
     
-    /* Light Mode Charts */
+    /* Dark Mode Charts */
     --chart-1: 217 91% 60%;
     --chart-2: 142 76% 36%;
     --chart-3: 38 92% 50%;
     --chart-4: 271 91% 65%;
     --chart-5: 0 84% 60%;
 
-    /* Light Mode Sidebar */
-    --sidebar-background: 0 0% 100%;
-    --sidebar-foreground: 240 10% 3.9%;
+    /* Dark Mode Sidebar */
+    --sidebar-background: 240 10% 3.9%;
+    --sidebar-foreground: 0 0% 98%;
     --sidebar-primary: 217 91% 60%;
-    --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 240 5% 96%;
-    --sidebar-accent-foreground: 240 10% 3.9%;
-    --sidebar-border: 240 5.9% 90%;
+    --sidebar-primary-foreground: 0 0% 98%;
+    --sidebar-accent: 240 4% 16%;
+    --sidebar-accent-foreground: 0 0% 98%;
+    --sidebar-border: 240 4% 16%;
     --sidebar-ring: 217 91% 60%;
     
     /* Light Mode Gradients */
