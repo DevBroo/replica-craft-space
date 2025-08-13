@@ -155,7 +155,7 @@ export const adminService = {
             properties_count: propertiesCount || 0,
             status: 'active' as const,
             is_active: true
-          };
+          } as PropertyOwner;
 
           console.log('✅ Created owner data:', ownerData);
           return ownerData;

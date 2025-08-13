@@ -55,7 +55,7 @@ const AdminDashboard: React.FC = () => {
       const ownersData = await adminService.getPropertyOwners();
       console.log('✅ Property owners loaded:', ownersData);
 
-      // Load all properties
+      // Load all properties using adminService
       const { data: propertiesData, error: propertiesError } = await adminService.adminSupabase
         .from('properties')
         .select('*');
@@ -177,7 +177,7 @@ const AdminDashboard: React.FC = () => {
   };
 
   const filteredOwners = owners.filter(owner =>
-    owner.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    owner.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
     (owner.full_name && owner.full_name.toLowerCase().includes(searchTerm.toLowerCase()))
   );
 
@@ -368,7 +368,7 @@ const AdminDashboard: React.FC = () => {
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                         {owner.properties_count} properties
                       </td>
-                       <td className="px-6 py-4 whitespace-nowrap">
+                      <td className="px-6 py-4 whitespace-nowrap">
                         <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
                           owner.is_active === true
                             ? 'bg-green-100 text-green-800' 
