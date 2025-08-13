@@ -29,6 +29,11 @@ import BookingAssistance from "./pages/BookingAssistance";
 import HostResources from "./pages/HostResources";
 import TrustSafety from "./pages/TrustSafety";
 
+// New unified host routes
+import HostSignup from "./pages/HostSignup";
+import HostLogin from "./pages/HostLogin";
+import HostDashboard from "./pages/HostDashboard";
+
 // Admin Panel Imports
 import ProtectedRoute from "./components/admin/ProtectedRoute";
 import SuperAdminDashboard from "./pages/admin/SuperAdminDashboard";
@@ -90,20 +95,19 @@ const App = () => (
           <Route path="/host-resources" element={<HostResources />} />
           <Route path="/trust-safety" element={<TrustSafety />} />
           
-          {/* Property Owner Portal Routes */}
-          <Route path="/owner" element={<OwnerDashboard />} />
-          <Route path="/owner/login" element={<OwnerLogin />} />
-          <Route path="/owner/signup" element={<Signup />} />
-          <Route path="/owner/dashboard" element={<OwnerDashboard />} />
-          <Route path="/owner/view" element={<OwnerDashboardView />} />
+          {/* New unified host routes */}
+          <Route path="/host/signup" element={<HostSignup />} />
+          <Route path="/host/login" element={<HostLogin />} />
+          <Route path="/host/dashboard" element={<HostDashboard />} />
           
-          {/* Agent Portal Routes */}
-          <Route path="/agent" element={<AgentDashboard />} />
-          <Route path="/agent/login" element={<AgentLogin />} />
-          <Route path="/agent/signup" element={<AgentSignup />} />
-          <Route path="/agent/dashboard" element={<AgentDashboard />} />
-          <Route path="/agent/add-property" element={<AddProperty />} />
-          <Route path="/agent/test" element={<TestAgentLogin />} />
+          {/* Legacy redirects for backward compatibility */}
+          <Route path="/owner/login" element={<Navigate to="/host/login" replace />} />
+          <Route path="/owner/signup" element={<Navigate to="/host/signup" replace />} />
+          <Route path="/owner/dashboard" element={<Navigate to="/host/dashboard" replace />} />
+          <Route path="/owner/view" element={<Navigate to="/host/dashboard" replace />} />
+          <Route path="/agent/login" element={<Navigate to="/host/login" replace />} />
+          <Route path="/agent/signup" element={<Navigate to="/host/signup" replace />} />
+          <Route path="/agent/dashboard" element={<Navigate to="/host/dashboard" replace />} />
           
           {/* Admin Panel Routes */}
           <Route path="/admin/login" element={<AdminLoginPage />} />

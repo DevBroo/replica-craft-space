@@ -29,7 +29,7 @@ const Signup: React.FC = () => {
   const [phone, setPhone] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
-  const [role, setRole] = useState<'customer' | 'owner' | 'agent'>('customer');
+  const [role, setRole] = useState<'customer'>('customer');
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [agreeToTerms, setAgreeToTerms] = useState(false);
@@ -42,9 +42,8 @@ const Signup: React.FC = () => {
       case 'admin':
         return '/admin/dashboard';
       case 'owner':
-        return '/owner/dashboard';
       case 'agent':
-        return '/agent/dashboard';
+        return '/host/dashboard';
       case 'customer':
         return '/';
       default:
@@ -64,8 +63,7 @@ const Signup: React.FC = () => {
         if (isAuthenticated && user) {
           // User is authenticated, redirect to dashboard
           const userRole = user.role || role;
-          const dashboardPath = userRole === 'owner' ? '/owner/dashboard' : 
-                               userRole === 'agent' ? '/agent/dashboard' : '/';
+          const dashboardPath = (userRole === 'owner' || userRole === 'agent') ? '/host/dashboard' : '/';
           
           console.log('🚀 Redirecting to dashboard:', dashboardPath, 'for role:', userRole);
           navigate(dashboardPath, { 
@@ -77,8 +75,7 @@ const Signup: React.FC = () => {
           });
         } else {
           // User needs email verification, redirect to login
-          const loginPath = role === 'owner' ? '/owner/login' : 
-                           role === 'agent' ? '/agent/login' : '/login';
+          const loginPath = '/login';
           
           console.log('🚀 Redirecting to login:', loginPath, 'for role:', role);
           navigate(loginPath, { 
@@ -123,32 +120,11 @@ const Signup: React.FC = () => {
     }
   }, [loading, error, signupSuccess, hasAttemptedRegistration, isAuthenticated, user]);
 
-  // Pre-select role from URL params or path
+  // Set role to customer (this component is only for customer signup now)
   useEffect(() => {
-    const urlParams = new URLSearchParams(location.search);
-    const roleParam = urlParams.get('role') as 'customer' | 'owner' | 'agent';
-    
-    console.log('🔄 Role selection check:', { 
-      pathname: location.pathname, 
-      roleParam, 
-      currentRole: role 
-    });
-    
-    // Check if we're on the owner signup path
-    if (location.pathname === '/owner/signup') {
-      console.log('✅ Setting role to owner (from path)');
-      setRole('owner');
-    } else if (roleParam && ['customer', 'owner', 'agent'].includes(roleParam)) {
-      console.log('✅ Setting role to', roleParam, '(from URL param)');
-      setRole(roleParam);
-    } else if (location.pathname === '/agent/signup') {
-      console.log('✅ Setting role to agent (from path)');
-      setRole('agent');
-    } else if (location.pathname === '/signup') {
-      console.log('✅ Setting role to customer (default)');
-      setRole('customer');
-    }
-  }, [location.search, location.pathname]);
+    console.log('✅ Setting role to customer (customer signup only)');
+    setRole('customer');
+  }, []);
 
   // Debug component mount and reset registration state
   useEffect(() => {
@@ -166,20 +142,16 @@ const Signup: React.FC = () => {
       console.log('🔄 User already authenticated, checking role and redirecting');
       console.log('🔍 User details:', { email: user.email, role: user.role });
       
-      // If user is already an owner and we're on owner signup, redirect to dashboard
-      if (user.role === 'owner' && location.pathname === '/owner/signup') {
-        console.log('✅ User is already owner, redirecting to dashboard');
-        navigate('/owner/dashboard', { replace: true });
-        return;
+      // Redirect to appropriate dashboard based on role
+      if (user.role === 'owner' || user.role === 'agent') {
+        navigate('/host/dashboard', { replace: true });
+      } else if (user.role === 'customer') {
+        navigate('/', { replace: true });
+      } else {
+        navigate('/', { replace: true });
       }
-      
-      // If user has a different role, redirect to appropriate dashboard
-      const dashboardPath = user.role === 'owner' ? '/owner/dashboard' : 
-                           user.role === 'agent' ? '/agent/dashboard' : '/';
-      console.log('🔄 Redirecting to:', dashboardPath);
-      navigate(dashboardPath, { replace: true });
     }
-  }, [isAuthenticated, user, loading, navigate, location.pathname]);
+  }, [isAuthenticated, user, loading, navigate]);
 
   const validateForm = () => {
     const newErrors: { [key: string]: string } = {};
@@ -236,9 +208,7 @@ const Signup: React.FC = () => {
       console.log('⚠️ User already authenticated, checking if role change is needed');
       if (user.role === role) {
         console.log('✅ User already has the correct role, redirecting to dashboard');
-        const dashboardPath = user.role === 'owner' ? '/owner/dashboard' : 
-                             user.role === 'agent' ? '/agent/dashboard' : '/';
-        navigate(dashboardPath, { replace: true });
+        navigate('/', { replace: true });
         return;
       } else {
         console.log('🔄 User role mismatch, proceeding with registration for new role');
@@ -288,12 +258,10 @@ const Signup: React.FC = () => {
             className="h-12 mx-auto mb-4" 
           />
           <h1 className="text-2xl font-bold text-gray-900">
-            {location.pathname === '/owner/signup' ? 'Create Property Owner Account' : 'Create Your Account'}
+            Create Customer Account
           </h1>
           <p className="text-gray-600 mt-2">
-            {location.pathname === '/owner/signup' 
-              ? 'Join Picnify as a property owner and start listing your properties' 
-              : 'Join Picnify and start your journey'}
+            Join Picnify and start your journey
           </p>
         </div>
 
@@ -301,7 +269,7 @@ const Signup: React.FC = () => {
         <Card className="shadow-lg">
           <CardHeader className="pb-4">
             <CardTitle className="text-center">
-              {location.pathname === '/owner/signup' ? 'Property Owner Sign Up' : 'Sign Up'}
+              Customer Sign Up
             </CardTitle>
           </CardHeader>
           <CardContent>
@@ -359,7 +327,7 @@ const Signup: React.FC = () => {
                           </p>
                           <ol className="list-decimal list-inside space-y-1 mt-1">
                             <li>You're automatically logged in and ready to go!</li>
-                            <li>{location.pathname === '/owner/signup' ? 'Start listing your properties!' : 'Start exploring amazing properties!'}</li>
+                            <li>Start exploring amazing properties!</li>
                           </ol>
                           <p className="mt-2 text-blue-600">
                             Redirecting to dashboard in 3 seconds...
@@ -374,7 +342,7 @@ const Signup: React.FC = () => {
                           <ol className="list-decimal list-inside space-y-1 mt-1">
                             <li>Check your email and click the verification link</li>
                             <li>Once verified, you can log in to your account</li>
-                            <li>{location.pathname === '/owner/signup' ? 'Start listing your properties!' : 'Start exploring amazing properties!'}</li>
+                            <li>Start exploring amazing properties!</li>
                           </ol>
                           <p className="mt-2 text-blue-600">
                             Redirecting to login page in 3 seconds...
@@ -471,20 +439,6 @@ const Signup: React.FC = () => {
                 )}
               </div>
 
-              {/* Role Selection */}
-              <div className="space-y-2">
-                <Label htmlFor="role">Account Type</Label>
-                <Select value={role} onValueChange={(value: 'customer' | 'owner' | 'agent') => setRole(value)}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select your account type" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="customer">Customer - Book properties</SelectItem>
-                    <SelectItem value="owner">Property Owner - List your properties</SelectItem>
-                    <SelectItem value="agent">Travel Agent - Manage bookings</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
 
               {/* Password Fields */}
               <div className="space-y-2">
