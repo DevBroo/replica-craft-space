@@ -105,7 +105,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
           return {
             id: data.id,
             email: data.email || '',
-            role: data.role === 'user' ? 'customer' : (data.role || 'customer'), // Normalize 'user' to 'customer'
+            role: data.role === 'user' ? 'customer' : data.role === 'property_owner' ? 'owner' : (data.role || 'customer'), // Normalize 'user' to 'customer' and 'property_owner' to 'owner'
             full_name: data.full_name,
             avatar_url: data.avatar_url,
             phone: data.phone,
