@@ -148,8 +148,7 @@ const PropertyApproval: React.FC = () => {
 
   const handleStatusUpdate = async (propertyId: string, newStatus: 'approved' | 'rejected') => {
     try {
-      const propertyService = new PropertyService();
-      await propertyService.updatePropertyStatus(propertyId, newStatus);
+      await PropertyService.updatePropertyStatus(propertyId, newStatus);
       toast.success(`Property ${newStatus} successfully`);
       fetchProperties(); // Refresh the list
     } catch (error) {
@@ -162,8 +161,7 @@ const PropertyApproval: React.FC = () => {
     if (!confirm('Are you sure you want to delete this property?')) return;
     
     try {
-      const propertyService = new PropertyService();
-      await propertyService.deleteProperty(propertyId);
+      await PropertyService.deleteProperty(propertyId);
       toast.success('Property deleted successfully');
       fetchProperties(); // Refresh the list
     } catch (error) {
@@ -176,22 +174,20 @@ const PropertyApproval: React.FC = () => {
     if (selectedProperties.length === 0) return;
     
     try {
-      const propertyService = new PropertyService();
-      
       if (action === 'approve') {
         await Promise.all(
-          selectedProperties.map(id => propertyService.updatePropertyStatus(id, 'approved'))
+          selectedProperties.map(id => PropertyService.updatePropertyStatus(id, 'approved'))
         );
         toast.success(`${selectedProperties.length} properties approved`);
       } else if (action === 'reject') {
         await Promise.all(
-          selectedProperties.map(id => propertyService.updatePropertyStatus(id, 'rejected'))
+          selectedProperties.map(id => PropertyService.updatePropertyStatus(id, 'rejected'))
         );
         toast.success(`${selectedProperties.length} properties rejected`);
       } else if (action === 'delete') {
         if (!confirm(`Are you sure you want to delete ${selectedProperties.length} properties?`)) return;
         await Promise.all(
-          selectedProperties.map(id => propertyService.deleteProperty(id))
+          selectedProperties.map(id => PropertyService.deleteProperty(id))
         );
         toast.success(`${selectedProperties.length} properties deleted`);
       }
@@ -325,195 +321,196 @@ const PropertyApproval: React.FC = () => {
                           className="rounded border-gray-300 text-blue-600 focus:ring-blue-500 cursor-pointer"
                         />
                       </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100">
-                      <div className="flex items-center space-x-1">
-                        <span>Property ID</span>
-                        <ArrowUpDown className="w-3 h-3 text-gray-400" />
-                      </div>
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100">
-                      <div className="flex items-center space-x-1">
-                        <span>Property Name</span>
-                        <ArrowUpDown className="w-3 h-3 text-gray-400" />
-                      </div>
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Owner Details
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100">
-                      <div className="flex items-center space-x-1">
-                        <span>Submission Date</span>
-                        <ArrowUpDown className="w-3 h-3 text-gray-400" />
-                      </div>
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Property Type
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Location
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Status
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Actions
-                    </th>
-                  </tr>
-                </thead>
-                <tbody className="bg-white divide-y divide-gray-200">
-                  {paginatedProperties.length > 0 ? paginatedProperties.map((property) => (
-                    <tr key={property.id} className="hover:bg-gray-50">
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <input
-                          type="checkbox"
-                          checked={selectedProperties.includes(property.id)}
-                          onChange={(e) => handleSelectProperty(property.id, e.target.checked)}
-                          className="rounded border-gray-300 text-blue-600 focus:ring-blue-500 cursor-pointer"
-                        />
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                        {property.id.slice(0, 8)}...
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="flex items-center">
-                          <div className="w-10 h-10 bg-blue-500 rounded-lg flex items-center justify-center mr-3">
-                            <Home className="w-5 h-5 text-white" />
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100">
+                        <div className="flex items-center space-x-1">
+                          <span>Property ID</span>
+                          <ArrowUpDown className="w-3 h-3 text-gray-400" />
+                        </div>
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100">
+                        <div className="flex items-center space-x-1">
+                          <span>Property Name</span>
+                          <ArrowUpDown className="w-3 h-3 text-gray-400" />
+                        </div>
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Owner Details
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100">
+                        <div className="flex items-center space-x-1">
+                          <span>Submission Date</span>
+                          <ArrowUpDown className="w-3 h-3 text-gray-400" />
+                        </div>
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Property Type
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Location
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Status
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Actions
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody className="bg-white divide-y divide-gray-200">
+                    {paginatedProperties.length > 0 ? paginatedProperties.map((property) => (
+                      <tr key={property.id} className="hover:bg-gray-50">
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <input
+                            type="checkbox"
+                            checked={selectedProperties.includes(property.id)}
+                            onChange={(e) => handleSelectProperty(property.id, e.target.checked)}
+                            className="rounded border-gray-300 text-blue-600 focus:ring-blue-500 cursor-pointer"
+                          />
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                          {property.id.slice(0, 8)}...
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <div className="flex items-center">
+                            <div className="w-10 h-10 bg-blue-500 rounded-lg flex items-center justify-center mr-3">
+                              <Home className="w-5 h-5 text-white" />
+                            </div>
+                            <div>
+                              <div className="text-sm font-medium text-gray-900">{property.title}</div>
+                              <div className="text-sm text-gray-500">{property.property_type}</div>
+                            </div>
                           </div>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                           <div>
-                            <div className="text-sm font-medium text-gray-900">{property.title}</div>
-                            <div className="text-sm text-gray-500">{property.property_type}</div>
+                            <div className="font-medium">{property.owner?.full_name || 'Unknown'}</div>
+                            <div className="text-gray-500">{property.owner?.email || 'No email'}</div>
+                            <div className="text-gray-500">{property.owner?.phone || 'No phone'}</div>
                           </div>
-                        </div>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                        <div>
-                          <div className="font-medium">{property.owner?.full_name || 'Unknown'}</div>
-                          <div className="text-gray-500">{property.owner?.email || 'No email'}</div>
-                          <div className="text-gray-500">{property.owner?.phone || 'No phone'}</div>
-                        </div>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                        {new Date(property.created_at).toLocaleDateString('en-US', {
-                          month: 'short',
-                          day: 'numeric',
-                          year: 'numeric'
-                        })}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                        {property.property_type}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                        <div className="flex items-center">
-                          <MapPin className="w-4 h-4 text-gray-400 mr-1" />
-                          {property.address}
-                        </div>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <span className={`px-2 py-1 text-xs font-medium rounded-full ${getStatusColor(property.status)}`}>
-                          {formatStatus(property.status)}
-                        </span>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                        <div className="flex space-x-2">
-                          <button className="text-blue-600 hover:text-blue-800 cursor-pointer p-1" title="View Details">
-                            <Eye className="w-4 h-4" />
-                          </button>
-                          {property.status === 'pending' && (
-                            <>
-                              <button 
-                                onClick={() => handleStatusUpdate(property.id, 'approved')}
-                                className="text-green-600 hover:text-green-800 cursor-pointer p-1" 
-                                title="Approve"
-                              >
-                                <CheckCircle className="w-4 h-4" />
-                              </button>
-                              <button 
-                                onClick={() => handleStatusUpdate(property.id, 'rejected')}
-                                className="text-red-600 hover:text-red-800 cursor-pointer p-1" 
-                                title="Reject"
-                              >
-                                <XCircle className="w-4 h-4" />
-                              </button>
-                            </>
-                          )}
-                          <button className="text-gray-600 hover:text-gray-800 cursor-pointer p-1" title="Edit">
-                            <Edit className="w-4 h-4" />
-                          </button>
-                          <button 
-                            onClick={() => handleDeleteProperty(property.id)}
-                            className="text-red-600 hover:text-red-800 cursor-pointer p-1" 
-                            title="Delete"
-                          >
-                            <Trash2 className="w-4 h-4" />
-                          </button>
-                        </div>
-                      </td>
-                    </tr>
-                  )) : (
-                    <tr>
-                      <td colSpan={9} className="px-6 py-12 text-center text-gray-500">
-                        No properties found
-                      </td>
-                    </tr>
-                  )}
-                </tbody>
-              </table>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                          {new Date(property.created_at).toLocaleDateString('en-US', {
+                            month: 'short',
+                            day: 'numeric',
+                            year: 'numeric'
+                          })}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                          {property.property_type}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                          <div className="flex items-center">
+                            <MapPin className="w-4 h-4 text-gray-400 mr-1" />
+                            {property.address}
+                          </div>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <span className={`px-2 py-1 text-xs font-medium rounded-full ${getStatusColor(property.status)}`}>
+                            {formatStatus(property.status)}
+                          </span>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                          <div className="flex space-x-2">
+                            <button className="text-blue-600 hover:text-blue-800 cursor-pointer p-1" title="View Details">
+                              <Eye className="w-4 h-4" />
+                            </button>
+                            {property.status === 'pending' && (
+                              <>
+                                <button 
+                                  onClick={() => handleStatusUpdate(property.id, 'approved')}
+                                  className="text-green-600 hover:text-green-800 cursor-pointer p-1" 
+                                  title="Approve"
+                                >
+                                  <CheckCircle className="w-4 h-4" />
+                                </button>
+                                <button 
+                                  onClick={() => handleStatusUpdate(property.id, 'rejected')}
+                                  className="text-red-600 hover:text-red-800 cursor-pointer p-1" 
+                                  title="Reject"
+                                >
+                                  <XCircle className="w-4 h-4" />
+                                </button>
+                              </>
+                            )}
+                            <button className="text-gray-600 hover:text-gray-800 cursor-pointer p-1" title="Edit">
+                              <Edit className="w-4 h-4" />
+                            </button>
+                            <button 
+                              onClick={() => handleDeleteProperty(property.id)}
+                              className="text-red-600 hover:text-red-800 cursor-pointer p-1" 
+                              title="Delete"
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    )) : (
+                      <tr>
+                        <td colSpan={9} className="px-6 py-12 text-center text-gray-500">
+                          No properties found
+                        </td>
+                      </tr>
+                    )}
+                  </tbody>
+                </table>
               </div>
 
               {/* Pagination */}
-            <div className="bg-white px-6 py-3 border-t border-gray-200 flex items-center justify-between">
-              <div className="flex items-center space-x-2">
-                <span className="text-sm text-gray-700">Show</span>
-                <select
-                  value={rowsPerPage}
-                  onChange={(e) => {
-                    setRowsPerPage(Number(e.target.value));
-                    setCurrentPage(1);
-                  }}
-                  className="border border-gray-300 rounded px-2 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 cursor-pointer"
-                >
-                  <option value={10}>10</option>
-                  <option value={25}>25</option>
-                  <option value={50}>50</option>
-                </select>
-                <span className="text-sm text-gray-700">entries</span>
-              </div>
-              <div className="flex items-center space-x-2">
-                <span className="text-sm text-gray-700">
-                  Showing {((currentPage - 1) * rowsPerPage) + 1} to {Math.min(currentPage * rowsPerPage, filteredProperties.length)} of {filteredProperties.length} entries
-                </span>
-                <div className="flex space-x-1">
-                  <button
-                    onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
-                    disabled={currentPage === 1}
-                    className="px-3 py-1 border border-gray-300 rounded text-sm hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+              <div className="bg-white px-6 py-3 border-t border-gray-200 flex items-center justify-between">
+                <div className="flex items-center space-x-2">
+                  <span className="text-sm text-gray-700">Show</span>
+                  <select
+                    value={rowsPerPage}
+                    onChange={(e) => {
+                      setRowsPerPage(Number(e.target.value));
+                      setCurrentPage(1);
+                    }}
+                    className="border border-gray-300 rounded px-2 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 cursor-pointer"
                   >
-                    Previous
-                  </button>
-                  {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
+                    <option value={10}>10</option>
+                    <option value={25}>25</option>
+                    <option value={50}>50</option>
+                  </select>
+                  <span className="text-sm text-gray-700">entries</span>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <span className="text-sm text-gray-700">
+                    Showing {((currentPage - 1) * rowsPerPage) + 1} to {Math.min(currentPage * rowsPerPage, filteredProperties.length)} of {filteredProperties.length} entries
+                  </span>
+                  <div className="flex space-x-1">
                     <button
-                      key={page}
-                      onClick={() => setCurrentPage(page)}
-                      className={`px-3 py-1 border rounded text-sm cursor-pointer ${
-                        currentPage === page
-                          ? 'bg-blue-600 text-white border-blue-600'
-                          : 'border-gray-300 hover:bg-gray-50'
-                      }`}
+                      onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
+                      disabled={currentPage === 1}
+                      className="px-3 py-1 border border-gray-300 rounded text-sm hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
                     >
-                      {page}
+                      Previous
                     </button>
-                  ))}
-                  <button
-                    onClick={() => setCurrentPage(Math.min(totalPages, currentPage + 1))}
-                    disabled={currentPage === totalPages}
-                    className="px-3 py-1 border border-gray-300 rounded text-sm hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
-                  >
-                    Next
-                  </button>
+                    {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
+                      <button
+                        key={page}
+                        onClick={() => setCurrentPage(page)}
+                        className={`px-3 py-1 border rounded text-sm cursor-pointer ${
+                          currentPage === page
+                            ? 'bg-blue-600 text-white border-blue-600'
+                            : 'border-gray-300 hover:bg-gray-50'
+                        }`}
+                      >
+                        {page}
+                      </button>
+                    ))}
+                    <button
+                      onClick={() => setCurrentPage(Math.min(totalPages, currentPage + 1))}
+                      disabled={currentPage === totalPages}
+                      className="px-3 py-1 border border-gray-300 rounded text-sm hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+                    >
+                      Next
+                    </button>
+                  </div>
                 </div>
               </div>
             </div>
-          </div>
+          )}
         </main>
       </div>
     </div>
