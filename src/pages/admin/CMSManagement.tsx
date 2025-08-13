@@ -35,7 +35,7 @@ import SharedHeader from '../../components/admin/SharedHeader';
 const CMSManagement: React.FC = () => {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [activeTab, setActiveTab] = useState('cms');
-  const [activeSection, setActiveSection] = useState('pages');
+  const [activeSection, setActiveSection] = useState('banners');
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
   const [currentPage, setCurrentPage] = useState(1);
@@ -47,184 +47,6 @@ const CMSManagement: React.FC = () => {
   const [selectedItem, setSelectedItem] = useState<any>(null);
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('list');
 
-  const pagesData = [
-    {
-      id: 'PG001',
-      title: 'Home Page',
-      slug: '/home',
-      status: 'Published',
-      author: 'Admin User',
-      lastModified: '2025-07-25',
-      views: 12500,
-      template: 'home-template',
-      seoTitle: 'Picnify - Premium Property Rentals',
-      metaDescription: 'Discover luxury vacation rentals and premium properties for your perfect getaway'
-    },
-    {
-      id: 'PG002',
-      title: 'About Us',
-      slug: '/about',
-      status: 'Published',
-      author: 'Content Manager',
-      lastModified: '2025-07-20',
-      views: 3200,
-      template: 'page-template',
-      seoTitle: 'About Picnify - Your Trusted Property Partner',
-      metaDescription: 'Learn about our mission to provide exceptional property rental experiences'
-    },
-    {
-      id: 'PG003',
-      title: 'Contact Us',
-      slug: '/contact',
-      status: 'Draft',
-      author: 'Admin User',
-      lastModified: '2025-07-28',
-      views: 0,
-      template: 'contact-template',
-      seoTitle: 'Contact Picnify - Get in Touch',
-      metaDescription: 'Contact our team for inquiries about property rentals and bookings'
-    },
-    {
-      id: 'PG004',
-      title: 'Privacy Policy',
-      slug: '/privacy',
-      status: 'Published',
-      author: 'Legal Team',
-      lastModified: '2025-07-15',
-      views: 1800,
-      template: 'legal-template',
-      seoTitle: 'Privacy Policy - Picnify',
-      metaDescription: 'Read our privacy policy and data protection practices'
-    },
-    {
-      id: 'PG005',
-      title: 'Terms of Service',
-      slug: '/terms',
-      status: 'Published',
-      author: 'Legal Team',
-      lastModified: '2025-07-15',
-      views: 1200,
-      template: 'legal-template',
-      seoTitle: 'Terms of Service - Picnify',
-      metaDescription: 'Review our terms of service and user agreement'
-    }
-  ];
-
-  const blogPostsData = [
-    {
-      id: 'BP001',
-      title: 'Top 10 Vacation Destinations for 2025',
-      slug: '/blog/top-vacation-destinations-2025',
-      status: 'Published',
-      author: 'Travel Writer',
-      publishDate: '2025-07-20',
-      lastModified: '2025-07-22',
-      views: 8500,
-      category: 'Travel Tips',
-      tags: ['vacation', 'travel', 'destinations'],
-      featured: true,
-      excerpt: 'Discover the most sought-after vacation destinations for the upcoming year',
-      thumbnail: 'https://readdy.ai/api/search-image?query=beautiful%20tropical%20vacation%20destination%20with%20crystal%20clear%20water%20and%20pristine%20beaches%20professional%20travel%20photography&width=300&height=200&seq=blog-thumb-001&orientation=landscape'
-    },
-    {
-      id: 'BP002',
-      title: 'How to Choose the Perfect Rental Property',
-      slug: '/blog/choose-perfect-rental-property',
-      status: 'Published',
-      author: 'Property Expert',
-      publishDate: '2025-07-18',
-      lastModified: '2025-07-19',
-      views: 6200,
-      category: 'Property Guide',
-      tags: ['rental', 'property', 'guide'],
-      featured: false,
-      excerpt: 'Essential tips for selecting the ideal rental property for your needs',
-      thumbnail: 'https://readdy.ai/api/search-image?query=modern%20luxury%20rental%20property%20interior%20with%20elegant%20furnishing%20and%20natural%20lighting%20professional%20real%20estate%20photography&width=300&height=200&seq=blog-thumb-002&orientation=landscape'
-    },
-    {
-      id: 'BP003',
-      title: 'Sustainable Travel: Eco-Friendly Accommodations',
-      slug: '/blog/sustainable-travel-eco-friendly',
-      status: 'Draft',
-      author: 'Sustainability Writer',
-      publishDate: '',
-      lastModified: '2025-07-28',
-      views: 0,
-      category: 'Sustainability',
-      tags: ['eco-friendly', 'sustainable', 'green'],
-      featured: false,
-      excerpt: 'Explore environmentally conscious accommodation options for responsible travelers',
-      thumbnail: 'https://readdy.ai/api/search-image?query=eco-friendly%20sustainable%20accommodation%20with%20green%20architecture%20and%20natural%20materials%20professional%20architectural%20photography&width=300&height=200&seq=blog-thumb-003&orientation=landscape'
-    },
-    {
-      id: 'BP004',
-      title: 'Local Experiences: Hidden Gems in Popular Cities',
-      slug: '/blog/local-experiences-hidden-gems',
-      status: 'Published',
-      author: 'Local Guide',
-      publishDate: '2025-07-15',
-      lastModified: '2025-07-16',
-      views: 4800,
-      category: 'Local Guide',
-      tags: ['local', 'experiences', 'culture'],
-      featured: true,
-      excerpt: 'Uncover authentic local experiences beyond the typical tourist attractions',
-      thumbnail: 'https://readdy.ai/api/search-image?query=authentic%20local%20cultural%20experience%20with%20traditional%20architecture%20and%20vibrant%20street%20scene%20professional%20travel%20photography&width=300&height=200&seq=blog-thumb-004&orientation=landscape'
-    }
-  ];
-
-  const mediaData = [
-    {
-      id: 'MD001',
-      name: 'hero-banner-home.jpg',
-      type: 'image',
-      size: '2.4 MB',
-      dimensions: '1920x1080',
-      uploadDate: '2025-07-25',
-      usedIn: ['Home Page', 'Landing Page'],
-      url: 'https://readdy.ai/api/search-image?query=luxury%20property%20hero%20banner%20with%20modern%20villa%20and%20stunning%20landscape%20professional%20real%20estate%20photography&width=400&height=300&seq=media-001&orientation=landscape'
-    },
-    {
-      id: 'MD002',
-      name: 'property-gallery-01.jpg',
-      type: 'image',
-      size: '1.8 MB',
-      dimensions: '1200x800',
-      uploadDate: '2025-07-24',
-      usedIn: ['Property Listings'],
-      url: 'https://readdy.ai/api/search-image?query=modern%20luxury%20property%20interior%20with%20elegant%20living%20room%20and%20premium%20furnishing%20professional%20real%20estate%20photography&width=400&height=300&seq=media-002&orientation=landscape'
-    },
-    {
-      id: 'MD003',
-      name: 'about-us-team.jpg',
-      type: 'image',
-      size: '1.2 MB',
-      dimensions: '800x600',
-      uploadDate: '2025-07-20',
-      usedIn: ['About Page'],
-      url: 'https://readdy.ai/api/search-image?query=professional%20business%20team%20in%20modern%20office%20environment%20with%20diverse%20group%20corporate%20photography&width=400&height=300&seq=media-003&orientation=landscape'
-    },
-    {
-      id: 'MD004',
-      name: 'promo-video.mp4',
-      type: 'video',
-      size: '45.2 MB',
-      dimensions: '1920x1080',
-      uploadDate: '2025-07-18',
-      usedIn: ['Home Page', 'Marketing'],
-      url: 'https://readdy.ai/api/search-image?query=video%20thumbnail%20with%20play%20button%20overlay%20showing%20luxury%20property%20marketing%20content%20professional%20style&width=400&height=300&seq=media-004&orientation=landscape'
-    },
-    {
-      id: 'MD005',
-      name: 'blog-featured-image.jpg',
-      type: 'image',
-      size: '900 KB',
-      dimensions: '1000x667',
-      uploadDate: '2025-07-15',
-      usedIn: ['Blog Posts'],
-      url: 'https://readdy.ai/api/search-image?query=featured%20blog%20image%20with%20travel%20and%20vacation%20theme%20showing%20beautiful%20destination%20professional%20travel%20photography&width=400&height=300&seq=media-005&orientation=landscape'
-    }
-  ];
 
   const homepageBannersData = [
     {
@@ -345,48 +167,6 @@ const CMSManagement: React.FC = () => {
     }
   ];
 
-  const settingsData = [
-    {
-      id: 'ST001',
-      category: 'General',
-      setting: 'Site Title',
-      value: 'Picnify - Premium Property Rentals',
-      type: 'text',
-      description: 'Main title displayed in browser tab and search results'
-    },
-    {
-      id: 'ST002',
-      category: 'General',
-      setting: 'Site Description',
-      value: 'Discover luxury vacation rentals and premium properties',
-      type: 'textarea',
-      description: 'Brief description of your website for SEO purposes'
-    },
-    {
-      id: 'ST003',
-      category: 'Contact',
-      setting: 'Contact Email',
-      value: 'info@picnify.com',
-      type: 'email',
-      description: 'Primary contact email for customer inquiries'
-    },
-    {
-      id: 'ST004',
-      category: 'Social Media',
-      setting: 'Facebook URL',
-      value: 'https://facebook.com/picnify',
-      type: 'url',
-      description: 'Link to your Facebook business page'
-    },
-    {
-      id: 'ST005',
-      category: 'SEO',
-      setting: 'Google Analytics ID',
-      value: 'GA-XXXXXXXXX',
-      type: 'text',
-      description: 'Google Analytics tracking ID for website analytics'
-    }
-  ];
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -400,28 +180,16 @@ const CMSManagement: React.FC = () => {
 
   const getCurrentData = () => {
     switch (activeSection) {
-      case 'pages': return pagesData;
-      case 'blog': return blogPostsData;
-      case 'media': return mediaData;
       case 'banners': return homepageBannersData;
       case 'legal': return legalContentData;
-      case 'settings': return settingsData;
-      default: return pagesData;
+      default: return homepageBannersData;
     }
   };
 
   const filteredData = getCurrentData().filter((item: any) => {
-    const searchFields = activeSection === 'pages'
-      ? [item.title, item.slug, item.author]
-      : activeSection === 'blog'
-      ? [item.title, item.slug, item.author, item.category]
-      : activeSection === 'media'
-      ? [item.name, item.type]
-      : activeSection === 'banners'
+    const searchFields = activeSection === 'banners'
       ? [item.title, item.subtitle, item.position, item.displayLocation]
-      : activeSection === 'legal'
-      ? [item.title, item.type, item.author]
-      : [item.setting, item.value, item.category];
+      : [item.title, item.type, item.author];
 
     const matchesSearch = searchFields.some((field: string) =>
       field?.toLowerCase().includes(searchTerm.toLowerCase())
@@ -654,110 +422,19 @@ const CMSManagement: React.FC = () => {
     </div>
   );
 
-  const renderPagesTable = () => (
-    <div className="overflow-x-auto">
-      <table className="w-full">
-        <thead className="bg-gray-50">
-          <tr>
-            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-              <input
-                type="checkbox"
-                checked={selectedItems.length === paginatedData.length && paginatedData.length > 0}
-                onChange={(e) => handleSelectAll(e.target.checked)}
-                className="rounded border-gray-300 text-blue-600 focus:ring-blue-500 cursor-pointer"
-              />
-            </th>
-            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Title</th>
-            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Slug</th>
-            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
-            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Author</th>
-            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Last Modified</th>
-            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Views</th>
-            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
-          </tr>
-        </thead>
-        <tbody className="bg-white divide-y divide-gray-200">
-          {paginatedData.map((page: any) => (
-            <tr key={page.id} className="hover:bg-gray-50">
-              <td className="px-6 py-4 whitespace-nowrap">
-                <input
-                  type="checkbox"
-                  checked={selectedItems.includes(page.id)}
-                  onChange={(e) => handleSelectItem(page.id, e.target.checked)}
-                  className="rounded border-gray-300 text-blue-600 focus:ring-blue-500 cursor-pointer"
-                />
-              </td>
-              <td className="px-6 py-4 whitespace-nowrap">
-                <div>
-                  <div className="text-sm font-medium text-gray-900">{page.title}</div>
-                  <div className="text-sm text-gray-500">{page.template}</div>
-                </div>
-              </td>
-              <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 font-mono">
-                {page.slug}
-              </td>
-              <td className="px-6 py-4 whitespace-nowrap">
-                <span className={`px-2 py-1 text-xs font-medium rounded-full ${getStatusColor(page.status)}`}>
-                  {page.status}
-                </span>
-              </td>
-              <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                {page.author}
-              </td>
-              <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                {new Date(page.lastModified).toLocaleDateString('en-US', {
-                  month: 'short',
-                  day: 'numeric',
-                  year: 'numeric'
-                })}
-              </td>
-              <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                {page.views.toLocaleString()}
-              </td>
-              <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                <div className="flex space-x-2">
-                  <button
-                    onClick={() => handleEdit(page)}
-                    className="text-blue-600 hover:text-blue-800 cursor-pointer p-1"
-                    title="Edit Page"
-                  >
-                    <Edit className="w-4 h-4" />
-                  </button>
-                  <button className="text-green-600 hover:text-green-800 cursor-pointer p-1" title="View Page">
-                    <Eye className="w-4 h-4" />
-                  </button>
-                  <button className="text-red-600 hover:text-red-800 cursor-pointer p-1" title="Delete">
-                    <Trash2 className="w-4 h-4" />
-                  </button>
-                </div>
-              </td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
-    </div>
-  );
 
   const renderCurrentTable = () => {
     switch (activeSection) {
-      case 'pages': return renderPagesTable();
-      case 'blog': return renderPagesTable(); // Reuse for blog posts
-      case 'media': return renderPagesTable(); // Reuse for media
       case 'banners': return renderBannersTable();
       case 'legal': return renderLegalTable();
-      case 'settings': return renderPagesTable(); // Reuse for settings
-      default: return renderPagesTable();
+      default: return renderBannersTable();
     }
   };
 
   const getCreateButtonText = () => {
     switch (activeSection) {
-      case 'pages': return 'Create New Page';
-      case 'blog': return 'Create New Post';
-      case 'media': return 'Upload Media';
       case 'banners': return 'Create New Banner';
       case 'legal': return 'Create New Document';
-      case 'settings': return 'Add Setting';
       default: return 'Create New';
     }
   };
@@ -780,30 +457,14 @@ const CMSManagement: React.FC = () => {
         <div className="bg-white border-b">
           <div className="px-6">
             <Tabs value={activeSection} onValueChange={setActiveSection}>
-              <TabsList className="grid w-full grid-cols-6">
-                <TabsTrigger value="pages" className="flex items-center gap-2">
-                  <FileText className="w-4 h-4" />
-                  Pages
-                </TabsTrigger>
-                <TabsTrigger value="blog" className="flex items-center gap-2">
-                  <BookOpen className="w-4 h-4" />
-                  Blog
-                </TabsTrigger>
-                <TabsTrigger value="media" className="flex items-center gap-2">
-                  <Image className="w-4 h-4" />
-                  Media
-                </TabsTrigger>
+              <TabsList className="grid w-full grid-cols-2">
                 <TabsTrigger value="banners" className="flex items-center gap-2">
                   <Monitor className="w-4 h-4" />
-                  Banners
+                  Homepage Banners
                 </TabsTrigger>
                 <TabsTrigger value="legal" className="flex items-center gap-2">
                   <Shield className="w-4 h-4" />
-                  Legal
-                </TabsTrigger>
-                <TabsTrigger value="settings" className="flex items-center gap-2">
-                  <Cog className="w-4 h-4" />
-                  Settings
+                  Terms, FAQs & Policies
                 </TabsTrigger>
               </TabsList>
             </Tabs>
@@ -871,7 +532,7 @@ const CMSManagement: React.FC = () => {
             <div className="relative">
               <input
                 type="text"
-                placeholder="Search pages..."
+                placeholder="Search content..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 className="pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm w-64"
