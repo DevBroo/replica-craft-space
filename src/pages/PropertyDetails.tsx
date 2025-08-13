@@ -270,7 +270,7 @@ const PropertyDetails = () => {
       });
       
       // Navigate to customer dashboard to see the booking
-      navigate('/customer-dashboard');
+      navigate('/customer/dashboard');
       
     } catch (error: any) {
       console.error('❌ Error creating booking:', error);
