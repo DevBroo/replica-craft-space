@@ -34,41 +34,87 @@ const BookingComPropertyForm: React.FC<BookingComPropertyFormProps> = ({
   const [currentStep, setCurrentStep] = useState(1);
   const [isLoading, setIsLoading] = useState(false);
 
+  // Parse complex description to extract embedded data
+  const parseDescription = (description: string) => {
+    const extracted = {
+      contactPhone: '',
+      arrivalInstructions: '',
+      mealPlans: [],
+      licenseNumber: '',
+      cleanDescription: description
+    };
+
+    // Extract contact phone
+    const phoneMatch = description.match(/Contact:\s*([^\n]+)/);
+    if (phoneMatch) {
+      extracted.contactPhone = phoneMatch[1].trim();
+      extracted.cleanDescription = extracted.cleanDescription.replace(/\*\*Property Details:\*\*[\s\S]*?(?=\n\n|$)/, '');
+    }
+
+    // Extract arrival instructions
+    const arrivalMatch = description.match(/\*\*Arrival Instructions:\*\*\s*\n([^*]+?)(?=\n\*\*|$)/);
+    if (arrivalMatch) {
+      extracted.arrivalInstructions = arrivalMatch[1].trim();
+    }
+
+    // Extract meal plans
+    const mealMatch = description.match(/\*\*Meal Plans:\*\*\s*([^\n]+)/);
+    if (mealMatch) {
+      extracted.mealPlans = mealMatch[1].split(',').map(plan => plan.trim()).filter(Boolean);
+    }
+
+    // Extract license number
+    const licenseMatch = description.match(/\*\*License:\*\*\s*([^\n]+)/);
+    if (licenseMatch) {
+      extracted.licenseNumber = licenseMatch[1].trim();
+    }
+
+    // Clean up description by removing all metadata sections
+    extracted.cleanDescription = extracted.cleanDescription
+      .replace(/\*\*Property Details:\*\*[\s\S]*?(?=\n\n|$)/, '')
+      .replace(/\*\*Arrival Instructions:\*\*[\s\S]*?(?=\n\n|$)/, '')
+      .replace(/\*\*Meal Plans:\*\*[^\n]*\n?/, '')
+      .replace(/\*\*License:\*\*[^\n]*\n?/, '')
+      .trim();
+
+    return extracted;
+  };
+
   const [formData, setFormData] = useState({
     // Basic Information
-    title: editingProperty?.title || '',
-    description: editingProperty?.description || '',
-    property_type: editingProperty?.property_type || '',
-    property_subtype: editingProperty?.property_subtype || '',
-    license_number: editingProperty?.license_number || '',
+    title: '',
+    description: '',
+    property_type: '',
+    property_subtype: '',
+    license_number: '',
     
     // Location & Address
-    address: editingProperty?.address || '',
-    country: editingProperty?.country || 'India',
-    postal_code: editingProperty?.postal_code || '',
-    coordinates: editingProperty?.coordinates || { lat: '', lng: '' },
+    address: '',
+    country: 'India',
+    postal_code: '',
+    coordinates: { lat: '', lng: '' },
     
     // Room & Capacity Details
-    max_guests: editingProperty?.max_guests || '',
-    bedrooms: editingProperty?.bedrooms || '',
-    bathrooms: editingProperty?.bathrooms || '',
-    bed_configuration: editingProperty?.bed_configuration || { beds: [] as BedConfig[] },
+    max_guests: '',
+    bedrooms: '',
+    bathrooms: '',
+    bed_configuration: { beds: [] as BedConfig[] },
     
     // Amenities & Facilities (Comprehensive categories)
-    amenities: editingProperty?.amenities || [],
+    amenities: [],
     
     // Booking & Payment
-    check_in_time: editingProperty?.check_in_time || '15:00',
-    check_out_time: editingProperty?.check_out_time || '11:00',
-    minimum_stay: editingProperty?.minimum_stay || 1,
-    cancellation_policy: editingProperty?.cancellation_policy || 'moderate',
-    payment_methods: editingProperty?.payment_methods || ['card', 'cash'],
+    check_in_time: '15:00',
+    check_out_time: '11:00',
+    minimum_stay: 1,
+    cancellation_policy: 'moderate',
+    payment_methods: ['card', 'cash'],
     
     // Pricing Structure
-    pricing: editingProperty?.pricing || { daily_rate: '', currency: 'INR' },
+    pricing: { daily_rate: '', currency: 'INR' },
     
     // House Rules & Policies
-    house_rules: editingProperty?.house_rules || {
+    house_rules: {
       smoking: 'not_allowed',
       pets: 'not_allowed',
       parties: 'not_allowed',
@@ -76,16 +122,72 @@ const BookingComPropertyForm: React.FC<BookingComPropertyFormProps> = ({
     },
     
     // Services & Extras
-    meal_plans: editingProperty?.meal_plans || [],
+    meal_plans: [],
     
     // Business Information
-    contact_phone: editingProperty?.contact_phone || '',
-    arrival_instructions: editingProperty?.arrival_instructions || '',
-    tax_information: editingProperty?.tax_information || {},
+    contact_phone: '',
+    arrival_instructions: '',
+    tax_information: {},
     
     // Images
-    images: editingProperty?.images || []
+    images: []
   });
+
+  // Initialize form data when editing
+  React.useEffect(() => {
+    if (isEdit && editingProperty) {
+      console.log('📝 Initializing form for editing:', editingProperty);
+      
+      // Parse description to extract embedded data
+      const parsedDesc = parseDescription(editingProperty.description || '');
+      
+      setFormData({
+        title: editingProperty.name || '',
+        description: parsedDesc.cleanDescription,
+        property_type: editingProperty.type || '',
+        property_subtype: editingProperty.subtype || '',
+        license_number: parsedDesc.licenseNumber || editingProperty.license_number || '',
+        
+        address: editingProperty.location || editingProperty.address || '',
+        country: editingProperty.country || 'India',
+        postal_code: editingProperty.zip_code || editingProperty.postal_code || '',
+        coordinates: { lat: editingProperty.latitude?.toString() || '', lng: editingProperty.longitude?.toString() || '' },
+        
+        max_guests: editingProperty.capacity?.toString() || editingProperty.max_guests?.toString() || '',
+        bedrooms: editingProperty.bedrooms?.toString() || '',
+        bathrooms: editingProperty.bathrooms?.toString() || '',
+        bed_configuration: editingProperty.bed_configuration || { beds: [] },
+        
+        amenities: Array.isArray(editingProperty.amenities) ? editingProperty.amenities : [],
+        
+        check_in_time: editingProperty.check_in_time || '15:00',
+        check_out_time: editingProperty.check_out_time || '11:00',
+        minimum_stay: editingProperty.minimum_stay || 1,
+        cancellation_policy: editingProperty.cancellation_policy || 'moderate',
+        payment_methods: Array.isArray(editingProperty.payment_methods) ? editingProperty.payment_methods : ['card', 'cash'],
+        
+        pricing: { 
+          daily_rate: editingProperty.price?.toString() || editingProperty.pricing?.daily_rate?.toString() || '', 
+          currency: editingProperty.pricing?.currency || 'INR' 
+        },
+        
+        house_rules: editingProperty.house_rules || {
+          smoking: 'not_allowed',
+          pets: 'not_allowed', 
+          parties: 'not_allowed',
+          quiet_hours: { start: '22:00', end: '08:00' }
+        },
+        
+        meal_plans: parsedDesc.mealPlans.length > 0 ? parsedDesc.mealPlans : (Array.isArray(editingProperty.meal_plans) ? editingProperty.meal_plans : []),
+        
+        contact_phone: parsedDesc.contactPhone || editingProperty.contact_phone || '',
+        arrival_instructions: parsedDesc.arrivalInstructions || editingProperty.arrival_instructions || '',
+        tax_information: editingProperty.tax_information || {},
+        
+        images: Array.isArray(editingProperty.images) ? editingProperty.images : []
+      });
+    }
+  }, [isEdit, editingProperty]);
 
   // Enhanced property types with subcategories (similar to Booking.com)
   const propertyTypes = {
@@ -929,6 +1031,91 @@ ${formData.license_number ? `**License:** ${formData.license_number}` : ''}`;
         return (
           <div className="space-y-6">
             <div>
+              <h3 className="text-lg font-medium mb-4">Property Images</h3>
+              <p className="text-sm text-muted-foreground mb-4">
+                Add high-quality images to showcase your property (up to 10 images)
+              </p>
+              
+              {/* Current Images Display */}
+              {formData.images.length > 0 && (
+                <div className="mb-4">
+                  <h4 className="text-sm font-medium mb-2">Current Images ({formData.images.length}/10)</h4>
+                  <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                    {formData.images.map((imageUrl, index) => (
+                      <div key={index} className="relative group">
+                        <img
+                          src={imageUrl}
+                          alt={`Property image ${index + 1}`}
+                          className="w-full h-32 object-cover rounded-lg border"
+                          onError={(e) => {
+                            e.currentTarget.src = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAwIiBoZWlnaHQ9IjEyOCIgdmlld0JveD0iMCAwIDIwMCAxMjgiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+CjxyZWN0IHdpZHRoPSIyMDAiIGhlaWdodD0iMTI4IiBmaWxsPSIjRjNGNEY2Ii8+Cjx0ZXh0IHg9IjEwMCIgeT0iNjQiIGZvbnQtZmFtaWx5PSJBcmlhbCIgZm9udC1zaXplPSIxNCIgZmlsbD0iIzlDQTNBRiIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZHk9Ii4zZW0iPkltYWdlIE5vdCBGb3VuZDwvdGV4dD4KICA8L3N2Zz4K';
+                          }}
+                        />
+                        <button
+                          type="button"
+                          onClick={() => {
+                            const newImages = formData.images.filter((_, i) => i !== index);
+                            handleInputChange('images', newImages);
+                          }}
+                          className="absolute top-2 right-2 bg-red-500 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity"
+                        >
+                          <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                            <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
+                          </svg>
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Add New Image URL */}
+              {formData.images.length < 10 && (
+                <div className="space-y-4">
+                  <div>
+                    <Label htmlFor="newImageUrl">Add Image URL</Label>
+                    <div className="flex gap-2">
+                      <input
+                        id="newImageUrl"
+                        type="url"
+                        placeholder="https://example.com/image.jpg"
+                        className="flex-1 p-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                        onKeyPress={(e) => {
+                          if (e.key === 'Enter') {
+                            e.preventDefault();
+                            const input = e.target as HTMLInputElement;
+                            const url = input.value.trim();
+                            if (url && formData.images.length < 10) {
+                              handleInputChange('images', [...formData.images, url]);
+                              input.value = '';
+                            }
+                          }
+                        }}
+                      />
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          const input = (e.target as HTMLButtonElement).previousElementSibling as HTMLInputElement;
+                          const url = input.value.trim();
+                          if (url && formData.images.length < 10) {
+                            handleInputChange('images', [...formData.images, url]);
+                            input.value = '';
+                          }
+                        }}
+                        className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:ring-2 focus:ring-blue-500"
+                      >
+                        Add
+                      </button>
+                    </div>
+                    <p className="text-sm text-muted-foreground mt-1">
+                      Press Enter or click Add to include the image
+                    </p>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            <div>
               <Label className="text-lg font-semibold">Contact & Instructions</Label>
             </div>
 
@@ -985,6 +1172,12 @@ ${formData.license_number ? `**License:** ${formData.license_number}` : ''}`;
                   <span className="text-sm text-muted-foreground">Amenities:</span>
                   <span className="text-sm font-medium">{formData.amenities.length} selected</span>
                 </div>
+                {formData.images.length > 0 && (
+                  <div className="flex justify-between">
+                    <span className="text-sm text-muted-foreground">Images:</span>
+                    <span className="text-sm font-medium">{formData.images.length} image(s)</span>
+                  </div>
+                )}
               </div>
             </div>
           </div>
