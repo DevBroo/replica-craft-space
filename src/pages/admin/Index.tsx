@@ -1,7 +1,7 @@
-import LoginPage from "./LoginPage";
+import ModernAdminDashboard from './ModernAdminDashboard';
 
 const Index = () => {
-  return <LoginPage />;
+  return <ModernAdminDashboard />;
 };
 
 export default Index;

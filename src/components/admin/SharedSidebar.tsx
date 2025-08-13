@@ -43,25 +43,24 @@ const SharedSidebar: React.FC<SharedSidebarProps> = ({ sidebarCollapsed, setSide
   const isActive = (path: string) => location.pathname === path;
 
   return (
-    <div className={`fixed left-0 top-0 h-full bg-white shadow-lg transition-all duration-300 z-40 ${sidebarCollapsed ? 'w-16' : 'w-64'}`}>
-      <div className="flex items-center justify-between p-4 border-b">
+    <div className={`fixed left-0 top-0 h-full sidebar-modern transition-all duration-300 z-40 ${sidebarCollapsed ? 'w-16' : 'w-64'}`}>
+      <div className="flex items-center justify-between p-4 border-b border-sidebar-border">
         {!sidebarCollapsed && (
           <div className="flex items-center space-x-2">
-            <img
-              src="/lovable-uploads/7777450f-e840-48c6-999b-89029812533f.png"
-              alt="Picnify Logo"
-              className="h-8 w-auto"
-            />
+            <div className="w-8 h-8 bg-gradient-to-r from-primary to-primary-glow rounded-lg flex items-center justify-center">
+              <span className="text-sm font-bold text-primary-foreground">P</span>
+            </div>
+            <span className="font-bold text-sidebar-foreground">Picnify Admin</span>
           </div>
         )}
         <button
           onClick={toggleSidebar}
-          className="p-2 rounded-lg hover:bg-gray-100 cursor-pointer"
+          className="p-2 rounded-lg hover:bg-sidebar-accent transition-colors cursor-pointer"
         >
-          <Menu className="w-5 h-5 text-gray-600" />
+          <Menu className="w-5 h-5 text-sidebar-foreground" />
         </button>
       </div>
-      <nav className="mt-4">
+      <nav className="mt-4 space-y-1 px-2">
         {menuItems.map((item) => {
           const IconComponent = item.icon;
           const active = isActive(item.path);
@@ -70,18 +69,35 @@ const SharedSidebar: React.FC<SharedSidebarProps> = ({ sidebarCollapsed, setSide
             <button
               key={item.id}
               onClick={() => navigate(item.path)}
-              className={`w-full flex items-center px-4 py-3 text-left hover:bg-blue-50 transition-colors cursor-pointer ${
-                active ? 'bg-blue-50 border-r-2 border-blue-600 text-blue-600' : 'text-gray-600'
+              className={`w-full flex items-center px-3 py-3 rounded-lg text-left transition-all duration-200 cursor-pointer group ${
+                active 
+                  ? 'bg-sidebar-primary text-sidebar-primary-foreground shadow-lg hover-glow' 
+                  : 'text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground'
               }`}
             >
-              <IconComponent className="w-5 h-5" />
+              <IconComponent className={`w-5 h-5 transition-colors ${active ? 'text-sidebar-primary-foreground' : ''}`} />
               {!sidebarCollapsed && (
-                <span className="ml-3">{item.label}</span>
+                <span className="ml-3 font-medium">{item.label}</span>
+              )}
+              {!sidebarCollapsed && active && (
+                <div className="ml-auto w-1.5 h-1.5 bg-sidebar-primary-foreground rounded-full" />
               )}
             </button>
           );
         })}
       </nav>
+      
+      {/* Modern Footer */}
+      {!sidebarCollapsed && (
+        <div className="absolute bottom-4 left-4 right-4">
+          <div className="glass-card p-3 rounded-lg">
+            <div className="text-xs text-sidebar-foreground/70 text-center">
+              <div className="font-medium">Admin Panel v2.0</div>
+              <div className="opacity-60">Modern & Powerful</div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
