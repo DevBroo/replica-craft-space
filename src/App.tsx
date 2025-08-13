@@ -18,6 +18,14 @@ import ForgotPassword from "./pages/ForgotPassword";
 import ResendVerification from "./pages/ResendVerification";
 import ResetPassword from "./pages/ResetPassword";
 import NotFound from "./pages/NotFound";
+import HowItWorks from "./pages/HowItWorks";
+import SafetyGuidelines from "./pages/SafetyGuidelines";
+import PrivacyPolicy from "./pages/PrivacyPolicy";
+import TermsOfService from "./pages/TermsOfService";
+import HelpCenter from "./pages/HelpCenter";
+import BookingAssistance from "./pages/BookingAssistance";
+import HostResources from "./pages/HostResources";
+import TrustSafety from "./pages/TrustSafety";
 
 // Admin Panel Imports
 import ProtectedRoute from "./components/admin/ProtectedRoute";
@@ -69,6 +77,14 @@ const App = () => (
           <Route path="/forgot-password" element={<ForgotPassword />} />
           <Route path="/resend-verification" element={<ResendVerification />} />
           <Route path="/reset-password" element={<ResetPassword />} />
+          <Route path="/how-it-works" element={<HowItWorks />} />
+          <Route path="/safety-guidelines" element={<SafetyGuidelines />} />
+          <Route path="/privacy-policy" element={<PrivacyPolicy />} />
+          <Route path="/terms-of-service" element={<TermsOfService />} />
+          <Route path="/help-center" element={<HelpCenter />} />
+          <Route path="/booking-assistance" element={<BookingAssistance />} />
+          <Route path="/host-resources" element={<HostResources />} />
+          <Route path="/trust-safety" element={<TrustSafety />} />
           
           {/* Property Owner Portal Routes */}
           <Route path="/owner" element={<OwnerDashboard />} />
