@@ -185,6 +185,32 @@ const PropertyDetails = () => {
       return;
     }
 
+    // Check if user role allows booking (only customers can book)
+    if (user.role !== 'customer') {
+      let dashboardPath = '/';
+      let message = "You are not authorized to book properties.";
+      
+      if (user.role === 'owner') {
+        dashboardPath = '/host/dashboard';
+        message = "As a property owner, please use your dashboard to manage your properties.";
+      } else if (user.role === 'agent') {
+        dashboardPath = '/host/dashboard';
+        message = "As an agent, please use your dashboard to manage bookings and properties.";
+      } else if (user.role === 'admin') {
+        dashboardPath = '/admin/dashboard';
+        message = "As an admin, please use your dashboard to manage the platform.";
+      }
+      
+      toast({
+        title: "Booking Restricted",
+        description: message,
+        variant: "default",
+      });
+      
+      navigate(dashboardPath);
+      return;
+    }
+
     // Validate dates
     if (!checkInDate || !checkOutDate) {
       toast({

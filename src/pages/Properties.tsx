@@ -530,8 +530,40 @@ const Properties: React.FC = () => {
   const totalPages = Math.ceil(properties.length / propertiesPerPage);
   const currentProperties = properties.slice((currentPage - 1) * propertiesPerPage, currentPage * propertiesPerPage);
 
-  // Modal handlers
+  // Modal handlers with role-based access
   const handleViewProperty = (property: any) => {
+    // Check user role before navigation/modal
+    if (user && user.role !== 'customer') {
+      // Redirect non-customers to their dashboard
+      let dashboardPath = '/';
+      let message = "Please use your dashboard.";
+      
+      if (user.role === 'owner') {
+        dashboardPath = '/host/dashboard';
+        message = "As a property owner, please use your dashboard to manage your properties.";
+      } else if (user.role === 'agent') {
+        dashboardPath = '/host/dashboard';
+        message = "As an agent, please use your dashboard to manage bookings and properties.";
+      } else if (user.role === 'admin') {
+        dashboardPath = '/admin/dashboard';
+        message = "As an admin, please use your dashboard to manage the platform.";
+      }
+      
+      // Use native toast method to show notification
+      const event = new CustomEvent('showToast', {
+        detail: {
+          title: "Access Restricted",
+          description: message,
+          variant: "default"
+        }
+      });
+      window.dispatchEvent(event);
+      
+      navigate(dashboardPath);
+      return;
+    }
+
+    // For customers and unauthenticated users, show property modal
     console.log('🔍 Opening property details modal:', {
       propertyId: property.id,
       hasRawData: !!property.rawData,
@@ -870,8 +902,8 @@ const Properties: React.FC = () => {
                         {/* Action Buttons */}
                         <div className="property-card-actions flex gap-3 mt-auto">
                           <button onClick={() => handleViewProperty(property)} className="flex-1 bg-gradient-to-r from-brand-red to-brand-orange text-white py-3 rounded-lg font-semibold hover:scale-105 transition-transform duration-200 flex items-center justify-center gap-2 backdrop-blur-sm">
-                            <i className="fas fa-eye"></i>
-                            View Details
+                            <i className={`fas ${!user || user.role === 'customer' ? 'fa-eye' : 'fa-tachometer-alt'}`}></i>
+                            {!user || user.role === 'customer' ? 'View Details' : 'Go to Dashboard'}
                           </button>
                           <button 
                             className="px-4 py-3 border border-brand-red/30 text-brand-red rounded-lg font-semibold hover:bg-brand-red hover:text-white transition-colors duration-200 backdrop-blur-sm"
