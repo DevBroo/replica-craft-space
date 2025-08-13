@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   Plus,
   Check,
@@ -13,10 +13,29 @@ import {
   ChevronDown,
   Search,
   Home,
-  Edit
+  Edit,
+  Loader2
 } from 'lucide-react';
 import SharedSidebar from '../../components/admin/SharedSidebar';
 import SharedHeader from '../../components/admin/SharedHeader';
+import { PropertyService } from '../../lib/propertyService';
+import { supabase } from '../../integrations/supabase/client';
+import { toast } from 'sonner';
+
+interface PropertyWithOwner {
+  id: string;
+  title: string;
+  address: string;
+  property_type: string;
+  status: string;
+  created_at: string;
+  owner_id: string;
+  owner?: {
+    full_name: string;
+    email: string;
+    phone: string;
+  };
+}
 
 const PropertyApproval: React.FC = () => {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
@@ -28,80 +47,81 @@ const PropertyApproval: React.FC = () => {
   const [rowsPerPage, setRowsPerPage] = useState(10);
   const [selectedProperties, setSelectedProperties] = useState<string[]>([]);
   const [showBulkActions, setShowBulkActions] = useState(false);
+  const [properties, setProperties] = useState<PropertyWithOwner[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-  const propertiesData = [
-    {
-      id: 'PROP001',
-      name: 'Shanti Villa Paradise',
-      owner: {
-        name: 'Rajesh Patel',
-        email: 'rajesh.patel@email.com',
-        phone: '+91 9876543210'
-      },
-      submissionDate: '2025-07-20',
-      propertyType: 'Villa',
-      location: 'Ahmedabad, Gujarat',
-      status: 'Pending',
-      description: 'Beautiful luxury villa with modern amenities'
-    },
-    {
-      id: 'PROP002',
-      name: 'Sagar Heights Complex',
-      owner: {
-        name: 'Priya Shah',
-        email: 'priya.shah@email.com',
-        phone: '+91 9876543211'
-      },
-      submissionDate: '2025-07-18',
-      propertyType: 'Apartment',
-      location: 'Surat, Gujarat',
-      status: 'Approved',
-      description: 'Contemporary apartment with city views'
-    },
-    {
-      id: 'PROP003',
-      name: 'Krishna Studio Homes',
-      owner: {
-        name: 'Amit Mehta',
-        email: 'amit.mehta@email.com',
-        phone: '+91 9876543212'
-      },
-      submissionDate: '2025-07-15',
-      propertyType: 'Studio',
-      location: 'Vadodara, Gujarat',
-      status: 'Rejected',
-      description: 'Compact studio perfect for professionals'
-    },
-    {
-      id: 'PROP004',
-      name: 'Gokul Garden Homes',
-      owner: {
-        name: 'Neha Desai',
-        email: 'neha.desai@email.com',
-        phone: '+91 9876543213'
-      },
-      submissionDate: '2025-07-22',
-      propertyType: 'Cottage',
-      location: 'Rajkot, Gujarat',
-      status: 'Pending',
-      description: 'Charming cottage with garden views'
+  useEffect(() => {
+    fetchProperties();
+  }, []);
+
+  const fetchProperties = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      
+      const { data: propertiesData, error: propertiesError } = await supabase
+        .from('properties')
+        .select(`
+          id,
+          title,
+          address,
+          property_type,
+          status,
+          created_at,
+          owner_id
+        `)
+        .order('created_at', { ascending: false });
+
+      if (propertiesError) throw propertiesError;
+
+      // Fetch owner details for each property
+      const propertiesWithOwners = await Promise.all(
+        (propertiesData || []).map(async (property) => {
+          const { data: owner, error: ownerError } = await supabase
+            .from('profiles')
+            .select('full_name, email, phone')
+            .eq('id', property.owner_id)
+            .single();
+
+          return {
+            ...property,
+            owner: ownerError ? null : owner
+          };
+        })
+      );
+
+      setProperties(propertiesWithOwners);
+    } catch (err) {
+      console.error('Error fetching properties:', err);
+      setError('Failed to load properties');
+    } finally {
+      setLoading(false);
     }
-  ];
+  };
 
   const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'Approved': return 'bg-green-100 text-green-800';
-      case 'Pending': return 'bg-yellow-100 text-yellow-800';
-      case 'Rejected': return 'bg-red-100 text-red-800';
+    switch (status?.toLowerCase()) {
+      case 'approved': return 'bg-green-100 text-green-800';
+      case 'pending': return 'bg-yellow-100 text-yellow-800';
+      case 'rejected': return 'bg-red-100 text-red-800';
       default: return 'bg-gray-100 text-gray-800';
     }
   };
 
-  const filteredProperties = propertiesData.filter(property => {
-    const matchesSearch = property.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      property.owner.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+  const formatStatus = (status: string) => {
+    return status.charAt(0).toUpperCase() + status.slice(1).toLowerCase();
+  };
+
+  const filteredProperties = properties.filter(property => {
+    const ownerName = property.owner?.full_name || '';
+    const ownerEmail = property.owner?.email || '';
+    const matchesSearch = 
+      property.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      ownerName.toLowerCase().includes(searchTerm.toLowerCase()) ||
       property.id.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      property.location.toLowerCase().includes(searchTerm.toLowerCase());
+      property.address.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      ownerEmail.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesStatus = statusFilter === 'all' || property.status.toLowerCase() === statusFilter.toLowerCase();
     return matchesSearch && matchesStatus;
   });
@@ -126,10 +146,63 @@ const PropertyApproval: React.FC = () => {
     }
   };
 
-  const handleBulkAction = (action: string) => {
-    console.log(`Bulk ${action} for properties:`, selectedProperties);
-    setSelectedProperties([]);
-    setShowBulkActions(false);
+  const handleStatusUpdate = async (propertyId: string, newStatus: 'approved' | 'rejected') => {
+    try {
+      const propertyService = new PropertyService();
+      await propertyService.updatePropertyStatus(propertyId, newStatus);
+      toast.success(`Property ${newStatus} successfully`);
+      fetchProperties(); // Refresh the list
+    } catch (error) {
+      console.error(`Error ${newStatus} property:`, error);
+      toast.error(`Failed to ${newStatus} property`);
+    }
+  };
+
+  const handleDeleteProperty = async (propertyId: string) => {
+    if (!confirm('Are you sure you want to delete this property?')) return;
+    
+    try {
+      const propertyService = new PropertyService();
+      await propertyService.deleteProperty(propertyId);
+      toast.success('Property deleted successfully');
+      fetchProperties(); // Refresh the list
+    } catch (error) {
+      console.error('Error deleting property:', error);
+      toast.error('Failed to delete property');
+    }
+  };
+
+  const handleBulkAction = async (action: string) => {
+    if (selectedProperties.length === 0) return;
+    
+    try {
+      const propertyService = new PropertyService();
+      
+      if (action === 'approve') {
+        await Promise.all(
+          selectedProperties.map(id => propertyService.updatePropertyStatus(id, 'approved'))
+        );
+        toast.success(`${selectedProperties.length} properties approved`);
+      } else if (action === 'reject') {
+        await Promise.all(
+          selectedProperties.map(id => propertyService.updatePropertyStatus(id, 'rejected'))
+        );
+        toast.success(`${selectedProperties.length} properties rejected`);
+      } else if (action === 'delete') {
+        if (!confirm(`Are you sure you want to delete ${selectedProperties.length} properties?`)) return;
+        await Promise.all(
+          selectedProperties.map(id => propertyService.deleteProperty(id))
+        );
+        toast.success(`${selectedProperties.length} properties deleted`);
+      }
+      
+      setSelectedProperties([]);
+      setShowBulkActions(false);
+      fetchProperties(); // Refresh the list
+    } catch (error) {
+      console.error(`Error performing bulk ${action}:`, error);
+      toast.error(`Failed to ${action} properties`);
+    }
   };
 
   return (
@@ -223,19 +296,35 @@ const PropertyApproval: React.FC = () => {
 
         {/* Property Table */}
         <main className="p-6">
-          <div className="bg-white rounded-lg shadow-sm border">
-            <div className="overflow-x-auto">
-              <table className="w-full">
-                <thead className="bg-gray-50">
-                  <tr>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      <input
-                        type="checkbox"
-                        checked={selectedProperties.length === paginatedProperties.length && paginatedProperties.length > 0}
-                        onChange={(e) => handleSelectAll(e.target.checked)}
-                        className="rounded border-gray-300 text-blue-600 focus:ring-blue-500 cursor-pointer"
-                      />
-                    </th>
+          {loading ? (
+            <div className="flex items-center justify-center py-12">
+              <Loader2 className="h-8 w-8 animate-spin text-blue-600" />
+              <span className="ml-2 text-gray-600">Loading properties...</span>
+            </div>
+          ) : error ? (
+            <div className="text-center py-12">
+              <p className="text-red-600 mb-4">{error}</p>
+              <button 
+                onClick={fetchProperties}
+                className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700"
+              >
+                Retry
+              </button>
+            </div>
+          ) : (
+            <div className="bg-white rounded-lg shadow-sm border">
+              <div className="overflow-x-auto">
+                <table className="w-full">
+                  <thead className="bg-gray-50">
+                    <tr>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        <input
+                          type="checkbox"
+                          checked={selectedProperties.length === paginatedProperties.length && paginatedProperties.length > 0}
+                          onChange={(e) => handleSelectAll(e.target.checked)}
+                          className="rounded border-gray-300 text-blue-600 focus:ring-blue-500 cursor-pointer"
+                        />
+                      </th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100">
                       <div className="flex items-center space-x-1">
                         <span>Property ID</span>
@@ -272,7 +361,7 @@ const PropertyApproval: React.FC = () => {
                   </tr>
                 </thead>
                 <tbody className="bg-white divide-y divide-gray-200">
-                  {paginatedProperties.map((property) => (
+                  {paginatedProperties.length > 0 ? paginatedProperties.map((property) => (
                     <tr key={property.id} className="hover:bg-gray-50">
                       <td className="px-6 py-4 whitespace-nowrap">
                         <input
@@ -283,7 +372,7 @@ const PropertyApproval: React.FC = () => {
                         />
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                        {property.id}
+                        {property.id.slice(0, 8)}...
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
                         <div className="flex items-center">
@@ -291,37 +380,37 @@ const PropertyApproval: React.FC = () => {
                             <Home className="w-5 h-5 text-white" />
                           </div>
                           <div>
-                            <div className="text-sm font-medium text-gray-900">{property.name}</div>
-                            <div className="text-sm text-gray-500">{property.propertyType}</div>
+                            <div className="text-sm font-medium text-gray-900">{property.title}</div>
+                            <div className="text-sm text-gray-500">{property.property_type}</div>
                           </div>
                         </div>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                         <div>
-                          <div className="font-medium">{property.owner.name}</div>
-                          <div className="text-gray-500">{property.owner.email}</div>
-                          <div className="text-gray-500">{property.owner.phone}</div>
+                          <div className="font-medium">{property.owner?.full_name || 'Unknown'}</div>
+                          <div className="text-gray-500">{property.owner?.email || 'No email'}</div>
+                          <div className="text-gray-500">{property.owner?.phone || 'No phone'}</div>
                         </div>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                        {new Date(property.submissionDate).toLocaleDateString('en-US', {
+                        {new Date(property.created_at).toLocaleDateString('en-US', {
                           month: 'short',
                           day: 'numeric',
                           year: 'numeric'
                         })}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                        {property.propertyType}
+                        {property.property_type}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                         <div className="flex items-center">
                           <MapPin className="w-4 h-4 text-gray-400 mr-1" />
-                          {property.location}
+                          {property.address}
                         </div>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
                         <span className={`px-2 py-1 text-xs font-medium rounded-full ${getStatusColor(property.status)}`}>
-                          {property.status}
+                          {formatStatus(property.status)}
                         </span>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
@@ -329,27 +418,49 @@ const PropertyApproval: React.FC = () => {
                           <button className="text-blue-600 hover:text-blue-800 cursor-pointer p-1" title="View Details">
                             <Eye className="w-4 h-4" />
                           </button>
-                          <button className="text-green-600 hover:text-green-800 cursor-pointer p-1" title="Approve">
-                            <CheckCircle className="w-4 h-4" />
-                          </button>
-                          <button className="text-red-600 hover:text-red-800 cursor-pointer p-1" title="Reject">
-                            <XCircle className="w-4 h-4" />
-                          </button>
+                          {property.status === 'pending' && (
+                            <>
+                              <button 
+                                onClick={() => handleStatusUpdate(property.id, 'approved')}
+                                className="text-green-600 hover:text-green-800 cursor-pointer p-1" 
+                                title="Approve"
+                              >
+                                <CheckCircle className="w-4 h-4" />
+                              </button>
+                              <button 
+                                onClick={() => handleStatusUpdate(property.id, 'rejected')}
+                                className="text-red-600 hover:text-red-800 cursor-pointer p-1" 
+                                title="Reject"
+                              >
+                                <XCircle className="w-4 h-4" />
+                              </button>
+                            </>
+                          )}
                           <button className="text-gray-600 hover:text-gray-800 cursor-pointer p-1" title="Edit">
                             <Edit className="w-4 h-4" />
                           </button>
-                          <button className="text-red-600 hover:text-red-800 cursor-pointer p-1" title="Delete">
+                          <button 
+                            onClick={() => handleDeleteProperty(property.id)}
+                            className="text-red-600 hover:text-red-800 cursor-pointer p-1" 
+                            title="Delete"
+                          >
                             <Trash2 className="w-4 h-4" />
                           </button>
                         </div>
                       </td>
                     </tr>
-                  ))}
+                  )) : (
+                    <tr>
+                      <td colSpan={9} className="px-6 py-12 text-center text-gray-500">
+                        No properties found
+                      </td>
+                    </tr>
+                  )}
                 </tbody>
               </table>
-            </div>
+              </div>
 
-            {/* Pagination */}
+              {/* Pagination */}
             <div className="bg-white px-6 py-3 border-t border-gray-200 flex items-center justify-between">
               <div className="flex items-center space-x-2">
                 <span className="text-sm text-gray-700">Show</span>
