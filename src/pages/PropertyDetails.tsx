@@ -7,6 +7,7 @@ import { useState, useEffect } from "react";
 import { PropertyService } from "@/lib/propertyService";
 import { BookingService } from "@/lib/bookingService";
 import { useAuth } from "@/contexts/AuthContext";
+import { useWishlist } from "@/contexts/WishlistContext";
 import { useToast } from "@/hooks/use-toast";
 
 // No dummy data - load from database using PropertyService
@@ -23,6 +24,7 @@ const PropertyDetails = () => {
   const [isBooking, setIsBooking] = useState(false);
   const { user, isAuthenticated } = useAuth();
   const { toast } = useToast();
+  const { isPropertySaved, addToWishlist, removeFromWishlist } = useWishlist();
   
   // Restore booking data if returning from login
   useEffect(() => {
@@ -353,8 +355,24 @@ const PropertyDetails = () => {
               <Button variant="outline" size="icon">
                 <Share2 className="w-4 h-4" />
               </Button>
-              <Button variant="outline" size="icon">
-                <Heart className="w-4 h-4" />
+              <Button 
+                variant="outline" 
+                size="icon"
+                onClick={() => {
+                  if (isPropertySaved(property.id)) {
+                    removeFromWishlist(property.id);
+                  } else {
+                    addToWishlist(property.id);
+                  }
+                }}
+              >
+                <Heart 
+                  className={`w-4 h-4 transition-colors ${
+                    isPropertySaved(property.id) 
+                      ? 'fill-red-500 text-red-500' 
+                      : 'text-gray-600'
+                  }`} 
+                />
               </Button>
             </div>
           </div>

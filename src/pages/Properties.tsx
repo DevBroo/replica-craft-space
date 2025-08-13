@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import picnifyLogo from '/lovable-uploads/f7960b1f-407a-4738-b8f6-067ea4600889.png';
 import { useAuth } from '@/contexts/AuthContext';
 import { PropertyService } from '@/lib/propertyService';
+import { useWishlist } from '@/contexts/WishlistContext';
 import ImageCarousel from '@/components/owner/ImageCarousel';
 
 // Scroll animation hook
@@ -42,6 +43,8 @@ const Properties: React.FC = () => {
   const [showFilters, setShowFilters] = useState(false);
   const [selectedProperty, setSelectedProperty] = useState<any>(null);
   const [showViewModal, setShowViewModal] = useState(false);
+  
+  const { isPropertySaved, addToWishlist, removeFromWishlist } = useWishlist();
 
   // Dropdown states for search functionality
   const [showGuestsDropdown, setShowGuestsDropdown] = useState(false);
@@ -870,8 +873,19 @@ const Properties: React.FC = () => {
                             <i className="fas fa-eye"></i>
                             View Details
                           </button>
-                          <button className="px-4 py-3 border border-brand-red/30 text-brand-red rounded-lg font-semibold hover:bg-brand-red hover:text-white transition-colors duration-200 backdrop-blur-sm">
-                            <i className="fas fa-heart"></i>
+                          <button 
+                            className="px-4 py-3 border border-brand-red/30 text-brand-red rounded-lg font-semibold hover:bg-brand-red hover:text-white transition-colors duration-200 backdrop-blur-sm"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              const propertyId = property.id;
+                              if (isPropertySaved(propertyId)) {
+                                removeFromWishlist(propertyId);
+                              } else {
+                                addToWishlist(propertyId);
+                              }
+                            }}
+                          >
+                            <i className={`fas fa-heart ${isPropertySaved(property.id) ? 'text-brand-red' : ''}`}></i>
                           </button>
                         </div>
                       </div>

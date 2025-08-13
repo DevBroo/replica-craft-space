@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { BookingService } from '@/lib/bookingService';
+import { useWishlist } from '@/contexts/WishlistContext';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -35,8 +36,9 @@ export default function CustomerDashboard() {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
   const [bookings, setBookings] = useState<Booking[]>([]);
-  const [savedProperties, setSavedProperties] = useState<Property[]>([]);
   const [loading, setLoading] = useState(true);
+  
+  const { savedProperties, savedCount, removeFromWishlist } = useWishlist();
 
   useEffect(() => {
     if (!user) {
@@ -81,7 +83,7 @@ export default function CustomerDashboard() {
           property_type: property.property_type,
           images: property.images || []
         })) || [];
-        setSavedProperties(formattedProperties);
+        // Note: savedProperties are now managed by WishlistContext
       }
 
     } catch (error) {
@@ -198,7 +200,7 @@ export default function CustomerDashboard() {
               </div>
             </CardHeader>
             <CardContent>
-              <div className="text-3xl font-bold text-foreground mb-1">{savedProperties.length}</div>
+              <div className="text-3xl font-bold text-foreground mb-1">{savedCount}</div>
               <p className="text-sm text-muted-foreground">
                 Ready to book
               </p>
@@ -308,7 +310,7 @@ export default function CustomerDashboard() {
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                     {savedProperties.map((property) => (
                       <Card key={property.id} className="glass-card-property hover-lift border-0 shadow-elevated">
-                        <div className="aspect-video bg-muted rounded-t-lg">
+                        <div className="aspect-video bg-muted rounded-t-lg relative">
                           {property.images?.[0] && (
                             <img
                               src={property.images[0]}
@@ -316,12 +318,18 @@ export default function CustomerDashboard() {
                               className="w-full h-full object-cover rounded-t-lg"
                             />
                           )}
+                          <button 
+                            className="absolute top-3 right-3 p-2 rounded-full bg-white/80 hover:bg-white transition-colors"
+                            onClick={() => removeFromWishlist(property.id)}
+                          >
+                            <Heart className="h-4 w-4 fill-red-500 text-red-500" />
+                          </button>
                         </div>
                         <CardContent className="p-4">
                           <h4 className="font-semibold mb-1">{property.title}</h4>
                           <p className="text-sm text-muted-foreground mb-2">{property.address}</p>
                           <div className="flex items-center justify-between">
-                            <span className="font-bold">${property.pricing?.base_price || property.pricing?.nightly_rate || 'N/A'}/night</span>
+                            <span className="font-bold">₹{(property.pricing as any)?.daily_rate || 'N/A'}/night</span>
                             <Button size="sm" asChild>
                               <Link to={`/property/${property.id}`}>View</Link>
                             </Button>
