@@ -142,7 +142,7 @@ const BookingComPropertyForm: React.FC<BookingComPropertyFormProps> = ({
       const parsedDesc = parseDescription(editingProperty.description || '');
       
       setFormData({
-        title: editingProperty.name || '',
+        title: editingProperty.title || editingProperty.name || '',
         description: parsedDesc.cleanDescription,
         property_type: editingProperty.type || '',
         property_subtype: editingProperty.subtype || '',
@@ -470,7 +470,10 @@ const BookingComPropertyForm: React.FC<BookingComPropertyFormProps> = ({
         bathrooms: Number(formData.bathrooms),
         description: formData.description,
         amenities: formData.amenities,
-        images: formData.images
+        images: formData.images,
+        postal_code: formData.postal_code,
+        contact_phone: formData.contact_phone,
+        license_number: formData.license_number
       };
 
       // Store additional data in the description or as metadata

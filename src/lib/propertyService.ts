@@ -62,6 +62,9 @@ export class PropertyService {
         max_guests: propertyData.capacity,
         bedrooms: propertyData.bedrooms,
         bathrooms: propertyData.bathrooms,
+        postal_code: (propertyData as any).postal_code,
+        contact_phone: (propertyData as any).contact_phone,
+        license_number: (propertyData as any).license_number,
         status: 'pending',
         is_featured: false,
         rating: 0,
@@ -128,7 +131,10 @@ export class PropertyService {
         images: propertyData.images,
         max_guests: propertyData.capacity,
         bedrooms: propertyData.bedrooms,
-        bathrooms: propertyData.bathrooms
+        bathrooms: propertyData.bathrooms,
+        postal_code: (propertyData as any).postal_code,
+        contact_phone: (propertyData as any).contact_phone,
+        license_number: (propertyData as any).license_number
       };
 
       const { data, error } = await supabase
