@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { PropertyService } from '@/lib/propertyService';
 import ImageCarousel from '@/components/owner/ImageCarousel';
+import BookingComPropertyForm from '@/components/owner/BookingComPropertyForm';
 
 const MyProperties: React.FC<{
   sidebarCollapsed: boolean;
@@ -14,31 +15,10 @@ const MyProperties: React.FC<{
   const { user, isAuthenticated, loading } = useAuth();
   
   const [properties, setProperties] = useState<any[]>([]);
-  const [showAddModal, setShowAddModal] = useState(false);
-  const [showEditModal, setShowEditModal] = useState(false);
+  const [showAddProperty, setShowAddProperty] = useState(false);
   const [showViewModal, setShowViewModal] = useState(false);
   const [selectedProperty, setSelectedProperty] = useState<any>(null);
   const [editingProperty, setEditingProperty] = useState<any>(null);
-  const [formData, setFormData] = useState({
-    name: '',
-    type: 'villa',
-    location: '',
-    city: '',
-    state: '',
-    price: '',
-    capacity: '',
-    bedrooms: '',
-    bathrooms: '',
-    description: '',
-    amenities: [] as string[]
-  });
-  const [selectedImages, setSelectedImages] = useState<File[]>([]);
-  const [imagePreviewUrls, setImagePreviewUrls] = useState<string[]>([]);
-  const [imageLinks, setImageLinks] = useState<string[]>([]);
-  const [showLinkInput, setShowLinkInput] = useState(false);
-  const [newImageLink, setNewImageLink] = useState('');
-
-
 
   useEffect(() => {
     if (!loading && (!isAuthenticated || !user)) {
@@ -163,45 +143,13 @@ const MyProperties: React.FC<{
   };
 
   const handleAddProperty = () => {
-    setFormData({
-      name: '',
-      type: 'villa',
-      location: '',
-      city: '',
-      state: '',
-      price: '',
-      capacity: '',
-      bedrooms: '',
-      bathrooms: '',
-      description: '',
-      amenities: []
-    });
-    setShowAddModal(true);
+    setEditingProperty(null);
+    setShowAddProperty(true);
   };
 
   const handleEditProperty = (property: any) => {
     setEditingProperty(property);
-    setFormData({
-      name: property.name || '',
-      type: property.type || 'villa',
-      location: property.location || '',
-      city: property.city || '',
-      state: property.state || '',
-      price: (property.price || 0).toString(),
-      capacity: (property.capacity || 0).toString(),
-      bedrooms: (property.bedrooms || 0).toString(),
-      bathrooms: (property.bathrooms || 0).toString(),
-      description: property.description || '',
-      amenities: property.amenities || []
-    });
-    
-    // Initialize image state with existing property images
-    const existingImages = property.images || [];
-    setImageLinks(existingImages);
-    setImagePreviewUrls([]);
-    setSelectedImages([]);
-    
-    setShowEditModal(true);
+    setShowAddProperty(true);
   };
 
   const handleViewProperty = (property: any) => {
@@ -335,265 +283,23 @@ const MyProperties: React.FC<{
     }
   };
 
-
-
-  const handleFormChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
-    const { name, value } = e.target;
-    setFormData(prev => ({
-      ...prev,
-      [name]: value
-    }));
-  };
-
-  const handleAmenityChange = (amenity: string) => {
-    setFormData(prev => ({
-      ...prev,
-      amenities: prev.amenities.includes(amenity)
-        ? prev.amenities.filter(a => a !== amenity)
-        : [...prev.amenities, amenity]
-    }));
-  };
-
-  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const files = Array.from(e.target.files || []);
-    console.log('📁 Files selected:', files.length);
+  const handlePropertySubmit = async () => {
+    // Reload properties after successful add/edit
+    if (!user || !user.email) return;
     
-    const validFiles = files.filter(file => 
-      file.type.startsWith('image/') && file.size <= 10 * 1024 * 1024 // 10MB limit
-    );
-    
-    console.log('✅ Valid files:', validFiles.length);
-    console.log('❌ Invalid files:', files.length - validFiles.length);
-
-    if (validFiles.length > 0) {
-      setSelectedImages(prev => [...prev, ...validFiles]);
-      
-      // Create preview URLs
-      validFiles.forEach((file, index) => {
-        console.log(`🖼️ Processing file ${index + 1}: ${file.name} (${(file.size / 1024 / 1024).toFixed(2)}MB)`);
-        
-        const reader = new FileReader();
-        reader.onload = (e) => {
-          const dataUrl = e.target?.result as string;
-          console.log(`✅ File ${index + 1} converted to base64 (${dataUrl.length} chars)`);
-          setImagePreviewUrls(prev => [...prev, dataUrl]);
-        };
-        reader.onerror = (error) => {
-          console.error(`❌ Error reading file ${index + 1}:`, error);
-        };
-        reader.readAsDataURL(file);
-      });
-    } else {
-      console.log('❌ No valid files to process');
-    }
-  };
-
-  const removeImage = (index: number) => {
-    setSelectedImages(prev => prev.filter((_, i) => i !== index));
-    setImagePreviewUrls(prev => prev.filter((_, i) => i !== index));
-  };
-
-  const addImageLink = () => {
     try {
-      if (!newImageLink.trim()) {
-        alert('Please enter an image URL');
-        return;
-      }
-      
-      if (!isValidImageUrl(newImageLink.trim())) {
-        alert('Please enter a valid image URL (must end with .jpg, .jpeg, .png, .gif, .webp)');
-        return;
-      }
-      
-      setImageLinks(prev => [...prev, newImageLink.trim()]);
-      setNewImageLink('');
-      setShowLinkInput(false);
-      console.log('✅ Image link added:', newImageLink.trim());
+      const ownerId = user.id || user.email;
+      const dbProperties = await PropertyService.getOwnerProperties(ownerId);
+      const frontendProperties = dbProperties.map(PropertyService.convertToFrontendFormat);
+      setProperties(frontendProperties);
+      console.log('✅ Properties reloaded after submit');
     } catch (error) {
-      console.error('❌ Error adding image link:', error);
-      alert('Error adding image link. Please try again.');
-    }
-  };
-
-  const removeImageLink = (index: number) => {
-    setImageLinks(prev => prev.filter((_, i) => i !== index));
-  };
-
-  const isValidImageUrl = (url: string) => {
-    const imageExtensions = ['.jpg', '.jpeg', '.png', '.gif', '.webp'];
-    return imageExtensions.some(ext => url.toLowerCase().includes(ext));
-  };
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    
-    if (!user) {
-      console.error('❌ No user found');
-      return;
+      console.error('❌ Error reloading properties:', error);
     }
     
-    console.log('💾 Saving property with images:', imagePreviewUrls.length);
-    console.log('🖼️ Image preview URLs:', imagePreviewUrls);
-    
-    // Combine uploaded images and image links
-    const allImages = [...imagePreviewUrls, ...imageLinks];
-    
-    const propertyData = {
-      name: formData.name,
-      type: formData.type,
-      location: formData.location,
-      city: formData.city,
-      state: formData.state,
-      price: parseInt(formData.price),
-      capacity: parseInt(formData.capacity),
-      bedrooms: parseInt(formData.bedrooms),
-      bathrooms: parseInt(formData.bathrooms),
-      description: formData.description,
-      amenities: formData.amenities,
-      images: allImages.length > 0 ? allImages : ['/placeholder.svg']
-    };
-
-    try {
-      if (editingProperty) {
-        // Update existing property in database
-        const updatedDbProperty = await PropertyService.updateProperty(editingProperty.id, propertyData);
-        
-        if (updatedDbProperty) {
-          const frontendProperty = PropertyService.convertToFrontendFormat(updatedDbProperty);
-          const updatedProperties = properties.map(p => p.id === editingProperty.id ? frontendProperty : p);
-          setProperties(updatedProperties);
-          console.log('✅ Property updated in database successfully');
-        }
-        
-        setShowEditModal(false);
-      } else {
-        // Add new property to database
-        const ownerId = user.id || user.email;
-        const newDbProperty = await PropertyService.addProperty(propertyData, ownerId);
-        
-        if (newDbProperty) {
-          const frontendProperty = PropertyService.convertToFrontendFormat(newDbProperty);
-          const updatedProperties = [...properties, frontendProperty];
-          setProperties(updatedProperties);
-          console.log('✅ Property added to database successfully');
-        }
-        
-        setShowAddModal(false);
-      }
-
-      // Reset form
-      setFormData({
-        name: '',
-        type: 'villa',
-        location: '',
-        city: '',
-        state: '',
-        price: '',
-        capacity: '',
-        bedrooms: '',
-        bathrooms: '',
-        description: '',
-        amenities: []
-      });
-      setSelectedImages([]);
-      setImagePreviewUrls([]);
-      setImageLinks([]);
-      setNewImageLink('');
-      setShowLinkInput(false);
-      
-    } catch (error) {
-      console.error('❌ Error saving property to database:', error);
-      
-      // Fallback: Save to localStorage if database is not available
-      try {
-        const storageKey = `properties_${user.email}`;
-        const existingProperties = localStorage.getItem(storageKey);
-        const propertiesArray = existingProperties ? JSON.parse(existingProperties) : [];
-        
-        // Check if property already exists in localStorage
-        const existingProperty = propertiesArray.find((p: any) => 
-          p.name === propertyData.name && 
-          p.location === propertyData.location && 
-          p.city === propertyData.city
-        );
-        
-        if (existingProperty) {
-          console.log('📋 Property already exists in localStorage, updating instead of adding');
-          // Update existing property
-          const updatedProperties = propertiesArray.map((p: any) => 
-            p.name === propertyData.name && 
-            p.location === propertyData.location && 
-            p.city === propertyData.city
-              ? { ...p, ...propertyData, updatedAt: new Date().toISOString() }
-              : p
-          );
-          localStorage.setItem(storageKey, JSON.stringify(updatedProperties));
-          
-          // Update UI
-          const updatedPropertiesList = properties.map(p => 
-            p.name === propertyData.name && 
-            p.location === propertyData.location && 
-            p.city === propertyData.city
-              ? { ...p, ...propertyData, updatedAt: new Date().toISOString() }
-              : p
-          );
-          setProperties(updatedPropertiesList);
-        } else {
-          // Add new property
-          const newProperty = {
-            id: Date.now().toString(), // Generate temporary ID
-            ...propertyData,
-            ownerEmail: user.email,
-            status: 'active',
-            createdAt: new Date().toISOString(),
-            isLocalStorage: true // Flag to identify localStorage properties
-          };
-          
-          propertiesArray.push(newProperty);
-          localStorage.setItem(storageKey, JSON.stringify(propertiesArray));
-          
-          // Update UI
-          const updatedProperties = [...properties, newProperty];
-          setProperties(updatedProperties);
-        }
-        
-        if (editingProperty) {
-          setShowEditModal(false);
-        } else {
-          setShowAddModal(false);
-        }
-        
-        // Reset form
-        setFormData({
-          name: '',
-          type: 'villa',
-          location: '',
-          city: '',
-          state: '',
-          price: '',
-          capacity: '',
-          bedrooms: '',
-          bathrooms: '',
-          description: '',
-          amenities: []
-        });
-        setSelectedImages([]);
-        setImagePreviewUrls([]);
-        setImageLinks([]);
-        setNewImageLink('');
-        setShowLinkInput(false);
-        
-        alert('✅ Property saved locally! (Database not available - using localStorage fallback)');
-        console.log('📋 Property saved to localStorage successfully');
-        
-      } catch (localStorageError) {
-        console.error('❌ Error saving to localStorage:', localStorageError);
-        alert('Failed to save property. Please check database setup or try again.');
-      }
-    }
+    setShowAddProperty(false);
+    setEditingProperty(null);
   };
-
-
 
   if (loading) {
     return (
@@ -606,6 +312,17 @@ const MyProperties: React.FC<{
     );
   }
 
+  // Show the comprehensive property form when adding/editing
+  if (showAddProperty) {
+    return (
+      <BookingComPropertyForm
+        onBack={() => setShowAddProperty(false)}
+        editingProperty={editingProperty}
+        isEdit={!!editingProperty}
+      />
+    );
+  }
+
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Sidebar */}
@@ -614,39 +331,42 @@ const MyProperties: React.FC<{
           {!sidebarCollapsed && (
             <div className="flex items-center space-x-2">
               <img
-                src="https://static.readdy.ai/image/15b9112da3f324084e8b4fa88fcbe450/72b18a0ae9a329ec72d4c44a4f7ac86d.png"
+                src="/lovable-uploads/4a6c26a9-df9d-4bbe-a6d2-acb1b3d99100.png"
                 alt="Picnify Logo"
                 className="h-8 w-auto"
               />
+              <span className="text-xl font-bold text-blue-600">Picnify</span>
             </div>
           )}
           <button
             onClick={toggleSidebar}
-            className="p-2 rounded-lg hover:bg-gray-100 cursor-pointer"
+            className="p-2 rounded-lg hover:bg-gray-100"
           >
-            <i className="fas fa-bars text-gray-600"></i>
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+            </svg>
           </button>
         </div>
-        <nav className="mt-4">
+        
+        <nav className="mt-8">
           {[
-            { id: 'dashboard', label: 'Dashboard', icon: 'fas fa-tachometer-alt' },
-            { id: 'properties', label: 'My Properties', icon: 'fas fa-home' },
-            { id: 'bookings', label: 'Bookings', icon: 'fas fa-calendar-check' },
-            { id: 'earnings', label: 'Earnings', icon: 'fas fa-dollar-sign' },
-            { id: 'reviews', label: 'Reviews', icon: 'fas fa-star' },
-            { id: 'messages', label: 'Messages', icon: 'fas fa-envelope' },
-            { id: 'profile', label: 'Profile', icon: 'fas fa-user' },
-            { id: 'settings', label: 'Settings', icon: 'fas fa-cog' },
+            { id: 'dashboard', label: 'Dashboard', icon: '📊' },
+            { id: 'properties', label: 'Properties', icon: '🏠' },
+            { id: 'bookings', label: 'Bookings', icon: '📅' },
+            { id: 'earnings', label: 'Earnings', icon: '💰' },
+            { id: 'reviews', label: 'Reviews', icon: '⭐' },
+            { id: 'profile', label: 'Profile', icon: '👤' },
+            { id: 'settings', label: 'Settings', icon: '⚙️' }
           ].map((item) => (
             <button
               key={item.id}
               onClick={() => setActiveTab(item.id)}
-              className={`w-full flex items-center px-4 py-3 text-left hover:bg-blue-50 transition-colors cursor-pointer ${
+              className={`w-full flex items-center px-4 py-3 text-left hover:bg-blue-50 transition-colors ${
                 activeTab === item.id ? 'bg-blue-50 border-r-2 border-blue-600 text-blue-600' : 'text-gray-600'
               }`}
             >
-              <i className={`${item.icon} w-5 text-center`}></i>
-              {!sidebarCollapsed && <span className="ml-3">{item.label}</span>}
+              <span className="text-xl mr-3">{item.icon}</span>
+              {!sidebarCollapsed && <span className="font-medium">{item.label}</span>}
             </button>
           ))}
         </nav>
@@ -655,902 +375,219 @@ const MyProperties: React.FC<{
       {/* Main Content */}
       <div className={`transition-all duration-300 ${sidebarCollapsed ? 'ml-16' : 'ml-64'}`}>
         {/* Header */}
-        <header className="bg-white shadow-sm border-b px-6 py-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-4">
-              <h1 className="text-2xl font-semibold text-gray-800">My Properties</h1>
-              <span className="bg-blue-100 text-blue-800 px-3 py-1 rounded-full text-sm font-medium">
-                {properties.length} Properties
-              </span>
+        <div className="bg-white shadow-sm border-b p-6">
+          <div className="flex justify-between items-center">
+            <div>
+              <h1 className="text-2xl font-bold text-gray-900">My Properties</h1>
+              <p className="text-gray-600 mt-1">Manage your property listings ({properties.length} properties)</p>
             </div>
-            <div className="flex items-center space-x-4">
-              <button 
-                onClick={handleAddProperty}
-                className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg flex items-center"
-              >
-                <i className="fas fa-plus mr-2"></i>
-                Add Property
-              </button>
-
-            </div>
+            <button
+              onClick={handleAddProperty}
+              className="bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition-colors font-medium"
+            >
+              + Add Property
+            </button>
           </div>
-        </header>
+        </div>
 
-        {/* Content */}
-        <main className="p-6">
-          {/* Properties Grid */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-            {properties.map((property) => (
-              <div key={property.id} className="bg-card rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 overflow-hidden group border border-border">
-                <div className="relative">
-                  <ImageCarousel
-                    images={property.images || ['/placeholder.svg']}
-                    alt={property.name}
-                  />
-                  <div className="absolute top-4 left-4">
-                    <span className={`px-3 py-1 rounded-full text-xs font-semibold ${getStatusColor(property.status)}`}>
-                      {property.status.charAt(0).toUpperCase() + property.status.slice(1)}
-                    </span>
-                  </div>
-                  <div className="absolute top-4 right-4">
-                    <span className="bg-card/95 text-card-foreground px-3 py-1 rounded-full text-xs font-medium border border-border backdrop-blur-sm">
-                      {getTypeLabel(property.type)}
-                    </span>
-                  </div>
-                </div>
-                <div className="p-6">
-                  <div className="flex items-start justify-between mb-4">
-                    <div className="flex-1">
-                      <h3 className="text-xl font-bold text-card-foreground mb-1 line-clamp-1">{property.name}</h3>
-                      <div className="flex items-center text-muted-foreground mb-2">
-                        <i className="fas fa-map-marker-alt mr-1 text-sm"></i>
-                        <span className="text-sm">{property.location}, {property.city}</span>
-                      </div>
-                    </div>
-                    <div className="flex items-center space-x-1 ml-2">
-                      <i className="fas fa-star text-yellow-400"></i>
-                      <span className="text-sm font-semibold text-card-foreground">{property.rating}</span>
-                    </div>
-                  </div>
-
-                  <div className="grid grid-cols-3 gap-4 mb-4 p-3 bg-muted/50 rounded-lg">
-                    <div className="text-center">
-                      <div className="flex items-center justify-center text-muted-foreground mb-1">
-                        <i className="fas fa-users text-sm"></i>
-                      </div>
-                      <span className="text-sm font-medium text-card-foreground">{property.capacity}</span>
-                      <p className="text-xs text-muted-foreground">Guests</p>
-                    </div>
-                    <div className="text-center">
-                      <div className="flex items-center justify-center text-muted-foreground mb-1">
-                        <i className="fas fa-bed text-sm"></i>
-                      </div>
-                      <span className="text-sm font-medium text-card-foreground">{property.bedrooms}</span>
-                      <p className="text-xs text-muted-foreground">Bedrooms</p>
-                    </div>
-                    <div className="text-center">
-                      <div className="flex items-center justify-center text-muted-foreground mb-1">
-                        <i className="fas fa-bath text-sm"></i>
-                      </div>
-                      <span className="text-sm font-medium text-card-foreground">{property.bathrooms}</span>
-                      <p className="text-xs text-muted-foreground">Bathrooms</p>
-                    </div>
-                  </div>
-
-                  <div className="flex items-center justify-between mb-6">
-                    <div className="space-y-1">
-                      <div className="flex items-center text-muted-foreground">
-                        <i className="fas fa-calendar mr-2 text-sm"></i>
-                        <span className="text-sm">{property.totalBookings} bookings</span>
-                      </div>
-                      <div className="flex items-center text-muted-foreground">
-                        <i className="fas fa-rupee-sign mr-2 text-sm"></i>
-                        <span className="text-sm">₹{(property.totalEarnings || 0).toLocaleString()} earned</span>
-                      </div>
-                    </div>
-                    <div className="text-right">
-                      <div className="text-2xl font-bold text-card-foreground">
-                        ₹{(property.price || 0).toLocaleString()}
-                      </div>
-                      <p className="text-xs text-muted-foreground">per night</p>
-                    </div>
-                  </div>
-
-                  <div className="mb-4">
-                    <label className="block text-xs font-medium text-muted-foreground mb-2">Status</label>
-                    <select
-                      value={property.status}
-                      onChange={(e) => handleStatusChange(property.id, e.target.value)}
-                      className="w-full text-xs px-3 py-2 border border-border rounded-lg bg-card focus:outline-none focus:ring-2 focus:ring-ring"
-                    >
-                      <option value="pending">Pending Review</option>
-                      <option value="approved">Active</option>
-                      <option value="inactive">Inactive</option>
-                      <option value="rejected">Maintenance</option>
-                    </select>
-                  </div>
-
-                  {/* Action Buttons */}
-                  <div className="space-y-3">
-                    {/* Primary Action - View Details */}
-                    <button 
-                      onClick={() => handleViewProperty(property)}
-                      className="w-full bg-gradient-to-r from-brand-red to-brand-orange hover:from-brand-red/90 hover:to-brand-orange/90 text-white px-4 py-3 rounded-lg font-semibold transition-all duration-200 shadow-md hover:shadow-lg transform hover:-translate-y-0.5"
-                    >
-                      <i className="fas fa-eye mr-2"></i>
-                      View Property Details
-                    </button>
-                    
-                    {/* Secondary Actions */}
-                    <div className="flex items-center space-x-2">
-                      <button 
-                        onClick={() => handleEditProperty(property)}
-                        className="flex-1 bg-secondary hover:bg-secondary/80 text-secondary-foreground px-4 py-2 rounded-lg font-medium transition-colors duration-200 border border-border"
-                      >
-                        <i className="fas fa-edit mr-2"></i>
-                        Edit
-                      </button>
-                      <button 
-                        onClick={() => handleDeleteProperty(property.id)}
-                        className="bg-destructive/10 hover:bg-destructive/20 text-destructive px-4 py-2 rounded-lg font-medium transition-colors duration-200 border border-destructive/20"
-                      >
-                        <i className="fas fa-trash"></i>
-                      </button>
-                    </div>
-                  </div>
-                </div>
+        {/* Properties Grid */}
+        <div className="p-6">
+          {properties.length === 0 ? (
+            <div className="text-center py-16">
+              <div className="bg-gray-100 rounded-full w-24 h-24 flex items-center justify-center mx-auto mb-6">
+                <span className="text-4xl">🏠</span>
               </div>
-            ))}
-          </div>
-
-          {properties.length === 0 && (
-            <div className="text-center py-12">
-              <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                <i className="fas fa-home text-gray-400 text-2xl"></i>
-              </div>
-              <h3 className="text-lg font-medium text-gray-800 mb-2">No properties found</h3>
-              <p className="text-gray-600 mb-4">Try adjusting your search or filters</p>
-              <button 
+              <h3 className="text-xl font-semibold text-gray-900 mb-2">No properties yet</h3>
+              <p className="text-gray-600 mb-6">Start by adding your first property to begin earning.</p>
+              <button
                 onClick={handleAddProperty}
-                className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg"
+                className="bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition-colors font-medium"
               >
-                <i className="fas fa-plus mr-2"></i>
                 Add Your First Property
               </button>
             </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+              {properties.map((property) => (
+                <div key={property.id} className="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow">
+                  {/* Property Image */}
+                  <div className="relative h-48">
+                    <ImageCarousel images={property.images || []} alt={property.name} />
+                    <div className="absolute top-2 right-2">
+                      <span className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(property.status)}`}>
+                        {property.status || 'active'}
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Property Details */}
+                  <div className="p-4">
+                    <div className="flex justify-between items-start mb-2">
+                      <h3 className="font-semibold text-gray-900 truncate">{property.name}</h3>
+                      <span className="text-xs bg-gray-100 text-gray-600 px-2 py-1 rounded-full">
+                        {getTypeLabel(property.type)}
+                      </span>
+                    </div>
+                    
+                    <p className="text-gray-600 text-sm mb-3 line-clamp-2">
+                      📍 {property.location}, {property.city}
+                    </p>
+
+                    <div className="flex justify-between items-center text-sm text-gray-600 mb-4">
+                      <div className="flex items-center space-x-3">
+                        <span>👥 {property.capacity}</span>
+                        <span>🛏️ {property.bedrooms}</span>
+                        <span>🚿 {property.bathrooms}</span>
+                      </div>
+                    </div>
+
+                    <div className="flex justify-between items-center">
+                      <div className="text-lg font-bold text-blue-600">
+                        ₹{property.price?.toLocaleString()}/night
+                      </div>
+                    </div>
+
+                    {/* Action Buttons */}
+                    <div className="flex space-x-2 mt-4">
+                      <button
+                        onClick={() => handleViewProperty(property)}
+                        className="flex-1 bg-gray-100 text-gray-700 py-2 px-3 rounded-md text-sm font-medium hover:bg-gray-200 transition-colors"
+                      >
+                        View
+                      </button>
+                      <button
+                        onClick={() => handleEditProperty(property)}
+                        className="flex-1 bg-blue-600 text-white py-2 px-3 rounded-md text-sm font-medium hover:bg-blue-700 transition-colors"
+                      >
+                        Edit
+                      </button>
+                      <button
+                        onClick={() => {
+                          const newStatus = property.status === 'active' ? 'inactive' : 'active';
+                          handleStatusChange(property.id, newStatus);
+                        }}
+                        className={`flex-1 py-2 px-3 rounded-md text-sm font-medium transition-colors ${
+                          property.status === 'active'
+                            ? 'bg-red-100 text-red-700 hover:bg-red-200'
+                            : 'bg-green-100 text-green-700 hover:bg-green-200'
+                        }`}
+                      >
+                        {property.status === 'active' ? 'Disable' : 'Enable'}
+                      </button>
+                      <button
+                        onClick={() => handleDeleteProperty(property.id)}
+                        className="bg-red-100 text-red-700 py-2 px-3 rounded-md text-sm font-medium hover:bg-red-200 transition-colors"
+                      >
+                        🗑️
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
           )}
-        </main>
+        </div>
       </div>
 
-      {/* Add Property Modal */}
-      {showAddModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-6 w-full max-w-4xl max-h-[90vh] overflow-y-auto">
-            <div className="flex items-center justify-between mb-6">
-              <h2 className="text-2xl font-semibold text-gray-800">Add New Property</h2>
-              <button
-                onClick={() => setShowAddModal(false)}
-                className="text-gray-400 hover:text-gray-600"
-              >
-                <i className="fas fa-times text-xl"></i>
-              </button>
-            </div>
-                          <form onSubmit={handleSubmit} className="space-y-6">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">Property Name</label>
-                    <input
-                      type="text"
-                      name="name"
-                      value={formData.name}
-                      onChange={handleFormChange}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                      placeholder="Enter property name"
-                      required
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">Property Type</label>
-                    <select
-                      name="type"
-                      value={formData.type}
-                      onChange={handleFormChange}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                      required
-                    >
-                      <option value="villa">Villa</option>
-                      <option value="resort">Resort</option>
-                      <option value="farmhouse">Farmhouse</option>
-                      <option value="homestay">Homestay</option>
-                      <option value="heritage">Heritage Palace</option>
-                      <option value="day-picnic">Day Picnic</option>
-                    </select>
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">Location</label>
-                    <input
-                      type="text"
-                      name="location"
-                      value={formData.location}
-                      onChange={handleFormChange}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                      placeholder="Enter location"
-                      required
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">City</label>
-                    <input
-                      type="text"
-                      name="city"
-                      value={formData.city}
-                      onChange={handleFormChange}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                      placeholder="Enter city"
-                      required
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">State</label>
-                    <input
-                      type="text"
-                      name="state"
-                      value={formData.state}
-                      onChange={handleFormChange}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                      placeholder="Enter state"
-                      required
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">Price per Day (₹)</label>
-                    <input
-                      type="number"
-                      name="price"
-                      value={formData.price}
-                      onChange={handleFormChange}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                      placeholder="Enter price"
-                      required
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">Capacity</label>
-                    <input
-                      type="number"
-                      name="capacity"
-                      value={formData.capacity}
-                      onChange={handleFormChange}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                      placeholder="Enter capacity"
-                      required
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">Bedrooms</label>
-                    <input
-                      type="number"
-                      name="bedrooms"
-                      value={formData.bedrooms}
-                      onChange={handleFormChange}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                      placeholder="Enter number of bedrooms"
-                      required
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">Bathrooms</label>
-                    <input
-                      type="number"
-                      name="bathrooms"
-                      value={formData.bathrooms}
-                      onChange={handleFormChange}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                      placeholder="Enter number of bathrooms"
-                      required
-                    />
-                  </div>
-                </div>
-                
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Description</label>
-                  <textarea
-                    name="description"
-                    value={formData.description}
-                    onChange={handleFormChange}
-                    rows={4}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    placeholder="Enter property description"
-                    required
-                  />
-                </div>
-                
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Amenities</label>
-                  <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                    {['wifi', 'ac', 'parking', 'kitchen', 'pool', 'gym', 'tv', 'spa', 'heating', 'fireplace'].map((amenity) => (
-                      <label key={amenity} className="flex items-center space-x-2 cursor-pointer">
-                        <input
-                          type="checkbox"
-                          checked={formData.amenities.includes(amenity)}
-                          onChange={() => handleAmenityChange(amenity)}
-                          className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-                        />
-                        <span className="text-sm text-gray-700 capitalize">{amenity}</span>
-                      </label>
-                    ))}
-                  </div>
-                </div>
-                
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Property Images</label>
-                  
-                  {/* Upload Option */}
-                  <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center mb-4">
-                    <input
-                      type="file"
-                      multiple
-                      accept="image/*"
-                      onChange={handleImageUpload}
-                      className="hidden"
-                      id="image-upload-add"
-                    />
-                    <label htmlFor="image-upload-add" className="cursor-pointer">
-                      <i className="fas fa-upload text-gray-400 text-2xl mb-2"></i>
-                      <p className="text-sm text-gray-600">Click to upload images or drag and drop</p>
-                      <p className="text-xs text-gray-500 mt-1">PNG, JPG up to 10MB</p>
-                    </label>
-                  </div>
-
-                  {/* Link Upload Option */}
-                  <div className="mb-4">
-                    <div className="flex items-center justify-between mb-2">
-                      <span className="text-sm font-medium text-gray-700">Or add image links:</span>
-                      <button
-                        type="button"
-                        onClick={() => setShowLinkInput(!showLinkInput)}
-                        className="text-blue-600 hover:text-blue-700 text-sm"
-                      >
-                        {showLinkInput ? 'Cancel' : 'Add Link'}
-                      </button>
-                    </div>
-                    
-                    {showLinkInput && (
-                      <div className="flex gap-2 mb-2">
-                        <input
-                          type="url"
-                          value={newImageLink}
-                          onChange={(e) => setNewImageLink(e.target.value)}
-                          placeholder="https://example.com/image.jpg"
-                          className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                        />
-                        <button
-                          type="button"
-                          onClick={addImageLink}
-                          className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
-                        >
-                          Add
-                        </button>
-                      </div>
-                    )}
-                  </div>
-                  
-                  {/* Uploaded Image Previews */}
-                  {imagePreviewUrls.length > 0 && (
-                    <div className="mt-4">
-                      <h4 className="text-sm font-medium text-gray-700 mb-2">Uploaded Images:</h4>
-                      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                        {imagePreviewUrls.map((url, index) => (
-                          <div key={index} className="relative">
-                            <img
-                              src={url}
-                              alt={`Preview ${index + 1}`}
-                              className="w-full h-24 object-cover rounded-lg"
-                            />
-                            <button
-                              type="button"
-                              onClick={() => removeImage(index)}
-                              className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs hover:bg-red-600"
-                            >
-                              <i className="fas fa-times"></i>
-                            </button>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Image Link Previews */}
-                  {imageLinks.length > 0 && (
-                    <div className="mt-4">
-                      <h4 className="text-sm font-medium text-gray-700 mb-2">Image Links:</h4>
-                      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                        {imageLinks.map((url, index) => (
-                          <div key={index} className="relative">
-                            <img
-                              src={url}
-                              alt={`Link ${index + 1}`}
-                              className="w-full h-24 object-cover rounded-lg"
-                              onError={(e) => {
-                                e.currentTarget.src = '/placeholder.svg';
-                              }}
-                            />
-                            <button
-                              type="button"
-                              onClick={() => removeImageLink(index)}
-                              className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs hover:bg-red-600"
-                            >
-                              <i className="fas fa-times"></i>
-                            </button>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-                </div>
-              </form>
-            <div className="flex justify-end space-x-3 mt-6">
-              <button
-                onClick={() => setShowAddModal(false)}
-                className="px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={handleSubmit}
-                className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
-              >
-                Add Property
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Edit Property Modal */}
-      {showEditModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-6 w-full max-w-4xl max-h-[90vh] overflow-y-auto">
-            <div className="flex items-center justify-between mb-6">
-              <h2 className="text-2xl font-semibold text-gray-800">Edit Property</h2>
-              <button
-                onClick={() => setShowEditModal(false)}
-                className="text-gray-400 hover:text-gray-600"
-              >
-                <i className="fas fa-times text-xl"></i>
-              </button>
-            </div>
-                          <form onSubmit={handleSubmit} className="space-y-6">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">Property Name</label>
-                    <input
-                      type="text"
-                      name="name"
-                      value={formData.name}
-                      onChange={handleFormChange}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                      placeholder="Enter property name"
-                      required
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">Property Type</label>
-                    <select
-                      name="type"
-                      value={formData.type}
-                      onChange={handleFormChange}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                      required
-                    >
-                      <option value="villa">Villa</option>
-                      <option value="resort">Resort</option>
-                      <option value="farmhouse">Farmhouse</option>
-                      <option value="homestay">Homestay</option>
-                      <option value="heritage">Heritage Palace</option>
-                      <option value="day-picnic">Day Picnic</option>
-                    </select>
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">Location</label>
-                    <input
-                      type="text"
-                      name="location"
-                      value={formData.location}
-                      onChange={handleFormChange}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                      placeholder="Enter location"
-                      required
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">City</label>
-                    <input
-                      type="text"
-                      name="city"
-                      value={formData.city}
-                      onChange={handleFormChange}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                      placeholder="Enter city"
-                      required
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">State</label>
-                    <input
-                      type="text"
-                      name="state"
-                      value={formData.state}
-                      onChange={handleFormChange}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                      placeholder="Enter state"
-                      required
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">Price per Day (₹)</label>
-                    <input
-                      type="number"
-                      name="price"
-                      value={formData.price}
-                      onChange={handleFormChange}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                      placeholder="Enter price"
-                      required
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">Capacity</label>
-                    <input
-                      type="number"
-                      name="capacity"
-                      value={formData.capacity}
-                      onChange={handleFormChange}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                      placeholder="Enter capacity"
-                      required
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">Bedrooms</label>
-                    <input
-                      type="number"
-                      name="bedrooms"
-                      value={formData.bedrooms}
-                      onChange={handleFormChange}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                      placeholder="Enter number of bedrooms"
-                      required
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">Bathrooms</label>
-                    <input
-                      type="number"
-                      name="bathrooms"
-                      value={formData.bathrooms}
-                      onChange={handleFormChange}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                      placeholder="Enter number of bathrooms"
-                      required
-                    />
-                  </div>
-                </div>
-                
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Description</label>
-                  <textarea
-                    name="description"
-                    value={formData.description}
-                    onChange={handleFormChange}
-                    rows={4}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    placeholder="Enter property description"
-                    required
-                  />
-                </div>
-                
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Amenities</label>
-                  <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                    {['wifi', 'ac', 'parking', 'kitchen', 'pool', 'gym', 'tv', 'spa', 'heating', 'fireplace'].map((amenity) => (
-                      <label key={amenity} className="flex items-center space-x-2 cursor-pointer">
-                        <input
-                          type="checkbox"
-                          checked={formData.amenities.includes(amenity)}
-                          onChange={() => handleAmenityChange(amenity)}
-                          className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-                        />
-                        <span className="text-sm text-gray-700 capitalize">{amenity}</span>
-                      </label>
-                    ))}
-                  </div>
-                </div>
-                
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Property Images</label>
-                  
-                  {/* Upload Option */}
-                  <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center mb-4">
-                    <input
-                      type="file"
-                      multiple
-                      accept="image/*"
-                      onChange={handleImageUpload}
-                      className="hidden"
-                      id="image-upload-edit"
-                    />
-                    <label htmlFor="image-upload-edit" className="cursor-pointer">
-                      <i className="fas fa-upload text-gray-400 text-2xl mb-2"></i>
-                      <p className="text-sm text-gray-600">Click to upload images or drag and drop</p>
-                      <p className="text-xs text-gray-500 mt-1">PNG, JPG up to 10MB</p>
-                    </label>
-                  </div>
-
-                  {/* Link Upload Option */}
-                  <div className="mb-4">
-                    <div className="flex items-center justify-between mb-2">
-                      <span className="text-sm font-medium text-gray-700">Or add image links:</span>
-                      <button
-                        type="button"
-                        onClick={() => setShowLinkInput(!showLinkInput)}
-                        className="text-blue-600 hover:text-blue-700 text-sm"
-                      >
-                        {showLinkInput ? 'Cancel' : 'Add Link'}
-                      </button>
-                    </div>
-                    
-                    {showLinkInput && (
-                      <div className="flex gap-2 mb-2">
-                        <input
-                          type="url"
-                          value={newImageLink}
-                          onChange={(e) => setNewImageLink(e.target.value)}
-                          placeholder="https://example.com/image.jpg"
-                          className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                        />
-                        <button
-                          type="button"
-                          onClick={addImageLink}
-                          className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
-                        >
-                          Add
-                        </button>
-                      </div>
-                    )}
-                  </div>
-                  
-                  {/* Uploaded Image Previews */}
-                  {imagePreviewUrls.length > 0 && (
-                    <div className="mt-4">
-                      <h4 className="text-sm font-medium text-gray-700 mb-2">Uploaded Images:</h4>
-                      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                        {imagePreviewUrls.map((url, index) => (
-                          <div key={index} className="relative">
-                            <img
-                              src={url}
-                              alt={`Preview ${index + 1}`}
-                              className="w-full h-24 object-cover rounded-lg"
-                            />
-                            <button
-                              type="button"
-                              onClick={() => removeImage(index)}
-                              className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs hover:bg-red-600"
-                            >
-                              <i className="fas fa-times"></i>
-                            </button>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Image Link Previews */}
-                  {imageLinks.length > 0 && (
-                    <div className="mt-4">
-                      <h4 className="text-sm font-medium text-gray-700 mb-2">Image Links:</h4>
-                      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                        {imageLinks.map((url, index) => (
-                          <div key={index} className="relative">
-                            <img
-                              src={url}
-                              alt={`Link ${index + 1}`}
-                              className="w-full h-24 object-cover rounded-lg"
-                              onError={(e) => {
-                                e.currentTarget.src = '/placeholder.svg';
-                              }}
-                            />
-                            <button
-                              type="button"
-                              onClick={() => removeImageLink(index)}
-                              className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs hover:bg-red-600"
-                            >
-                              <i className="fas fa-times"></i>
-                            </button>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-                </div>
-              </form>
-            <div className="flex justify-end space-x-3 mt-6">
-              <button
-                onClick={() => setShowEditModal(false)}
-                className="px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={handleSubmit}
-                className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
-              >
-                Update Property
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Enhanced View Property Modal */}
+      {/* View Property Modal */}
       {showViewModal && selectedProperty && (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-          <div className="bg-card rounded-2xl shadow-2xl w-full max-w-6xl max-h-[95vh] overflow-hidden">
-            {/* Modal Header */}
-            <div className="flex items-center justify-between p-6 border-b border-border bg-gradient-to-r from-brand-red/5 to-brand-orange/5">
-              <div>
-                <h2 className="text-3xl font-bold text-card-foreground">{selectedProperty.name}</h2>
-                <div className="flex items-center mt-2 space-x-4">
-                  <div className="flex items-center text-muted-foreground">
-                    <i className="fas fa-map-marker-alt mr-2"></i>
-                    <span>{selectedProperty.location}, {selectedProperty.city}, {selectedProperty.state}</span>
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-lg max-w-4xl w-full max-h-[90vh] overflow-y-auto">
+            <div className="p-6">
+              <div className="flex justify-between items-center mb-6">
+                <h2 className="text-2xl font-bold text-gray-900">{selectedProperty.name}</h2>
+                <button
+                  onClick={() => setShowViewModal(false)}
+                  className="text-gray-500 hover:text-gray-700"
+                >
+                  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              </div>
+
+              {/* Property Images */}
+              <div className="mb-6">
+                <ImageCarousel images={selectedProperty.images || []} alt={selectedProperty.name} />
+              </div>
+
+              {/* Property Details */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                  <h3 className="text-lg font-semibold mb-4">Basic Information</h3>
+                  <div className="space-y-3">
+                    <div className="flex justify-between">
+                      <span className="text-gray-600">Type:</span>
+                      <span className="font-medium">{getTypeLabel(selectedProperty.type)}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-gray-600">Location:</span>
+                      <span className="font-medium">{selectedProperty.location}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-gray-600">City:</span>
+                      <span className="font-medium">{selectedProperty.city}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-gray-600">State:</span>
+                      <span className="font-medium">{selectedProperty.state}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-gray-600">Price per night:</span>
+                      <span className="font-medium text-blue-600">₹{selectedProperty.price?.toLocaleString()}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-gray-600">Status:</span>
+                      <span className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(selectedProperty.status)}`}>
+                        {selectedProperty.status}
+                      </span>
+                    </div>
                   </div>
-                  <div className="flex items-center">
-                    <i className="fas fa-star text-yellow-400 mr-1"></i>
-                    <span className="font-semibold text-card-foreground">{selectedProperty.rating}/5</span>
+                </div>
+
+                <div>
+                  <h3 className="text-lg font-semibold mb-4">Capacity & Rooms</h3>
+                  <div className="space-y-3">
+                    <div className="flex justify-between">
+                      <span className="text-gray-600">Max Guests:</span>
+                      <span className="font-medium">{selectedProperty.capacity} people</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-gray-600">Bedrooms:</span>
+                      <span className="font-medium">{selectedProperty.bedrooms}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-gray-600">Bathrooms:</span>
+                      <span className="font-medium">{selectedProperty.bathrooms}</span>
+                    </div>
                   </div>
                 </div>
               </div>
-              <button
-                onClick={() => setShowViewModal(false)}
-                className="p-2 rounded-full hover:bg-muted/50 text-muted-foreground hover:text-card-foreground transition-colors"
-              >
-                <i className="fas fa-times text-xl"></i>
-              </button>
-            </div>
 
-            {/* Modal Content */}
-            <div className="overflow-y-auto max-h-[calc(95vh-100px)]">
-              <div className="p-6 space-y-8">
-                {/* Image Gallery and Key Info */}
-                <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                  <div className="lg:col-span-2">
-                    <div className="h-96 rounded-xl overflow-hidden">
-                      <ImageCarousel
-                        images={selectedProperty.images || ['/placeholder.svg']}
-                        alt={selectedProperty.name}
-                      />
-                    </div>
-                  </div>
-                  <div className="space-y-6">
-                    {/* Status and Type */}
-                    <div className="flex flex-wrap gap-3">
-                      <span className={`px-4 py-2 rounded-full text-sm font-semibold ${getStatusColor(selectedProperty.status)}`}>
-                        {selectedProperty.status.charAt(0).toUpperCase() + selectedProperty.status.slice(1)}
-                      </span>
-                      <span className="bg-muted text-muted-foreground px-4 py-2 rounded-full text-sm font-medium border border-border">
-                        {getTypeLabel(selectedProperty.type)}
-                      </span>
-                    </div>
-
-                    {/* Pricing */}
-                    <div className="bg-gradient-to-r from-brand-red/10 to-brand-orange/10 p-6 rounded-xl border border-brand-red/20">
-                      <div className="text-center">
-                        <div className="text-4xl font-bold text-card-foreground mb-2">
-                          ₹{(selectedProperty.price || 0).toLocaleString()}
-                        </div>
-                        <p className="text-muted-foreground">per night</p>
-                      </div>
-                    </div>
-
-                    {/* Key Stats */}
-                    <div className="grid grid-cols-2 gap-4">
-                      <div className="bg-muted/50 p-4 rounded-lg text-center">
-                        <div className="text-2xl font-bold text-card-foreground">{selectedProperty.capacity}</div>
-                        <p className="text-sm text-muted-foreground">Guests</p>
-                      </div>
-                      <div className="bg-muted/50 p-4 rounded-lg text-center">
-                        <div className="text-2xl font-bold text-card-foreground">{selectedProperty.bedrooms}</div>
-                        <p className="text-sm text-muted-foreground">Bedrooms</p>
-                      </div>
-                      <div className="bg-muted/50 p-4 rounded-lg text-center">
-                        <div className="text-2xl font-bold text-card-foreground">{selectedProperty.bathrooms}</div>
-                        <p className="text-sm text-muted-foreground">Bathrooms</p>
-                      </div>
-                      <div className="bg-muted/50 p-4 rounded-lg text-center">
-                        <div className="text-2xl font-bold text-card-foreground">{selectedProperty.totalBookings}</div>
-                        <p className="text-sm text-muted-foreground">Bookings</p>
-                      </div>
-                    </div>
-                  </div>
+              {/* Description */}
+              {selectedProperty.description && (
+                <div className="mt-6">
+                  <h3 className="text-lg font-semibold mb-3">Description</h3>
+                  <p className="text-gray-600 leading-relaxed">{selectedProperty.description}</p>
                 </div>
+              )}
 
-                {/* Description */}
-                <div className="bg-muted/30 p-6 rounded-xl">
-                  <h4 className="text-xl font-bold text-card-foreground mb-4">
-                    <i className="fas fa-align-left mr-2 text-brand-red"></i>
-                    Description
-                  </h4>
-                  <p className="text-muted-foreground leading-relaxed">{selectedProperty.description}</p>
-                </div>
-
-                {/* Amenities */}
-                <div>
-                  <h4 className="text-xl font-bold text-card-foreground mb-6">
-                    <i className="fas fa-star mr-2 text-brand-orange"></i>
-                    Amenities & Features
-                  </h4>
-                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                    {selectedProperty.amenities.map((amenity: string) => (
-                      <div key={amenity} className="flex items-center space-x-3 bg-muted/50 p-3 rounded-lg">
-                        <div className="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center">
-                          <i className="fas fa-check text-green-600 text-sm"></i>
-                        </div>
-                        <span className="capitalize font-medium text-card-foreground">{amenity}</span>
-                      </div>
+              {/* Amenities */}
+              {selectedProperty.amenities && selectedProperty.amenities.length > 0 && (
+                <div className="mt-6">
+                  <h3 className="text-lg font-semibold mb-3">Amenities</h3>
+                  <div className="flex flex-wrap gap-2">
+                    {selectedProperty.amenities.map((amenity: string, index: number) => (
+                      <span
+                        key={index}
+                        className="bg-blue-100 text-blue-800 px-3 py-1 rounded-full text-sm"
+                      >
+                        {amenity}
+                      </span>
                     ))}
                   </div>
                 </div>
-
-                {/* Performance Metrics */}
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                  <div className="bg-green-50 border border-green-200 p-6 rounded-xl text-center">
-                    <div className="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-3">
-                      <i className="fas fa-chart-line text-green-600"></i>
-                    </div>
-                    <div className="text-2xl font-bold text-green-800 mb-1">
-                      ₹{(selectedProperty.totalEarnings || 0).toLocaleString()}
-                    </div>
-                    <p className="text-sm text-green-600 font-medium">Total Earnings</p>
-                  </div>
-                  <div className="bg-blue-50 border border-blue-200 p-6 rounded-xl text-center">
-                    <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-3">
-                      <i className="fas fa-calendar-check text-blue-600"></i>
-                    </div>
-                    <div className="text-2xl font-bold text-blue-800 mb-1">{selectedProperty.totalBookings}</div>
-                    <p className="text-sm text-blue-600 font-medium">Total Bookings</p>
-                  </div>
-                  <div className="bg-purple-50 border border-purple-200 p-6 rounded-xl text-center">
-                    <div className="w-12 h-12 bg-purple-100 rounded-full flex items-center justify-center mx-auto mb-3">
-                      <i className="fas fa-calendar text-purple-600"></i>
-                    </div>
-                    <div className="text-2xl font-bold text-purple-800 mb-1">
-                      {new Date(selectedProperty.createdAt).toLocaleDateString()}
-                    </div>
-                    <p className="text-sm text-purple-600 font-medium">Date Added</p>
-                  </div>
-                </div>
-
-                {/* Action Buttons */}
-                <div className="flex flex-col sm:flex-row gap-4 pt-6 border-t border-border">
-                  <button 
-                    onClick={() => {
-                      setShowViewModal(false);
-                      handleEditProperty(selectedProperty);
-                    }}
-                    className="flex-1 bg-gradient-to-r from-brand-red to-brand-orange hover:from-brand-red/90 hover:to-brand-orange/90 text-white px-6 py-3 rounded-lg font-semibold transition-all duration-200 shadow-md hover:shadow-lg"
-                  >
-                    <i className="fas fa-edit mr-2"></i>
-                    Edit Property
-                  </button>
-                  <button 
-                    onClick={() => setShowViewModal(false)}
-                    className="px-6 py-3 bg-secondary hover:bg-secondary/80 text-secondary-foreground rounded-lg font-medium transition-colors duration-200 border border-border"
-                  >
-                    Close
-                  </button>
-                </div>
-              </div>
+              )}
             </div>
           </div>
         </div>
