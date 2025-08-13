@@ -5,6 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Alert, AlertDescription } from '@/components/ui/alert';
+import { useOwnerProperties, useOwnerBookings, useOwnerStats } from '@/hooks/useOwnerData';
 import { 
   Home, 
   Calendar, 
@@ -23,7 +24,7 @@ import {
 } from 'lucide-react';
 
 // Import existing owner dashboard components
-import Properties from '@/components/owner/Properties';
+import Properties from '@/components/owner/PropertiesNew';
 import Bookings from '@/components/owner/Bookings';
 import Earnings from '@/components/owner/Earnings';
 import Reviews from '@/components/owner/Reviews';
@@ -38,6 +39,11 @@ const HostDashboard: React.FC = () => {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [activeTab, setActiveTab] = useState('dashboard');
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
+
+  // Fetch real data using custom hooks
+  const { properties, loading: propertiesLoading } = useOwnerProperties(user?.id || '');
+  const { bookings, loading: bookingsLoading } = useOwnerBookings(user?.id || '');
+  const { stats, loading: statsLoading } = useOwnerStats(user?.id || '');
 
   // Check for success message from signup/login
   useEffect(() => {
@@ -138,8 +144,12 @@ const HostDashboard: React.FC = () => {
             <Home className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">12</div>
-            <p className="text-xs text-muted-foreground">+2 from last month</p>
+            <div className="text-2xl font-bold">
+              {statsLoading ? "..." : stats.totalProperties}
+            </div>
+            <p className="text-xs text-muted-foreground">
+              +{stats.propertiesThisMonth} this month
+            </p>
           </CardContent>
         </Card>
 
@@ -149,30 +159,38 @@ const HostDashboard: React.FC = () => {
             <Calendar className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">28</div>
-            <p className="text-xs text-muted-foreground">+5 this week</p>
+            <div className="text-2xl font-bold">
+              {statsLoading ? "..." : stats.activeBookings}
+            </div>
+            <p className="text-xs text-muted-foreground">Current confirmed bookings</p>
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Revenue</CardTitle>
+            <CardTitle className="text-sm font-medium">Total Revenue</CardTitle>
             <DollarSign className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">₹45,231</div>
-            <p className="text-xs text-muted-foreground">+12% from last month</p>
+            <div className="text-2xl font-bold">
+              {statsLoading ? "..." : `₹${stats.totalRevenue.toLocaleString()}`}
+            </div>
+            <p className="text-xs text-muted-foreground">
+              ₹{stats.revenueThisMonth.toLocaleString()} this month
+            </p>
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Avg. Rating</CardTitle>
+            <CardTitle className="text-sm font-medium">Avg Rating</CardTitle>
             <Star className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">4.8</div>
-            <p className="text-xs text-muted-foreground">Based on 234 reviews</p>
+            <div className="text-2xl font-bold">
+              {statsLoading ? "..." : stats.averageRating.toFixed(1)}
+            </div>
+            <p className="text-xs text-muted-foreground">Across all properties</p>
           </CardContent>
         </Card>
       </div>
@@ -185,57 +203,83 @@ const HostDashboard: React.FC = () => {
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
-              <div className="flex items-center justify-between border-b pb-2">
-                <div>
-                  <p className="font-medium">Sunset Villa Resort</p>
-                  <p className="text-sm text-gray-500">John Smith • 3 days</p>
-                </div>
-                <Badge variant="secondary">Confirmed</Badge>
-              </div>
-              <div className="flex items-center justify-between border-b pb-2">
-                <div>
-                  <p className="font-medium">Lakeside Retreat</p>
-                  <p className="text-sm text-gray-500">Sarah Johnson • 5 days</p>
-                </div>
-                <Badge variant="secondary">Pending</Badge>
-              </div>
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="font-medium">Mountain Cottage</p>
-                  <p className="text-sm text-gray-500">Mike Davis • 2 days</p>
-                </div>
-                <Badge variant="secondary">Confirmed</Badge>
-              </div>
+              {bookingsLoading ? (
+                <div className="text-center py-4 text-muted-foreground">Loading bookings...</div>
+              ) : bookings.length > 0 ? (
+                bookings.slice(0, 3).map((booking) => (
+                  <div key={booking.id} className="flex items-center justify-between p-3 bg-gray-50 rounded">
+                    <div>
+                      <p className="font-medium">₹{Number(booking.total_amount).toLocaleString()}</p>
+                      <p className="text-sm text-gray-600">{booking.property?.title || 'Property'}</p>
+                      <p className="text-xs text-gray-500">
+                        {new Date(booking.check_in_date).toLocaleDateString()} - {new Date(booking.check_out_date).toLocaleDateString()}
+                      </p>
+                    </div>
+                    <Badge variant="secondary" className={
+                      booking.status === 'confirmed' ? 'bg-green-100 text-green-800' :
+                      booking.status === 'pending' ? 'bg-yellow-100 text-yellow-800' :
+                      'bg-gray-100 text-gray-800'
+                    }>
+                      {booking.status}
+                    </Badge>
+                  </div>
+                ))
+              ) : (
+                <div className="text-center py-4 text-muted-foreground">No bookings yet</div>
+              )}
+              <Button variant="outline" className="w-full" onClick={() => setActiveTab('bookings')}>
+                View All Bookings
+              </Button>
             </div>
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader>
-            <CardTitle>Recent Messages</CardTitle>
+            <CardTitle>Your Properties</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
-              <div className="flex items-start space-x-3">
-                <div className="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center text-white text-sm">
-                  JS
-                </div>
-                <div className="flex-1">
-                  <p className="font-medium">John Smith</p>
-                  <p className="text-sm text-gray-500">Question about check-in time</p>
-                  <p className="text-xs text-gray-400">2 hours ago</p>
-                </div>
-              </div>
-              <div className="flex items-start space-x-3">
-                <div className="w-8 h-8 bg-green-500 rounded-full flex items-center justify-center text-white text-sm">
-                  SJ
-                </div>
-                <div className="flex-1">
-                  <p className="font-medium">Sarah Johnson</p>
-                  <p className="text-sm text-gray-500">Booking confirmation</p>
-                  <p className="text-xs text-gray-400">4 hours ago</p>
-                </div>
-              </div>
+              {propertiesLoading ? (
+                <div className="text-center py-4 text-muted-foreground">Loading properties...</div>
+              ) : properties.length > 0 ? (
+                properties.slice(0, 3).map((property) => (
+                  <div key={property.id} className="flex items-center space-x-3 p-3 bg-gray-50 rounded">
+                    <div className="w-12 h-12 bg-gray-200 rounded-lg overflow-hidden">
+                      {property.images && property.images.length > 0 ? (
+                        <img 
+                          src={property.images[0]} 
+                          alt={property.title}
+                          className="w-full h-full object-cover"
+                        />
+                      ) : (
+                        <div className="w-full h-full flex items-center justify-center">
+                          <Home className="w-6 h-6 text-gray-400" />
+                        </div>
+                      )}
+                    </div>
+                    <div className="flex-1">
+                      <p className="font-medium">{property.title}</p>
+                      <p className="text-sm text-gray-600">{property.property_type}</p>
+                      <p className="text-xs text-gray-500">
+                        ₹{property.pricing?.daily_rate || 0}/night
+                      </p>
+                    </div>
+                    <Badge variant="secondary" className={
+                      property.status === 'approved' ? 'bg-green-100 text-green-800' :
+                      property.status === 'pending' ? 'bg-yellow-100 text-yellow-800' :
+                      'bg-red-100 text-red-800'
+                    }>
+                      {property.status}
+                    </Badge>
+                  </div>
+                ))
+              ) : (
+                <div className="text-center py-4 text-muted-foreground">No properties yet</div>
+              )}
+              <Button variant="outline" className="w-full" onClick={() => setActiveTab('properties')}>
+                View All Properties
+              </Button>
             </div>
           </CardContent>
         </Card>
