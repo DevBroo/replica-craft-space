@@ -30,10 +30,25 @@ const CustomerLogin: React.FC = () => {
     }
   }, [location.state]);
 
+  // Restore booking data if available
+  useEffect(() => {
+    if (location.state?.bookingData) {
+      // Store booking data temporarily
+      sessionStorage.setItem('pendingBookingData', JSON.stringify(location.state.bookingData));
+    }
+  }, [location.state]);
+
   // Redirect if already authenticated
   useEffect(() => {
     if (isAuthenticated && user) {
-      // Redirect based on user role
+      // Check if we need to return to booking
+      const returnTo = location.state?.returnTo;
+      if (returnTo) {
+        navigate(returnTo, { replace: true });
+        return;
+      }
+      
+      // Default role-based redirects
       switch (user.role) {
         case 'property_owner':
           navigate('/owner/view', { replace: true });
@@ -47,7 +62,7 @@ const CustomerLogin: React.FC = () => {
         case 'customer':
         case 'user':
         default:
-          navigate('/customer/dashboard', { replace: true });
+          navigate('/customer-dashboard', { replace: true });
           break;
       }
     }

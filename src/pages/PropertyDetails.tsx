@@ -24,6 +24,31 @@ const PropertyDetails = () => {
   const { user, isAuthenticated } = useAuth();
   const { toast } = useToast();
   
+  // Restore booking data if returning from login
+  useEffect(() => {
+    const pendingBookingData = sessionStorage.getItem('pendingBookingData');
+    if (pendingBookingData) {
+      try {
+        const bookingData = JSON.parse(pendingBookingData);
+        setCheckInDate(bookingData.checkInDate || '');
+        setCheckOutDate(bookingData.checkOutDate || '');
+        setGuests(bookingData.guests || 2);
+        
+        // Clear the stored data
+        sessionStorage.removeItem('pendingBookingData');
+        
+        if (isAuthenticated) {
+          toast({
+            title: "Welcome back!",
+            description: "Your booking details have been restored. You can now complete your reservation.",
+          });
+        }
+      } catch (error) {
+        console.error('Error restoring booking data:', error);
+      }
+    }
+  }, [isAuthenticated, toast]);
+
   useEffect(() => {
     const loadProperty = async () => {
       if (!id) return;
@@ -139,64 +164,131 @@ const PropertyDetails = () => {
   };
 
   const handleBooking = async () => {
-    if (!isAuthenticated) {
+    // Pre-validate authentication
+    if (!isAuthenticated || !user) {
       toast({
-        title: "Login Required",
-        description: "Please log in to make a booking.",
+        title: "Sign In Required",
+        description: "Please sign in to your account to book this property. We'll save your selection.",
         variant: "destructive"
       });
-      navigate('/customer/login');
+      
+      // Navigate to login with booking context
+      navigate('/customer-login', { 
+        state: { 
+          returnTo: `/property/${property.id}`,
+          bookingData: { checkInDate, checkOutDate, guests },
+          message: "Please sign in to complete your booking"
+        }
+      });
       return;
     }
 
+    // Validate dates
     if (!checkInDate || !checkOutDate) {
       toast({
-        title: "Missing Dates",
-        description: "Please select check-in and check-out dates.",
+        title: "Select Your Dates",
+        description: "Please choose your check-in and check-out dates to proceed with booking.",
         variant: "destructive"
       });
       return;
     }
 
-    if (new Date(checkOutDate) <= new Date(checkInDate)) {
+    const checkIn = new Date(checkInDate);
+    const checkOut = new Date(checkOutDate);
+    
+    if (checkIn >= checkOut) {
       toast({
-        title: "Invalid Dates",
-        description: "Check-out date must be after check-in date.",
+        title: "Invalid Date Selection",
+        description: "Your check-out date must be after your check-in date. Please adjust your dates.",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    // Check if booking is in the past
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    if (checkIn < today) {
+      toast({
+        title: "Past Date Selected",
+        description: "Check-in date cannot be in the past. Please select a future date.",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    // Validate guest count
+    if (guests > property.max_guests) {
+      toast({
+        title: "Guest Limit Exceeded",
+        description: `This property accommodates up to ${property.max_guests} guests. Please adjust your guest count.`,
+        variant: "destructive"
+      });
+      return;
+    }
+
+    if (guests < 1) {
+      toast({
+        title: "Invalid Guest Count",
+        description: "At least one guest is required for booking.",
         variant: "destructive"
       });
       return;
     }
 
     setIsBooking(true);
+    
     try {
-      const bookingData = {
+      console.log('📝 Creating booking with data:', {
         property_id: property.id,
         user_id: user.id,
         check_in_date: checkInDate,
         check_out_date: checkOutDate,
-        guests: guests,
+        guests,
+        total_amount: calculateTotal()
+      });
+
+      const booking = await BookingService.createBooking({
+        property_id: property.id,
+        user_id: user.id,
+        check_in_date: checkInDate,
+        check_out_date: checkOutDate,
+        guests,
         total_amount: calculateTotal(),
         booking_details: {
           property_title: property.title,
-          nights: calculateNights(),
-          price_per_night: property.price
+          property_location: property.location,
+          nights: calculateNights()
         }
-      };
-
-      const booking = await BookingService.createBooking(bookingData);
-      
-      toast({
-        title: "Booking Created!",
-        description: "Your booking has been successfully created.",
       });
 
-      // Redirect to customer dashboard
-      navigate('/customer/dashboard');
+      console.log('✅ Booking created successfully:', booking);
+      
+      toast({
+        title: "Booking Confirmed! 🎉",
+        description: `Your reservation for ${property.title} has been confirmed. Check your dashboard for details.`,
+      });
+      
+      // Navigate to customer dashboard to see the booking
+      navigate('/customer-dashboard');
+      
     } catch (error: any) {
-      console.error('Booking error:', error);
+      console.error('❌ Error creating booking:', error);
+      
+      // More specific error messages
+      let errorMessage = "We couldn't complete your booking. Please try again.";
+      
+      if (error?.message?.includes('auth')) {
+        errorMessage = "Authentication expired. Please sign in again to continue.";
+      } else if (error?.message?.includes('availability')) {
+        errorMessage = "This property is not available for your selected dates. Please choose different dates.";
+      } else if (error?.message?.includes('payment')) {
+        errorMessage = "Payment processing failed. Please check your payment details and try again.";
+      }
+      
       toast({
         title: "Booking Failed",
-        description: error.message || "Failed to create booking. Please try again.",
+        description: errorMessage,
         variant: "destructive"
       });
     } finally {
@@ -384,6 +476,35 @@ const PropertyDetails = () => {
                   <div className="text-sm text-muted-foreground">per night</div>
                 </div>
 
+                {/* Authentication Status */}
+                {isAuthenticated ? (
+                  <div className="mb-4 p-3 bg-green-50 border border-green-200 rounded-lg">
+                    <div className="flex items-center text-green-700">
+                      <div className="w-2 h-2 bg-green-500 rounded-full mr-2"></div>
+                      <span className="text-sm font-medium">Signed in as {user?.email}</span>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="mb-4 p-3 bg-orange-50 border border-orange-200 rounded-lg">
+                    <div className="text-orange-700 mb-2">
+                      <span className="text-sm font-medium">Sign in required to book</span>
+                    </div>
+                    <Button 
+                      variant="outline" 
+                      size="sm" 
+                      onClick={() => navigate('/customer-login', { 
+                        state: { 
+                          returnTo: `/property/${property.id}`,
+                          bookingData: { checkInDate, checkOutDate, guests }
+                        }
+                      })}
+                      className="w-full"
+                    >
+                      Sign In to Continue
+                    </Button>
+                  </div>
+                )}
+
                 <div className="space-y-4 mb-6">
                   <div>
                     <label className="block text-sm font-medium mb-2">Check-in</label>
@@ -437,9 +558,10 @@ const PropertyDetails = () => {
                 <Button 
                   className="w-full mb-4" 
                   onClick={handleBooking}
-                  disabled={isBooking || !checkInDate || !checkOutDate}
+                  disabled={isBooking || !checkInDate || !checkOutDate || !isAuthenticated}
                 >
-                  {isBooking ? 'Creating Booking...' : 'Reserve Now'}
+                  {isBooking ? 'Creating Booking...' : 
+                   !isAuthenticated ? 'Sign In to Book' : 'Reserve Now'}
                 </Button>
                 
                 <div className="text-center text-sm text-muted-foreground">
