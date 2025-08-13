@@ -494,7 +494,7 @@ const PropertyDetails = () => {
                       size="sm" 
                       onClick={() => {
                         console.log('🔄 Navigating to customer login...');
-                        navigate('/customer-login', { 
+                        navigate('/login', { 
                           state: { 
                             returnTo: `/property/${property?.id}`,
                             bookingData: { checkInDate, checkOutDate, guests },
