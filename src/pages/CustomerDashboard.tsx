@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
+import { BookingService } from '@/lib/bookingService';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -47,27 +48,10 @@ export default function CustomerDashboard() {
 
   const fetchUserData = async () => {
     try {
-      // Fetch bookings
-      const { data: bookingsData, error: bookingsError } = await supabase
-        .from('bookings')
-        .select(`
-          id,
-          property_id,
-          check_in_date,
-          check_out_date,
-          status,
-          total_amount,
-          properties (
-            title
-          )
-        `)
-        .eq('user_id', user?.id)
-        .order('created_at', { ascending: false });
-
-      if (bookingsError) {
-        console.error('Error fetching bookings:', bookingsError);
-      } else {
-        const formattedBookings = bookingsData?.map(booking => ({
+      // Fetch bookings using BookingService
+      if (user?.id) {
+        const bookingsData = await BookingService.getUserBookings(user.id);
+        const formattedBookings = bookingsData.map(booking => ({
           id: booking.id,
           property_id: booking.property_id,
           property_title: booking.properties?.title || 'Unknown Property',
@@ -75,7 +59,7 @@ export default function CustomerDashboard() {
           check_out_date: booking.check_out_date,
           status: booking.status,
           total_amount: booking.total_amount
-        })) || [];
+        }));
         setBookings(formattedBookings);
       }
 

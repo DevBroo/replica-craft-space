@@ -1330,7 +1330,13 @@ const Properties: React.FC = () => {
 
                   {/* Action Buttons */}
                   <div className="space-y-3">
-                    <button className="w-full bg-gradient-to-r from-brand-red to-brand-orange text-white py-4 rounded-lg font-semibold text-lg hover:scale-105 transition-transform duration-200">
+                    <button 
+                      className="w-full bg-gradient-to-r from-brand-red to-brand-orange text-white py-4 rounded-lg font-semibold text-lg hover:scale-105 transition-transform duration-200"
+                      onClick={() => {
+                        setShowViewModal(false);
+                        navigate(`/property/${selectedProperty.id}`);
+                      }}
+                    >
                       Book Now
                     </button>
                     <button className="w-full border border-brand-red text-brand-red py-3 rounded-lg font-semibold hover:bg-brand-red hover:text-white transition-colors duration-200">

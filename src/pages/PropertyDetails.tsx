@@ -5,6 +5,9 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { useState, useEffect } from "react";
 import { PropertyService } from "@/lib/propertyService";
+import { BookingService } from "@/lib/bookingService";
+import { useAuth } from "@/contexts/AuthContext";
+import { useToast } from "@/hooks/use-toast";
 
 // No dummy data - load from database using PropertyService
 
@@ -15,6 +18,11 @@ const PropertyDetails = () => {
   const [guests, setGuests] = useState(2);
   const [property, setProperty] = useState<any>(null);
   const [loading, setLoading] = useState(true);
+  const [checkInDate, setCheckInDate] = useState('');
+  const [checkOutDate, setCheckOutDate] = useState('');
+  const [isBooking, setIsBooking] = useState(false);
+  const { user, isAuthenticated } = useAuth();
+  const { toast } = useToast();
   
   useEffect(() => {
     const loadProperty = async () => {
@@ -114,6 +122,87 @@ const PropertyDetails = () => {
 
     loadProperty();
   }, [id]);
+
+  const calculateNights = () => {
+    if (!checkInDate || !checkOutDate) return 0;
+    const checkIn = new Date(checkInDate);
+    const checkOut = new Date(checkOutDate);
+    const diffTime = checkOut.getTime() - checkIn.getTime();
+    return Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+  };
+
+  const calculateTotal = () => {
+    const nights = calculateNights();
+    const basePrice = property.price * nights;
+    const serviceFee = Math.round(basePrice * 0.1);
+    return basePrice + serviceFee;
+  };
+
+  const handleBooking = async () => {
+    if (!isAuthenticated) {
+      toast({
+        title: "Login Required",
+        description: "Please log in to make a booking.",
+        variant: "destructive"
+      });
+      navigate('/customer/login');
+      return;
+    }
+
+    if (!checkInDate || !checkOutDate) {
+      toast({
+        title: "Missing Dates",
+        description: "Please select check-in and check-out dates.",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    if (new Date(checkOutDate) <= new Date(checkInDate)) {
+      toast({
+        title: "Invalid Dates",
+        description: "Check-out date must be after check-in date.",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    setIsBooking(true);
+    try {
+      const bookingData = {
+        property_id: property.id,
+        user_id: user.id,
+        check_in_date: checkInDate,
+        check_out_date: checkOutDate,
+        guests: guests,
+        total_amount: calculateTotal(),
+        booking_details: {
+          property_title: property.title,
+          nights: calculateNights(),
+          price_per_night: property.price
+        }
+      };
+
+      const booking = await BookingService.createBooking(bookingData);
+      
+      toast({
+        title: "Booking Created!",
+        description: "Your booking has been successfully created.",
+      });
+
+      // Redirect to customer dashboard
+      navigate('/customer/dashboard');
+    } catch (error: any) {
+      console.error('Booking error:', error);
+      toast({
+        title: "Booking Failed",
+        description: error.message || "Failed to create booking. Please try again.",
+        variant: "destructive"
+      });
+    } finally {
+      setIsBooking(false);
+    }
+  };
 
   if (loading) {
     return (
@@ -297,11 +386,25 @@ const PropertyDetails = () => {
 
                 <div className="space-y-4 mb-6">
                   <div>
-                    <label className="block text-sm font-medium mb-2">Check-in / Check-out</label>
-                    <Button variant="outline" className="w-full justify-start">
-                      <Calendar className="w-4 h-4 mr-2" />
-                      Select dates
-                    </Button>
+                    <label className="block text-sm font-medium mb-2">Check-in</label>
+                    <input
+                      type="date"
+                      value={checkInDate}
+                      onChange={(e) => setCheckInDate(e.target.value)}
+                      className="w-full p-3 border rounded-lg"
+                      min={new Date().toISOString().split('T')[0]}
+                    />
+                  </div>
+                  
+                  <div>
+                    <label className="block text-sm font-medium mb-2">Check-out</label>
+                    <input
+                      type="date"
+                      value={checkOutDate}
+                      onChange={(e) => setCheckOutDate(e.target.value)}
+                      className="w-full p-3 border rounded-lg"
+                      min={checkInDate || new Date().toISOString().split('T')[0]}
+                    />
                   </div>
                   
                   <div>
@@ -331,30 +434,36 @@ const PropertyDetails = () => {
                   </div>
                 </div>
 
-                <Button className="w-full mb-4">
-                  Reserve Now
+                <Button 
+                  className="w-full mb-4" 
+                  onClick={handleBooking}
+                  disabled={isBooking || !checkInDate || !checkOutDate}
+                >
+                  {isBooking ? 'Creating Booking...' : 'Reserve Now'}
                 </Button>
                 
                 <div className="text-center text-sm text-muted-foreground">
                   You won't be charged yet
                 </div>
 
-                <div className="border-t pt-4 mt-4">
-                  <div className="flex justify-between items-center text-sm mb-2">
-                    <span>${property.price} × 5 nights</span>
-                    <span>${property.price * 5}</span>
-                  </div>
-                  <div className="flex justify-between items-center text-sm mb-2">
-                    <span>Service fee</span>
-                    <span>${Math.round(property.price * 5 * 0.1)}</span>
-                  </div>
-                  <div className="border-t pt-2 mt-2">
-                    <div className="flex justify-between items-center font-semibold">
-                      <span>Total</span>
-                      <span>${property.price * 5 + Math.round(property.price * 5 * 0.1)}</span>
+                {checkInDate && checkOutDate && (
+                  <div className="border-t pt-4 mt-4">
+                    <div className="flex justify-between items-center text-sm mb-2">
+                      <span>${property.price} × {calculateNights()} nights</span>
+                      <span>${property.price * calculateNights()}</span>
+                    </div>
+                    <div className="flex justify-between items-center text-sm mb-2">
+                      <span>Service fee</span>
+                      <span>${Math.round(property.price * calculateNights() * 0.1)}</span>
+                    </div>
+                    <div className="border-t pt-2 mt-2">
+                      <div className="flex justify-between items-center font-semibold">
+                        <span>Total</span>
+                        <span>${calculateTotal()}</span>
+                      </div>
                     </div>
                   </div>
-                </div>
+                )}
               </CardContent>
             </Card>
           </div>
