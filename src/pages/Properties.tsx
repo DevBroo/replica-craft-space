@@ -1042,37 +1042,78 @@ const Properties: React.FC = () => {
                     </div>
                   </div>
 
-                  {/* Property Information */}
+                  {/* Property Classification & Location */}
                   <div className="mb-6">
-                    <h3 className="text-lg font-semibold text-foreground mb-3">Property Information</h3>
+                    <h3 className="text-lg font-semibold text-foreground mb-3">Property Details</h3>
                     <div className="space-y-3">
-                      {selectedProperty.rawData?.postal_code && (
+                      {/* Property Type & Subtype */}
+                      {selectedProperty.rawData?.property_type && (
                         <div className="flex items-center gap-2">
-                          <i className="fas fa-map-pin text-brand-red"></i>
+                          <i className="fas fa-home text-brand-red"></i>
                           <span className="text-sm text-muted-foreground">
-                            Postal Code: {selectedProperty.rawData.postal_code}
+                            {selectedProperty.rawData.property_type}
+                            {selectedProperty.rawData.property_subtype && ` • ${selectedProperty.rawData.property_subtype}`}
                           </span>
+                          {selectedProperty.rawData?.is_featured && (
+                            <span className="px-2 py-1 bg-brand-red/10 text-brand-red rounded-full text-xs font-medium">
+                              <i className="fas fa-star mr-1"></i>Featured
+                            </span>
+                          )}
                         </div>
                       )}
-                      {selectedProperty.rawData?.license_number && (
-                        <div className="flex items-center gap-2">
-                          <i className="fas fa-certificate text-brand-red"></i>
-                          <span className="text-sm text-muted-foreground">
-                            License: {selectedProperty.rawData.license_number}
-                          </span>
+                      
+                      {/* Full Address */}
+                      {selectedProperty.address && (
+                        <div className="flex items-start gap-2">
+                          <i className="fas fa-map-marker-alt text-brand-red mt-1"></i>
+                          <div className="text-sm text-muted-foreground">
+                            <div>{selectedProperty.address}</div>
+                            {selectedProperty.rawData?.postal_code && (
+                              <div className="text-xs text-muted-foreground/70">
+                                {selectedProperty.rawData.postal_code}, {selectedProperty.rawData?.country || 'India'}
+                              </div>
+                            )}
+                          </div>
                         </div>
                       )}
-                      {selectedProperty.rawData?.contact_phone && (
-                        <div className="flex items-center gap-2">
-                          <i className="fas fa-phone text-brand-red"></i>
-                          <a href={`tel:${selectedProperty.rawData.contact_phone}`} 
-                             className="text-sm text-brand-red hover:underline">
-                            {selectedProperty.rawData.contact_phone}
-                          </a>
-                        </div>
-                      )}
+
+                      {/* Contact & License */}
+                      <div className="grid grid-cols-1 gap-3">
+                        {selectedProperty.rawData?.contact_phone && (
+                          <div className="flex items-center gap-2">
+                            <i className="fas fa-phone text-brand-red"></i>
+                            <a href={`tel:${selectedProperty.rawData.contact_phone}`} 
+                               className="text-sm text-brand-red hover:underline">
+                              {selectedProperty.rawData.contact_phone}
+                            </a>
+                          </div>
+                        )}
+                        {selectedProperty.rawData?.license_number && (
+                          <div className="flex items-center gap-2">
+                            <i className="fas fa-certificate text-brand-red"></i>
+                            <span className="text-sm text-muted-foreground">
+                              License: {selectedProperty.rawData.license_number}
+                            </span>
+                          </div>
+                        )}
+                      </div>
                     </div>
                   </div>
+
+                  {/* Bed Configuration */}
+                  {selectedProperty.rawData?.bed_configuration?.beds && selectedProperty.rawData.bed_configuration.beds.length > 0 && (
+                    <div className="mb-6">
+                      <h3 className="text-lg font-semibold text-foreground mb-3">Bed Configuration</h3>
+                      <div className="grid grid-cols-2 gap-3">
+                        {selectedProperty.rawData.bed_configuration.beds.map((bed: any, index: number) => (
+                          <div key={index} className="flex items-center gap-2 text-sm text-muted-foreground bg-muted p-3 rounded-lg">
+                            <i className="fas fa-bed text-brand-red"></i>
+                            <span>{bed.count || 1} {bed.type || 'Bed'}{(bed.count || 1) > 1 ? 's' : ''}</span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
 
                   {/* Booking Policies */}
                   <div className="mb-6">
@@ -1149,6 +1190,36 @@ const Properties: React.FC = () => {
                     </div>
                   )}
 
+                  {/* House Rules */}
+                  {selectedProperty.rawData?.house_rules && Object.keys(selectedProperty.rawData.house_rules).length > 0 && (
+                    <div className="mb-6">
+                      <h3 className="text-lg font-semibold text-foreground mb-3">House Rules</h3>
+                      <div className="bg-muted p-4 rounded-lg space-y-2">
+                        {Object.entries(selectedProperty.rawData.house_rules).map(([key, value]: [string, any], index: number) => (
+                          <div key={index} className="flex items-center gap-2 text-sm text-muted-foreground">
+                            <i className={`fas fa-${value ? 'check text-green-500' : 'times text-red-500'}`}></i>
+                            <span className="capitalize">{key.replace(/_/g, ' ')}: {String(value)}</span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Booking Rules */}
+                  {selectedProperty.rawData?.booking_rules && Object.keys(selectedProperty.rawData.booking_rules).length > 0 && (
+                    <div className="mb-6">
+                      <h3 className="text-lg font-semibold text-foreground mb-3">Booking Rules</h3>
+                      <div className="bg-brand-red/5 p-4 rounded-lg space-y-2">
+                        {Object.entries(selectedProperty.rawData.booking_rules).map(([key, value]: [string, any], index: number) => (
+                          <div key={index} className="flex items-start gap-2 text-sm text-muted-foreground">
+                            <i className="fas fa-info-circle text-brand-red mt-1"></i>
+                            <span><span className="font-medium capitalize">{key.replace(/_/g, ' ')}:</span> {String(value)}</span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
                   {/* Arrival Instructions */}
                   {selectedProperty.rawData?.arrival_instructions && (
                     <div className="mb-6">
@@ -1176,20 +1247,41 @@ const Properties: React.FC = () => {
 
                   {/* Pricing Details */}
                   <div className="bg-muted rounded-lg p-6 mb-6">
-                    <h3 className="text-lg font-semibold text-foreground mb-4">Pricing</h3>
+                    <h3 className="text-lg font-semibold text-foreground mb-4">Pricing & Fees</h3>
                     <div className="space-y-3">
                       <div className="flex justify-between">
-                        <span className="text-muted-foreground">Base price</span>
+                        <span className="text-muted-foreground">Base price per night</span>
                         <span className="font-semibold">₹{selectedProperty.price.toLocaleString()}</span>
                       </div>
                       <div className="flex justify-between text-sm text-muted-foreground">
                         <span>Service fee</span>
                         <span>₹{Math.round(selectedProperty.price * 0.1).toLocaleString()}</span>
                       </div>
+                      
+                      {/* Tax Information */}
+                      {selectedProperty.rawData?.tax_information && Object.keys(selectedProperty.rawData.tax_information).length > 0 && (
+                        <div className="border-t border-border pt-2">
+                          {Object.entries(selectedProperty.rawData.tax_information).map(([key, value]: [string, any], index: number) => (
+                            <div key={index} className="flex justify-between text-sm text-muted-foreground">
+                              <span className="capitalize">{key.replace(/_/g, ' ')}</span>
+                              <span>{typeof value === 'number' ? `₹${value.toLocaleString()}` : String(value)}</span>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+
                       <div className="border-t border-border pt-3 flex justify-between font-semibold text-lg">
-                        <span>Total</span>
+                        <span>Total per night</span>
                         <span>₹{Math.round(selectedProperty.price * 1.1).toLocaleString()}</span>
                       </div>
+                      
+                      {/* Property Age Info */}
+                      {selectedProperty.rawData?.created_at && (
+                        <div className="text-xs text-muted-foreground/70 pt-2 border-t border-border">
+                          <i className="fas fa-calendar-plus mr-1"></i>
+                          Listed: {new Date(selectedProperty.rawData.created_at).toLocaleDateString()}
+                        </div>
+                      )}
                     </div>
                   </div>
 
