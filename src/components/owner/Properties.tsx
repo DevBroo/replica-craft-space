@@ -1,6 +1,5 @@
 import React, { useState } from 'react';
-import AddProperty from './AddProperty';
-import EnhancedAddProperty from './EnhancedAddProperty';
+import BookingComPropertyForm from './BookingComPropertyForm';
 
 interface PropertiesProps {
   sidebarCollapsed: boolean;
@@ -15,10 +14,20 @@ const Properties: React.FC<PropertiesProps> = ({ sidebarCollapsed, toggleSidebar
   const [searchQuery, setSearchQuery] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
   const [showAddProperty, setShowAddProperty] = useState(false);
+  const [editingProperty, setEditingProperty] = useState<any>(null);
   const propertiesPerPage = 9;
 
   if (showAddProperty) {
-    return <EnhancedAddProperty onBack={() => setShowAddProperty(false)} />;
+    return (
+      <BookingComPropertyForm 
+        onBack={() => {
+          setShowAddProperty(false);
+          setEditingProperty(null);
+        }} 
+        editingProperty={editingProperty}
+        isEdit={!!editingProperty}
+      />
+    );
   }
 
   const menuItems = [
@@ -436,7 +445,13 @@ const Properties: React.FC<PropertiesProps> = ({ sidebarCollapsed, toggleSidebar
                     <p className="text-sm font-medium text-gray-800">{property.monthlyRevenue}</p>
                   </div>
                   <div className="flex items-center space-x-2">
-                    <button className="flex-1 bg-blue-600 text-white py-2 px-3 rounded-lg hover:bg-blue-700 transition-colors cursor-pointer !rounded-button whitespace-nowrap text-sm">
+                    <button 
+                      onClick={() => {
+                        setEditingProperty(property);
+                        setShowAddProperty(true);
+                      }}
+                      className="flex-1 bg-blue-600 text-white py-2 px-3 rounded-lg hover:bg-blue-700 transition-colors cursor-pointer !rounded-button whitespace-nowrap text-sm"
+                    >
                       <i className="fas fa-edit mr-1"></i>
                       Edit
                     </button>
