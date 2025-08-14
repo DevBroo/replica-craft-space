@@ -26,13 +26,23 @@ import {
   ArrowUpDown,
   Clock,
   Calendar,
-  ExternalLink
+  ExternalLink,
+  Save,
+  AlertTriangle
 } from 'lucide-react';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '../../components/admin/ui/tabs';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '../../components/admin/ui/dialog';
+import { Button } from '../../components/admin/ui/button';
+import { Input } from '../../components/admin/ui/input';
+import { Label } from '../../components/admin/ui/label';
+import { Textarea } from '../../components/admin/ui/textarea';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../../components/admin/ui/select';
+import { useToast } from '../../hooks/use-toast';
 import SharedSidebar from '../../components/admin/SharedSidebar';
 import SharedHeader from '../../components/admin/SharedHeader';
 
 const CMSManagement: React.FC = () => {
+  const { toast } = useToast();
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [activeTab, setActiveTab] = useState('cms');
   const [activeSection, setActiveSection] = useState('banners');
@@ -44,9 +54,15 @@ const CMSManagement: React.FC = () => {
   const [showBulkActions, setShowBulkActions] = useState(false);
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [showPreviewModal, setShowPreviewModal] = useState(false);
   const [selectedItem, setSelectedItem] = useState<any>(null);
+  const [itemToDelete, setItemToDelete] = useState<any>(null);
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('list');
-
+  const [isLoading, setIsLoading] = useState(false);
+  
+  // Form states
+  const [formData, setFormData] = useState<any>({});
 
   const homepageBannersData = [
     {
@@ -167,6 +183,9 @@ const CMSManagement: React.FC = () => {
     }
   ];
 
+  // Data states (simulate database)
+  const [bannersData, setBannersData] = useState(homepageBannersData);
+  const [legalData, setLegalData] = useState(legalContentData);
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -180,9 +199,9 @@ const CMSManagement: React.FC = () => {
 
   const getCurrentData = () => {
     switch (activeSection) {
-      case 'banners': return homepageBannersData;
-      case 'legal': return legalContentData;
-      default: return homepageBannersData;
+      case 'banners': return bannersData;
+      case 'legal': return legalData;
+      default: return bannersData;
     }
   };
 
@@ -219,15 +238,174 @@ const CMSManagement: React.FC = () => {
     }
   };
 
-  const handleBulkAction = (action: string) => {
-    console.log(`Bulk ${action} for items:`, selectedItems);
-    setSelectedItems([]);
-    setShowBulkActions(false);
+  const handleBulkAction = async (action: string) => {
+    setIsLoading(true);
+    try {
+      if (action === 'publish') {
+        if (activeSection === 'banners') {
+          setBannersData(prev => prev.map(item => 
+            selectedItems.includes(item.id) ? { ...item, status: 'Active' } : item
+          ));
+        } else {
+          setLegalData(prev => prev.map(item => 
+            selectedItems.includes(item.id) ? { ...item, status: 'Published' } : item
+          ));
+        }
+        toast({
+          title: "Items Published",
+          description: `${selectedItems.length} items have been published successfully.`,
+        });
+      } else if (action === 'delete') {
+        if (activeSection === 'banners') {
+          setBannersData(prev => prev.filter(item => !selectedItems.includes(item.id)));
+        } else {
+          setLegalData(prev => prev.filter(item => !selectedItems.includes(item.id)));
+        }
+        toast({
+          title: "Items Deleted",
+          description: `${selectedItems.length} items have been deleted successfully.`,
+        });
+      }
+      setSelectedItems([]);
+      setShowBulkActions(false);
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to perform bulk action. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const handleEdit = (item: any) => {
     setSelectedItem(item);
+    setFormData(item);
     setShowEditModal(true);
+  };
+
+  const handleCreate = () => {
+    const newItem = activeSection === 'banners' ? {
+      id: '',
+      title: '',
+      subtitle: '',
+      status: 'Draft',
+      position: 'Hero',
+      startDate: '',
+      endDate: '',
+      ctaText: '',
+      ctaLink: '',
+      backgroundImage: '',
+      displayLocation: '',
+      targetAudience: 'All Users',
+      clicks: 0,
+      impressions: 0
+    } : {
+      id: '',
+      type: 'Terms of Service',
+      title: '',
+      status: 'Draft',
+      version: '1.0',
+      lastUpdated: new Date().toISOString().split('T')[0],
+      author: 'Admin',
+      wordCount: 0,
+      readingTime: '0 min',
+      sections: [],
+      approvalStatus: 'Pending Review',
+      content: ''
+    };
+    setFormData(newItem);
+    setShowCreateModal(true);
+  };
+
+  const handleSave = async () => {
+    setIsLoading(true);
+    try {
+      if (showCreateModal) {
+        const newId = activeSection === 'banners' ? `HB${String(Date.now()).slice(-3)}` : `LC${String(Date.now()).slice(-3)}`;
+        const newItem = { ...formData, id: newId };
+        
+        if (activeSection === 'banners') {
+          setBannersData(prev => [...prev, newItem]);
+        } else {
+          setLegalData(prev => [...prev, newItem]);
+        }
+        
+        toast({
+          title: "Item Created",
+          description: `${activeSection === 'banners' ? 'Banner' : 'Document'} created successfully.`,
+        });
+      } else {
+        if (activeSection === 'banners') {
+          setBannersData(prev => prev.map(item => 
+            item.id === formData.id ? formData : item
+          ));
+        } else {
+          setLegalData(prev => prev.map(item => 
+            item.id === formData.id ? formData : item
+          ));
+        }
+        
+        toast({
+          title: "Item Updated",
+          description: `${activeSection === 'banners' ? 'Banner' : 'Document'} updated successfully.`,
+        });
+      }
+      
+      setShowCreateModal(false);
+      setShowEditModal(false);
+      setFormData({});
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to save item. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleDelete = async (item: any) => {
+    setItemToDelete(item);
+    setShowDeleteModal(true);
+  };
+
+  const confirmDelete = async () => {
+    setIsLoading(true);
+    try {
+      if (activeSection === 'banners') {
+        setBannersData(prev => prev.filter(item => item.id !== itemToDelete.id));
+      } else {
+        setLegalData(prev => prev.filter(item => item.id !== itemToDelete.id));
+      }
+      
+      toast({
+        title: "Item Deleted",
+        description: `${activeSection === 'banners' ? 'Banner' : 'Document'} deleted successfully.`,
+      });
+      
+      setShowDeleteModal(false);
+      setItemToDelete(null);
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to delete item. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handlePreview = (item: any) => {
+    setSelectedItem(item);
+    setShowPreviewModal(true);
+  };
+
+  const updateFormField = (field: string, value: any) => {
+    setFormData(prev => ({ ...prev, [field]: value }));
   };
 
   const renderBannersTable = () => (
@@ -305,13 +483,21 @@ const CMSManagement: React.FC = () => {
                   >
                     <Edit className="w-4 h-4" />
                   </button>
-                  <button className="text-green-600 hover:text-green-800 cursor-pointer p-1" title="Preview Banner">
+                  <button 
+                    onClick={() => handlePreview(banner)}
+                    className="text-green-600 hover:text-green-800 cursor-pointer p-1" 
+                    title="Preview Banner"
+                  >
                     <Eye className="w-4 h-4" />
                   </button>
                   <button className="text-purple-600 hover:text-purple-800 cursor-pointer p-1" title="Reorder">
                     <ArrowUpDown className="w-4 h-4" />
                   </button>
-                  <button className="text-red-600 hover:text-red-800 cursor-pointer p-1" title="Delete">
+                  <button 
+                    onClick={() => handleDelete(banner)}
+                    className="text-red-600 hover:text-red-800 cursor-pointer p-1" 
+                    title="Delete"
+                  >
                     <Trash2 className="w-4 h-4" />
                   </button>
                 </div>
@@ -404,7 +590,11 @@ const CMSManagement: React.FC = () => {
                   >
                     <Edit className="w-4 h-4" />
                   </button>
-                  <button className="text-green-600 hover:text-green-800 cursor-pointer p-1" title="Preview Document">
+                  <button 
+                    onClick={() => handlePreview(document)}
+                    className="text-green-600 hover:text-green-800 cursor-pointer p-1" 
+                    title="Preview Document"
+                  >
                     <Eye className="w-4 h-4" />
                   </button>
                   <button className="text-purple-600 hover:text-purple-800 cursor-pointer p-1" title="Version History">
@@ -476,7 +666,7 @@ const CMSManagement: React.FC = () => {
           <div className="flex flex-wrap items-center justify-between gap-4">
             <div className="flex items-center space-x-4">
               <button
-                onClick={() => setShowCreateModal(true)}
+                onClick={handleCreate}
                 className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors cursor-pointer flex items-center"
               >
                 <Plus className="w-4 h-4 mr-2" />
@@ -638,6 +828,468 @@ const CMSManagement: React.FC = () => {
           </div>
         </main>
       </div>
+
+      {/* Create Modal */}
+      <Dialog open={showCreateModal} onOpenChange={setShowCreateModal}>
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Create New {activeSection === 'banners' ? 'Banner' : 'Document'}</DialogTitle>
+          </DialogHeader>
+          
+          {activeSection === 'banners' ? (
+            <div className="space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label htmlFor="title">Title</Label>
+                  <Input
+                    id="title"
+                    value={formData.title || ''}
+                    onChange={(e) => updateFormField('title', e.target.value)}
+                    placeholder="Enter banner title"
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="position">Position</Label>
+                  <Select value={formData.position || 'Hero'} onValueChange={(value) => updateFormField('position', value)}>
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="Hero">Hero</SelectItem>
+                      <SelectItem value="Secondary">Secondary</SelectItem>
+                      <SelectItem value="Footer">Footer</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+              
+              <div>
+                <Label htmlFor="subtitle">Subtitle</Label>
+                <Input
+                  id="subtitle"
+                  value={formData.subtitle || ''}
+                  onChange={(e) => updateFormField('subtitle', e.target.value)}
+                  placeholder="Enter banner subtitle"
+                />
+              </div>
+              
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label htmlFor="ctaText">CTA Text</Label>
+                  <Input
+                    id="ctaText"
+                    value={formData.ctaText || ''}
+                    onChange={(e) => updateFormField('ctaText', e.target.value)}
+                    placeholder="e.g., Book Now"
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="ctaLink">CTA Link</Label>
+                  <Input
+                    id="ctaLink"
+                    value={formData.ctaLink || ''}
+                    onChange={(e) => updateFormField('ctaLink', e.target.value)}
+                    placeholder="e.g., /properties"
+                  />
+                </div>
+              </div>
+              
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label htmlFor="startDate">Start Date</Label>
+                  <Input
+                    id="startDate"
+                    type="date"
+                    value={formData.startDate || ''}
+                    onChange={(e) => updateFormField('startDate', e.target.value)}
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="endDate">End Date</Label>
+                  <Input
+                    id="endDate"
+                    type="date"
+                    value={formData.endDate || ''}
+                    onChange={(e) => updateFormField('endDate', e.target.value)}
+                  />
+                </div>
+              </div>
+              
+              <div>
+                <Label htmlFor="backgroundImage">Background Image URL</Label>
+                <Input
+                  id="backgroundImage"
+                  value={formData.backgroundImage || ''}
+                  onChange={(e) => updateFormField('backgroundImage', e.target.value)}
+                  placeholder="Enter image URL"
+                />
+              </div>
+              
+              <div>
+                <Label htmlFor="displayLocation">Display Location</Label>
+                <Input
+                  id="displayLocation"
+                  value={formData.displayLocation || ''}
+                  onChange={(e) => updateFormField('displayLocation', e.target.value)}
+                  placeholder="e.g., Homepage Hero"
+                />
+              </div>
+            </div>
+          ) : (
+            <div className="space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label htmlFor="docTitle">Title</Label>
+                  <Input
+                    id="docTitle"
+                    value={formData.title || ''}
+                    onChange={(e) => updateFormField('title', e.target.value)}
+                    placeholder="Enter document title"
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="type">Document Type</Label>
+                  <Select value={formData.type || 'Terms of Service'} onValueChange={(value) => updateFormField('type', value)}>
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="Terms of Service">Terms of Service</SelectItem>
+                      <SelectItem value="Privacy Policy">Privacy Policy</SelectItem>
+                      <SelectItem value="FAQ">FAQ</SelectItem>
+                      <SelectItem value="Refund Policy">Refund Policy</SelectItem>
+                      <SelectItem value="Cookie Policy">Cookie Policy</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+              
+              <div>
+                <Label htmlFor="content">Content</Label>
+                <Textarea
+                  id="content"
+                  value={formData.content || ''}
+                  onChange={(e) => updateFormField('content', e.target.value)}
+                  placeholder="Enter document content"
+                  rows={8}
+                />
+              </div>
+              
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label htmlFor="version">Version</Label>
+                  <Input
+                    id="version"
+                    value={formData.version || '1.0'}
+                    onChange={(e) => updateFormField('version', e.target.value)}
+                    placeholder="e.g., 1.0"
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="author">Author</Label>
+                  <Input
+                    id="author"
+                    value={formData.author || 'Admin'}
+                    onChange={(e) => updateFormField('author', e.target.value)}
+                    placeholder="Author name"
+                  />
+                </div>
+              </div>
+            </div>
+          )}
+          
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowCreateModal(false)}>
+              Cancel
+            </Button>
+            <Button onClick={handleSave} disabled={isLoading}>
+              {isLoading && <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-2" />}
+              <Save className="w-4 h-4 mr-2" />
+              Create
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Edit Modal */}
+      <Dialog open={showEditModal} onOpenChange={setShowEditModal}>
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Edit {activeSection === 'banners' ? 'Banner' : 'Document'}</DialogTitle>
+          </DialogHeader>
+          
+          {activeSection === 'banners' ? (
+            <div className="space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label htmlFor="editTitle">Title</Label>
+                  <Input
+                    id="editTitle"
+                    value={formData.title || ''}
+                    onChange={(e) => updateFormField('title', e.target.value)}
+                    placeholder="Enter banner title"
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="editPosition">Position</Label>
+                  <Select value={formData.position || 'Hero'} onValueChange={(value) => updateFormField('position', value)}>
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="Hero">Hero</SelectItem>
+                      <SelectItem value="Secondary">Secondary</SelectItem>
+                      <SelectItem value="Footer">Footer</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+              
+              <div>
+                <Label htmlFor="editSubtitle">Subtitle</Label>
+                <Input
+                  id="editSubtitle"
+                  value={formData.subtitle || ''}
+                  onChange={(e) => updateFormField('subtitle', e.target.value)}
+                  placeholder="Enter banner subtitle"
+                />
+              </div>
+              
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label htmlFor="editCtaText">CTA Text</Label>
+                  <Input
+                    id="editCtaText"
+                    value={formData.ctaText || ''}
+                    onChange={(e) => updateFormField('ctaText', e.target.value)}
+                    placeholder="e.g., Book Now"
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="editCtaLink">CTA Link</Label>
+                  <Input
+                    id="editCtaLink"
+                    value={formData.ctaLink || ''}
+                    onChange={(e) => updateFormField('ctaLink', e.target.value)}
+                    placeholder="e.g., /properties"
+                  />
+                </div>
+              </div>
+              
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label htmlFor="editStartDate">Start Date</Label>
+                  <Input
+                    id="editStartDate"
+                    type="date"
+                    value={formData.startDate || ''}
+                    onChange={(e) => updateFormField('startDate', e.target.value)}
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="editEndDate">End Date</Label>
+                  <Input
+                    id="editEndDate"
+                    type="date"
+                    value={formData.endDate || ''}
+                    onChange={(e) => updateFormField('endDate', e.target.value)}
+                  />
+                </div>
+              </div>
+              
+              <div>
+                <Label htmlFor="editStatus">Status</Label>
+                <Select value={formData.status || 'Draft'} onValueChange={(value) => updateFormField('status', value)}>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="Active">Active</SelectItem>
+                    <SelectItem value="Scheduled">Scheduled</SelectItem>
+                    <SelectItem value="Draft">Draft</SelectItem>
+                    <SelectItem value="Archived">Archived</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              
+              <div>
+                <Label htmlFor="editBackgroundImage">Background Image URL</Label>
+                <Input
+                  id="editBackgroundImage"
+                  value={formData.backgroundImage || ''}
+                  onChange={(e) => updateFormField('backgroundImage', e.target.value)}
+                  placeholder="Enter image URL"
+                />
+              </div>
+            </div>
+          ) : (
+            <div className="space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label htmlFor="editDocTitle">Title</Label>
+                  <Input
+                    id="editDocTitle"
+                    value={formData.title || ''}
+                    onChange={(e) => updateFormField('title', e.target.value)}
+                    placeholder="Enter document title"
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="editType">Document Type</Label>
+                  <Select value={formData.type || 'Terms of Service'} onValueChange={(value) => updateFormField('type', value)}>
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="Terms of Service">Terms of Service</SelectItem>
+                      <SelectItem value="Privacy Policy">Privacy Policy</SelectItem>
+                      <SelectItem value="FAQ">FAQ</SelectItem>
+                      <SelectItem value="Refund Policy">Refund Policy</SelectItem>
+                      <SelectItem value="Cookie Policy">Cookie Policy</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+              
+              <div>
+                <Label htmlFor="editContent">Content</Label>
+                <Textarea
+                  id="editContent"
+                  value={formData.content || ''}
+                  onChange={(e) => updateFormField('content', e.target.value)}
+                  placeholder="Enter document content"
+                  rows={8}
+                />
+              </div>
+              
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label htmlFor="editVersion">Version</Label>
+                  <Input
+                    id="editVersion"
+                    value={formData.version || '1.0'}
+                    onChange={(e) => updateFormField('version', e.target.value)}
+                    placeholder="e.g., 1.0"
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="editStatus2">Status</Label>
+                  <Select value={formData.status || 'Draft'} onValueChange={(value) => updateFormField('status', value)}>
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="Published">Published</SelectItem>
+                      <SelectItem value="Draft">Draft</SelectItem>
+                      <SelectItem value="Archived">Archived</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+            </div>
+          )}
+          
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowEditModal(false)}>
+              Cancel
+            </Button>
+            <Button onClick={handleSave} disabled={isLoading}>
+              {isLoading && <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-2" />}
+              <Save className="w-4 h-4 mr-2" />
+              Save Changes
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete Confirmation Modal */}
+      <Dialog open={showDeleteModal} onOpenChange={setShowDeleteModal}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <AlertTriangle className="w-5 h-5 text-red-500" />
+              Confirm Deletion
+            </DialogTitle>
+          </DialogHeader>
+          
+          <div className="py-4">
+            <p className="text-gray-600">
+              Are you sure you want to delete "{itemToDelete?.title}"? This action cannot be undone.
+            </p>
+          </div>
+          
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowDeleteModal(false)}>
+              Cancel
+            </Button>
+            <Button variant="destructive" onClick={confirmDelete} disabled={isLoading}>
+              {isLoading && <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-2" />}
+              <Trash2 className="w-4 h-4 mr-2" />
+              Delete
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Preview Modal */}
+      <Dialog open={showPreviewModal} onOpenChange={setShowPreviewModal}>
+        <DialogContent className="max-w-4xl max-h-[90vh]">
+          <DialogHeader>
+            <DialogTitle>Preview {activeSection === 'banners' ? 'Banner' : 'Document'}</DialogTitle>
+          </DialogHeader>
+          
+          <div className="overflow-y-auto max-h-[70vh]">
+            {activeSection === 'banners' && selectedItem ? (
+              <div className="space-y-4">
+                <div className="relative bg-gray-100 rounded-lg overflow-hidden" style={{ aspectRatio: '16/9' }}>
+                  {selectedItem.backgroundImage && (
+                    <img 
+                      src={selectedItem.backgroundImage} 
+                      alt={selectedItem.title}
+                      className="w-full h-full object-cover"
+                    />
+                  )}
+                  <div className="absolute inset-0 bg-black bg-opacity-40 flex items-center justify-center">
+                    <div className="text-center text-white p-8">
+                      <h2 className="text-4xl font-bold mb-4">{selectedItem.title}</h2>
+                      <p className="text-xl mb-6">{selectedItem.subtitle}</p>
+                      <button className="bg-blue-600 text-white px-8 py-3 rounded-lg font-semibold">
+                        {selectedItem.ctaText}
+                      </button>
+                    </div>
+                  </div>
+                </div>
+                <div className="grid grid-cols-2 gap-4 text-sm">
+                  <div><strong>Position:</strong> {selectedItem.position}</div>
+                  <div><strong>Status:</strong> {selectedItem.status}</div>
+                  <div><strong>Start Date:</strong> {selectedItem.startDate}</div>
+                  <div><strong>End Date:</strong> {selectedItem.endDate}</div>
+                </div>
+              </div>
+            ) : selectedItem && (
+              <div className="space-y-4">
+                <div className="border-b pb-4">
+                  <h2 className="text-2xl font-bold mb-2">{selectedItem.title}</h2>
+                  <div className="flex items-center gap-4 text-sm text-gray-600">
+                    <span>Type: {selectedItem.type}</span>
+                    <span>Version: v{selectedItem.version}</span>
+                    <span>Status: {selectedItem.status}</span>
+                  </div>
+                </div>
+                <div className="prose max-w-none">
+                  <p>{selectedItem.content || 'No content available for preview.'}</p>
+                </div>
+              </div>
+            )}
+          </div>
+          
+          <DialogFooter>
+            <Button onClick={() => setShowPreviewModal(false)}>
+              Close Preview
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
