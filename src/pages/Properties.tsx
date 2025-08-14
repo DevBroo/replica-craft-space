@@ -91,19 +91,36 @@ const Properties: React.FC = () => {
       const activeProperties = (await PropertyService.getActiveProperties()) as any[];
 
       // Store only essential data to reduce storage size
-      const essentialProperties = activeProperties.map((property: any) => ({
-        id: property.id,
-        name: property.title || 'Unnamed Property',
-        location: typeof property.location === 'string' ? property.location : property.location && typeof property.location === 'object' && 'city' in property.location ? (property.location as any).city : property.address || 'Unknown Location',
+      const essentialProperties = activeProperties.map((property: any) => {
+        // Enhanced location extraction for caching
+        const getLocationDisplay = (prop: any) => {
+          if (prop.location && typeof prop.location === 'object') {
+            const { city, state } = prop.location;
+            if (city && state) return `${city}, ${state}`;
+            if (city) return city;
+            if (state) return state;
+          }
+          if (prop.city && prop.state) return `${prop.city}, ${prop.state}`;
+          if (prop.city) return prop.city;
+          if (typeof prop.location === 'string' && prop.location) return prop.location;
+          if (prop.address) return prop.address;
+          return 'Location not specified';
+        };
+
+        return {
+          id: property.id,
+          name: property.title || 'Unnamed Property',
+          location: getLocationDisplay(property),
         price: typeof property.pricing === 'object' && property.pricing && 'daily_rate' in property.pricing ? (property.pricing as any).daily_rate : 0,
-        image: property.images && property.images.length > 0 ? property.images[0] : '',
-        type: property.property_type || 'Property',
-        status: property.status || 'pending',
-        rating: property.rating || 0,
-        guests: property.max_guests || 1,
-        bedrooms: property.bedrooms || 1,
-        bathrooms: property.bathrooms || 1
-      }));
+          image: property.images && property.images.length > 0 ? property.images[0] : '',
+          type: property.property_type || 'Property',
+          status: property.status || 'pending',
+          rating: property.rating || 0,
+          guests: property.max_guests || 1,
+          bedrooms: property.bedrooms || 1,
+          bathrooms: property.bathrooms || 1
+        };
+      });
       const propertiesJson = JSON.stringify(essentialProperties);
       localStorage.setItem('properties_cache', propertiesJson);
       localStorage.setItem('properties_cache_timestamp', Date.now().toString());
@@ -177,13 +194,34 @@ const Properties: React.FC = () => {
             
             if (!isMounted) return;
 
-            // Always convert to frontend format for consistency
-            const formattedProperties = activeProperties.map(property => ({
+          // Always convert to frontend format for consistency
+          const formattedProperties = activeProperties.map(property => {
+            // Enhanced location extraction function
+            const getLocationDisplay = (prop: any) => {
+              // Try structured location first (new format)
+              if (prop.location && typeof prop.location === 'object') {
+                const { city, state } = prop.location;
+                if (city && state) return `${city}, ${state}`;
+                if (city) return city;
+                if (state) return state;
+              }
+              
+              // Try direct city/state fields
+              if (prop.city && prop.state) return `${prop.city}, ${prop.state}`;
+              if (prop.city) return prop.city;
+              if (prop.state) return prop.state;
+              
+              // Try string location or address
+              if (typeof prop.location === 'string' && prop.location) return prop.location;
+              if (prop.address) return prop.address;
+              
+              return 'Location not specified';
+            };
+
+            return {
               id: property.id,
               name: property.title || 'Unnamed Property',
-              location: typeof property.location === 'string' ? property.location : 
-                       property.location && typeof property.location === 'object' && 'city' in property.location ? 
-                       (property.location as any).city : property.address || 'Unknown Location',
+              location: getLocationDisplay(property),
               price: typeof property.pricing === 'object' && property.pricing && 'daily_rate' in property.pricing ? 
                      (property.pricing as any).daily_rate : 0,
               image: property.images && property.images.length > 0 ? property.images[0] : '',
@@ -195,7 +233,8 @@ const Properties: React.FC = () => {
               bathrooms: property.bathrooms || 1,
               // Keep raw data for detailed view
               rawData: property
-            }));
+            };
+          });
 
             setDbProperties(formattedProperties);
             setPropertiesLoaded(true);
@@ -209,11 +248,11 @@ const Properties: React.FC = () => {
                 localStorage.setItem('properties_cache_timestamp', Date.now().toString());
                 console.log('✅ Properties cached successfully');
               }
-            } catch (cacheError) {
-              console.warn('⚠️ Failed to cache properties:', cacheError);
-            }
-            
-            break; // Success, exit retry loop
+             } catch (cacheError) {
+               console.warn('⚠️ Failed to cache properties:', cacheError);
+             }
+             
+             break; // Success, exit retry loop
             
           } catch (fetchError: any) {
             lastError = fetchError;
@@ -411,7 +450,7 @@ const Properties: React.FC = () => {
     const mappedProperty = {
       id: property.id || `property-${index}`,
       name: property.name || property.title || 'Unnamed Property',
-      location: property.city || property.location?.city || 'Unknown Location',
+      location: property.location || 'Location not specified',
       rating: property.rating || 0,
       reviews: property.totalBookings || property.review_count || 0,
       price: property.price || property.pricing?.daily_rate || 0,

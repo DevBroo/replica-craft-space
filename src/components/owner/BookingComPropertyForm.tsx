@@ -155,8 +155,8 @@ const BookingComPropertyForm: React.FC<BookingComPropertyFormProps> = ({
         license_number: parsedDesc.licenseNumber || editingProperty.license_number || '',
         
         address: editingProperty.location || editingProperty.address || '',
-        state: editingProperty.state || '',
-        city: editingProperty.city || '',
+        state: editingProperty.state || editingProperty.location?.state || '',
+        city: editingProperty.city || editingProperty.location?.city || '',
         area: editingProperty.area || '',
         country: editingProperty.country || 'India',
         postal_code: editingProperty.zip_code || editingProperty.postal_code || '',
