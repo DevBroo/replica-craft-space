@@ -26,8 +26,14 @@ const useScrollAnimation = () => {
   }, []);
 };
 
-// Import default image for properties without uploaded images
+// Import default images for properties without uploaded images
 import beachsideParadise from '@/assets/beachside-paradise.jpg';
+import lakesideRetreat from '@/assets/lakeside-retreat.jpg';
+import mountainCottage from '@/assets/mountain-cottage.jpg';
+import farmHouseBliss from '@/assets/farm-house-bliss.jpg';
+import gardenEstate from '@/assets/garden-estate.jpg';
+import royalHeritageVilla from '@/assets/royal-heritage-villa.jpg';
+import sunsetVillaResort from '@/assets/sunset-villa-resort.jpg';
 const Properties: React.FC = () => {
   // Initialize scroll animations
   useScrollAnimation();
@@ -976,7 +982,49 @@ const Properties: React.FC = () => {
                       return prop.address || 'Location not specified';
                     };
                     const getPropertyPrice = (prop: any) => prop.pricing?.daily_rate || prop.price || 0;
-                    const getPropertyImages = (prop: any) => prop.images?.length > 0 ? prop.images : [beachsideParadise];
+                    const getPropertyImages = (prop: any) => {
+                      console.log('🖼️ Property images for:', prop.title || prop.name, {
+                        images: prop.images,
+                        imagesLength: prop.images?.length,
+                        imagesType: typeof prop.images,
+                        isArray: Array.isArray(prop.images)
+                      });
+                      
+                      // Handle various data structures
+                      let images = [];
+                      if (Array.isArray(prop.images) && prop.images.length > 0) {
+                        // Filter out problematic base64 images and validate URLs
+                        images = prop.images.filter((img: string) => {
+                          if (!img || typeof img !== 'string') return false;
+                          // Skip overly large base64 images that cause issues
+                          if (img.startsWith('data:') && img.length > 100000) {
+                            console.warn('⚠️ Skipping large base64 image:', img.substring(0, 50) + '...');
+                            return false;
+                          }
+                          return true;
+                        });
+                      }
+                      
+                      // If no valid images, provide unique fallback based on property ID or type
+                      if (images.length === 0) {
+                        const fallbackImages = [
+                          beachsideParadise,
+                          lakesideRetreat,
+                          mountainCottage,
+                          farmHouseBliss,
+                          gardenEstate,
+                          royalHeritageVilla,
+                          sunsetVillaResort
+                        ];
+                        // Use property ID hash to get consistent but unique fallback
+                        const hash = prop.id ? prop.id.split('').reduce((a: number, b: string) => a + b.charCodeAt(0), 0) : Math.random() * 1000;
+                        const fallbackIndex = Math.abs(hash) % fallbackImages.length;
+                        images = [fallbackImages[fallbackIndex]];
+                        console.log('🖼️ Using fallback image for:', prop.title || prop.name, fallbackIndex);
+                      }
+                      
+                      return images;
+                    };
                     
                     return <div key={property.id} className="glass-card-property property-card-height rounded-2xl overflow-hidden">
                       {/* Image Carousel */}
