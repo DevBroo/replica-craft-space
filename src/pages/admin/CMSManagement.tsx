@@ -334,23 +334,19 @@ const CMSManagement: React.FC = () => {
       subtitle: '',
       status: 'inactive',
       position: 'hero',
-      start_date: '',
-      end_date: '',
-      cta_text: '',
-      cta_link: '',
-      background_image: ''
+      startDate: '',
+      endDate: '',
+      ctaText: '',
+      ctaLink: '',
+      backgroundImage: '',
+      targetAudience: ''
     } : {
       id: '',
-      type: 'Terms of Service',
+      document_type: 'Terms of Service',
       title: '',
       status: 'Draft',
-      version: '1.0',
-      lastUpdated: new Date().toISOString().split('T')[0],
+      version: 1,
       author: 'Admin',
-      wordCount: 0,
-      readingTime: '0 min',
-      sections: [],
-      approvalStatus: 'Pending Review',
       content: ''
     };
     setFormData(newItem);
@@ -360,11 +356,19 @@ const CMSManagement: React.FC = () => {
   const handleSave = async () => {
     setIsLoading(true);
     try {
+      let dataToSave = { ...formData };
+      
+      // Handle date fields - convert empty strings to null
+      if (activeSection === 'banners') {
+        if (dataToSave.startDate === '') dataToSave.startDate = null;
+        if (dataToSave.endDate === '') dataToSave.endDate = null;
+      }
+      
       if (showCreateModal) {
         if (activeSection === 'banners') {
-          await bannerService.createBanner(formData);
+          await bannerService.createBanner(dataToSave);
         } else {
-          await bannerService.createLegalDocument(formData);
+          await bannerService.createLegalDocument(dataToSave);
         }
         
         toast({
@@ -373,9 +377,9 @@ const CMSManagement: React.FC = () => {
         });
       } else {
         if (activeSection === 'banners') {
-          await bannerService.updateBanner(formData.id, formData);
+          await bannerService.updateBanner(formData.id, dataToSave);
         } else {
-          await bannerService.updateLegalDocument(formData.id, formData);
+          await bannerService.updateLegalDocument(formData.id, dataToSave);
         }
         
         toast({
@@ -389,7 +393,24 @@ const CMSManagement: React.FC = () => {
       
       setShowCreateModal(false);
       setShowEditModal(false);
-      setFormData({});
+      
+      // Reset form data to default values for next creation
+      if (showCreateModal && activeSection === 'banners') {
+        setFormData({
+          title: '',
+          subtitle: '',
+          status: 'inactive',
+          position: 'hero',
+          startDate: '',
+          endDate: '',
+          ctaText: '',
+          ctaLink: '',
+          backgroundImage: '',
+          targetAudience: ''
+        });
+      } else {
+        setFormData({});
+      }
     } catch (error) {
       console.error('Save error:', error);
       toast({
@@ -444,22 +465,8 @@ const CMSManagement: React.FC = () => {
   };
 
   const updateFormField = (field: string, value: any) => {
-    // Map camelCase frontend fields to snake_case database fields for banners
-    if (activeSection === 'banners') {
-      const fieldMapping: Record<string, string> = {
-        'backgroundImage': 'background_image',
-        'startDate': 'start_date',
-        'endDate': 'end_date',
-        'ctaText': 'cta_text',
-        'ctaLink': 'cta_link',
-        'targetAudience': 'target_audience'
-      };
-      
-      const mappedField = fieldMapping[field] || field;
-      setFormData(prev => ({ ...prev, [mappedField]: value }));
-    } else {
-      setFormData(prev => ({ ...prev, [field]: value }));
-    }
+    // Keep form fields in camelCase format, conversion happens in bannerService
+    setFormData(prev => ({ ...prev, [field]: value }));
   };
 
   const renderBannersTable = () => (
@@ -930,8 +937,8 @@ const CMSManagement: React.FC = () => {
                   <Label htmlFor="ctaText">CTA Text</Label>
                   <Input
                     id="ctaText"
-                    value={formData.cta_text || ''}
-                    onChange={(e) => updateFormField('cta_text', e.target.value)}
+                    value={formData.ctaText || ''}
+                    onChange={(e) => updateFormField('ctaText', e.target.value)}
                     placeholder="e.g., Book Now"
                   />
                 </div>
@@ -939,8 +946,8 @@ const CMSManagement: React.FC = () => {
                   <Label htmlFor="ctaLink">CTA Link</Label>
                   <Input
                     id="ctaLink"
-                    value={formData.cta_link || ''}
-                    onChange={(e) => updateFormField('cta_link', e.target.value)}
+                    value={formData.ctaLink || ''}
+                    onChange={(e) => updateFormField('ctaLink', e.target.value)}
                     placeholder="e.g., /properties"
                   />
                 </div>
@@ -952,8 +959,8 @@ const CMSManagement: React.FC = () => {
                   <Input
                     id="startDate"
                     type="date"
-                    value={formData.start_date || ''}
-                    onChange={(e) => updateFormField('start_date', e.target.value)}
+                    value={formData.startDate || ''}
+                    onChange={(e) => updateFormField('startDate', e.target.value)}
                   />
                 </div>
                 <div>
@@ -961,8 +968,8 @@ const CMSManagement: React.FC = () => {
                   <Input
                     id="endDate"
                     type="date"
-                    value={formData.end_date || ''}
-                    onChange={(e) => updateFormField('end_date', e.target.value)}
+                    value={formData.endDate || ''}
+                    onChange={(e) => updateFormField('endDate', e.target.value)}
                   />
                 </div>
               </div>
@@ -1121,8 +1128,8 @@ const CMSManagement: React.FC = () => {
                   <Label htmlFor="editCtaText">CTA Text</Label>
                   <Input
                     id="editCtaText"
-                    value={formData.cta_text || ''}
-                    onChange={(e) => updateFormField('cta_text', e.target.value)}
+                    value={formData.ctaText || ''}
+                    onChange={(e) => updateFormField('ctaText', e.target.value)}
                     placeholder="e.g., Book Now"
                   />
                 </div>
@@ -1130,8 +1137,8 @@ const CMSManagement: React.FC = () => {
                   <Label htmlFor="editCtaLink">CTA Link</Label>
                   <Input
                     id="editCtaLink"
-                    value={formData.cta_link || ''}
-                    onChange={(e) => updateFormField('cta_link', e.target.value)}
+                    value={formData.ctaLink || ''}
+                    onChange={(e) => updateFormField('ctaLink', e.target.value)}
                     placeholder="e.g., /properties"
                   />
                 </div>
@@ -1143,8 +1150,8 @@ const CMSManagement: React.FC = () => {
                   <Input
                     id="editStartDate"
                     type="date"
-                    value={formData.start_date || ''}
-                    onChange={(e) => updateFormField('start_date', e.target.value)}
+                    value={formData.startDate || ''}
+                    onChange={(e) => updateFormField('startDate', e.target.value)}
                   />
                 </div>
                 <div>
@@ -1152,8 +1159,8 @@ const CMSManagement: React.FC = () => {
                   <Input
                     id="editEndDate"
                     type="date"
-                    value={formData.end_date || ''}
-                    onChange={(e) => updateFormField('end_date', e.target.value)}
+                    value={formData.endDate || ''}
+                    onChange={(e) => updateFormField('endDate', e.target.value)}
                   />
                 </div>
               </div>
@@ -1176,8 +1183,8 @@ const CMSManagement: React.FC = () => {
                 <Label htmlFor="editBackgroundImage">Background Image URL</Label>
                 <Input
                   id="editBackgroundImage"
-                  value={formData.background_image || ''}
-                  onChange={(e) => updateFormField('background_image', e.target.value)}
+                  value={formData.backgroundImage || ''}
+                  onChange={(e) => updateFormField('backgroundImage', e.target.value)}
                   placeholder="Enter image URL"
                 />
               </div>
