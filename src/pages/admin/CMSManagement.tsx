@@ -317,12 +317,12 @@ const CMSManagement: React.FC = () => {
       id: '',
       title: '',
       subtitle: '',
-      status: 'Draft',
-      position: 'Hero',
-      startDate: '',
-      endDate: '',
-      ctaText: '',
-      ctaLink: '',
+      status: 'inactive',
+      position: 'hero',
+      start_date: '',
+      end_date: '',
+      cta_text: '',
+      cta_link: '',
       backgroundImage: '',
       displayLocation: '',
       targetAudience: 'All Users',
@@ -493,13 +493,13 @@ const CMSManagement: React.FC = () => {
               <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                 <div className="flex items-center text-xs">
                   <Calendar className="w-3 h-3 mr-1" />
-                  {new Date(banner.startDate).toLocaleDateString()} - {new Date(banner.endDate).toLocaleDateString()}
+                  {banner.start_date ? new Date(banner.start_date).toLocaleDateString() : 'Not set'} - {banner.end_date ? new Date(banner.end_date).toLocaleDateString() : 'Not set'}
                 </div>
               </td>
               <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                 <div className="text-xs">
-                  <div>Clicks: {banner.clicks.toLocaleString()}</div>
-                  <div>Views: {banner.impressions.toLocaleString()}</div>
+                  <div>Clicks: {banner.clicks?.toLocaleString() || 'N/A'}</div>
+                  <div>Views: {banner.impressions?.toLocaleString() || 'N/A'}</div>
                 </div>
               </td>
               <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
@@ -573,12 +573,12 @@ const CMSManagement: React.FC = () => {
               <td className="px-6 py-4 whitespace-nowrap">
                 <div>
                   <div className="text-sm font-medium text-gray-900">{document.title}</div>
-                  <div className="text-sm text-gray-500">{document.author}</div>
+                  <div className="text-sm text-gray-500">Document ID: {document.id}</div>
                 </div>
               </td>
               <td className="px-6 py-4 whitespace-nowrap">
                 <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
-                  {document.type}
+                  {document.document_type}
                 </span>
               </td>
               <td className="px-6 py-4 whitespace-nowrap">
@@ -906,8 +906,8 @@ const CMSManagement: React.FC = () => {
                   <Label htmlFor="ctaText">CTA Text</Label>
                   <Input
                     id="ctaText"
-                    value={formData.ctaText || ''}
-                    onChange={(e) => updateFormField('ctaText', e.target.value)}
+                    value={formData.cta_text || ''}
+                    onChange={(e) => updateFormField('cta_text', e.target.value)}
                     placeholder="e.g., Book Now"
                   />
                 </div>
@@ -915,8 +915,8 @@ const CMSManagement: React.FC = () => {
                   <Label htmlFor="ctaLink">CTA Link</Label>
                   <Input
                     id="ctaLink"
-                    value={formData.ctaLink || ''}
-                    onChange={(e) => updateFormField('ctaLink', e.target.value)}
+                    value={formData.cta_link || ''}
+                    onChange={(e) => updateFormField('cta_link', e.target.value)}
                     placeholder="e.g., /properties"
                   />
                 </div>
@@ -928,8 +928,8 @@ const CMSManagement: React.FC = () => {
                   <Input
                     id="startDate"
                     type="date"
-                    value={formData.startDate || ''}
-                    onChange={(e) => updateFormField('startDate', e.target.value)}
+                    value={formData.start_date || ''}
+                    onChange={(e) => updateFormField('start_date', e.target.value)}
                   />
                 </div>
                 <div>
@@ -937,8 +937,8 @@ const CMSManagement: React.FC = () => {
                   <Input
                     id="endDate"
                     type="date"
-                    value={formData.endDate || ''}
-                    onChange={(e) => updateFormField('endDate', e.target.value)}
+                    value={formData.end_date || ''}
+                    onChange={(e) => updateFormField('end_date', e.target.value)}
                   />
                 </div>
               </div>
@@ -1014,13 +1014,18 @@ const CMSManagement: React.FC = () => {
                   />
                 </div>
                 <div>
-                  <Label htmlFor="author">Author</Label>
-                  <Input
-                    id="author"
-                    value={formData.author || 'Admin'}
-                    onChange={(e) => updateFormField('author', e.target.value)}
-                    placeholder="Author name"
-                  />
+                  <Label htmlFor="documentType">Document Type</Label>
+                  <Select value={formData.document_type || 'terms'} onValueChange={(value) => updateFormField('document_type', value)}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select document type" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="terms">Terms of Service</SelectItem>
+                      <SelectItem value="privacy">Privacy Policy</SelectItem>
+                      <SelectItem value="faq">FAQ</SelectItem>
+                      <SelectItem value="policy">Policy</SelectItem>
+                    </SelectContent>
+                  </Select>
                 </div>
               </div>
             </div>
@@ -1110,8 +1115,8 @@ const CMSManagement: React.FC = () => {
                   <Input
                     id="editStartDate"
                     type="date"
-                    value={formData.startDate || ''}
-                    onChange={(e) => updateFormField('startDate', e.target.value)}
+                    value={formData.start_date || ''}
+                    onChange={(e) => updateFormField('start_date', e.target.value)}
                   />
                 </div>
                 <div>
@@ -1119,8 +1124,8 @@ const CMSManagement: React.FC = () => {
                   <Input
                     id="editEndDate"
                     type="date"
-                    value={formData.endDate || ''}
-                    onChange={(e) => updateFormField('endDate', e.target.value)}
+                    value={formData.end_date || ''}
+                    onChange={(e) => updateFormField('end_date', e.target.value)}
                   />
                 </div>
               </div>
