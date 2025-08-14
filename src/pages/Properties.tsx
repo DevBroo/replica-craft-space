@@ -4,6 +4,7 @@ import picnifyLogo from '/lovable-uploads/f7960b1f-407a-4738-b8f6-067ea4600889.p
 import { useAuth } from '@/contexts/AuthContext';
 import { PropertyService } from '@/lib/propertyService';
 import { useWishlist } from '@/contexts/WishlistContext';
+import { useToast } from '@/hooks/use-toast';
 import ImageCarousel from '@/components/owner/ImageCarousel';
 
 // Scroll animation hook
@@ -77,6 +78,7 @@ const Properties: React.FC = () => {
     logout
   } = useAuth();
   const navigate = useNavigate();
+  const { toast } = useToast();
 
   // Load properties from database with production-optimized strategy
   const [dbProperties, setDbProperties] = useState<any[]>([]);
@@ -640,17 +642,27 @@ const Properties: React.FC = () => {
   const totalPages = Math.ceil(properties.length / propertiesPerPage);
   const currentProperties = properties.slice((currentPage - 1) * propertiesPerPage, currentPage * propertiesPerPage);
 
-  // Modal handlers with role-based access
+  // Navigate directly to property details for booking
   const handleViewProperty = (property: any) => {
-    // For all users, show property details for booking
-    console.log('🔍 Opening property details modal for booking:', {
+    // Validate property has ID before navigation
+    if (!property?.id) {
+      console.error('❌ Property missing ID:', property);
+      toast({
+        title: "Error",
+        description: "Unable to load property details. Please try again.",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    console.log('🔍 Navigating to property details for booking:', {
       propertyId: property.id,
       hasRawData: !!property.rawData,
-      rawDataKeys: property.rawData ? Object.keys(property.rawData) : [],
-      propertyData: property
+      property: property
     });
-    setSelectedProperty(property);
-    setShowViewModal(true);
+    
+    // Navigate directly to property details page for booking
+    navigate(`/property/${property.id}`);
   };
   const closeViewModal = () => {
     setShowViewModal(false);
