@@ -27,6 +27,67 @@ export interface LegalDocument {
   updated_at: string;
 }
 
+// Field mapping utilities
+const mapToDatabase = (data: any) => {
+  const mapped: any = { ...data };
+  
+  // Map camelCase to snake_case for database
+  if (data.backgroundImage !== undefined) {
+    mapped.background_image = data.backgroundImage;
+    delete mapped.backgroundImage;
+  }
+  if (data.startDate !== undefined) {
+    mapped.start_date = data.startDate;
+    delete mapped.startDate;
+  }
+  if (data.endDate !== undefined) {
+    mapped.end_date = data.endDate;
+    delete mapped.endDate;
+  }
+  if (data.ctaText !== undefined) {
+    mapped.cta_text = data.ctaText;
+    delete mapped.ctaText;
+  }
+  if (data.ctaLink !== undefined) {
+    mapped.cta_link = data.ctaLink;
+    delete mapped.ctaLink;
+  }
+  if (data.targetAudience !== undefined) {
+    mapped.target_audience = data.targetAudience;
+    delete mapped.targetAudience;
+  }
+  
+  return mapped;
+};
+
+const mapFromDatabase = (data: any) => {
+  if (!data) return data;
+  
+  const mapped: any = { ...data };
+  
+  // Map snake_case to camelCase for frontend
+  if (data.background_image !== undefined) {
+    mapped.backgroundImage = data.background_image;
+  }
+  if (data.start_date !== undefined) {
+    mapped.startDate = data.start_date;
+  }
+  if (data.end_date !== undefined) {
+    mapped.endDate = data.end_date;
+  }
+  if (data.cta_text !== undefined) {
+    mapped.ctaText = data.cta_text;
+  }
+  if (data.cta_link !== undefined) {
+    mapped.ctaLink = data.cta_link;
+  }
+  if (data.target_audience !== undefined) {
+    mapped.targetAudience = data.target_audience;
+  }
+  
+  return mapped;
+};
+
 export const bannerService = {
   // Banner operations
   async getBannersByPosition(position: string): Promise<HomepageBanner[]> {
@@ -38,7 +99,7 @@ export const bannerService = {
       .order('created_at', { ascending: false });
 
     if (error) throw error;
-    return data || [];
+    return data?.map(mapFromDatabase) || [];
   },
 
   async getAllBanners(): Promise<HomepageBanner[]> {
@@ -48,30 +109,32 @@ export const bannerService = {
       .order('created_at', { ascending: false });
 
     if (error) throw error;
-    return data || [];
+    return data?.map(mapFromDatabase) || [];
   },
 
   async createBanner(banner: Omit<HomepageBanner, 'id' | 'created_at' | 'updated_at'>): Promise<HomepageBanner> {
+    const mappedBanner = mapToDatabase(banner);
     const { data, error } = await supabase
       .from('homepage_banners')
-      .insert([banner])
+      .insert([mappedBanner])
       .select()
       .single();
 
     if (error) throw error;
-    return data;
+    return mapFromDatabase(data);
   },
 
   async updateBanner(id: string, updates: Partial<HomepageBanner>): Promise<HomepageBanner> {
+    const mappedUpdates = mapToDatabase(updates);
     const { data, error } = await supabase
       .from('homepage_banners')
-      .update(updates)
+      .update(mappedUpdates)
       .eq('id', id)
       .select()
       .single();
 
     if (error) throw error;
-    return data;
+    return mapFromDatabase(data);
   },
 
   async deleteBanner(id: string): Promise<void> {

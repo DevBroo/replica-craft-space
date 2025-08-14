@@ -308,7 +308,23 @@ const CMSManagement: React.FC = () => {
 
   const handleEdit = (item: any) => {
     setSelectedItem(item);
-    setFormData(item);
+    
+    // Map database fields to form fields for banners
+    if (activeSection === 'banners') {
+      const mappedItem = {
+        ...item,
+        backgroundImage: item.background_image || item.backgroundImage || '',
+        startDate: item.start_date || item.startDate || '',
+        endDate: item.end_date || item.endDate || '',
+        ctaText: item.cta_text || item.ctaText || '',
+        ctaLink: item.cta_link || item.ctaLink || '',
+        targetAudience: item.target_audience || item.targetAudience || ''
+      };
+      setFormData(mappedItem);
+    } else {
+      setFormData(item);
+    }
+    
     setShowEditModal(true);
   };
 
@@ -472,7 +488,7 @@ const CMSManagement: React.FC = () => {
                 <div className="flex items-center">
                   <img 
                     className="h-12 w-20 object-cover rounded border" 
-                    src={banner.backgroundImage} 
+                    src={banner.background_image || banner.backgroundImage} 
                     alt={banner.title}
                   />
                   <div className="ml-3">
@@ -878,14 +894,14 @@ const CMSManagement: React.FC = () => {
                 </div>
                 <div>
                   <Label htmlFor="position">Position</Label>
-                  <Select value={formData.position || 'Hero'} onValueChange={(value) => updateFormField('position', value)}>
+                  <Select value={formData.position || 'hero'} onValueChange={(value) => updateFormField('position', value)}>
                     <SelectTrigger>
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="Hero">Hero</SelectItem>
-                      <SelectItem value="Secondary">Secondary</SelectItem>
-                      <SelectItem value="Footer">Footer</SelectItem>
+                      <SelectItem value="hero">Hero</SelectItem>
+                      <SelectItem value="secondary">Secondary</SelectItem>
+                      <SelectItem value="footer">Footer</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
@@ -954,13 +970,17 @@ const CMSManagement: React.FC = () => {
               </div>
               
               <div>
-                <Label htmlFor="displayLocation">Display Location</Label>
-                <Input
-                  id="displayLocation"
-                  value={formData.displayLocation || ''}
-                  onChange={(e) => updateFormField('displayLocation', e.target.value)}
-                  placeholder="e.g., Homepage Hero"
-                />
+                <Label htmlFor="status">Status</Label>
+                <Select value={formData.status || 'inactive'} onValueChange={(value) => updateFormField('status', value)}>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="active">Active</SelectItem>
+                    <SelectItem value="inactive">Inactive</SelectItem>
+                    <SelectItem value="scheduled">Scheduled</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
             </div>
           ) : (
