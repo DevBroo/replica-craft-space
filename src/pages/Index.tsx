@@ -49,6 +49,9 @@ const useScrollAnimation = () => {
 import heroBackground from '@/assets/hero-background.jpg';
 import successfulHost from '@/assets/successful-host.jpg';
 import picnifyLogo from '/lovable-uploads/f7960b1f-407a-4738-b8f6-067ea4600889.png';
+import HeroBanner from '@/components/banners/HeroBanner';
+import SecondaryBanner from '@/components/banners/SecondaryBanner';
+import FooterBanner from '@/components/banners/FooterBanner';
 
 const Index: React.FC = () => {
 const [searchLocation, setSearchLocation] = useState('');
@@ -395,172 +398,98 @@ return (
       </div>
     )}
 
-{/* Hero Section */}
-<section
-className="relative min-h-screen flex items-center justify-center bg-cover bg-center overflow-hidden"
-style={{
-backgroundImage: `linear-gradient(135deg, hsl(var(--brand-red) / 0.8) 0%, hsl(var(--brand-orange) / 0.6) 50%, rgba(0,0,0,0.4) 100%), url('${heroBackground}')`
-}}
->
-<div className="absolute inset-0 bg-black/40"></div>
-{/* Floating Elements */}
-<div className="absolute top-20 left-20 w-32 h-32 bg-gradient-to-r from-brand-orange/40 to-brand-red/50 rounded-full mix-blend-multiply filter blur-3xl opacity-70 animate-blob"></div>
-<div className="absolute top-40 right-20 w-40 h-40 bg-gradient-to-r from-brand-red/50 to-pink-500/50 rounded-full mix-blend-multiply filter blur-3xl opacity-70 animate-blob animation-delay-2000"></div>
-<div className="absolute bottom-20 left-1/3 w-36 h-36 bg-gradient-to-r from-yellow-400/50 to-brand-orange/50 rounded-full mix-blend-multiply filter blur-3xl opacity-70 animate-blob animation-delay-4000"></div>
+{/* Dynamic Hero Banner from CMS */}
+<HeroBanner />
 
-            <div className="text-center text-white max-w-6xl mx-auto px-4 relative z-10">
-<div className="mb-8">
-<span className="inline-block px-6 py-2 bg-white/20 backdrop-blur-md rounded-full text-sm font-medium border border-white/30 mb-4">
-✨ India's Premier Vacation Rental Platform
-</span>
-</div>
-<h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-black mb-8 font-poppins tracking-tight text-shadow leading-tight">
-Discover Perfect <br />
-<span className="bg-gradient-to-r from-yellow-300 via-orange-400 to-red-500 bg-clip-text text-transparent animate-pulse">Getaways</span> Near You
-</h1>
-<p className="text-lg md:text-2xl mb-12 opacity-95 font-light max-w-4xl mx-auto leading-relaxed">
-Where you create beautiful memories with your loved ones
-</p>
-<div className="flex flex-wrap items-center justify-center gap-6 mb-16">
-<div className="flex items-center gap-3 bg-white/10 backdrop-blur-md px-6 py-3 rounded-full border border-white/20">
-<div className="w-3 h-3 bg-green-400 rounded-full animate-pulse"></div>
-<i className="fas fa-map-marked-alt text-green-400"></i>
-<span className="text-base font-medium">500+ Premium Locations</span>
-</div>
-<div className="flex items-center gap-3 bg-white/10 backdrop-blur-md px-6 py-3 rounded-full border border-white/20">
-<div className="w-3 h-3 bg-yellow-400 rounded-full animate-pulse"></div>
-<i className="fas fa-star text-yellow-400"></i>
-<span className="text-base font-medium">4.9/5 Customer Rating</span>
-</div>
-</div>
-
-{/* Enhanced Search Bar */}
-<div className="bg-white/95 backdrop-blur-md rounded-3xl p-6 shadow-xl max-w-7xl mx-auto border transform hover:scale-[1.02] transition-all duration-500">
-<div className="flex flex-wrap gap-4 mb-6 border-b border-gray-200 pb-4">
-{[
-{ icon: 'fas fa-sun', label: 'Day Picnic', value: 'day-picnic' },
-{ icon: 'fas fa-hotel', label: 'Resorts', value: 'resort' },
-{ icon: 'fas fa-home', label: 'Villas', value: 'villa' },
-{ icon: 'fas fa-warehouse', label: 'Farmhouse', value: 'farmhouse' },
-{ icon: 'fas fa-house-user', label: 'Homestay', value: 'homestay' },
-{ icon: 'fas fa-landmark', label: 'Heritage Palace', value: 'heritage' },
-].map((category, index) => (
-<button
-key={index}
-className={`flex items-center gap-2 px-6 py-3 rounded-xl transition-all duration-300 ${
-category.value === 'day-picnic'
-? 'bg-gradient-to-r from-brand-red to-brand-orange text-white shadow-lg'
-: 'bg-gray-50 text-gray-600 hover:bg-gray-100'
-}`}
->
-<i className={`${category.icon} text-lg`}></i>
-<span className="font-medium whitespace-nowrap">{category.label}</span>
-</button>
-))}
-</div>
-<div className="grid grid-cols-1 lg:grid-cols-7 gap-6 items-center">
-<div className="lg:col-span-2">
-<div className="relative">
-<div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-<i className="fas fa-map-marker-alt text-brand-red text-lg"></i>
-</div>
-<input
-type="text"
-placeholder="Where would you like to go?"
-value={searchLocation}
-onChange={(e) => setSearchLocation(e.target.value)}
-className="w-full pl-12 pr-4 py-4 text-gray-800 placeholder-gray-500 border-2 border-gray-200 rounded-xl outline-none focus:border-brand-red focus:ring-4 focus:ring-brand-red/20 transition-all duration-300 text-base"
-/>
-</div>
-</div>
-<div className="lg:col-span-1" id="dateContainer">
-<div className="relative">
-<div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-<i className="fas fa-calendar-alt text-brand-orange text-lg"></i>
-</div>
-<input
-type="date"
-value={searchDate}
-onChange={(e) => setSearchDate(e.target.value)}
-className="w-full pl-12 pr-4 py-4 text-gray-800 border-2 border-gray-200 rounded-xl outline-none focus:border-brand-orange focus:ring-4 focus:ring-brand-orange/20 transition-all duration-300 text-base"
-style={{ minWidth: '180px' }}
-/>
-</div>
-</div>
-<div className="lg:col-span-2 flex gap-12 ml-12">
-<div className="relative flex-1">
-<div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-<i className="fas fa-users text-blue-500 text-lg"></i>
-</div>
-<select
-className="w-full pl-12 pr-12 py-4 text-gray-800 border-2 border-gray-200 rounded-xl outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-500/20 transition-all duration-300 text-base appearance-none cursor-pointer space-y-2"
-style={{ minWidth: '240px' }}
-onChange={(e) => {
-if(e.target.value === 'custom') {
-document.getElementById('customGroupSize')?.classList.remove('hidden');
-} else {
-document.getElementById('customGroupSize')?.classList.add('hidden');
-setGroupSize(e.target.value);
-}
-}}
->
-<option value="" className="py-2">Select group size</option>
-{[...Array(15)].map((_, i) => (
-<option key={i + 1} value={i + 1} className="py-2">{i + 1} Guest{i !== 0 ? 's' : ''}</option>
-))}
-<option value="custom" className="py-2">15+ Guests</option>
-</select>
-<div className="absolute inset-y-0 right-0 pr-4 flex items-center pointer-events-none">
-<i className="fas fa-chevron-down text-gray-400"></i>
-</div>
-</div>
-<input
-type="number"
-id="customGroupSize"
-className="hidden w-full pl-12 pr-4 py-4 mt-2 text-gray-800 border-2 border-gray-200 rounded-xl outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-500/20 transition-all duration-300 text-base"
-placeholder="Enter group size"
-min="16"
-onChange={(e) => setGroupSize(e.target.value)}
-/>
-<div className="relative flex-1">
-<div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-<i className="fas fa-rupee-sign text-green-500 text-lg"></i>
-</div>
-<select
-className="w-full pl-12 pr-12 py-4 text-gray-800 border-2 border-gray-200 rounded-xl outline-none focus:border-green-500 focus:ring-4 focus:ring-green-500/20 transition-all duration-300 text-base appearance-none cursor-pointer"
-style={{ minWidth: '240px' }}
->
-<option value="">Price per person</option>
-<option value="0-500">Below ₹500</option>
-<option value="500-1000">₹500 - ₹1,000</option>
-<option value="1000-2000">₹1,000 - ₹2,000</option>
-<option value="2000+">Above ₹2,000</option>
-</select>
-<div className="absolute inset-y-0 right-0 pr-4 flex items-center pointer-events-none">
-<i className="fas fa-chevron-down text-gray-400"></i>
-</div>
-</div>
-</div>
-</div>
-<div className="flex justify-center mt-6">
-<button className="bg-gradient-to-r from-red-600 to-orange-600 text-white px-8 py-4 rounded-xl hover:from-red-700 hover:to-orange-700 transition-all duration-300 cursor-pointer whitespace-nowrap rounded-button font-bold text-lg shadow-xl hover:shadow-2xl transform hover:scale-105 flex items-center justify-center gap-3 h-[56px] w-full max-w-md">
-<i className="fas fa-search text-xl"></i>
-<span>Search</span>
-</button>
-</div>
-<div className="mt-6 pt-4 border-t border-gray-200">
-<div className="flex flex-wrap items-center gap-4">
-<span className="text-gray-600 font-medium">Popular:</span>
-{['Goa Beach Villas', 'Himalayan Retreats', 'Rajasthan Palaces', 'Kerala Backwaters'].map((search, index) => (
-<button key={index} className="bg-gray-50 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-100 transition-colors duration-200 text-sm font-medium">
-{search}
-</button>
-))}
-</div>
-</div>
-</div>
-</div>
+{/* Search Bar Section */}
+<section className="py-16 bg-gradient-to-br from-primary/5 to-secondary/5">
+  <div className="container mx-auto px-4">
+    <div className="bg-white/95 backdrop-blur-md rounded-3xl p-6 shadow-xl max-w-7xl mx-auto border transform hover:scale-[1.02] transition-all duration-500">
+      <div className="flex flex-wrap gap-4 mb-6 border-b border-gray-200 pb-4">
+        {[
+          { icon: 'fas fa-sun', label: 'Day Picnic', value: 'day-picnic' },
+          { icon: 'fas fa-hotel', label: 'Resorts', value: 'resort' },
+          { icon: 'fas fa-home', label: 'Villas', value: 'villa' },
+          { icon: 'fas fa-warehouse', label: 'Farmhouse', value: 'farmhouse' },
+          { icon: 'fas fa-house-user', label: 'Homestay', value: 'homestay' },
+          { icon: 'fas fa-landmark', label: 'Heritage Palace', value: 'heritage' },
+        ].map((category, index) => (
+          <button
+            key={index}
+            className={`flex items-center gap-2 px-6 py-3 rounded-xl transition-all duration-300 ${
+              category.value === 'day-picnic'
+                ? 'bg-gradient-to-r from-brand-red to-brand-orange text-white shadow-lg'
+                : 'bg-gray-50 text-gray-600 hover:bg-gray-100'
+            }`}
+          >
+            <i className={`${category.icon} text-lg`}></i>
+            <span className="font-medium whitespace-nowrap">{category.label}</span>
+          </button>
+        ))}
+      </div>
+      <div className="grid grid-cols-1 lg:grid-cols-7 gap-6 items-center">
+        <div className="lg:col-span-2">
+          <div className="relative">
+            <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+              <i className="fas fa-map-marker-alt text-brand-red text-lg"></i>
+            </div>
+            <input
+              type="text"
+              placeholder="Where would you like to go?"
+              value={searchLocation}
+              onChange={(e) => setSearchLocation(e.target.value)}
+              className="w-full pl-12 pr-4 py-4 text-gray-800 placeholder-gray-500 border-2 border-gray-200 rounded-xl outline-none focus:border-brand-red focus:ring-4 focus:ring-brand-red/20 transition-all duration-300 text-base"
+            />
+          </div>
+        </div>
+        <div className="lg:col-span-1">
+          <div className="relative">
+            <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+              <i className="fas fa-calendar-alt text-brand-orange text-lg"></i>
+            </div>
+            <input
+              type="date"
+              value={searchDate}
+              onChange={(e) => setSearchDate(e.target.value)}
+              className="w-full pl-12 pr-4 py-4 text-gray-800 border-2 border-gray-200 rounded-xl outline-none focus:border-brand-orange focus:ring-4 focus:ring-brand-orange/20 transition-all duration-300 text-base"
+            />
+          </div>
+        </div>
+        <div className="lg:col-span-2">
+          <div className="relative">
+            <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+              <i className="fas fa-users text-blue-500 text-lg"></i>
+            </div>
+            <select
+              className="w-full pl-12 pr-12 py-4 text-gray-800 border-2 border-gray-200 rounded-xl outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-500/20 transition-all duration-300 text-base appearance-none cursor-pointer"
+              onChange={(e) => setGroupSize(e.target.value)}
+            >
+              <option value="">Select group size</option>
+              {[...Array(15)].map((_, i) => (
+                <option key={i + 1} value={i + 1}>{i + 1} Guest{i !== 0 ? 's' : ''}</option>
+              ))}
+            </select>
+            <div className="absolute inset-y-0 right-0 pr-4 flex items-center pointer-events-none">
+              <i className="fas fa-chevron-down text-gray-400"></i>
+            </div>
+          </div>
+        </div>
+        <div className="lg:col-span-2">
+          <button 
+            onClick={() => navigate('/properties')}
+            className="w-full bg-gradient-to-r from-red-600 to-orange-600 text-white px-8 py-4 rounded-xl hover:from-red-700 hover:to-orange-700 transition-all duration-300 cursor-pointer font-bold text-lg shadow-xl hover:shadow-2xl transform hover:scale-105 flex items-center justify-center gap-3"
+          >
+            <i className="fas fa-search text-xl"></i>
+            <span>Search</span>
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
 </section>
+
+{/* Secondary Banner */}
+<SecondaryBanner />
 
 {/* Property Owner CTA Section */}
 <section className="py-16 bg-gradient-to-r from-brand-orange to-brand-red relative overflow-hidden">
@@ -940,6 +869,9 @@ className="w-full h-96 lg:h-[500px] object-cover object-top rounded-xl"
 </div>
 </div>
 </section>
+
+{/* Footer Banner */}
+<FooterBanner />
 
 {/* Footer */}
 <footer className="bg-gray-900 text-white py-20 relative overflow-hidden">

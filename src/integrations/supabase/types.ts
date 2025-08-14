@@ -71,6 +71,87 @@ export type Database = {
           },
         ]
       }
+      homepage_banners: {
+        Row: {
+          background_image: string | null
+          created_at: string
+          cta_link: string | null
+          cta_text: string | null
+          end_date: string | null
+          id: string
+          position: string
+          start_date: string | null
+          status: string
+          subtitle: string | null
+          target_audience: string | null
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          background_image?: string | null
+          created_at?: string
+          cta_link?: string | null
+          cta_text?: string | null
+          end_date?: string | null
+          id?: string
+          position: string
+          start_date?: string | null
+          status?: string
+          subtitle?: string | null
+          target_audience?: string | null
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          background_image?: string | null
+          created_at?: string
+          cta_link?: string | null
+          cta_text?: string | null
+          end_date?: string | null
+          id?: string
+          position?: string
+          start_date?: string | null
+          status?: string
+          subtitle?: string | null
+          target_audience?: string | null
+          title?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      legal_documents: {
+        Row: {
+          content: string
+          created_at: string
+          document_type: string
+          id: string
+          status: string
+          title: string
+          updated_at: string
+          version: number
+        }
+        Insert: {
+          content: string
+          created_at?: string
+          document_type: string
+          id?: string
+          status?: string
+          title: string
+          updated_at?: string
+          version?: number
+        }
+        Update: {
+          content?: string
+          created_at?: string
+          document_type?: string
+          id?: string
+          status?: string
+          title?: string
+          updated_at?: string
+          version?: number
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           avatar_url: string | null

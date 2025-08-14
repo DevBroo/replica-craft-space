@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { 
+import React, { useState, useEffect } from 'react';
+import {
   Plus,
   Eye,
   Trash2,
@@ -40,6 +40,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '.
 import { useToast } from '../../hooks/use-toast';
 import SharedSidebar from '../../components/admin/SharedSidebar';
 import SharedHeader from '../../components/admin/SharedHeader';
+import { bannerService } from "../../lib/bannerService";
 
 const homepageBannersData = [
   {
@@ -183,9 +184,35 @@ const CMSManagement: React.FC = () => {
   // Form states
   const [formData, setFormData] = useState<any>({});
 
-  // Data states (simulate database)
-  const [bannersData, setBannersData] = useState(homepageBannersData);
-  const [legalData, setLegalData] = useState(legalContentData);
+  // Data states
+  const [bannersData, setBannersData] = useState<any[]>([]);
+  const [legalData, setLegalData] = useState<any[]>([]);
+
+  // Load data on component mount
+  useEffect(() => {
+    loadData();
+  }, []);
+
+  const loadData = async () => {
+    try {
+      setIsLoading(true);
+      const [banners, documents] = await Promise.all([
+        bannerService.getAllBanners(),
+        bannerService.getAllLegalDocuments()
+      ]);
+      setBannersData(banners);
+      setLegalData(documents);
+    } catch (error) {
+      console.error('Error loading data:', error);
+      toast({
+        title: "Error",
+        description: "Failed to load data. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -323,13 +350,10 @@ const CMSManagement: React.FC = () => {
     setIsLoading(true);
     try {
       if (showCreateModal) {
-        const newId = activeSection === 'banners' ? `HB${String(Date.now()).slice(-3)}` : `LC${String(Date.now()).slice(-3)}`;
-        const newItem = { ...formData, id: newId };
-        
         if (activeSection === 'banners') {
-          setBannersData(prev => [...prev, newItem]);
+          await bannerService.createBanner(formData);
         } else {
-          setLegalData(prev => [...prev, newItem]);
+          await bannerService.createLegalDocument(formData);
         }
         
         toast({
@@ -338,13 +362,9 @@ const CMSManagement: React.FC = () => {
         });
       } else {
         if (activeSection === 'banners') {
-          setBannersData(prev => prev.map(item => 
-            item.id === formData.id ? formData : item
-          ));
+          await bannerService.updateBanner(formData.id, formData);
         } else {
-          setLegalData(prev => prev.map(item => 
-            item.id === formData.id ? formData : item
-          ));
+          await bannerService.updateLegalDocument(formData.id, formData);
         }
         
         toast({
@@ -353,10 +373,14 @@ const CMSManagement: React.FC = () => {
         });
       }
       
+      // Reload data after successful operation
+      await loadData();
+      
       setShowCreateModal(false);
       setShowEditModal(false);
       setFormData({});
     } catch (error) {
+      console.error('Save error:', error);
       toast({
         title: "Error",
         description: "Failed to save item. Please try again.",
@@ -376,10 +400,13 @@ const CMSManagement: React.FC = () => {
     setIsLoading(true);
     try {
       if (activeSection === 'banners') {
-        setBannersData(prev => prev.filter(item => item.id !== itemToDelete.id));
+        await bannerService.deleteBanner(itemToDelete.id);
       } else {
-        setLegalData(prev => prev.filter(item => item.id !== itemToDelete.id));
+        await bannerService.deleteLegalDocument(itemToDelete.id);
       }
+      
+      // Reload data after successful deletion
+      await loadData();
       
       toast({
         title: "Item Deleted",
@@ -389,6 +416,7 @@ const CMSManagement: React.FC = () => {
       setShowDeleteModal(false);
       setItemToDelete(null);
     } catch (error) {
+      console.error('Delete error:', error);
       toast({
         title: "Error",
         description: "Failed to delete item. Please try again.",
