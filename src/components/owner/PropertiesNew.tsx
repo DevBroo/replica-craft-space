@@ -56,27 +56,47 @@ const Properties: React.FC<PropertiesProps> = ({
   const { properties: fetchedProperties, loading: propertiesLoading, error } = useOwnerProperties(user?.id || '');
   
   // Transform the data to match the component's expected format
-  const properties = fetchedProperties.map(property => ({
-    id: property.id,
-    name: property.title,
-    type: property.property_type,
-    location: 'Location not specified',
-    price: `₹${property.pricing?.daily_rate || 0}`,
-    status: property.status === 'approved' ? 'Active' : 
-           property.status === 'pending' ? 'Pending' : 
-           property.status === 'rejected' ? 'Rejected' : 'Inactive',
-    rating: property.rating || 0,
-    reviews: property.review_count || 0,
-    image: property.images && property.images.length > 0 ? property.images[0] : '/assets/placeholder.jpg',
-    bookings: 0,
-    revenue: '₹0',
-    nextBooking: 'No upcoming bookings',
-    description: 'Property description not available',
-    amenities: [],
-    maxGuests: property.max_guests || 1,
-    bedrooms: property.bedrooms || 0,
-    bathrooms: property.bathrooms || 0
-  }));
+  const properties = fetchedProperties.map(property => {
+    // Extract location from the structured data
+    const getLocationDisplay = (property: any) => {
+      // Try to get from location object first (new format)
+      if (property.location && typeof property.location === 'object') {
+        const { city, state } = property.location;
+        if (city && state) return `${city}, ${state}`;
+        if (city) return city;
+        if (state) return state;
+      }
+      
+      // Try to get from address field (fallback)
+      if (property.address) {
+        return property.address;
+      }
+      
+      return 'Location not specified';
+    };
+
+    return {
+      id: property.id,
+      name: property.title,
+      type: property.property_type,
+      location: getLocationDisplay(property),
+      price: `₹${property.pricing?.daily_rate || 0}`,
+      status: property.status === 'approved' ? 'Active' : 
+             property.status === 'pending' ? 'Pending' : 
+             property.status === 'rejected' ? 'Rejected' : 'Inactive',
+      rating: property.rating || 0,
+      reviews: property.review_count || 0,
+      image: property.images && property.images.length > 0 ? property.images[0] : '/assets/placeholder.jpg',
+      bookings: 0,
+      revenue: '₹0',
+      nextBooking: 'No upcoming bookings',
+      description: 'Property description not available',
+      amenities: [],
+      maxGuests: property.max_guests || 1,
+      bedrooms: property.bedrooms || 0,
+      bathrooms: property.bathrooms || 0
+    };
+  });
 
   if (showAddProperty || editingProperty) {
     return (

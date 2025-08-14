@@ -510,7 +510,7 @@ const BookingComPropertyForm: React.FC<BookingComPropertyFormProps> = ({
       const transformedData = {
         name: formData.title,
         type: formData.property_type,
-        location: formData.address,
+        location: `${formData.city}, ${formData.state}`, // Generate clean location string
         city: formData.city,
         state: formData.state,
         price: Number(formData.pricing.daily_rate),

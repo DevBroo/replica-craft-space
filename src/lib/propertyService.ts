@@ -345,14 +345,21 @@ export class PropertyService {
    * Convert database property to frontend format
    */
   static convertToFrontendFormat(dbProperty: Property): any {
+    // Extract location data from the structured location object
+    const locationData = dbProperty.location as any;
+    const city = locationData?.city || '';
+    const state = locationData?.state || '';
+    const displayLocation = city && state ? `${city}, ${state}` : 
+                           city || state || dbProperty.address || 'Location not specified';
+    
     return {
       id: dbProperty.id,
       name: dbProperty.title,
       title: dbProperty.title,
       type: dbProperty.property_type,
-      location: (dbProperty.location as any)?.address || '',
-      city: (dbProperty.location as any)?.city || '',
-      state: (dbProperty.location as any)?.state || '',
+      location: displayLocation,
+      city: city,
+      state: state,
       postal_code: dbProperty.postal_code || '',
       price: (dbProperty.pricing as any)?.daily_rate || 0,
       capacity: dbProperty.max_guests,
