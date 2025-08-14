@@ -43,9 +43,10 @@ const HeroBanner = () => {
     return (
       <section className="relative bg-gradient-to-br from-primary/20 to-primary/5 py-20">
         <div 
-          className="absolute inset-0 bg-cover bg-center bg-no-repeat opacity-20"
+          className="absolute inset-0 bg-cover bg-center bg-no-repeat"
           style={{ backgroundImage: "url('/src/assets/hero-background.jpg')" }}
         />
+        <div className="absolute inset-0 bg-black/30" />
         <div className="container mx-auto px-4 text-center relative z-10">
           <h1 className="text-4xl md:text-6xl font-bold text-foreground mb-6">
             Discover Perfect Getaways Near You
@@ -64,10 +65,13 @@ const HeroBanner = () => {
   return (
     <section className="relative bg-gradient-to-br from-primary/20 to-primary/5 py-20">
       {banner.background_image && (
-        <div 
-          className="absolute inset-0 bg-cover bg-center bg-no-repeat opacity-20"
-          style={{ backgroundImage: `url(${banner.background_image})` }}
-        />
+        <>
+          <div 
+            className="absolute inset-0 bg-cover bg-center bg-no-repeat"
+            style={{ backgroundImage: `url(${banner.background_image})` }}
+          />
+          <div className="absolute inset-0 bg-black/30" />
+        </>
       )}
       <div className="container mx-auto px-4 text-center relative z-10">
         <h1 className="text-4xl md:text-6xl font-bold text-foreground mb-6">
