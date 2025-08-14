@@ -52,6 +52,7 @@ import picnifyLogo from '/lovable-uploads/f7960b1f-407a-4738-b8f6-067ea4600889.p
 import HeroBanner from '@/components/banners/HeroBanner';
 import SecondaryBanner from '@/components/banners/SecondaryBanner';
 import FooterBanner from '@/components/banners/FooterBanner';
+import LocationAutocomplete from '@/components/ui/LocationAutocomplete';
 
 const Index: React.FC = () => {
 const [searchLocation, setSearchLocation] = useState('');
@@ -429,18 +430,11 @@ return (
       </div>
       <div className="grid grid-cols-1 lg:grid-cols-7 gap-6 items-center">
         <div className="lg:col-span-2">
-          <div className="relative">
-            <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-              <i className="fas fa-map-marker-alt text-brand-red text-lg"></i>
-            </div>
-            <input
-              type="text"
-              placeholder="Where would you like to go?"
-              value={searchLocation}
-              onChange={(e) => setSearchLocation(e.target.value)}
-              className="w-full pl-12 pr-4 py-4 text-gray-800 placeholder-gray-500 border-2 border-gray-200 rounded-xl outline-none focus:border-brand-red focus:ring-4 focus:ring-brand-red/20 transition-all duration-300 text-base"
-            />
-          </div>
+          <LocationAutocomplete
+            value={searchLocation}
+            onChange={setSearchLocation}
+            placeholder="Where would you like to go?"
+          />
         </div>
         <div className="lg:col-span-1">
           <div className="relative">
