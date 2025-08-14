@@ -520,6 +520,12 @@ const Properties: React.FC = () => {
       reviews: property.totalBookings || property.review_count || 0,
       price: property.price || property.pricing?.daily_rate || 0,
       originalPrice: (property.price || property.pricing?.daily_rate || 0) * 1.1,
+      // CRITICAL FIX: Include images array from database
+      images: property.images || [],
+      // Preserve pricing structure for proper display
+      pricing: property.pricing || { daily_rate: property.price || 0 },
+      // Keep original location object structure for search functionality
+      address: property.address || property.location || 'Location not specified',
       // 10% markup for original price
       image: property.images && property.images.length > 0 ? property.images[0] : property.image_url || property.image || property.firstImage || (() => {
         // Provide default images based on property type
