@@ -234,8 +234,8 @@ const CMSManagement: React.FC = () => {
 
   const filteredData = getCurrentData().filter((item: any) => {
     const searchFields = activeSection === 'banners'
-      ? [item.title, item.subtitle, item.position, item.displayLocation]
-      : [item.title, item.type, item.author];
+      ? [item.title, item.subtitle, item.position]
+      : [item.title, item.document_type, item.author];
 
     const matchesSearch = searchFields.some((field: string) =>
       field?.toLowerCase().includes(searchTerm.toLowerCase())
@@ -330,7 +330,6 @@ const CMSManagement: React.FC = () => {
 
   const handleCreate = () => {
     const newItem = activeSection === 'banners' ? {
-      id: '',
       title: '',
       subtitle: '',
       status: 'inactive',
@@ -339,11 +338,7 @@ const CMSManagement: React.FC = () => {
       end_date: '',
       cta_text: '',
       cta_link: '',
-      backgroundImage: '',
-      displayLocation: '',
-      targetAudience: 'All Users',
-      clicks: 0,
-      impressions: 0
+      background_image: ''
     } : {
       id: '',
       type: 'Terms of Service',
@@ -449,7 +444,22 @@ const CMSManagement: React.FC = () => {
   };
 
   const updateFormField = (field: string, value: any) => {
-    setFormData(prev => ({ ...prev, [field]: value }));
+    // Map camelCase frontend fields to snake_case database fields for banners
+    if (activeSection === 'banners') {
+      const fieldMapping: Record<string, string> = {
+        'backgroundImage': 'background_image',
+        'startDate': 'start_date',
+        'endDate': 'end_date',
+        'ctaText': 'cta_text',
+        'ctaLink': 'cta_link',
+        'targetAudience': 'target_audience'
+      };
+      
+      const mappedField = fieldMapping[field] || field;
+      setFormData(prev => ({ ...prev, [mappedField]: value }));
+    } else {
+      setFormData(prev => ({ ...prev, [field]: value }));
+    }
   };
 
   const renderBannersTable = () => (
@@ -498,8 +508,7 @@ const CMSManagement: React.FC = () => {
                 </div>
               </td>
               <td className="px-6 py-4 whitespace-nowrap">
-                <span className="text-sm text-gray-900">{banner.position}</span>
-                <div className="text-xs text-gray-500">{banner.displayLocation}</div>
+                <span className="text-sm text-gray-900 capitalize">{banner.position}</span>
               </td>
               <td className="px-6 py-4 whitespace-nowrap">
                 <span className={`px-2 py-1 text-xs font-medium rounded-full ${getStatusColor(banner.status)}`}>
@@ -514,8 +523,7 @@ const CMSManagement: React.FC = () => {
               </td>
               <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                 <div className="text-xs">
-                  <div>Clicks: {banner.clicks?.toLocaleString() || 'N/A'}</div>
-                  <div>Views: {banner.impressions?.toLocaleString() || 'N/A'}</div>
+                  <div>Analytics coming soon</div>
                 </div>
               </td>
               <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
@@ -1085,14 +1093,14 @@ const CMSManagement: React.FC = () => {
                 </div>
                 <div>
                   <Label htmlFor="editPosition">Position</Label>
-                  <Select value={formData.position || 'Hero'} onValueChange={(value) => updateFormField('position', value)}>
+                  <Select value={formData.position || 'hero'} onValueChange={(value) => updateFormField('position', value)}>
                     <SelectTrigger>
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="Hero">Hero</SelectItem>
-                      <SelectItem value="Secondary">Secondary</SelectItem>
-                      <SelectItem value="Footer">Footer</SelectItem>
+                      <SelectItem value="hero">Hero</SelectItem>
+                      <SelectItem value="secondary">Secondary</SelectItem>
+                      <SelectItem value="footer">Footer</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
@@ -1113,8 +1121,8 @@ const CMSManagement: React.FC = () => {
                   <Label htmlFor="editCtaText">CTA Text</Label>
                   <Input
                     id="editCtaText"
-                    value={formData.ctaText || ''}
-                    onChange={(e) => updateFormField('ctaText', e.target.value)}
+                    value={formData.cta_text || ''}
+                    onChange={(e) => updateFormField('cta_text', e.target.value)}
                     placeholder="e.g., Book Now"
                   />
                 </div>
@@ -1122,8 +1130,8 @@ const CMSManagement: React.FC = () => {
                   <Label htmlFor="editCtaLink">CTA Link</Label>
                   <Input
                     id="editCtaLink"
-                    value={formData.ctaLink || ''}
-                    onChange={(e) => updateFormField('ctaLink', e.target.value)}
+                    value={formData.cta_link || ''}
+                    onChange={(e) => updateFormField('cta_link', e.target.value)}
                     placeholder="e.g., /properties"
                   />
                 </div>
@@ -1152,15 +1160,14 @@ const CMSManagement: React.FC = () => {
               
               <div>
                 <Label htmlFor="editStatus">Status</Label>
-                <Select value={formData.status || 'Draft'} onValueChange={(value) => updateFormField('status', value)}>
+                <Select value={formData.status || 'inactive'} onValueChange={(value) => updateFormField('status', value)}>
                   <SelectTrigger>
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="Active">Active</SelectItem>
-                    <SelectItem value="Scheduled">Scheduled</SelectItem>
-                    <SelectItem value="Draft">Draft</SelectItem>
-                    <SelectItem value="Archived">Archived</SelectItem>
+                    <SelectItem value="active">Active</SelectItem>
+                    <SelectItem value="inactive">Inactive</SelectItem>
+                    <SelectItem value="scheduled">Scheduled</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -1169,8 +1176,8 @@ const CMSManagement: React.FC = () => {
                 <Label htmlFor="editBackgroundImage">Background Image URL</Label>
                 <Input
                   id="editBackgroundImage"
-                  value={formData.backgroundImage || ''}
-                  onChange={(e) => updateFormField('backgroundImage', e.target.value)}
+                  value={formData.background_image || ''}
+                  onChange={(e) => updateFormField('background_image', e.target.value)}
                   placeholder="Enter image URL"
                 />
               </div>
