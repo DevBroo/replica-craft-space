@@ -55,41 +55,41 @@ import FooterBanner from '@/components/banners/FooterBanner';
 import LocationAutocomplete from '@/components/ui/LocationAutocomplete';
 
 const Index: React.FC = () => {
-const [searchLocation, setSearchLocation] = useState('');
-const [searchDate, setSearchDate] = useState('');
-const [groupSize, setGroupSize] = useState('');
-const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-const isMobile = useIsMobile();
-const navigate = useNavigate();
-const { loading, user, isAuthenticated, logout } = useAuth();
+  const [searchLocation, setSearchLocation] = useState('');
+  const [searchDate, setSearchDate] = useState('');
+  const [groupSize, setGroupSize] = useState('');
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const isMobile = useIsMobile();
+  const navigate = useNavigate();
+  const { loading, user, isAuthenticated, logout } = useAuth();
 
-// Debug authentication state
-useEffect(() => {
-  console.log('🔍 Index page auth state:', { 
-    isAuthenticated, 
-    user: user ? { email: user.email, role: user.role, id: user.id } : null 
-  });
-}, [isAuthenticated, user]);
+  // Debug authentication state
+  useEffect(() => {
+    console.log('🔍 Index page auth state:', { 
+      isAuthenticated, 
+      user: user ? { email: user.email, role: user.role, id: user.id } : null 
+    });
+  }, [isAuthenticated, user]);
 
-// Initialize scroll animations
-useScrollAnimation();
+  // Initialize scroll animations
+  useScrollAnimation();
 
-// No dummy data - will be replaced with database properties
-const topPicks: any[] = [];
+  // No dummy data - will be replaced with database properties
+  const topPicks: any[] = [];
 
-// No dummy data - will be replaced with database properties
-const featuredProperties: any[] = [];
+  // No dummy data - will be replaced with database properties
+  const featuredProperties: any[] = [];
 
-const categories = [
-{ name: 'Farm Houses', icon: 'fas fa-tractor' },
-{ name: 'Beach Properties', icon: 'fas fa-umbrella-beach' },
-{ name: 'Mountain Retreats', icon: 'fas fa-mountain' },
-{ name: 'Garden Venues', icon: 'fas fa-leaf' },
-{ name: 'Pool Villas', icon: 'fas fa-swimming-pool' }
-];
+  const categories = [
+    { name: 'Farm Houses', icon: 'fas fa-tractor' },
+    { name: 'Beach Properties', icon: 'fas fa-umbrella-beach' },
+    { name: 'Mountain Retreats', icon: 'fas fa-mountain' },
+    { name: 'Garden Venues', icon: 'fas fa-leaf' },
+    { name: 'Pool Villas', icon: 'fas fa-swimming-pool' }
+  ];
 
-return (
-<div className="min-h-screen bg-background font-poppins">
+  return (
+    <div className="min-h-screen bg-background font-poppins">
   {loading && (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-white">
       <div className="text-center">
