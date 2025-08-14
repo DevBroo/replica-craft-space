@@ -29,8 +29,17 @@ const FooterBanner = () => {
   }
 
   return (
-    <section className="py-12 bg-primary/5">
-      <div className="container mx-auto px-4 text-center">
+    <section className="relative py-12 bg-primary/5">
+      {banner.background_image && (
+        <>
+          <div 
+            className="absolute inset-0 bg-cover bg-center bg-no-repeat"
+            style={{ backgroundImage: `url(${banner.background_image})` }}
+          />
+          <div className="absolute inset-0 bg-black/30" />
+        </>
+      )}
+      <div className="container mx-auto px-4 text-center relative z-10">
         <div className="max-w-4xl mx-auto">
           <h2 className="text-2xl md:text-3xl font-bold text-foreground mb-4">
             {banner.title}

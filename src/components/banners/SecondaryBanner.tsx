@@ -34,10 +34,13 @@ const SecondaryBanner = () => {
       <div className="container mx-auto px-4">
         <Card className="overflow-hidden bg-gradient-to-r from-secondary/20 to-accent/20 border-none">
           {banner.background_image && (
-            <div 
-              className="absolute inset-0 bg-cover bg-center bg-no-repeat opacity-10"
-              style={{ backgroundImage: `url(${banner.background_image})` }}
-            />
+            <>
+              <div 
+                className="absolute inset-0 bg-cover bg-center bg-no-repeat"
+                style={{ backgroundImage: `url(${banner.background_image})` }}
+              />
+              <div className="absolute inset-0 bg-black/30" />
+            </>
           )}
           <CardContent className="relative z-10 p-8 md:p-12 text-center">
             <h2 className="text-3xl md:text-4xl font-bold text-foreground mb-4">
