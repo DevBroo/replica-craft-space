@@ -41,6 +41,125 @@ import { useToast } from '../../hooks/use-toast';
 import SharedSidebar from '../../components/admin/SharedSidebar';
 import SharedHeader from '../../components/admin/SharedHeader';
 
+const homepageBannersData = [
+  {
+    id: 'HB001',
+    title: 'Summer Sale - 40% Off',
+    subtitle: 'Discover Amazing Deals on Premium Properties',
+    status: 'Active',
+    position: 'Hero',
+    startDate: '2025-07-01',
+    endDate: '2025-08-31',
+    ctaText: 'Book Now',
+    ctaLink: '/properties',
+    backgroundImage: 'https://readdy.ai/api/search-image?query=luxury%20summer%20vacation%20banner%20with%20tropical%20resort%20and%20sale%20promotion%20professional%20marketing%20design&width=800&height=400&seq=banner-001&orientation=landscape',
+    displayLocation: 'Homepage Hero',
+    targetAudience: 'All Users',
+    clicks: 1250,
+    impressions: 8900
+  },
+  {
+    id: 'HB002',
+    title: 'New Property Launch',
+    subtitle: 'Exclusive Beachfront Villas Now Available',
+    status: 'Scheduled',
+    position: 'Secondary',
+    startDate: '2025-08-15',
+    endDate: '2025-09-15',
+    ctaText: 'Explore',
+    ctaLink: '/properties/beachfront',
+    backgroundImage: 'https://readdy.ai/api/search-image?query=stunning%20beachfront%20villa%20banner%20with%20ocean%20view%20and%20modern%20architecture%20professional%20real%20estate%20photography&width=800&height=400&seq=banner-002&orientation=landscape',
+    displayLocation: 'Homepage Secondary',
+    targetAudience: 'Registered Users',
+    clicks: 0,
+    impressions: 0
+  },
+  {
+    id: 'HB003',
+    title: 'Welcome Back!',
+    subtitle: 'Special Offers for Returning Guests',
+    status: 'Active',
+    position: 'Footer',
+    startDate: '2025-07-10',
+    endDate: '2025-12-31',
+    ctaText: 'View Offers',
+    ctaLink: '/special-offers',
+    backgroundImage: 'https://readdy.ai/api/search-image?query=welcome%20back%20banner%20with%20luxury%20hotel%20interior%20and%20warm%20hospitality%20theme%20professional%20hospitality%20photography&width=800&height=300&seq=banner-003&orientation=landscape',
+    displayLocation: 'Footer Banner',
+    targetAudience: 'Returning Customers',
+    clicks: 340,
+    impressions: 2100
+  }
+];
+
+const legalContentData = [
+  {
+    id: 'LC001',
+    type: 'Terms of Service',
+    title: 'Terms of Service',
+    status: 'Published',
+    version: '2.1',
+    lastUpdated: '2025-07-15',
+    author: 'Legal Team',
+    wordCount: 3250,
+    readingTime: '13 min',
+    sections: ['User Agreement', 'Property Booking', 'Cancellation Policy', 'Liability'],
+    approvalStatus: 'Approved'
+  },
+  {
+    id: 'LC002',
+    type: 'Privacy Policy',
+    title: 'Privacy Policy',
+    status: 'Published',
+    version: '1.8',
+    lastUpdated: '2025-07-20',
+    author: 'Legal Team',
+    wordCount: 2890,
+    readingTime: '12 min',
+    sections: ['Data Collection', 'Data Usage', 'Cookies', 'Third Parties'],
+    approvalStatus: 'Approved'
+  },
+  {
+    id: 'LC003',
+    type: 'FAQ',
+    title: 'Frequently Asked Questions',
+    status: 'Draft',
+    version: '3.2',
+    lastUpdated: '2025-07-28',
+    author: 'Support Team',
+    wordCount: 1450,
+    readingTime: '6 min',
+    sections: ['Booking', 'Payments', 'Cancellations', 'Property Features'],
+    approvalStatus: 'Pending Review'
+  },
+  {
+    id: 'LC004',
+    type: 'Refund Policy',
+    title: 'Refund and Cancellation Policy',
+    status: 'Published',
+    version: '1.5',
+    lastUpdated: '2025-07-12',
+    author: 'Legal Team',
+    wordCount: 1890,
+    readingTime: '8 min',
+    sections: ['Cancellation Rules', 'Refund Process', 'Exceptions', 'Timeline'],
+    approvalStatus: 'Approved'
+  },
+  {
+    id: 'LC005',
+    type: 'Cookie Policy',
+    title: 'Cookie Policy',
+    status: 'Published',
+    version: '1.2',
+    lastUpdated: '2025-07-18',
+    author: 'Legal Team',
+    wordCount: 980,
+    readingTime: '4 min',
+    sections: ['Cookie Types', 'Usage', 'Management', 'Third Party Cookies'],
+    approvalStatus: 'Approved'
+  }
+];
+
 const CMSManagement: React.FC = () => {
   const { toast } = useToast();
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
@@ -63,125 +182,6 @@ const CMSManagement: React.FC = () => {
   
   // Form states
   const [formData, setFormData] = useState<any>({});
-
-  const homepageBannersData = [
-    {
-      id: 'HB001',
-      title: 'Summer Sale - 40% Off',
-      subtitle: 'Discover Amazing Deals on Premium Properties',
-      status: 'Active',
-      position: 'Hero',
-      startDate: '2025-07-01',
-      endDate: '2025-08-31',
-      ctaText: 'Book Now',
-      ctaLink: '/properties',
-      backgroundImage: 'https://readdy.ai/api/search-image?query=luxury%20summer%20vacation%20banner%20with%20tropical%20resort%20and%20sale%20promotion%20professional%20marketing%20design&width=800&height=400&seq=banner-001&orientation=landscape',
-      displayLocation: 'Homepage Hero',
-      targetAudience: 'All Users',
-      clicks: 1250,
-      impressions: 8900
-    },
-    {
-      id: 'HB002',
-      title: 'New Property Launch',
-      subtitle: 'Exclusive Beachfront Villas Now Available',
-      status: 'Scheduled',
-      position: 'Secondary',
-      startDate: '2025-08-15',
-      endDate: '2025-09-15',
-      ctaText: 'Explore',
-      ctaLink: '/properties/beachfront',
-      backgroundImage: 'https://readdy.ai/api/search-image?query=stunning%20beachfront%20villa%20banner%20with%20ocean%20view%20and%20modern%20architecture%20professional%20real%20estate%20photography&width=800&height=400&seq=banner-002&orientation=landscape',
-      displayLocation: 'Homepage Secondary',
-      targetAudience: 'Registered Users',
-      clicks: 0,
-      impressions: 0
-    },
-    {
-      id: 'HB003',
-      title: 'Welcome Back!',
-      subtitle: 'Special Offers for Returning Guests',
-      status: 'Active',
-      position: 'Footer',
-      startDate: '2025-07-10',
-      endDate: '2025-12-31',
-      ctaText: 'View Offers',
-      ctaLink: '/special-offers',
-      backgroundImage: 'https://readdy.ai/api/search-image?query=welcome%20back%20banner%20with%20luxury%20hotel%20interior%20and%20warm%20hospitality%20theme%20professional%20hospitality%20photography&width=800&height=300&seq=banner-003&orientation=landscape',
-      displayLocation: 'Footer Banner',
-      targetAudience: 'Returning Customers',
-      clicks: 340,
-      impressions: 2100
-    }
-  ];
-
-  const legalContentData = [
-    {
-      id: 'LC001',
-      type: 'Terms of Service',
-      title: 'Terms of Service',
-      status: 'Published',
-      version: '2.1',
-      lastUpdated: '2025-07-15',
-      author: 'Legal Team',
-      wordCount: 3250,
-      readingTime: '13 min',
-      sections: ['User Agreement', 'Property Booking', 'Cancellation Policy', 'Liability'],
-      approvalStatus: 'Approved'
-    },
-    {
-      id: 'LC002',
-      type: 'Privacy Policy',
-      title: 'Privacy Policy',
-      status: 'Published',
-      version: '1.8',
-      lastUpdated: '2025-07-20',
-      author: 'Legal Team',
-      wordCount: 2890,
-      readingTime: '12 min',
-      sections: ['Data Collection', 'Data Usage', 'Cookies', 'Third Parties'],
-      approvalStatus: 'Approved'
-    },
-    {
-      id: 'LC003',
-      type: 'FAQ',
-      title: 'Frequently Asked Questions',
-      status: 'Draft',
-      version: '3.2',
-      lastUpdated: '2025-07-28',
-      author: 'Support Team',
-      wordCount: 1450,
-      readingTime: '6 min',
-      sections: ['Booking', 'Payments', 'Cancellations', 'Property Features'],
-      approvalStatus: 'Pending Review'
-    },
-    {
-      id: 'LC004',
-      type: 'Refund Policy',
-      title: 'Refund and Cancellation Policy',
-      status: 'Published',
-      version: '1.5',
-      lastUpdated: '2025-07-12',
-      author: 'Legal Team',
-      wordCount: 1890,
-      readingTime: '8 min',
-      sections: ['Cancellation Rules', 'Refund Process', 'Exceptions', 'Timeline'],
-      approvalStatus: 'Approved'
-    },
-    {
-      id: 'LC005',
-      type: 'Cookie Policy',
-      title: 'Cookie Policy',
-      status: 'Published',
-      version: '1.2',
-      lastUpdated: '2025-07-18',
-      author: 'Legal Team',
-      wordCount: 980,
-      readingTime: '4 min',
-      sections: ['Cookie Types', 'Usage', 'Management', 'Third Party Cookies'],
-      approvalStatus: 'Approved'
-    }
-  ];
 
   // Data states (simulate database)
   const [bannersData, setBannersData] = useState(homepageBannersData);
