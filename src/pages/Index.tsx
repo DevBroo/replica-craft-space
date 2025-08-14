@@ -733,7 +733,7 @@ className="w-full h-72 object-cover transition-transform duration-700 group-hove
 </div>
                   <button 
                     onClick={() => navigate('/properties')}
-                    className="w-full bg-gradient-to-r from-red-600 to-orange-500 text-white py-4 rounded-xl hover:from-red-700 hover:to-orange-600 transition-all duration-300 cursor-pointer whitespace-nowrap rounded-button font-bold text-base shadow-lg hover:shadow-xl transform hover:scale-105"
+                    className="w-full bg-gradient-to-r from-brand-orange to-brand-red text-white py-3 px-6 rounded-xl hover:from-orange-600 hover:to-red-600 transition-all duration-300 cursor-pointer font-bold text-sm shadow-lg hover:shadow-xl transform hover:scale-105 border border-white/20"
                   >
                     Book Now
                     <i className="fas fa-arrow-right ml-2"></i>

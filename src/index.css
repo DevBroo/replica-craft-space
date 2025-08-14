@@ -216,6 +216,22 @@ All colors MUST be HSL.
     animation: float 6s ease-in-out infinite;
   }
 
+  .animation-delay-500 {
+    animation-delay: 0.5s;
+  }
+
+  .animation-delay-1000 {
+    animation-delay: 1s;
+  }
+
+  .animation-delay-2000 {
+    animation-delay: 2s;
+  }
+
+  .animation-delay-4000 {
+    animation-delay: 4s;
+  }
+
   /* Modern Glass Effects */
   .glass-card {
     background: rgba(255, 255, 255, 0.05);

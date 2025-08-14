@@ -41,52 +41,129 @@ const HeroBanner = () => {
   // If no banner is configured, show default content
   if (!banner) {
     return (
-      <section className="relative bg-gradient-to-br from-primary/20 to-primary/5 py-20">
+      <section className="relative min-h-[90vh] flex items-center justify-center overflow-hidden">
         <div 
-          className="absolute inset-0 bg-cover bg-center bg-no-repeat"
+          className="absolute inset-0 bg-cover bg-center bg-no-repeat scale-105 animate-float"
           style={{ backgroundImage: "url('/src/assets/hero-background.jpg')" }}
         />
-        <div className="absolute inset-0 bg-black/30" />
-        <div className="container mx-auto px-4 text-center relative z-10">
-          <h1 className="text-4xl md:text-6xl font-bold text-foreground mb-6">
-            Discover Perfect Getaways Near You
-          </h1>
-          <p className="text-xl text-muted-foreground mb-8 max-w-2xl mx-auto">
-            From day picnics to weekend retreats, find unique properties and experiences across India
-          </p>
-          <Button asChild size="lg" className="text-lg">
-            <Link to="/properties">Start Exploring</Link>
-          </Button>
+        <div className="absolute inset-0 bg-gradient-to-b from-black/20 via-black/40 to-black/60" />
+        
+        {/* Decorative Elements */}
+        <div className="absolute inset-0 pointer-events-none">
+          <div className="absolute top-20 left-10 w-32 h-32 bg-gradient-to-r from-brand-orange/20 to-brand-red/20 rounded-full animate-blob"></div>
+          <div className="absolute top-40 right-16 w-24 h-24 bg-gradient-to-r from-primary/30 to-primary-glow/30 rounded-full animate-blob animation-delay-2000"></div>
+          <div className="absolute bottom-32 left-1/4 w-20 h-20 bg-gradient-to-r from-accent/40 to-primary/40 rounded-full animate-blob animation-delay-4000"></div>
+        </div>
+
+        <div className="container mx-auto px-4 text-center relative z-10 max-w-5xl">
+          {/* Enhanced Title */}
+          <div className="mb-8 animate-fade-in">
+            <h1 className="text-5xl md:text-7xl lg:text-8xl font-black mb-4 leading-none">
+              <span className="bg-gradient-to-r from-white via-yellow-100 to-orange-200 bg-clip-text text-transparent drop-shadow-2xl animate-pulse">
+                Discover Perfect Getaways Near You
+              </span>
+            </h1>
+            <div className="w-32 h-1 bg-gradient-to-r from-brand-orange to-brand-red mx-auto rounded-full shadow-lg animate-scale-in"></div>
+          </div>
+
+          {/* Enhanced Subtitle */}
+          <div className="mb-12 animate-fade-in animation-delay-500">
+            <p className="text-xl md:text-2xl lg:text-3xl text-white/90 max-w-4xl mx-auto leading-relaxed font-medium">
+              <span className="drop-shadow-lg">
+                From day picnics to weekend retreats, find unique properties and experiences across India
+              </span>
+            </p>
+          </div>
+
+          {/* Enhanced CTA Button */}
+          <div className="animate-fade-in animation-delay-1000">
+            <Button 
+              asChild 
+              size="lg" 
+              className="text-xl px-12 py-6 bg-gradient-to-r from-brand-orange to-brand-red hover:from-orange-600 hover:to-red-600 text-white font-bold rounded-2xl shadow-2xl hover:shadow-brand-orange/50 transform hover:scale-110 transition-all duration-300 border-2 border-white/20 backdrop-blur-sm"
+            >
+              <Link to="/properties" className="flex items-center gap-3">
+                Start Exploring
+                <i className="fas fa-arrow-right text-lg animate-bounce"></i>
+              </Link>
+            </Button>
+          </div>
+        </div>
+
+        {/* Scroll Indicator */}
+        <div className="absolute bottom-8 left-1/2 transform -translate-x-1/2 animate-bounce">
+          <div className="w-6 h-10 border-2 border-white/50 rounded-full flex justify-center">
+            <div className="w-1 h-3 bg-white rounded-full mt-2 animate-pulse"></div>
+          </div>
         </div>
       </section>
     );
   }
 
   return (
-    <section className="relative bg-gradient-to-br from-primary/20 to-primary/5 py-20">
+    <section className="relative min-h-[90vh] flex items-center justify-center overflow-hidden">
+      {/* Background Image */}
       {banner.background_image && (
         <>
           <div 
-            className="absolute inset-0 bg-cover bg-center bg-no-repeat"
+            className="absolute inset-0 bg-cover bg-center bg-no-repeat scale-105 animate-float"
             style={{ backgroundImage: `url(${banner.background_image})` }}
           />
-          <div className="absolute inset-0 bg-black/30" />
+          <div className="absolute inset-0 bg-gradient-to-b from-black/20 via-black/40 to-black/60" />
         </>
       )}
-      <div className="container mx-auto px-4 text-center relative z-10">
-        <h1 className="text-4xl md:text-6xl font-bold text-foreground mb-6">
-          {banner.title}
-        </h1>
+      
+      {/* Decorative Elements */}
+      <div className="absolute inset-0 pointer-events-none">
+        <div className="absolute top-20 left-10 w-32 h-32 bg-gradient-to-r from-brand-orange/20 to-brand-red/20 rounded-full animate-blob"></div>
+        <div className="absolute top-40 right-16 w-24 h-24 bg-gradient-to-r from-primary/30 to-primary-glow/30 rounded-full animate-blob animation-delay-2000"></div>
+        <div className="absolute bottom-32 left-1/4 w-20 h-20 bg-gradient-to-r from-accent/40 to-primary/40 rounded-full animate-blob animation-delay-4000"></div>
+      </div>
+
+      <div className="container mx-auto px-4 text-center relative z-10 max-w-5xl">
+        {/* Enhanced Title with Multiple Effects */}
+        <div className="mb-8 animate-fade-in">
+          <h1 className="text-5xl md:text-7xl lg:text-8xl font-black mb-4 leading-none">
+            <span className="bg-gradient-to-r from-white via-yellow-100 to-orange-200 bg-clip-text text-transparent drop-shadow-2xl animate-pulse">
+              {banner.title}
+            </span>
+          </h1>
+          <div className="w-32 h-1 bg-gradient-to-r from-brand-orange to-brand-red mx-auto rounded-full shadow-lg animate-scale-in"></div>
+        </div>
+
+        {/* Enhanced Subtitle */}
         {banner.subtitle && (
-          <p className="text-xl text-muted-foreground mb-8 max-w-2xl mx-auto">
-            {banner.subtitle}
-          </p>
+          <div className="mb-12 animate-fade-in animation-delay-500">
+            <p className="text-xl md:text-2xl lg:text-3xl text-white/90 max-w-4xl mx-auto leading-relaxed font-medium">
+              <span className="drop-shadow-lg">
+                {banner.subtitle}
+              </span>
+            </p>
+          </div>
         )}
+
+        {/* Enhanced CTA Button */}
         {banner.cta_text && banner.cta_link && (
-          <Button asChild size="lg" className="text-lg">
-            <Link to={banner.cta_link}>{banner.cta_text}</Link>
-          </Button>
+          <div className="animate-fade-in animation-delay-1000">
+            <Button 
+              asChild 
+              size="lg" 
+              className="text-xl px-12 py-6 bg-gradient-to-r from-brand-orange to-brand-red hover:from-orange-600 hover:to-red-600 text-white font-bold rounded-2xl shadow-2xl hover:shadow-brand-orange/50 transform hover:scale-110 transition-all duration-300 border-2 border-white/20 backdrop-blur-sm"
+            >
+              <Link to={banner.cta_link} className="flex items-center gap-3">
+                {banner.cta_text}
+                <i className="fas fa-arrow-right text-lg animate-bounce"></i>
+              </Link>
+            </Button>
+          </div>
         )}
+      </div>
+
+      {/* Scroll Indicator */}
+      <div className="absolute bottom-8 left-1/2 transform -translate-x-1/2 animate-bounce">
+        <div className="w-6 h-10 border-2 border-white/50 rounded-full flex justify-center">
+          <div className="w-1 h-3 bg-white rounded-full mt-2 animate-pulse"></div>
+        </div>
       </div>
     </section>
   );
