@@ -91,35 +91,23 @@ const Properties: React.FC = () => {
       console.log('🔄 Background refresh started...');
       const activeProperties = (await PropertyService.getActiveProperties()) as any[];
 
-      // Store only essential data to reduce storage size
+      // Store data preserving database structure for consistency
       const essentialProperties = activeProperties.map((property: any) => {
-        // Enhanced location extraction for caching
-        const getLocationDisplay = (prop: any) => {
-          if (prop.location && typeof prop.location === 'object') {
-            const { city, state } = prop.location;
-            if (city && state) return `${city}, ${state}`;
-            if (city) return city;
-            if (state) return state;
-          }
-          if (prop.city && prop.state) return `${prop.city}, ${prop.state}`;
-          if (prop.city) return prop.city;
-          if (typeof prop.location === 'string' && prop.location) return prop.location;
-          if (prop.address) return prop.address;
-          return 'Location not specified';
-        };
-
         return {
           id: property.id,
-          name: property.title || 'Unnamed Property',
-          location: getLocationDisplay(property),
-        price: typeof property.pricing === 'object' && property.pricing && 'daily_rate' in property.pricing ? (property.pricing as any).daily_rate : 0,
-          image: property.images && property.images.length > 0 ? property.images[0] : '',
-          type: property.property_type || 'Property',
+          title: property.title || 'Unnamed Property', // Use title consistently
+          location: property.location || {}, // Preserve object structure
+          pricing: property.pricing || { daily_rate: 0 }, // Preserve object structure
+          images: property.images || [],
+          property_type: property.property_type || 'Property',
           status: property.status || 'pending',
           rating: property.rating || 0,
-          guests: property.max_guests || 1,
+          max_guests: property.max_guests || 1,
           bedrooms: property.bedrooms || 1,
-          bathrooms: property.bathrooms || 1
+          bathrooms: property.bathrooms || 1,
+          address: property.address || '',
+          // Keep raw data for compatibility
+          rawData: property
         };
       });
       const propertiesJson = JSON.stringify(essentialProperties);
@@ -195,43 +183,21 @@ const Properties: React.FC = () => {
             
             if (!isMounted) return;
 
-          // Always convert to frontend format for consistency
+          // Preserve database structure for consistency
           const formattedProperties = activeProperties.map(property => {
-            // Enhanced location extraction function
-            const getLocationDisplay = (prop: any) => {
-              // Try structured location first (new format)
-              if (prop.location && typeof prop.location === 'object') {
-                const { city, state } = prop.location;
-                if (city && state) return `${city}, ${state}`;
-                if (city) return city;
-                if (state) return state;
-              }
-              
-              // Try direct city/state fields
-              if (prop.city && prop.state) return `${prop.city}, ${prop.state}`;
-              if (prop.city) return prop.city;
-              if (prop.state) return prop.state;
-              
-              // Try string location or address
-              if (typeof prop.location === 'string' && prop.location) return prop.location;
-              if (prop.address) return prop.address;
-              
-              return 'Location not specified';
-            };
-
             return {
               id: property.id,
-              name: property.title || 'Unnamed Property',
-              location: getLocationDisplay(property),
-              price: typeof property.pricing === 'object' && property.pricing && 'daily_rate' in property.pricing ? 
-                     (property.pricing as any).daily_rate : 0,
-              image: property.images && property.images.length > 0 ? property.images[0] : '',
-              type: property.property_type || 'Property',
+              title: property.title || 'Unnamed Property',
+              location: property.location || {},
+              pricing: property.pricing || { daily_rate: 0 },
+              images: property.images || [],
+              property_type: property.property_type || 'Property',
               status: property.status || 'pending',
               rating: property.rating || 0,
-              guests: property.max_guests || 1,
+              max_guests: property.max_guests || 1,
               bedrooms: property.bedrooms || 1,
               bathrooms: property.bathrooms || 1,
+              address: property.address || '',
               // Keep raw data for detailed view
               rawData: property
             };
@@ -339,31 +305,67 @@ const Properties: React.FC = () => {
     }
   }, [dbProperties.length]);
 
-  // Apply filters to database properties
+  // Apply filters with defensive programming for data structure consistency
   const filteredProperties = dbProperties.filter((property: any) => {
     let passesFilter = true;
     const filterReasons = [];
 
-    // Filter by location (destination) - Enhanced logic
+    // Debug logging for data structure analysis
+    if (dbProperties.length > 0 && searchLocation) {
+      console.log('🔍 Filtering property:', {
+        title: property.title || property.name,
+        location: property.location,
+        address: property.address,
+        searchTerm: searchLocation
+      });
+    }
+
+    // Filter by location with robust data handling
     if (searchLocation && searchLocation.trim() !== '') {
       const searchLocationLower = searchLocation.toLowerCase().trim();
       
-      // Extract property location data
-      const propertyCity = (property.location?.city || property.city || '').toLowerCase();
-      const propertyState = (property.location?.state || property.state || '').toLowerCase();
+      // Extract location data defensively (handle both cached and database formats)
+      let propertyCity = '';
+      let propertyState = '';
+      let locationString = '';
+      
+      // Try object structure first (database format)
+      if (property.location && typeof property.location === 'object') {
+        propertyCity = (property.location.city || '').toLowerCase();
+        propertyState = (property.location.state || '').toLowerCase();
+      }
+      // Try string location (cached format fallback)
+      else if (typeof property.location === 'string') {
+        locationString = property.location.toLowerCase();
+        // Try to parse "city, state" format
+        if (locationString.includes(',')) {
+          const parts = locationString.split(',').map(p => p.trim());
+          propertyCity = parts[0] || '';
+          propertyState = parts[1] || '';
+        } else {
+          propertyCity = locationString;
+        }
+      }
+      // Try direct fields (fallback)
+      else {
+        propertyCity = (property.city || '').toLowerCase();
+        propertyState = (property.state || '').toLowerCase();
+      }
+      
       const propertyAddress = (property.address || '').toLowerCase();
       
-      // Create searchable location strings
-      const locationStrings = [
+      // Create all possible searchable strings
+      const searchableStrings = [
         propertyCity,
         propertyState,
         propertyAddress,
-        `${propertyCity}, ${propertyState}`.replace(', ', ', '),
+        locationString,
+        `${propertyCity}, ${propertyState}`,
         `${propertyCity} ${propertyState}`,
-      ].filter(str => str.trim() !== '');
+        (property.title || property.name || '').toLowerCase()
+      ].filter(str => str && str.trim() !== '');
       
-      // Normalize search input (handle common variations)
-      let normalizedSearch = searchLocationLower;
+      // Location name variations mapping
       const locationVariations: { [key: string]: string[] } = {
         'bangalore': ['bengaluru', 'bangalore'],
         'bengaluru': ['bangalore', 'bengaluru'],
@@ -375,42 +377,38 @@ const Properties: React.FC = () => {
         'madras': ['chennai', 'madras']
       };
       
-      // Check if search matches any location string (bidirectional)
+      // Check for matches
       let locationMatch = false;
       
-      for (const locationStr of locationStrings) {
-        if (locationStr === '') continue;
-        
-        // Direct match - search term found in property location
-        if (locationStr.includes(normalizedSearch)) {
+      // Direct string matching
+      for (const searchableStr of searchableStrings) {
+        if (searchableStr.includes(searchLocationLower) || searchLocationLower.includes(searchableStr)) {
           locationMatch = true;
           break;
         }
-        
-        // Reverse match - property location found in search term
-        if (normalizedSearch.includes(locationStr)) {
-          locationMatch = true;
-          break;
-        }
-        
-        // Check variations
+      }
+      
+      // Check variations if no direct match
+      if (!locationMatch) {
         for (const [key, variations] of Object.entries(locationVariations)) {
-          if (normalizedSearch.includes(key)) {
+          if (searchLocationLower.includes(key)) {
             for (const variation of variations) {
-              if (locationStr.includes(variation)) {
-                locationMatch = true;
-                break;
+              for (const searchableStr of searchableStrings) {
+                if (searchableStr.includes(variation)) {
+                  locationMatch = true;
+                  break;
+                }
               }
+              if (locationMatch) break;
             }
           }
           if (locationMatch) break;
         }
-        if (locationMatch) break;
       }
       
       if (!locationMatch) {
         passesFilter = false;
-        filterReasons.push(`Location mismatch: Property(${propertyCity}, ${propertyState}) vs Search(${searchLocationLower})`);
+        filterReasons.push(`Location: "${searchLocationLower}" not found in [${searchableStrings.join(', ')}]`);
       }
     }
 
@@ -419,9 +417,9 @@ const Properties: React.FC = () => {
     //   // Add date filtering logic here if needed
     // }
 
-    // Filter by guests
+    // Filter by guests with defensive property access
     if (groupSize && groupSize !== '') {
-      const propertyGuests = property.max_guests || property.capacity || 1;
+      const propertyGuests = property.max_guests || property.guests || property.capacity || 1;
       const requiredGuests = parseInt(groupSize);
       if (groupSize === '9+' && propertyGuests < 9) {
         passesFilter = false;
@@ -432,7 +430,7 @@ const Properties: React.FC = () => {
       }
     }
 
-    // Filter by price range
+    // Filter by price range with defensive property access
     if (priceRange && priceRange !== '') {
       const propertyPrice = property.pricing?.daily_rate || property.price || 0;
       if (priceRange === '0-2000' && propertyPrice > 2000) {
@@ -817,14 +815,28 @@ const Properties: React.FC = () => {
                 location: searchLocation,
                 date: searchDate,
                 guests: groupSize,
-                priceRange: priceRange
+                priceRange: priceRange,
+                totalProperties: dbProperties.length
               });
+              
               // Close all dropdowns
               setShowLocationDropdown(false);
               setShowGuestsDropdown(false);
               setShowPriceDropdown(false);
-              // The filtering is now handled automatically by the filter logic above
-              console.log('✅ Filters applied automatically');
+              
+              // Reset pagination to first page
+              setCurrentPage(1);
+              
+              // Trigger re-filtering by forcing a state update
+              const searchState = {
+                location: searchLocation,
+                guests: groupSize,
+                price: priceRange,
+                timestamp: Date.now()
+              };
+              console.log('✅ Search state updated:', searchState);
+              
+              // The filtering will be automatically applied by the filteredProperties logic
             }} className="bg-gradient-to-r from-brand-red to-brand-orange text-white px-8 py-4 rounded-xl hover:from-red-700 hover:to-orange-700 transition-all duration-300 cursor-pointer whitespace-nowrap rounded-button font-bold text-lg shadow-xl hover:shadow-2xl transform hover:scale-105 flex items-center justify-center gap-3">
                 <i className="fas fa-search text-xl"></i>
                 <span>Search</span>
@@ -950,10 +962,26 @@ const Properties: React.FC = () => {
                   <h3 className="text-lg font-medium text-gray-800 mb-2">No properties found</h3>
                   <p className="text-gray-600 mb-4">Properties array length: {properties.length}, Current properties: {currentProperties.length}</p>
                 </div> : <div className={`grid gap-8 ${viewMode === 'grid' ? 'grid-cols-1 md:grid-cols-2 xl:grid-cols-3' : 'grid-cols-1'}`}>
-                  {currentProperties.map((property, index) => <div key={property.id} className="glass-card-property property-card-height rounded-2xl overflow-hidden">
+                  {currentProperties.map((property, index) => {
+                    // Helper functions for defensive data access
+                    const getPropertyTitle = (prop: any) => prop.title || prop.name || 'Unnamed Property';
+                    const getPropertyLocation = (prop: any) => {
+                      if (prop.location && typeof prop.location === 'object') {
+                        const { city, state } = prop.location;
+                        if (city && state) return `${city}, ${state}`;
+                        if (city) return city;
+                        if (state) return state;
+                      }
+                      if (typeof prop.location === 'string') return prop.location;
+                      return prop.address || 'Location not specified';
+                    };
+                    const getPropertyPrice = (prop: any) => prop.pricing?.daily_rate || prop.price || 0;
+                    const getPropertyImages = (prop: any) => prop.images?.length > 0 ? prop.images : [beachsideParadise];
+                    
+                    return <div key={property.id} className="glass-card-property property-card-height rounded-2xl overflow-hidden">
                       {/* Image Carousel */}
                       <div className="relative">
-                        <ImageCarousel images={property.image ? [property.image] : [beachsideParadise]} alt={property.name} />
+                        <ImageCarousel images={getPropertyImages(property)} alt={getPropertyTitle(property)} />
                         <div className="absolute top-3 left-3">
                           <span className="bg-gradient-to-r from-brand-red to-brand-orange text-white px-3 py-1 rounded-full text-sm font-semibold backdrop-blur-sm">
                             {property.type || 'Villa'}
@@ -968,12 +996,12 @@ const Properties: React.FC = () => {
                       {/* Content Section */}
                       <div className="property-card-content p-6">
                         <div className="flex items-start justify-between mb-3">
-                          <h3 className="text-xl font-bold text-foreground line-clamp-2">{property.name}</h3>
+                          <h3 className="text-xl font-bold text-foreground line-clamp-2">{getPropertyTitle(property)}</h3>
                         </div>
                         
                         <div className="flex items-center text-muted-foreground mb-3">
                           <i className="fas fa-map-marker-alt text-brand-red mr-2"></i>
-                          <span className="text-sm">{property.location}</span>
+                          <span className="text-sm">{getPropertyLocation(property)}</span>
                         </div>
 
                         {/* Property Stats */}
@@ -994,7 +1022,7 @@ const Properties: React.FC = () => {
 
                         <div className="flex items-center justify-between mb-4">
                           <div className="text-2xl font-bold text-foreground">
-                            ₹{property.price.toLocaleString()}
+                            ₹{getPropertyPrice(property).toLocaleString()}
                             <span className="text-sm font-normal text-muted-foreground">/night</span>
                           </div>
                         </div>
@@ -1021,7 +1049,8 @@ const Properties: React.FC = () => {
                           </button>
                         </div>
                       </div>
-                    </div>)}
+                    </div>
+                  })}
                 </div>}
 
               {/* Pagination */}
