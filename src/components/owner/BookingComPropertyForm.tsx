@@ -12,6 +12,7 @@ import { Badge } from '@/components/owner/ui/badge';
 import { Separator } from '@/components/owner/ui/separator';
 import { Progress } from '@/components/owner/ui/progress';
 import { toast } from '@/hooks/use-toast';
+import { getAllStates, getCitiesByState, getPopularCitiesByState } from '@/data/indianLocations';
 
 interface BookingComPropertyFormProps {
   onBack: () => void;
@@ -80,6 +81,8 @@ const BookingComPropertyForm: React.FC<BookingComPropertyFormProps> = ({
     return extracted;
   };
 
+  const [availableCities, setAvailableCities] = useState<string[]>([]);
+  
   const [formData, setFormData] = useState({
     // Basic Information
     title: '',
@@ -90,6 +93,9 @@ const BookingComPropertyForm: React.FC<BookingComPropertyFormProps> = ({
     
     // Location & Address
     address: '',
+    state: '',
+    city: '',
+    area: '',
     country: 'India',
     postal_code: '',
     coordinates: { lat: '', lng: '' },
@@ -149,6 +155,9 @@ const BookingComPropertyForm: React.FC<BookingComPropertyFormProps> = ({
         license_number: parsedDesc.licenseNumber || editingProperty.license_number || '',
         
         address: editingProperty.location || editingProperty.address || '',
+        state: editingProperty.state || '',
+        city: editingProperty.city || '',
+        area: editingProperty.area || '',
         country: editingProperty.country || 'India',
         postal_code: editingProperty.zip_code || editingProperty.postal_code || '',
         coordinates: { lat: editingProperty.latitude?.toString() || '', lng: editingProperty.longitude?.toString() || '' },
@@ -369,6 +378,46 @@ const BookingComPropertyForm: React.FC<BookingComPropertyFormProps> = ({
     }
   };
 
+  const handleStateChange = (state: string) => {
+    const cities = getCitiesByState(state);
+    setAvailableCities(cities);
+    setFormData(prev => ({
+      ...prev,
+      state,
+      city: '', // Reset city when state changes
+      address: generateAddress(state, '', prev.area)
+    }));
+  };
+
+  const handleCityChange = (city: string) => {
+    setFormData(prev => ({
+      ...prev,
+      city,
+      address: generateAddress(prev.state, city, prev.area)
+    }));
+  };
+
+  const handleAreaChange = (area: string) => {
+    setFormData(prev => ({
+      ...prev,
+      area,
+      address: generateAddress(prev.state, prev.city, area)
+    }));
+  };
+
+  const generateAddress = (state: string, city: string, area: string) => {
+    const parts = [area, city, state, 'India'].filter(Boolean);
+    return parts.join(', ');
+  };
+
+  // Initialize cities when state is set during editing
+  React.useEffect(() => {
+    if (formData.state && !availableCities.length) {
+      const cities = getCitiesByState(formData.state);
+      setAvailableCities(cities);
+    }
+  }, [formData.state, availableCities.length]);
+
   const handleArrayToggle = (field: string, value: string) => {
     setFormData(prev => ({
       ...prev,
@@ -412,7 +461,7 @@ const BookingComPropertyForm: React.FC<BookingComPropertyFormProps> = ({
       case 1:
         return !!(formData.title && formData.description && formData.property_type && formData.description.length >= 50);
       case 2:
-        return !!(formData.address && formData.postal_code);
+        return !!(formData.state && formData.city && formData.postal_code);
       case 3:
         return !!(formData.max_guests && formData.bedrooms && formData.bathrooms);
       case 4:
@@ -462,8 +511,8 @@ const BookingComPropertyForm: React.FC<BookingComPropertyFormProps> = ({
         name: formData.title,
         type: formData.property_type,
         location: formData.address,
-        city: formData.address.split(',')[0]?.trim() || 'Not specified',
-        state: formData.address.split(',')[1]?.trim() || 'Not specified',
+        city: formData.city,
+        state: formData.state,
         price: Number(formData.pricing.daily_rate),
         capacity: Number(formData.max_guests),
         bedrooms: Number(formData.bedrooms),
@@ -602,35 +651,84 @@ ${formData.license_number ? `**License:** ${formData.license_number}` : ''}`;
       case 2:
         return (
           <div className="space-y-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <Label htmlFor="state">State/Union Territory *</Label>
+                <Select value={formData.state} onValueChange={handleStateChange}>
+                  <SelectTrigger className="mt-2">
+                    <SelectValue placeholder="Select your state" />
+                  </SelectTrigger>
+                  <SelectContent className="max-h-60">
+                    {getAllStates().map((state) => (
+                      <SelectItem key={state} value={state}>{state}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div>
+                <Label htmlFor="city">City *</Label>
+                <Select 
+                  value={formData.city} 
+                  onValueChange={handleCityChange}
+                  disabled={!formData.state}
+                >
+                  <SelectTrigger className="mt-2">
+                    <SelectValue placeholder={formData.state ? "Select your city" : "Select state first"} />
+                  </SelectTrigger>
+                  <SelectContent className="max-h-60">
+                    {formData.state && (
+                      <>
+                        <div className="px-2 py-1 text-xs font-semibold text-muted-foreground border-b">
+                          Popular Cities
+                        </div>
+                        {getPopularCitiesByState(formData.state).map((city) => (
+                          <SelectItem key={city} value={city}>
+                            <span className="flex items-center gap-2">
+                              ⭐ {city}
+                            </span>
+                          </SelectItem>
+                        ))}
+                        <div className="px-2 py-1 text-xs font-semibold text-muted-foreground border-b border-t">
+                          All Cities
+                        </div>
+                        {availableCities.filter(city => !getPopularCitiesByState(formData.state).includes(city)).map((city) => (
+                          <SelectItem key={city} value={city}>{city}</SelectItem>
+                        ))}
+                      </>
+                    )}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+
+            <div>
+              <Label htmlFor="area">Area/Locality</Label>
+              <Input
+                id="area"
+                value={formData.area}
+                onChange={(e) => handleAreaChange(e.target.value)}
+                placeholder="Enter specific area, locality, or neighborhood"
+                className="mt-2"
+              />
+            </div>
+
             <div>
               <Label htmlFor="address">Complete Address *</Label>
               <Textarea
                 id="address"
                 value={formData.address}
                 onChange={(e) => handleInputChange('address', e.target.value)}
-                placeholder="Enter the full address including street, area, and landmarks"
+                placeholder="This will be auto-generated from your selections above, or you can edit it manually"
                 rows={3}
                 className="mt-2"
               />
+              <div className="text-sm text-muted-foreground mt-1">
+                Address is automatically generated from your state, city, and area selections
+              </div>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <Label htmlFor="country">Country</Label>
-                <Select value={formData.country} onValueChange={(value) => handleInputChange('country', value)}>
-                  <SelectTrigger className="mt-2">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="India">India</SelectItem>
-                    <SelectItem value="USA">United States</SelectItem>
-                    <SelectItem value="UK">United Kingdom</SelectItem>
-                    <SelectItem value="Canada">Canada</SelectItem>
-                    <SelectItem value="Australia">Australia</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-
               <div>
                 <Label htmlFor="postal_code">Postal Code *</Label>
                 <Input
@@ -640,6 +738,22 @@ ${formData.license_number ? `**License:** ${formData.license_number}` : ''}`;
                   placeholder="Enter postal/ZIP code"
                   className="mt-2"
                 />
+              </div>
+
+              <div>
+                <Label htmlFor="country">Country</Label>
+                <Select value={formData.country} onValueChange={(value) => handleInputChange('country', value)}>
+                  <SelectTrigger className="mt-2">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="India">🇮🇳 India</SelectItem>
+                    <SelectItem value="USA">🇺🇸 United States</SelectItem>
+                    <SelectItem value="UK">🇬🇧 United Kingdom</SelectItem>
+                    <SelectItem value="Canada">🇨🇦 Canada</SelectItem>
+                    <SelectItem value="Australia">🇦🇺 Australia</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
             </div>
 
