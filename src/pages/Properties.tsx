@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import picnifyLogo from '/lovable-uploads/f7960b1f-407a-4738-b8f6-067ea4600889.png';
 import { useAuth } from '@/contexts/AuthContext';
 import { PropertyService } from '@/lib/propertyService';
@@ -31,9 +31,10 @@ import beachsideParadise from '@/assets/beachside-paradise.jpg';
 const Properties: React.FC = () => {
   // Initialize scroll animations
   useScrollAnimation();
-  const [searchLocation, setSearchLocation] = useState('');
-  const [searchDate, setSearchDate] = useState('');
-  const [groupSize, setGroupSize] = useState('');
+  const [searchParams] = useSearchParams();
+  const [searchLocation, setSearchLocation] = useState(searchParams.get('location') || '');
+  const [searchDate, setSearchDate] = useState(searchParams.get('date') || '');
+  const [groupSize, setGroupSize] = useState(searchParams.get('guests') || '');
   const [priceRange, setPriceRange] = useState('');
   const [propertyType, setPropertyType] = useState('');
   const [amenities, setAmenities] = useState<string[]>([]);

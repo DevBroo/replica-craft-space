@@ -470,7 +470,13 @@ const Index: React.FC = () => {
         </div>
         <div className="lg:col-span-2">
           <button 
-            onClick={() => navigate('/properties')}
+            onClick={() => {
+              const searchParams = new URLSearchParams();
+              if (searchLocation) searchParams.set('location', searchLocation);
+              if (searchDate) searchParams.set('date', searchDate);
+              if (groupSize) searchParams.set('guests', groupSize);
+              navigate(`/properties?${searchParams.toString()}`);
+            }}
             className="w-full bg-gradient-to-r from-red-600 to-orange-600 text-white px-8 py-4 rounded-xl hover:from-red-700 hover:to-orange-700 transition-all duration-300 cursor-pointer font-bold text-lg shadow-xl hover:shadow-2xl transform hover:scale-105 flex items-center justify-center gap-3"
           >
             <i className="fas fa-search text-xl"></i>
