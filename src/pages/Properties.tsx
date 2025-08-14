@@ -344,13 +344,73 @@ const Properties: React.FC = () => {
     let passesFilter = true;
     const filterReasons = [];
 
-    // Filter by location (destination)
+    // Filter by location (destination) - Enhanced logic
     if (searchLocation && searchLocation.trim() !== '') {
-      const propertyLocation = (property.city || property.location?.city || property.address || '').toLowerCase();
-      const searchLocationLower = searchLocation.toLowerCase();
-      if (!propertyLocation.includes(searchLocationLower)) {
+      const searchLocationLower = searchLocation.toLowerCase().trim();
+      
+      // Extract property location data
+      const propertyCity = (property.location?.city || property.city || '').toLowerCase();
+      const propertyState = (property.location?.state || property.state || '').toLowerCase();
+      const propertyAddress = (property.address || '').toLowerCase();
+      
+      // Create searchable location strings
+      const locationStrings = [
+        propertyCity,
+        propertyState,
+        propertyAddress,
+        `${propertyCity}, ${propertyState}`.replace(', ', ', '),
+        `${propertyCity} ${propertyState}`,
+      ].filter(str => str.trim() !== '');
+      
+      // Normalize search input (handle common variations)
+      let normalizedSearch = searchLocationLower;
+      const locationVariations: { [key: string]: string[] } = {
+        'bangalore': ['bengaluru', 'bangalore'],
+        'bengaluru': ['bangalore', 'bengaluru'],
+        'mumbai': ['bombay', 'mumbai'],
+        'bombay': ['mumbai', 'bombay'],
+        'kolkata': ['calcutta', 'kolkata'],
+        'calcutta': ['kolkata', 'calcutta'],
+        'chennai': ['madras', 'chennai'],
+        'madras': ['chennai', 'madras']
+      };
+      
+      // Check if search matches any location string (bidirectional)
+      let locationMatch = false;
+      
+      for (const locationStr of locationStrings) {
+        if (locationStr === '') continue;
+        
+        // Direct match - search term found in property location
+        if (locationStr.includes(normalizedSearch)) {
+          locationMatch = true;
+          break;
+        }
+        
+        // Reverse match - property location found in search term
+        if (normalizedSearch.includes(locationStr)) {
+          locationMatch = true;
+          break;
+        }
+        
+        // Check variations
+        for (const [key, variations] of Object.entries(locationVariations)) {
+          if (normalizedSearch.includes(key)) {
+            for (const variation of variations) {
+              if (locationStr.includes(variation)) {
+                locationMatch = true;
+                break;
+              }
+            }
+          }
+          if (locationMatch) break;
+        }
+        if (locationMatch) break;
+      }
+      
+      if (!locationMatch) {
         passesFilter = false;
-        filterReasons.push(`Location mismatch: ${propertyLocation} vs ${searchLocationLower}`);
+        filterReasons.push(`Location mismatch: Property(${propertyCity}, ${propertyState}) vs Search(${searchLocationLower})`);
       }
     }
 
