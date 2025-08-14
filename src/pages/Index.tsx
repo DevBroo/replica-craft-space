@@ -614,12 +614,15 @@ className="w-full h-64 object-cover transition-transform duration-700 group-hove
           </div>
         )}
         </div>
-<div className="text-center mt-16">
-<button className="bg-gradient-to-r from-red-600 to-orange-500 text-white px-10 py-4 rounded-xl hover:from-red-700 hover:to-orange-600 transition-all duration-300 cursor-pointer whitespace-nowrap rounded-button font-bold text-lg shadow-xl hover:shadow-2xl transform hover:scale-105">
-Explore All Properties
-<i className="fas fa-arrow-right ml-3"></i>
-</button>
-</div>
+        <div className="text-center mt-16">
+          <button 
+            onClick={() => navigate('/properties')}
+            className="bg-gradient-to-r from-red-600 to-orange-500 text-white px-10 py-4 rounded-xl hover:from-red-700 hover:to-orange-600 transition-all duration-300 cursor-pointer whitespace-nowrap rounded-button font-bold text-lg shadow-xl hover:shadow-2xl transform hover:scale-105"
+          >
+            Explore All Properties
+            <i className="fas fa-arrow-right ml-3"></i>
+          </button>
+        </div>
 </div>
 </section>
 
@@ -728,10 +731,13 @@ className="w-full h-72 object-cover transition-transform duration-700 group-hove
 </span>
 ))}
 </div>
-<button className="w-full bg-gradient-to-r from-red-600 to-orange-500 text-white py-4 rounded-xl hover:from-red-700 hover:to-orange-600 transition-all duration-300 cursor-pointer whitespace-nowrap rounded-button font-bold text-base shadow-lg hover:shadow-xl transform hover:scale-105">
-Book Now
-<i className="fas fa-arrow-right ml-2"></i>
-</button>
+                  <button 
+                    onClick={() => navigate('/properties')}
+                    className="w-full bg-gradient-to-r from-red-600 to-orange-500 text-white py-4 rounded-xl hover:from-red-700 hover:to-orange-600 transition-all duration-300 cursor-pointer whitespace-nowrap rounded-button font-bold text-base shadow-lg hover:shadow-xl transform hover:scale-105"
+                  >
+                    Book Now
+                    <i className="fas fa-arrow-right ml-2"></i>
+                  </button>
 </div>
 </div>
 </div>
@@ -745,12 +751,15 @@ Book Now
           </div>
         )}
         </div>
-<div className="text-center mt-16">
-<button className="bg-gradient-to-r from-gray-800 to-gray-900 text-white px-10 py-4 rounded-xl hover:from-gray-900 hover:to-black transition-all duration-300 cursor-pointer whitespace-nowrap font-bold text-lg shadow-xl hover:shadow-2xl transform hover:scale-105">
-View All Featured Properties
-<i className="fas fa-building ml-3"></i>
-</button>
-</div>
+        <div className="text-center mt-16">
+          <button 
+            onClick={() => navigate('/properties')}
+            className="bg-gradient-to-r from-gray-800 to-gray-900 text-white px-10 py-4 rounded-xl hover:from-gray-900 hover:to-black transition-all duration-300 cursor-pointer whitespace-nowrap font-bold text-lg shadow-xl hover:shadow-2xl transform hover:scale-105"
+          >
+            View All Featured Properties
+            <i className="fas fa-building ml-3"></i>
+          </button>
+        </div>
 </div>
 </section>
 
