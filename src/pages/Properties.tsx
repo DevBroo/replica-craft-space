@@ -1,1612 +1,751 @@
 import React, { useState, useEffect } from 'react';
-import { Link, useNavigate, useSearchParams } from 'react-router-dom';
-import picnifyLogo from '/lovable-uploads/f7960b1f-407a-4738-b8f6-067ea4600889.png';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
-import { PropertyService } from '@/lib/propertyService';
-import { useWishlist } from '@/contexts/WishlistContext';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Badge } from '@/components/ui/badge';
+import { Slider } from '@/components/ui/slider';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
-import ImageCarousel from '@/components/owner/ImageCarousel';
+import { supabase } from '@/integrations/supabase/client';
+import { 
+  Search, 
+  MapPin, 
+  Star, 
+  Filter, 
+  SlidersHorizontal,
+  Heart,
+  Clock,
+  Users,
+  Bed,
+  Bath,
+  ChevronLeft,
+  ChevronRight
+} from 'lucide-react';
 
-// Scroll animation hook
-const useScrollAnimation = () => {
-  useEffect(() => {
-    const observerOptions = {
-      threshold: 0.1,
-      rootMargin: '0px 0px -50px 0px'
-    };
-    const observer = new IntersectionObserver(entries => {
-      entries.forEach(entry => {
-        if (entry.isIntersecting) {
-          entry.target.classList.add('animate');
-        }
-      });
-    }, observerOptions);
-    const elements = document.querySelectorAll('.fade-in-up, .fade-in');
-    elements.forEach(el => observer.observe(el));
-    return () => observer.disconnect();
-  }, []);
-};
+interface Property {
+  id: string;
+  name: string;
+  title: string;
+  location: string;
+  price: number;
+  rating: number;
+  totalBookings: number;
+  images: string[];
+  type: string;
+  capacity?: number;
+  bedrooms?: number;
+  bathrooms?: number;
+  amenities?: string[];
+}
 
-// Import default images for properties without uploaded images
-import beachsideParadise from '@/assets/beachside-paradise.jpg';
-import lakesideRetreat from '@/assets/lakeside-retreat.jpg';
-import mountainCottage from '@/assets/mountain-cottage.jpg';
-import farmHouseBliss from '@/assets/farm-house-bliss.jpg';
-import gardenEstate from '@/assets/garden-estate.jpg';
-import royalHeritageVilla from '@/assets/royal-heritage-villa.jpg';
-import sunsetVillaResort from '@/assets/sunset-villa-resort.jpg';
 const Properties: React.FC = () => {
-  // Initialize scroll animations
-  useScrollAnimation();
-  const [searchParams] = useSearchParams();
-  const [searchLocation, setSearchLocation] = useState(searchParams.get('location') || '');
-  const [searchDate, setSearchDate] = useState(searchParams.get('date') || '');
-  const [groupSize, setGroupSize] = useState(searchParams.get('guests') || '');
-  const [priceRange, setPriceRange] = useState('');
-  const [propertyType, setPropertyType] = useState('');
-  const [amenities, setAmenities] = useState<string[]>([]);
-  const [sortBy, setSortBy] = useState('popularity');
-  const [viewMode, setViewMode] = useState('grid');
-  const [currentPage, setCurrentPage] = useState(1);
-  const [showFilters, setShowFilters] = useState(false);
-  const [selectedProperty, setSelectedProperty] = useState<any>(null);
-  const [showViewModal, setShowViewModal] = useState(false);
-  
-  const { isPropertySaved, addToWishlist, removeFromWishlist } = useWishlist();
-
-  // Dropdown states for search functionality
-  const [showGuestsDropdown, setShowGuestsDropdown] = useState(false);
-  const [showPriceDropdown, setShowPriceDropdown] = useState(false);
-  const [showLocationDropdown, setShowLocationDropdown] = useState(false);
-
-  // Close dropdowns when clicking outside
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      const target = event.target as Element;
-      if (!target.closest('.dropdown-container')) {
-        setShowGuestsDropdown(false);
-        setShowPriceDropdown(false);
-        setShowLocationDropdown(false);
-      }
-    };
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, []);
-  const {
-    user,
-    isAuthenticated,
-    logout
-  } = useAuth();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const { user, isAuthenticated } = useAuth();
   const { toast } = useToast();
 
-  // Load properties from database with production-optimized strategy
-  const [dbProperties, setDbProperties] = useState<any[]>([]);
+  // State for properties and filters
+  const [properties, setProperties] = useState<Property[]>([]);
   const [loading, setLoading] = useState(true);
-  const [propertiesLoaded, setPropertiesLoaded] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [cacheDisabled, setCacheDisabled] = useState(() => {
-    try {
-      return localStorage?.getItem('cache_disabled') === 'true';
-    } catch {
-      return false;
-    }
-  });
+  const [searchTerm, setSearchTerm] = useState(searchParams.get('search') || '');
+  const [locationFilter, setLocationFilter] = useState(searchParams.get('location') || '');
+  const [propertyTypeFilter, setPropertyTypeFilter] = useState(searchParams.get('type') || '');
+  const [priceRange, setPriceRange] = useState([0, 50000]);
+  const [sortBy, setSortBy] = useState('price-low');
+  const [showFilters, setShowFilters] = useState(false);
+  
+  // Pagination
+  const [currentPage, setCurrentPage] = useState(1);
+  const propertiesPerPage = 12;
 
-  // Background refresh function for seamless updates
-  const refreshPropertiesInBackground = async () => {
-    try {
-      console.log('🔄 Background refresh started...');
-      const activeProperties = (await PropertyService.getActiveProperties()) as any[];
+  // Day Picnic state
+  const [dayPicnicPackages, setDayPicnicPackages] = useState<any[]>([]);
+  const [showDayPicnics, setShowDayPicnics] = useState(false);
 
-      // Store data preserving database structure for consistency
-      const essentialProperties = activeProperties.map((property: any) => {
+  // Fetch properties on component mount
+  useEffect(() => {
+    fetchProperties();
+    fetchDayPicnicPackages();
+  }, []);
+
+  // Update URL when filters change
+  useEffect(() => {
+    const params = new URLSearchParams();
+    if (searchTerm) params.set('search', searchTerm);
+    if (locationFilter) params.set('location', locationFilter);
+    if (propertyTypeFilter) params.set('type', propertyTypeFilter);
+    
+    const newUrl = `${window.location.pathname}${params.toString() ? '?' + params.toString() : ''}`;
+    window.history.replaceState({}, '', newUrl);
+  }, [searchTerm, locationFilter, propertyTypeFilter]);
+
+  const fetchProperties = async () => {
+    try {
+      setLoading(true);
+      console.log('🔍 Fetching properties from Supabase...');
+      
+      const { data, error } = await supabase
+        .from('properties')
+        .select('*')
+        .in('status', ['approved', 'pending'])
+        .order('created_at', { ascending: false });
+
+      if (error) {
+        console.error('❌ Supabase error:', error);
+        throw error;
+      }
+
+      if (!data) {
+        console.warn('⚠️ No data returned from Supabase');
+        setProperties([]);
+        return;
+      }
+
+      console.log('✅ Properties fetched successfully:', data.length);
+      
+      // Convert database format to frontend format
+      const formattedProperties = data.map(property => {
+        const locationData = property.location as any;
+        const city = locationData?.city || '';
+        const state = locationData?.state || '';
+        const displayLocation = city && state ? `${city}, ${state}` : 
+                               city || state || property.address || 'Location not specified';
+        
         return {
           id: property.id,
-          title: property.title || 'Unnamed Property', // Use title consistently
-          location: property.location || {}, // Preserve object structure
-          pricing: property.pricing || { daily_rate: 0 }, // Preserve object structure
-          images: property.images || [],
-          property_type: property.property_type || 'Property',
-          status: property.status || 'pending',
+          name: property.title,
+          title: property.title,
+          location: displayLocation,
+          price: (property.pricing as any)?.daily_rate || 0,
           rating: property.rating || 0,
-          max_guests: property.max_guests || 1,
-          bedrooms: property.bedrooms || 1,
-          bathrooms: property.bathrooms || 1,
-          address: property.address || '',
-          // Keep raw data for compatibility
-          rawData: property
+          totalBookings: property.review_count || 0,
+          images: property.images || [],
+          type: property.property_type,
+          capacity: property.max_guests,
+          bedrooms: property.bedrooms || 0,
+          bathrooms: property.bathrooms || 0,
+          amenities: property.amenities || []
         };
       });
-      const propertiesJson = JSON.stringify(essentialProperties);
-      localStorage.setItem('properties_cache', propertiesJson);
-      localStorage.setItem('properties_cache_timestamp', Date.now().toString());
 
-      // Update state if component is still mounted
-      setDbProperties(essentialProperties);
-      console.log('✅ Background refresh completed:', essentialProperties.length);
-    } catch (error) {
-      console.warn('⚠️ Background refresh failed:', error);
-    }
-  };
-  useEffect(() => {
-    let isMounted = true;
-
-    const loadProperties = async () => {
-      try {
-        console.log('🔍 Starting properties load...');
-        console.log('🔧 Environment info:', {
-          hostname: window.location.hostname,
-          isProduction: !window.location.hostname.includes('localhost'),
-          hasLocalStorage: typeof localStorage !== 'undefined'
-        });
-        
-        setLoading(true);
-        setError(null);
-
-        // Try cache first (only if available)
-        let cachedData = null;
-        try {
-          if (typeof localStorage !== 'undefined' && !cacheDisabled) {
-            const cacheKey = 'properties_cache';
-            const cacheTimestamp = localStorage.getItem('properties_cache_timestamp');
-            const now = Date.now();
-            const cacheAge = cacheTimestamp ? now - parseInt(cacheTimestamp) : Infinity;
-
-            if (cacheAge < 30 * 60 * 1000) { // 30 minutes
-              const cachedProperties = localStorage.getItem(cacheKey);
-              if (cachedProperties) {
-                cachedData = JSON.parse(cachedProperties);
-                console.log('⚡ Using cached properties:', cachedData.length);
-                
-                if (isMounted) {
-                  setDbProperties(cachedData);
-                  setPropertiesLoaded(true);
-                  setLoading(false);
-                }
-                
-                // Background refresh for fresh data
-                if (cacheAge > 10 * 60 * 1000) {
-                  refreshPropertiesInBackground();
-                }
-                return;
-              }
-            }
-          }
-        } catch (cacheError) {
-          console.warn('⚠️ Cache check failed:', cacheError);
-        }
-
-        // Fetch from database with retry logic
-        console.log('🔍 Fetching properties from database...');
-        let attempts = 0;
-        let lastError = null;
-        
-        while (attempts < 3 && isMounted) {
-          try {
-            attempts++;
-            console.log(`🔄 Fetch attempt ${attempts}/3`);
-            
-            const activeProperties = await PropertyService.getActiveProperties();
-            
-            if (!isMounted) return;
-
-          // Preserve database structure for consistency
-          const formattedProperties = activeProperties.map(property => {
-            return {
-              id: property.id,
-              title: property.title || 'Unnamed Property',
-              location: property.location || {},
-              pricing: property.pricing || { daily_rate: 0 },
-              images: property.images || [],
-              property_type: property.property_type || 'Property',
-              status: property.status || 'pending',
-              rating: property.rating || 0,
-              max_guests: property.max_guests || 1,
-              bedrooms: property.bedrooms || 1,
-              bathrooms: property.bathrooms || 1,
-              address: property.address || '',
-              // Keep raw data for detailed view
-              rawData: property
-            };
-          });
-
-            setDbProperties(formattedProperties);
-            setPropertiesLoaded(true);
-            setError(null);
-            console.log('✅ Properties loaded successfully:', formattedProperties.length);
-
-            // Cache the formatted properties (if possible)
-            try {
-              if (typeof localStorage !== 'undefined' && !cacheDisabled) {
-                localStorage.setItem('properties_cache', JSON.stringify(formattedProperties));
-                localStorage.setItem('properties_cache_timestamp', Date.now().toString());
-                console.log('✅ Properties cached successfully');
-              }
-             } catch (cacheError) {
-               console.warn('⚠️ Failed to cache properties:', cacheError);
-             }
-             
-             break; // Success, exit retry loop
-            
-          } catch (fetchError: any) {
-            lastError = fetchError;
-            console.error(`❌ Fetch attempt ${attempts} failed:`, fetchError);
-            
-            if (attempts < 3) {
-              console.log(`⏳ Retrying in ${attempts}s...`);
-              await new Promise(resolve => setTimeout(resolve, attempts * 1000));
-            }
-          }
-        }
-
-        // If all retries failed
-        if (lastError && isMounted) {
-          console.error('❌ All fetch attempts failed:', lastError);
-          setError(`Failed to load properties: ${lastError.message}`);
-          
-          // Try to use any cached data as fallback
-          if (cachedData) {
-            console.log('🔄 Using stale cache as fallback');
-            setDbProperties(cachedData);
-            setPropertiesLoaded(true);
-          } else {
-            setDbProperties([]);
-          }
-        }
-
-      } catch (error: any) {
-        console.error('❌ Unexpected error in loadProperties:', error);
-        if (isMounted) {
-          setError(`Unexpected error: ${error.message}`);
-          setDbProperties([]);
-        }
-      } finally {
-        if (isMounted) {
-          setLoading(false);
-        }
-      }
-    };
-
-    loadProperties();
-
-    // Cleanup function to prevent memory leaks
-    return () => {
-      isMounted = false;
-    };
-  }, [propertiesLoaded]);
-
-  // Cache management functions
-  const clearPropertiesCache = () => {
-    localStorage.removeItem('properties_cache');
-    localStorage.removeItem('properties_cache_timestamp');
-    setPropertiesLoaded(false);
-    console.log('🗑️ Properties cache cleared');
-  };
-  const clearAllCache = () => {
-    try {
-      const keys = Object.keys(localStorage);
-      // Clear all localStorage data to free maximum space
-      keys.forEach(key => localStorage.removeItem(key));
-      console.log('🗑️ All localStorage cleared to free storage space');
-    } catch (error) {
-      console.warn('⚠️ Error clearing localStorage:', error);
-    }
-  };
-  const reEnableCaching = () => {
-    setCacheDisabled(false);
-    localStorage.removeItem('cache_disabled');
-    console.log('✅ Caching re-enabled');
-  };
-  const refreshProperties = () => {
-    clearPropertiesCache();
-    setLoading(true);
-    setDbProperties([]);
-    setPropertiesLoaded(false);
-    // This will trigger the useEffect to reload properties
-  };
-
-  // Only log once when properties change to reduce console spam
-  useEffect(() => {
-    if (dbProperties.length > 0) {
-      console.log('✅ Properties loaded successfully:', dbProperties.length);
-    }
-  }, [dbProperties.length]);
-
-  // Apply filters with defensive programming for data structure consistency
-  const filteredProperties = dbProperties.filter((property: any) => {
-    let passesFilter = true;
-    const filterReasons = [];
-
-    // Debug logging for data structure analysis
-    if (dbProperties.length > 0 && searchLocation) {
-      console.log('🔍 Filtering property:', {
-        title: property.title || property.name,
-        location: property.location,
-        address: property.address,
-        searchTerm: searchLocation
-      });
-    }
-
-    // Filter by location with robust data handling
-    if (searchLocation && searchLocation.trim() !== '') {
-      const searchLocationLower = searchLocation.toLowerCase().trim();
-      
-      // Extract location data defensively (handle both cached and database formats)
-      let propertyCity = '';
-      let propertyState = '';
-      let locationString = '';
-      
-      // Try object structure first (database format)
-      if (property.location && typeof property.location === 'object') {
-        propertyCity = (property.location.city || '').toLowerCase();
-        propertyState = (property.location.state || '').toLowerCase();
-      }
-      // Try string location (cached format fallback)
-      else if (typeof property.location === 'string') {
-        locationString = property.location.toLowerCase();
-        // Try to parse "city, state" format
-        if (locationString.includes(',')) {
-          const parts = locationString.split(',').map(p => p.trim());
-          propertyCity = parts[0] || '';
-          propertyState = parts[1] || '';
-        } else {
-          propertyCity = locationString;
-        }
-      }
-      // Try direct fields (fallback)
-      else {
-        propertyCity = (property.city || '').toLowerCase();
-        propertyState = (property.state || '').toLowerCase();
-      }
-      
-      const propertyAddress = (property.address || '').toLowerCase();
-      
-      // Create all possible searchable strings
-      const searchableStrings = [
-        propertyCity,
-        propertyState,
-        propertyAddress,
-        locationString,
-        `${propertyCity}, ${propertyState}`,
-        `${propertyCity} ${propertyState}`,
-        (property.title || property.name || '').toLowerCase()
-      ].filter(str => str && str.trim() !== '');
-      
-      // Location name variations mapping
-      const locationVariations: { [key: string]: string[] } = {
-        'bangalore': ['bengaluru', 'bangalore'],
-        'bengaluru': ['bangalore', 'bengaluru'],
-        'mumbai': ['bombay', 'mumbai'],
-        'bombay': ['mumbai', 'bombay'],
-        'kolkata': ['calcutta', 'kolkata'],
-        'calcutta': ['kolkata', 'calcutta'],
-        'chennai': ['madras', 'chennai'],
-        'madras': ['chennai', 'madras']
-      };
-      
-      // Check for matches
-      let locationMatch = false;
-      
-      // Direct string matching
-      for (const searchableStr of searchableStrings) {
-        if (searchableStr.includes(searchLocationLower) || searchLocationLower.includes(searchableStr)) {
-          locationMatch = true;
-          break;
-        }
-      }
-      
-      // Check variations if no direct match
-      if (!locationMatch) {
-        for (const [key, variations] of Object.entries(locationVariations)) {
-          if (searchLocationLower.includes(key)) {
-            for (const variation of variations) {
-              for (const searchableStr of searchableStrings) {
-                if (searchableStr.includes(variation)) {
-                  locationMatch = true;
-                  break;
-                }
-              }
-              if (locationMatch) break;
-            }
-          }
-          if (locationMatch) break;
-        }
-      }
-      
-      if (!locationMatch) {
-        passesFilter = false;
-        filterReasons.push(`Location: "${searchLocationLower}" not found in [${searchableStrings.join(', ')}]`);
-      }
-    }
-
-    // Filter by date (if implemented)
-    // if (searchDate && searchDate.trim() !== '') {
-    //   // Add date filtering logic here if needed
-    // }
-
-    // Filter by guests with defensive property access
-    if (groupSize && groupSize !== '') {
-      const propertyGuests = property.max_guests || property.guests || property.capacity || 1;
-      const requiredGuests = parseInt(groupSize);
-      if (groupSize === '9+' && propertyGuests < 9) {
-        passesFilter = false;
-        filterReasons.push(`Guest capacity: ${propertyGuests} < 9`);
-      } else if (groupSize !== '9+' && propertyGuests < requiredGuests) {
-        passesFilter = false;
-        filterReasons.push(`Guest capacity: ${propertyGuests} < ${requiredGuests}`);
-      }
-    }
-
-    // Filter by price range with defensive property access
-    if (priceRange && priceRange !== '') {
-      const propertyPrice = property.pricing?.daily_rate || property.price || 0;
-      if (priceRange === '0-2000' && propertyPrice > 2000) {
-        passesFilter = false;
-        filterReasons.push(`Price ${propertyPrice} > 2000`);
-      } else if (priceRange === '2000-3000' && (propertyPrice < 2000 || propertyPrice > 3000)) {
-        passesFilter = false;
-        filterReasons.push(`Price ${propertyPrice} not in 2000-3000 range`);
-      } else if (priceRange === '3000-4000' && (propertyPrice < 3000 || propertyPrice > 4000)) {
-        passesFilter = false;
-        filterReasons.push(`Price ${propertyPrice} not in 3000-4000 range`);
-      } else if (priceRange === '4000+' && propertyPrice < 4000) {
-        passesFilter = false;
-        filterReasons.push(`Price ${propertyPrice} < 4000`);
-      }
-    }
-
-    // Filter by property type
-    if (propertyType && propertyType !== '') {
-      const propertyTypeValue = property.property_type || property.type || '';
-      if (propertyTypeValue.toLowerCase() !== propertyType.toLowerCase()) {
-        passesFilter = false;
-        filterReasons.push(`Type mismatch: ${propertyTypeValue} vs ${propertyType}`);
-      }
-    }
-
-    // Filter by amenities
-    if (amenities.length > 0) {
-      const propertyAmenities = Array.isArray(property.amenities) ? property.amenities.map((a: string) => a.toLowerCase()) : [];
-
-      // Check if at least one selected amenity is present
-      const hasMatchingAmenity = amenities.some(amenity => propertyAmenities.includes(amenity.toLowerCase()));
-      if (!hasMatchingAmenity) {
-        passesFilter = false;
-        filterReasons.push(`No matching amenities: ${amenities.join(', ')} vs ${propertyAmenities.join(', ')}`);
-      }
-    }
-    if (!passesFilter && (searchLocation || groupSize || priceRange || propertyType || amenities.length > 0)) {
-      console.log(`❌ Property "${property.name || property.title}" filtered out:`, filterReasons.join(', '));
-    }
-    return passesFilter;
-  });
-
-  // Log filtering results
-  if (searchLocation || groupSize || priceRange || propertyType || amenities.length > 0) {
-    console.log(`🔍 Filtering results: ${filteredProperties.length}/${dbProperties.length} properties match criteria`);
-    console.log(`📍 Active filters:`, {
-      location: searchLocation || 'Any',
-      guests: groupSize || 'Any',
-      priceRange: priceRange || 'Any',
-      propertyType: propertyType || 'Any',
-      amenities: amenities.length > 0 ? amenities.join(', ') : 'Any'
-    });
-  }
-
-  // Apply sorting to filtered properties
-  const sortedProperties = [...filteredProperties].sort((a, b) => {
-    switch (sortBy) {
-      case 'price-asc':
-        return (a.pricing?.daily_rate || a.price || 0) - (b.pricing?.daily_rate || b.price || 0);
-      case 'price-desc':
-        return (b.pricing?.daily_rate || b.price || 0) - (a.pricing?.daily_rate || a.price || 0);
-      case 'rating-desc':
-        return (b.rating || 0) - (a.rating || 0);
-      case 'newest':
-        return new Date(b.created_at || 0).getTime() - new Date(a.created_at || 0).getTime();
-      case 'popularity':
-      default:
-        return (b.totalBookings || b.review_count || 0) - (a.totalBookings || a.review_count || 0);
-    }
-  });
-
-  // Only show filtered and sorted database properties - no dummy data
-  const properties = sortedProperties.map((property: any, index: number) => {
-    // Add error handling for missing properties
-    const mappedProperty = {
-      id: property.id || `property-${index}`,
-      name: property.name || property.title || 'Unnamed Property',
-      location: property.location || 'Location not specified',
-      rating: property.rating || 0,
-      reviews: property.totalBookings || property.review_count || 0,
-      price: property.price || property.pricing?.daily_rate || 0,
-      originalPrice: (property.price || property.pricing?.daily_rate || 0) * 1.1,
-      // CRITICAL FIX: Include images array from database
-      images: property.images || [],
-      // Preserve pricing structure for proper display
-      pricing: property.pricing || { daily_rate: property.price || 0 },
-      // Keep original location object structure for search functionality
-      address: property.address || property.location || 'Location not specified',
-      // 10% markup for original price
-      image: property.images && property.images.length > 0 ? property.images[0] : property.image_url || property.image || property.firstImage || (() => {
-        // Provide default images based on property type
-        const defaultImages = {
-          'villa': 'https://images.unsplash.com/photo-1564013799919-ab600027ffc6?w=400&h=300&fit=crop',
-          'cottage': 'https://images.unsplash.com/photo-1571896349842-33c89424de2d?w=400&h=300&fit=crop',
-          'resort': 'https://images.unsplash.com/photo-1582268611958-ebfd161ef9cf?w=400&h=300&fit=crop',
-          'estate': 'https://images.unsplash.com/photo-1564013799919-ab600027ffc6?w=400&h=300&fit=crop',
-          'heritage': 'https://images.unsplash.com/photo-1571896349842-33c89424de2d?w=400&h=300&fit=crop',
-          'retreat': 'https://images.unsplash.com/photo-1582268611958-ebfd161ef9cf?w=400&h=300&fit=crop'
-        };
-        const propertyType = (property.property_type || property.type || 'villa').toLowerCase();
-        return defaultImages[propertyType] || defaultImages['villa'];
-      })(),
-      // Use uploaded image or fallback to type-specific default
-      amenities: Array.isArray(property.amenities) ? property.amenities.map((a: string) => a.charAt(0).toUpperCase() + a.slice(1)) : [],
-      type: property.type || property.property_type || 'Property',
-      guests: property.capacity || property.max_guests || 1,
-      bedrooms: property.bedrooms || 1,
-      bathrooms: property.bathrooms || 1,
-      status: property.status || 'pending',
-      // Add status for pending indicator
-      featured: true,
-      ownerEmail: property.ownerEmail || property.owner_id || '',
-      description: property.description || '',
-      rawData: property // Preserve the full database record for enhanced modal details
-    };
-
-    // Ensure type is a string and capitalize it
-    if (typeof mappedProperty.type === 'string') {
-      mappedProperty.type = mappedProperty.type.charAt(0).toUpperCase() + mappedProperty.type.slice(1);
-    } else {
-      mappedProperty.type = 'Property';
-    }
-    return mappedProperty;
-  });
-  const filterOptions = {
-    priceRanges: [{
-      label: 'Under ₹2,000',
-      value: '0-2000'
-    }, {
-      label: '₹2,000 - ₹3,000',
-      value: '2000-3000'
-    }, {
-      label: '₹3,000 - ₹4,000',
-      value: '3000-4000'
-    }, {
-      label: 'Above ₹4,000',
-      value: '4000+'
-    }],
-    propertyTypes: ['Villa', 'Cottage', 'Resort', 'Estate', 'Heritage', 'Retreat', 'Farm House', 'Camp', 'Bungalow', 'Loft', 'Cabin', 'Palace'],
-    amenitiesList: ['Pool', 'WiFi', 'Parking', 'Kitchen', 'AC', 'Fireplace', 'Garden', 'Beach Access', 'Restaurant', 'Spa', 'Heritage', 'Lake View', 'Balcony', 'Farm', 'BBQ', 'Games', 'Nature', 'Desert View', 'Camp Fire', 'Traditional', 'Camel Safari', 'Mountain View', 'Heating', 'City View', 'Modern', 'River View', 'Yoga', 'Adventure', 'Royal'],
-    sortOptions: [{
-      label: 'Popularity',
-      value: 'popularity'
-    }, {
-      label: 'Price: Low to High',
-      value: 'price-asc'
-    }, {
-      label: 'Price: High to Low',
-      value: 'price-desc'
-    }, {
-      label: 'Rating: High to Low',
-      value: 'rating-desc'
-    }, {
-      label: 'Newest First',
-      value: 'newest'
-    }]
-  };
-
-  // Search dropdown options
-  const searchOptions = {
-    locations: ['Mumbai, Maharashtra', 'Delhi, NCR', 'Bangalore, Karnataka', 'Chennai, Tamil Nadu', 'Kolkata, West Bengal', 'Hyderabad, Telangana', 'Pune, Maharashtra', 'Ahmedabad, Gujarat', 'Jaipur, Rajasthan', 'Goa', 'Kerala', 'Himachal Pradesh', 'Uttarakhand', 'Rajasthan', 'Gujarat'],
-    guests: [{
-      value: '1',
-      label: '1 Guest'
-    }, {
-      value: '2',
-      label: '2 Guests'
-    }, {
-      value: '3',
-      label: '3 Guests'
-    }, {
-      value: '4',
-      label: '4 Guests'
-    }, {
-      value: '5',
-      label: '5 Guests'
-    }, {
-      value: '6',
-      label: '6 Guests'
-    }, {
-      value: '7',
-      label: '7 Guests'
-    }, {
-      value: '8',
-      label: '8 Guests'
-    }, {
-      value: '9+',
-      label: '9+ Guests'
-    }]
-  };
-  const toggleAmenity = (amenity: string) => {
-    setAmenities(prev => prev.includes(amenity) ? prev.filter(a => a !== amenity) : [...prev, amenity]);
-  };
-  const clearAllFilters = () => {
-    setPriceRange('');
-    setPropertyType('');
-    setAmenities([]);
-  };
-  const propertiesPerPage = 9;
-  const totalPages = Math.ceil(properties.length / propertiesPerPage);
-  const currentProperties = properties.slice((currentPage - 1) * propertiesPerPage, currentPage * propertiesPerPage);
-
-  // Navigate directly to property details for booking
-  const handleViewProperty = (property: any) => {
-    // Validate property has ID before navigation
-    if (!property?.id) {
-      console.error('❌ Property missing ID:', property);
+      setProperties(formattedProperties);
+    } catch (error: any) {
+      console.error('❌ Failed to fetch properties:', error);
       toast({
         title: "Error",
-        description: "Unable to load property details. Please try again.",
+        description: "Failed to load properties. Please try again.",
         variant: "destructive"
       });
-      return;
+      setProperties([]);
+    } finally {
+      setLoading(false);
     }
+  };
 
-    console.log('🔍 Navigating to property details for booking:', {
-      propertyId: property.id,
-      hasRawData: !!property.rawData,
-      property: property
-    });
+  const fetchDayPicnicPackages = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('day_picnic_packages')
+        .select(`
+          *,
+          properties (
+            id,
+            title,
+            address,
+            images,
+            rating,
+            review_count,
+            status
+          )
+        `)
+        .eq('properties.status', 'approved');
+
+      if (error) throw error;
+      
+      const formattedPackages = data?.map(pkg => ({
+        id: pkg.id,
+        propertyId: pkg.properties.id,
+        name: `Day Picnic at ${pkg.properties.title}`,
+        title: `Day Picnic at ${pkg.properties.title}`,
+        location: pkg.properties.address,
+        price: pkg.base_price,
+        pricingType: pkg.pricing_type,
+        rating: pkg.properties.rating || 0,
+        totalBookings: pkg.properties.review_count || 0,
+        images: pkg.properties.images || [],
+        timing: {
+          start: pkg.start_time,
+          end: pkg.end_time,
+          duration: pkg.duration_hours
+        },
+        mealPlan: pkg.meal_plan || [],
+        inclusions: pkg.inclusions || [],
+        exclusions: pkg.exclusions || [],
+        addOns: pkg.add_ons || [],
+        type: 'day_picnic'
+      })) || [];
+      
+      setDayPicnicPackages(formattedPackages);
+    } catch (error) {
+      console.error('Error fetching day picnic packages:', error);
+    }
+  };
+
+  // Filter properties based on search criteria
+  const filteredProperties = properties.filter(property => {
+    const matchesSearch = !searchTerm || 
+      property.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      property.location.toLowerCase().includes(searchTerm.toLowerCase());
     
-    // Navigate directly to property details page for booking
+    const matchesLocation = !locationFilter || 
+      property.location.toLowerCase().includes(locationFilter.toLowerCase());
+    
+    const matchesType = !propertyTypeFilter || 
+      property.type.toLowerCase() === propertyTypeFilter.toLowerCase();
+    
+    const matchesPrice = property.price >= priceRange[0] && property.price <= priceRange[1];
+    
+    return matchesSearch && matchesLocation && matchesType && matchesPrice;
+  });
+
+  // Filter functions for day picnics
+  const filteredDayPicnics = dayPicnicPackages.filter(pkg => {
+    const matchesLocation = !locationFilter || 
+      pkg.location.toLowerCase().includes(locationFilter.toLowerCase());
+    const matchesPrice = pkg.price >= priceRange[0] && pkg.price <= priceRange[1];
+    return matchesLocation && matchesPrice;
+  });
+
+  // Sort properties
+  const sortedProperties = [...filteredProperties].sort((a, b) => {
+    switch (sortBy) {
+      case 'price-low':
+        return a.price - b.price;
+      case 'price-high':
+        return b.price - a.price;
+      case 'rating':
+        return b.rating - a.rating;
+      case 'popular':
+        return b.totalBookings - a.totalBookings;
+      default:
+        return 0;
+    }
+  });
+
+  // Pagination logic
+  const totalPages = Math.ceil(sortedProperties.length / propertiesPerPage);
+  const startIndex = (currentPage - 1) * propertiesPerPage;
+  const endIndex = startIndex + propertiesPerPage;
+  const currentProperties = sortedProperties.slice(startIndex, endIndex);
+
+  const handleViewProperty = (property: Property) => {
     navigate(`/property/${property.id}`);
   };
-  const closeViewModal = () => {
-    setShowViewModal(false);
-    setSelectedProperty(null);
+
+  const formatTime12Hour = (time24: string) => {
+    const [hour, minute] = time24.split(':');
+    const h = parseInt(hour, 10);
+    const ampm = h >= 12 ? 'PM' : 'AM';
+    const h12 = h % 12 || 12;
+    return `${h12}:${minute} ${ampm}`;
   };
-  return <div className="min-h-screen bg-background font-poppins">
-      {/* Header */}
-      <header className="sticky top-0 z-50 bg-background shadow-lg">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center h-20">
-            <div className="flex items-center">
-              <a href="/" className="flex items-center">
-                <img src={picnifyLogo} alt="Picnify.in Logo" className="h-12" />
-              </a>
+
+  const handleViewDayPicnic = (pkg: any) => {
+    // Navigate to day picnic booking page (we'll create this later)
+    navigate(`/day-picnic/${pkg.propertyId}`);
+  };
+
+  const propertyTypes = [
+    'Hotels',
+    'Apartments', 
+    'Resorts',
+    'Villas',
+    'Homestays',
+    'Farm Houses',
+    'Other'
+  ];
+
+  return (
+    <div className="min-h-screen bg-gray-50">
+      {/* Navigation */}
+      <nav className="bg-white shadow-sm border-b">
+        <div className="container mx-auto px-4">
+          <div className="flex items-center justify-between h-16">
+            <div 
+              className="text-2xl font-bold text-orange-600 cursor-pointer"
+              onClick={() => navigate('/')}
+            >
+              Picnify
             </div>
-            <nav className="hidden md:flex items-center space-x-8">
-              <a href="/" className="text-foreground hover:text-brand-orange font-medium transition-colors duration-200 cursor-pointer">Home</a>
-              <a href="/properties" className="text-brand-red hover:text-brand-orange font-medium transition-colors duration-200 cursor-pointer">Properties</a>
-              <a href="/locations" className="text-foreground hover:text-brand-orange font-medium transition-colors duration-200 cursor-pointer">Locations</a>
-              <a href="/about" className="text-foreground hover:text-brand-orange font-medium transition-colors duration-200 cursor-pointer">About</a>
-              <a href="/contact" className="text-foreground hover:text-brand-orange font-medium transition-colors duration-200 cursor-pointer">Contact</a>
-            </nav>
+            
+            <div className="hidden md:flex items-center space-x-8">
+              <button 
+                onClick={() => navigate('/')}
+                className="text-gray-700 hover:text-orange-600 transition-colors"
+              >
+                Home
+              </button>
+              <button 
+                onClick={() => navigate('/properties')}
+                className="text-orange-600 font-medium"
+              >
+                Properties
+              </button>
+              <button 
+                onClick={() => navigate('/about')}
+                className="text-gray-700 hover:text-orange-600 transition-colors"
+              >
+                About
+              </button>
+              <button 
+                onClick={() => navigate('/contact')}
+                className="text-gray-700 hover:text-orange-600 transition-colors"
+              >
+                Contact
+              </button>
+            </div>
+
             <div className="flex items-center space-x-4">
-              {isAuthenticated && user ? <div className="flex items-center space-x-4">
-                  <div className="flex items-center space-x-2">
-                    <div className="w-8 h-8 bg-gradient-to-r from-brand-orange to-brand-red rounded-full flex items-center justify-center text-white font-medium text-sm">
-                      {user.email.charAt(0).toUpperCase()}
-                    </div>
-                    <span className="text-sm font-medium text-foreground hidden lg:block">
-                      {user.email}
-                    </span>
-                  </div>
-                  <button onClick={() => logout()} className="bg-secondary text-secondary-foreground hover:bg-secondary/80 font-medium transition-all duration-200 cursor-pointer whitespace-nowrap rounded-button px-6 py-3 inline-flex items-center">
-                    <i className="fas fa-sign-out-alt mr-2"></i>Logout
-                  </button>
-                </div> : <>
-                  <Link to="/login" className="bg-secondary text-secondary-foreground hover:bg-secondary/80 font-medium transition-all duration-200 cursor-pointer whitespace-nowrap rounded-button px-6 py-3 inline-flex items-center">
-                    <i className="fas fa-user mr-2"></i>Login
-                  </Link>
-                  <Link to="/signup" className="bg-gradient-to-r from-brand-orange to-brand-red text-white px-6 py-3 hover:from-orange-600 hover:to-red-600 transition-all duration-300 cursor-pointer whitespace-nowrap rounded-button font-medium shadow-lg hover:shadow-xl transform hover:scale-105 inline-flex items-center">
-                    <i className="fas fa-arrow-right-to-bracket mr-2"></i>Sign Up
-                  </Link>
-                </>}
+              {isAuthenticated ? (
+                <div className="flex items-center space-x-2">
+                  <span className="text-sm text-gray-600">Welcome, {user?.email}</span>
+                  <Button 
+                    variant="outline" 
+                    size="sm"
+                    onClick={() => navigate('/dashboard')}
+                  >
+                    Dashboard
+                  </Button>
+                </div>
+              ) : (
+                <div className="flex items-center space-x-2">
+                  <Button 
+                    variant="ghost" 
+                    size="sm"
+                    onClick={() => navigate('/login')}
+                  >
+                    Login
+                  </Button>
+                  <Button 
+                    size="sm"
+                    onClick={() => navigate('/signup')}
+                  >
+                    Sign Up
+                  </Button>
+                </div>
+              )}
             </div>
           </div>
         </div>
-      </header>
+      </nav>
 
-      {/* Hero Section with Search */}
-      <section className="bg-gradient-to-br from-secondary/30 to-brand-orange/10 py-16">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-12">
-            <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-black text-foreground font-poppins mb-6 text-shadow">
-              Discover Amazing <span className="bg-gradient-to-r from-brand-red to-brand-orange bg-clip-text text-transparent">Properties</span>
-            </h1>
-            <p className="text-base sm:text-lg md:text-xl text-muted-foreground max-w-3xl mx-auto">
-              Browse through our curated collection of premium vacation rentals across India
-            </p>
-          </div>
+      {/* Header */}
+      <div className="bg-white border-b">
+        <div className="container mx-auto px-4 py-8">
+          <h1 className="text-3xl font-bold text-gray-900 mb-2">
+            Find Your Perfect Stay
+          </h1>
+          <p className="text-gray-600">
+            Discover amazing properties and day picnic experiences
+          </p>
+        </div>
+      </div>
 
-          {/* Enhanced Search Bar */}
-          <div className="bg-background rounded-3xl p-8 shadow-xl max-w-6xl mx-auto border">
-            <div className="grid grid-cols-1 md:grid-cols-5 gap-6 items-end dropdown-container">
-              <div className="space-y-2">
-                <label className="text-foreground font-semibold text-sm uppercase tracking-wide">Destination</label>
-                <div className="relative">
-                  <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                    <i className="fas fa-map-marker-alt text-brand-red text-lg"></i>
-                  </div>
-                  <input type="text" placeholder="Search destination..." value={searchLocation} onChange={e => {
-                  setSearchLocation(e.target.value);
-                  setShowLocationDropdown(true);
-                }} onFocus={() => setShowLocationDropdown(true)} className="w-full pl-12 pr-4 py-4 text-foreground placeholder-muted-foreground border-2 border-border rounded-xl outline-none focus:border-brand-red focus:ring-4 focus:ring-brand-red/20 transition-all duration-300 text-sm font-medium" />
-                  {showLocationDropdown && <div className="absolute top-full left-0 right-0 mt-1 bg-background border-2 border-border rounded-xl shadow-lg z-50 max-h-60 overflow-y-auto">
-                      {searchOptions.locations.filter(location => location.toLowerCase().includes(searchLocation.toLowerCase())).map((location, index) => <button key={index} onClick={() => {
-                    setSearchLocation(location);
-                    setShowLocationDropdown(false);
-                  }} className="w-full px-4 py-3 text-left text-foreground hover:bg-secondary transition-colors duration-200 cursor-pointer">
-                            {location}
-                          </button>)}
-                    </div>}
-                </div>
-              </div>
-
-              <div className="space-y-2">
-                <label className="text-foreground font-semibold text-sm uppercase tracking-wide">Check-in</label>
-                <div className="relative">
-                  <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                    <i className="fas fa-calendar-alt text-brand-orange text-lg"></i>
-                  </div>
-                  <input type="date" value={searchDate} onChange={e => setSearchDate(e.target.value)} className="w-full pl-12 pr-4 py-4 text-foreground border-2 border-border rounded-xl outline-none focus:border-brand-orange focus:ring-4 focus:ring-brand-orange/20 transition-all duration-300 text-sm font-medium" />
-                </div>
-              </div>
-
-              <div className="space-y-2">
-                <label className="text-foreground font-semibold text-sm uppercase tracking-wide">Guests</label>
-                <div className="relative">
-                  <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                    <i className="fas fa-users text-blue-500 text-lg"></i>
-                  </div>
-                  <div className="absolute inset-y-0 right-0 pr-4 flex items-center pointer-events-none">
-                    <i className="fas fa-chevron-down text-muted-foreground"></i>
-                  </div>
-                  <button onClick={() => setShowGuestsDropdown(!showGuestsDropdown)} className="w-full pl-12 pr-12 py-4 text-left text-foreground border-2 border-border rounded-xl outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-500/20 transition-all duration-300 text-sm font-medium cursor-pointer">
-                    {groupSize ? searchOptions.guests.find(g => g.value === groupSize)?.label || groupSize : 'Select guests'}
-                  </button>
-                  {showGuestsDropdown && <div className="absolute top-full left-0 right-0 mt-1 bg-background border-2 border-border rounded-xl shadow-lg z-50">
-                      {searchOptions.guests.map((guest, index) => <button key={index} onClick={() => {
-                    setGroupSize(guest.value);
-                    setShowGuestsDropdown(false);
-                  }} className="w-full px-4 py-3 text-left text-foreground hover:bg-secondary transition-colors duration-200 cursor-pointer">
-                          {guest.label}
-                        </button>)}
-                    </div>}
-                </div>
-              </div>
-
-              <div className="space-y-2">
-                <label className="text-foreground font-semibold text-sm uppercase tracking-wide">Price Range</label>
-                <div className="relative">
-                  <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                    <i className="fas fa-rupee-sign text-green-500 text-lg"></i>
-                  </div>
-                  <div className="absolute inset-y-0 right-0 pr-4 flex items-center pointer-events-none">
-                    <i className="fas fa-chevron-down text-muted-foreground"></i>
-                  </div>
-                  <button onClick={() => setShowPriceDropdown(!showPriceDropdown)} className="w-full pl-12 pr-12 py-4 text-left text-foreground border-2 border-border rounded-xl outline-none focus:border-green-500 focus:ring-4 focus:ring-green-500/20 transition-all duration-300 text-sm font-medium cursor-pointer">
-                    {priceRange ? filterOptions.priceRanges.find(p => p.value === priceRange)?.label || priceRange : 'Any price'}
-                  </button>
-                  {showPriceDropdown && <div className="absolute top-full left-0 right-0 mt-1 bg-background border-2 border-border rounded-xl shadow-lg z-50">
-                      {filterOptions.priceRanges.map((range, index) => <button key={index} onClick={() => {
-                    setPriceRange(range.value);
-                    setShowPriceDropdown(false);
-                  }} className="w-full px-4 py-3 text-left text-foreground hover:bg-secondary transition-colors duration-200 cursor-pointer">
-                          {range.label}
-                        </button>)}
-                    </div>}
-                </div>
-              </div>
-
-              <button onClick={() => {
-              console.log('🔍 Search triggered with:', {
-                location: searchLocation,
-                date: searchDate,
-                guests: groupSize,
-                priceRange: priceRange,
-                totalProperties: dbProperties.length
-              });
-              
-              // Close all dropdowns
-              setShowLocationDropdown(false);
-              setShowGuestsDropdown(false);
-              setShowPriceDropdown(false);
-              
-              // Reset pagination to first page
-              setCurrentPage(1);
-              
-              // Trigger re-filtering by forcing a state update
-              const searchState = {
-                location: searchLocation,
-                guests: groupSize,
-                price: priceRange,
-                timestamp: Date.now()
-              };
-              console.log('✅ Search state updated:', searchState);
-              
-              // The filtering will be automatically applied by the filteredProperties logic
-            }} className="bg-gradient-to-r from-brand-red to-brand-orange text-white px-8 py-4 rounded-xl hover:from-red-700 hover:to-orange-700 transition-all duration-300 cursor-pointer whitespace-nowrap rounded-button font-bold text-lg shadow-xl hover:shadow-2xl transform hover:scale-105 flex items-center justify-center gap-3">
-                <i className="fas fa-search text-xl"></i>
-                <span>Search</span>
-              </button>
-            </div>
+      <main className="container mx-auto px-4 py-8">
+        {/* Toggle between Properties and Day Picnics */}
+        <div className="flex justify-center mb-8">
+          <div className="bg-white rounded-lg p-1 shadow-sm">
+            <Button
+              variant={!showDayPicnics ? "default" : "ghost"}
+              onClick={() => setShowDayPicnics(false)}
+              className="px-6 py-2"
+            >
+              Stay Properties
+            </Button>
+            <Button
+              variant={showDayPicnics ? "default" : "ghost"}
+              onClick={() => setShowDayPicnics(true)}
+              className="px-6 py-2"
+            >
+              Day Picnics
+            </Button>
           </div>
         </div>
-      </section>
 
-      {/* Filter and Sort Section */}
-      <section className="bg-background border-b border-border sticky top-20 z-40">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-          <div className="flex flex-wrap items-center justify-between gap-4">
-            <div className="flex items-center gap-6">
-              <div className="flex items-center gap-4">
-                <span className="text-foreground font-semibold">Sort by:</span>
-                <div className="relative">
-                  <select value={sortBy} onChange={e => setSortBy(e.target.value)} className="appearance-none bg-background border border-border rounded-lg px-4 py-2 pr-8 text-foreground focus:outline-none focus:border-brand-red cursor-pointer">
-                    {filterOptions.sortOptions.map(option => <option key={option.value} value={option.value}>{option.label}</option>)}
-                  </select>
-                  <div className="absolute inset-y-0 right-0 flex items-center px-2 pointer-events-none">
-                    <i className="fas fa-chevron-down text-muted-foreground"></i>
+        {/* Search and Filters */}
+        <Card className="mb-8">
+          <CardContent className="p-6">
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+              {/* Search */}
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+                <Input
+                  placeholder="Search properties..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="pl-10"
+                />
+              </div>
+
+              {/* Location */}
+              <div className="relative">
+                <MapPin className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+                <Input
+                  placeholder="Location"
+                  value={locationFilter}
+                  onChange={(e) => setLocationFilter(e.target.value)}
+                  className="pl-10"
+                />
+              </div>
+
+              {/* Property Type */}
+              {!showDayPicnics && (
+                <Select value={propertyTypeFilter} onValueChange={setPropertyTypeFilter}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Property Type" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="">All Types</SelectItem>
+                    {propertyTypes.map(type => (
+                      <SelectItem key={type} value={type}>{type}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              )}
+
+              {/* Sort */}
+              <Select value={sortBy} onValueChange={setSortBy}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Sort by" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="price-low">Price: Low to High</SelectItem>
+                  <SelectItem value="price-high">Price: High to Low</SelectItem>
+                  <SelectItem value="rating">Highest Rated</SelectItem>
+                  <SelectItem value="popular">Most Popular</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            {/* Advanced Filters Toggle */}
+            <div className="mt-4">
+              <Button
+                variant="outline"
+                onClick={() => setShowFilters(!showFilters)}
+                className="flex items-center"
+              >
+                <SlidersHorizontal className="w-4 h-4 mr-2" />
+                {showFilters ? 'Hide' : 'Show'} Filters
+              </Button>
+            </div>
+
+            {/* Advanced Filters */}
+            {showFilters && (
+              <div className="mt-6 p-4 bg-gray-50 rounded-lg">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  {/* Price Range */}
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Price Range: ₹{priceRange[0]} - ₹{priceRange[1]}
+                    </label>
+                    <Slider
+                      value={priceRange}
+                      onValueChange={setPriceRange}
+                      max={50000}
+                      min={0}
+                      step={500}
+                      className="w-full"
+                    />
                   </div>
                 </div>
               </div>
+            )}
+          </CardContent>
+        </Card>
 
-              <div className="flex items-center gap-2">
-                <span className="text-foreground font-semibold">View:</span>
-                <button className={`p-2 rounded-lg transition-colors duration-200 cursor-pointer ${viewMode === 'grid' ? 'bg-brand-red/10 text-brand-red' : 'text-muted-foreground hover:text-foreground'}`} onClick={() => setViewMode('grid')}>
-                  <i className="fas fa-th-large"></i>
-                </button>
-                <button className={`p-2 rounded-lg transition-colors duration-200 cursor-pointer ${viewMode === 'list' ? 'bg-brand-red/10 text-brand-red' : 'text-muted-foreground hover:text-foreground'}`} onClick={() => setViewMode('list')}>
-                  <i className="fas fa-list"></i>
-                </button>
-              </div>
+        {/* Results Section */}
+        {!showDayPicnics ? (
+          // Regular Properties
+          <div>
+            {/* Results Header */}
+            <div className="flex items-center justify-between mb-6">
+              <h2 className="text-2xl font-bold text-gray-900">
+                Properties ({filteredProperties.length})
+              </h2>
             </div>
 
-            <div className="flex items-center gap-4">
-              <span className="text-muted-foreground">Showing {properties.length} properties</span>
-                      <button onClick={refreshProperties} disabled={loading} className="flex items-center gap-2 px-4 py-2 border border-border rounded-lg hover:border-brand-red transition-colors duration-200 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed" title="Refresh properties">
-          <i className={`fas fa-sync-alt ${loading ? 'animate-spin' : ''} text-brand-red`}></i>
-          <span className="text-foreground">Refresh</span>
-        </button>
-        {cacheDisabled}
-              <button className="flex items-center gap-2 px-4 py-2 border border-border rounded-lg hover:border-muted-foreground transition-colors duration-200 cursor-pointer lg:hidden" onClick={() => setShowFilters(!showFilters)}>
-                <i className="fas fa-filter text-muted-foreground"></i>
-                <span className="text-foreground">Filters</span>
-              </button>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* Main Content */}
-      <section className="py-12 relative min-h-screen">
-        {/* Glassmorphic Background */}
-        <div className="absolute inset-0 bg-gradient-to-br from-blue-50/30 via-purple-50/20 to-pink-50/30 dark:from-slate-900/30 dark:via-purple-900/20 dark:to-blue-900/30"></div>
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative">
-          <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
-            {/* Filters Sidebar */}
-            <div className={`lg:col-span-1 ${showFilters ? 'block' : 'hidden lg:block'}`}>
-              <div className="glass-sidebar rounded-2xl p-6 sticky top-32">
-                <div className="flex items-center justify-between mb-6">
-                  <h3 className="text-xl font-bold text-foreground">Filters</h3>
-                  <button className="lg:hidden text-muted-foreground hover:text-foreground" onClick={() => setShowFilters(false)}>
-                    <i className="fas fa-times"></i>
-                  </button>
-                </div>
-
-                {/* Price Range Filter */}
-                <div className="mb-8">
-                  <h4 className="font-semibold text-foreground mb-4">Price Range</h4>
-                  <div className="space-y-3">
-                    {filterOptions.priceRanges.map((range, index) => <label key={index} className="flex items-center cursor-pointer">
-                        <input type="radio" name="priceRange" value={range.value} checked={priceRange === range.value} onChange={e => setPriceRange(e.target.value)} className="w-4 h-4 text-brand-red border-border focus:ring-brand-red" />
-                        <span className="ml-3 text-foreground">{range.label}</span>
-                      </label>)}
-                  </div>
-                </div>
-
-                {/* Property Type Filter */}
-                <div className="mb-8">
-                  <h4 className="font-semibold text-foreground mb-4">Property Type</h4>
-                  <div className="space-y-3 max-h-48 overflow-y-auto">
-                    {filterOptions.propertyTypes.map((type, index) => <label key={index} className="flex items-center cursor-pointer">
-                        <input type="radio" name="propertyType" value={type} checked={propertyType === type} onChange={e => setPropertyType(e.target.value)} className="w-4 h-4 text-brand-red border-border focus:ring-brand-red" />
-                        <span className="ml-3 text-foreground">{type}</span>
-                      </label>)}
-                  </div>
-                </div>
-
-                {/* Amenities Filter */}
-                <div className="mb-8">
-                  <h4 className="font-semibold text-foreground mb-4">Amenities</h4>
-                  <div className="space-y-3 max-h-64 overflow-y-auto">
-                    {filterOptions.amenitiesList.map((amenity, index) => <label key={index} className="flex items-center cursor-pointer">
-                        <input type="checkbox" checked={amenities.includes(amenity)} onChange={() => toggleAmenity(amenity)} className="w-4 h-4 text-brand-red border-border rounded focus:ring-brand-red" />
-                        <span className="ml-3 text-foreground">{amenity}</span>
-                      </label>)}
-                  </div>
-                </div>
-
-                {/* Clear Filters */}
-                <button onClick={clearAllFilters} className="w-full bg-secondary text-secondary-foreground py-3 rounded-lg hover:bg-secondary/80 transition-colors duration-200 cursor-pointer whitespace-nowrap rounded-button font-medium">
-                  Clear All Filters
-                </button>
-              </div>
-            </div>
-
-            {/* Properties Grid */}
-            <div className="lg:col-span-3">
-              
-                            {loading ? <div className="text-center py-12">
-                  <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4 animate-spin">
-                    <i className="fas fa-spinner text-gray-400 text-2xl"></i>
-                  </div>
-                  <h3 className="text-lg font-medium text-gray-800 mb-2">Loading properties...</h3>
-                  <p className="text-gray-600">Please wait while we fetch your properties</p>
-                </div> : currentProperties.length === 0 ? <div className="text-center py-12">
-                  <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                    <i className="fas fa-home text-gray-400 text-2xl"></i>
-                  </div>
-                  <h3 className="text-lg font-medium text-gray-800 mb-2">No properties found</h3>
-                  <p className="text-gray-600 mb-4">Properties array length: {properties.length}, Current properties: {currentProperties.length}</p>
-                </div> : <div className={`grid gap-8 ${viewMode === 'grid' ? 'grid-cols-1 md:grid-cols-2 xl:grid-cols-3' : 'grid-cols-1'}`}>
-                  {currentProperties.map((property, index) => {
-                    // Helper functions for defensive data access
-                    const getPropertyTitle = (prop: any) => prop.title || prop.name || 'Unnamed Property';
-                    const getPropertyLocation = (prop: any) => {
-                      if (prop.location && typeof prop.location === 'object') {
-                        const { city, state } = prop.location;
-                        if (city && state) return `${city}, ${state}`;
-                        if (city) return city;
-                        if (state) return state;
-                      }
-                      if (typeof prop.location === 'string') return prop.location;
-                      return prop.address || 'Location not specified';
-                    };
-                    const getPropertyPrice = (prop: any) => prop.pricing?.daily_rate || prop.price || 0;
-                    const getPropertyImages = (prop: any) => {
-                      console.log('🖼️ Property images for:', prop.title || prop.name, {
-                        images: prop.images,
-                        imagesLength: prop.images?.length,
-                        imagesType: typeof prop.images,
-                        isArray: Array.isArray(prop.images)
-                      });
-                      
-                      // Handle various data structures
-                      let images = [];
-                      if (Array.isArray(prop.images) && prop.images.length > 0) {
-                        // Filter out problematic base64 images and validate URLs
-                        images = prop.images.filter((img: string) => {
-                          if (!img || typeof img !== 'string') return false;
-                          // Skip overly large base64 images that cause issues
-                          if (img.startsWith('data:') && img.length > 100000) {
-                            console.warn('⚠️ Skipping large base64 image:', img.substring(0, 50) + '...');
-                            return false;
-                          }
-                          return true;
-                        });
-                      }
-                      
-                      // If no valid images, provide unique fallback based on property ID or type
-                      if (images.length === 0) {
-                        const fallbackImages = [
-                          beachsideParadise,
-                          lakesideRetreat,
-                          mountainCottage,
-                          farmHouseBliss,
-                          gardenEstate,
-                          royalHeritageVilla,
-                          sunsetVillaResort
-                        ];
-                        // Use property ID hash to get consistent but unique fallback
-                        const hash = prop.id ? prop.id.split('').reduce((a: number, b: string) => a + b.charCodeAt(0), 0) : Math.random() * 1000;
-                        const fallbackIndex = Math.abs(hash) % fallbackImages.length;
-                        images = [fallbackImages[fallbackIndex]];
-                        console.log('🖼️ Using fallback image for:', prop.title || prop.name, fallbackIndex);
-                      }
-                      
-                      return images;
-                    };
-                    
-                    return <div key={property.id} className="glass-card-property property-card-height rounded-2xl overflow-hidden">
-                      {/* Image Carousel */}
-                      <div className="relative">
-                        <ImageCarousel images={getPropertyImages(property)} alt={getPropertyTitle(property)} />
-                        <div className="absolute top-3 left-3">
-                          <span className="bg-gradient-to-r from-brand-red to-brand-orange text-white px-3 py-1 rounded-full text-sm font-semibold backdrop-blur-sm">
-                            {property.type || 'Villa'}
-                          </span>
-                        </div>
-                        {property.rating > 0 && <div className="absolute top-3 right-3 bg-black/70 backdrop-blur-sm text-white px-2 py-1 rounded-full text-sm flex items-center gap-1">
-                            <i className="fas fa-star text-yellow-400 text-xs"></i>
-                            {property.rating.toFixed(1)}
-                          </div>}
+            {/* Loading State */}
+            {loading ? (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {[...Array(6)].map((_, index) => (
+                  <Card key={index} className="overflow-hidden">
+                    <div className="animate-pulse">
+                      <div className="w-full h-48 bg-gray-200"></div>
+                      <div className="p-4 space-y-3">
+                        <div className="h-4 bg-gray-200 rounded w-3/4"></div>
+                        <div className="h-3 bg-gray-200 rounded w-1/2"></div>
+                        <div className="h-4 bg-gray-200 rounded w-1/4"></div>
                       </div>
-                      
-                      {/* Content Section */}
-                      <div className="property-card-content p-6">
-                        <div className="flex items-start justify-between mb-3">
-                          <h3 className="text-xl font-bold text-foreground line-clamp-2">{getPropertyTitle(property)}</h3>
-                        </div>
+                    </div>
+                  </Card>
+                ))}
+              </div>
+            ) : (
+              <>
+                {/* Properties Grid */}
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                  {currentProperties.map((property) => (
+                    <Card key={property.id} className="overflow-hidden hover:shadow-lg transition-shadow cursor-pointer">
+                      <div 
+                        className="relative"
+                        onClick={() => handleViewProperty(property)}
+                      >
+                        {property.images && property.images.length > 0 ? (
+                          <img
+                            src={property.images[0]}
+                            alt={property.name}
+                            className="w-full h-48 object-cover"
+                          />
+                        ) : (
+                          <div className="w-full h-48 bg-gray-200 flex items-center justify-center">
+                            <MapPin className="w-12 h-12 text-gray-400" />
+                          </div>
+                        )}
                         
-                        <div className="flex items-center text-muted-foreground mb-3">
-                          <i className="fas fa-map-marker-alt text-brand-red mr-2"></i>
-                          <span className="text-sm">{getPropertyLocation(property)}</span>
-                        </div>
+                        {/* Wishlist Button */}
+                        <button className="absolute top-3 right-3 p-2 bg-white rounded-full shadow-md hover:bg-gray-50">
+                          <Heart className="w-4 h-4 text-gray-600" />
+                        </button>
 
-                        {/* Property Stats */}
-                        <div className="grid grid-cols-3 gap-4 mb-4 text-sm text-muted-foreground">
-                          <div className="flex items-center gap-1">
-                            <i className="fas fa-users text-brand-red"></i>
-                            <span>{property.guests || 1} guests</span>
-                          </div>
-                          <div className="flex items-center gap-1">
-                            <i className="fas fa-bed text-brand-red"></i>
-                            <span>{property.bedrooms || 1} beds</span>
-                          </div>
-                          <div className="flex items-center gap-1">
-                            <i className="fas fa-bath text-brand-red"></i>
-                            <span>{property.bathrooms || 1} baths</span>
-                          </div>
-                        </div>
-
-                        <div className="flex items-center justify-between mb-4">
-                          <div className="text-2xl font-bold text-foreground">
-                            ₹{getPropertyPrice(property).toLocaleString()}
-                            <span className="text-sm font-normal text-muted-foreground">/night</span>
-                          </div>
-                        </div>
-
-                        {/* Action Buttons */}
-                        <div className="property-card-actions flex gap-3 mt-auto">
-                          <button onClick={() => handleViewProperty(property)} className="flex-1 bg-gradient-to-r from-brand-red to-brand-orange text-white py-3 rounded-lg font-semibold hover:scale-105 transition-transform duration-200 flex items-center justify-center gap-2 backdrop-blur-sm">
-                            <i className="fas fa-calendar-check"></i>
-                            Book Now
-                          </button>
-                          <button 
-                            className="px-4 py-3 border border-brand-red/30 text-brand-red rounded-lg font-semibold hover:bg-brand-red hover:text-white transition-colors duration-200 backdrop-blur-sm"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              const propertyId = property.id;
-                              if (isPropertySaved(propertyId)) {
-                                removeFromWishlist(propertyId);
-                              } else {
-                                addToWishlist(propertyId);
-                              }
-                            }}
-                          >
-                            <i className={`fas fa-heart ${isPropertySaved(property.id) ? 'text-brand-red' : ''}`}></i>
-                          </button>
-                        </div>
-                      </div>
-                    </div>
-                  })}
-                </div>}
-
-              {/* Pagination */}
-              <div className="flex justify-center items-center mt-12 gap-4">
-                <button onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))} disabled={currentPage === 1} className="px-4 py-2 border border-border rounded-lg hover:bg-secondary disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer whitespace-nowrap rounded-button">
-                  <i className="fas fa-chevron-left mr-2"></i>
-                  Previous
-                </button>
-                <div className="flex gap-2">
-                  {[...Array(totalPages)].map((_, index) => <button key={index} onClick={() => setCurrentPage(index + 1)} className={`px-4 py-2 rounded-lg cursor-pointer whitespace-nowrap rounded-button ${currentPage === index + 1 ? 'bg-brand-red text-white' : 'border border-border hover:bg-secondary'}`}>
-                      {index + 1}
-                    </button>)}
-                </div>
-                <button onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))} disabled={currentPage === totalPages} className="px-4 py-2 border border-border rounded-lg hover:bg-secondary disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer whitespace-nowrap rounded-button">
-                  Next
-                  <i className="fas fa-chevron-right ml-2"></i>
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* Footer */}
-      <footer className="bg-gray-900 text-white py-20 relative overflow-hidden">
-        <div className="absolute inset-0 opacity-10">
-          <div className="absolute top-0 left-0 w-64 h-64 bg-gradient-to-r from-brand-red to-brand-orange rounded-full filter blur-3xl"></div>
-          <div className="absolute bottom-0 right-0 w-80 h-80 bg-gradient-to-r from-brand-orange to-yellow-500 rounded-full filter blur-3xl"></div>
-        </div>
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-12 mb-16">
-            <div className="lg:col-span-2">
-              <div className="mb-6">
-                <img src={picnifyLogo} alt="Picnify.in Logo" className="h-12" />
-              </div>
-              <p className="text-gray-300 text-lg mb-8 leading-relaxed max-w-md">
-                Picnify is your one-stop platform to discover and book day picnic spots, villas, farmhouses, and unique getaways, making your time with loved ones hassle-free and memorable
-              </p>
-              <div className="flex flex-wrap gap-4">
-                <a href="https://facebook.com/picnify" target="_blank" rel="noopener noreferrer" className="w-12 h-12 bg-gradient-to-r from-brand-red to-brand-orange rounded-full flex items-center justify-center hover:scale-110 transition-transform duration-300 group">
-                  <i className="fab fa-facebook-f text-xl group-hover:animate-bounce"></i>
-                </a>
-                <a href="https://instagram.com/picnify" target="_blank" rel="noopener noreferrer" className="w-12 h-12 bg-gradient-to-r from-brand-red to-brand-orange rounded-full flex items-center justify-center hover:scale-110 transition-transform duration-300 group">
-                  <i className="fab fa-instagram text-xl group-hover:animate-bounce"></i>
-                </a>
-                <a href="https://twitter.com/picnify" target="_blank" rel="noopener noreferrer" className="w-12 h-12 bg-gradient-to-r from-brand-red to-brand-orange rounded-full flex items-center justify-center hover:scale-110 transition-transform duration-300 group">
-                  <i className="fab fa-twitter text-xl group-hover:animate-bounce"></i>
-                </a>
-                <a href="https://youtube.com/picnify" target="_blank" rel="noopener noreferrer" className="w-12 h-12 bg-gradient-to-r from-brand-red to-brand-orange rounded-full flex items-center justify-center hover:scale-110 transition-transform duration-300 group">
-                  <i className="fab fa-youtube text-xl group-hover:animate-bounce"></i>
-                </a>
-                <a href="https://linkedin.com/company/picnify" target="_blank" rel="noopener noreferrer" className="w-12 h-12 bg-gradient-to-r from-brand-red to-brand-orange rounded-full flex items-center justify-center hover:scale-110 transition-transform duration-300 group">
-                  <i className="fab fa-linkedin-in text-xl group-hover:animate-bounce"></i>
-                </a>
-                <a href="https://wa.me/+919876543210" target="_blank" rel="noopener noreferrer" className="w-12 h-12 bg-gradient-to-r from-brand-red to-brand-orange rounded-full flex items-center justify-center hover:scale-110 transition-transform duration-300 group">
-                  <i className="fab fa-whatsapp text-xl group-hover:animate-bounce"></i>
-                </a>
-              </div>
-            </div>
-            <div>
-              <h3 className="text-xl font-bold mb-6 text-white">Quick Links</h3>
-              <ul className="space-y-4">
-                <li><a href="#" className="text-gray-300 hover:text-white transition-colors duration-200 cursor-pointer flex items-center gap-2"><i className="fas fa-chevron-right text-xs text-brand-red"></i>About Picknify</a></li>
-                <li><a href="#" className="text-gray-300 hover:text-white transition-colors duration-200 cursor-pointer flex items-center gap-2"><i className="fas fa-chevron-right text-xs text-brand-red"></i>How It Works</a></li>
-                <li><a href="#" className="text-gray-300 hover:text-white transition-colors duration-200 cursor-pointer flex items-center gap-2"><i className="fas fa-chevron-right text-xs text-brand-red"></i>Safety Guidelines</a></li>
-                <li><a href="#" className="text-gray-300 hover:text-white transition-colors duration-200 cursor-pointer flex items-center gap-2"><i className="fas fa-chevron-right text-xs text-brand-red"></i>Privacy Policy</a></li>
-                <li><a href="#" className="text-gray-300 hover:text-white transition-colors duration-200 cursor-pointer flex items-center gap-2"><i className="fas fa-chevron-right text-xs text-brand-red"></i>Terms of Service</a></li>
-              </ul>
-            </div>
-            <div>
-              <h3 className="text-xl font-bold mb-6 text-white">Support & Help</h3>
-              <ul className="space-y-4">
-                <li><a href="#" className="text-gray-300 hover:text-white transition-colors duration-200 cursor-pointer flex items-center gap-2"><i className="fas fa-chevron-right text-xs text-brand-red"></i>24/7 Help Center</a></li>
-                <li><a href="#" className="text-gray-300 hover:text-white transition-colors duration-200 cursor-pointer flex items-center gap-2"><i className="fas fa-chevron-right text-xs text-brand-red"></i>Contact Support</a></li>
-                <li><a href="#" className="text-gray-300 hover:text-white transition-colors duration-200 cursor-pointer flex items-center gap-2"><i className="fas fa-chevron-right text-xs text-brand-red"></i>Booking Assistance</a></li>
-                <li><a href="#" className="text-gray-300 hover:text-white transition-colors duration-200 cursor-pointer flex items-center gap-2"><i className="fas fa-chevron-right text-xs text-brand-red"></i>Host Resources</a></li>
-                <li><a href="#" className="text-gray-300 hover:text-white transition-colors duration-200 cursor-pointer flex items-center gap-2"><i className="fas fa-chevron-right text-xs text-brand-red"></i>Trust & Safety</a></li>
-              </ul>
-            </div>
-          </div>
-          <div className="border-t border-gray-700 pt-12">
-            <div className="flex flex-col lg:flex-row justify-between items-center gap-8">
-              <div className="text-center lg:text-left">
-                <p className="text-gray-400 text-lg">
-                  © 2025 Picnify.in - Crafted with ❤️ in India. All rights reserved.
-                </p>
-                <p className="text-gray-500 text-sm mt-2">
-                  Connecting travelers with extraordinary experiences since 2024
-                </p>
-              </div>
-              <div className="flex items-center gap-8">
-                <div className="text-center">
-                  <div className="text-2xl font-bold text-white">4.9★</div>
-                  <div className="text-xs text-gray-400">App Rating</div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </footer>
-
-      {/* View Property Modal */}
-      {showViewModal && selectedProperty && <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="bg-background rounded-2xl shadow-2xl max-w-4xl w-full max-h-[90vh] overflow-y-auto">
-            {/* Modal Header */}
-            <div className="sticky top-0 bg-background border-b border-border p-6 flex justify-between items-center">
-              <h2 className="text-2xl font-bold text-foreground">Property Details</h2>
-              <button onClick={closeViewModal} className="w-10 h-10 rounded-full bg-muted hover:bg-muted/80 flex items-center justify-center transition-colors">
-                <i className="fas fa-times text-muted-foreground"></i>
-              </button>
-            </div>
-
-            <div className="p-6">
-              {/* Property Images */}
-              <div className="mb-6">
-                <ImageCarousel images={selectedProperty.image ? [selectedProperty.image] : [beachsideParadise]} alt={selectedProperty.name} />
-              </div>
-
-              {/* Property Info Grid */}
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-                {/* Left Column */}
-                <div>
-                  <div className="mb-6">
-                    <div className="flex items-start justify-between mb-3">
-                      <h1 className="text-3xl font-bold text-foreground">{selectedProperty.name}</h1>
-                      <span className="bg-gradient-to-r from-brand-red to-brand-orange text-white px-3 py-1 rounded-full text-sm font-semibold">
-                        {selectedProperty.type || 'Villa'}
-                      </span>
-                    </div>
-                    
-                    <div className="flex items-center text-muted-foreground mb-4">
-                      <i className="fas fa-map-marker-alt text-brand-red mr-2"></i>
-                      <span>{selectedProperty.location}</span>
-                    </div>
-
-                    {selectedProperty.rating > 0 && <div className="flex items-center gap-2 mb-4">
-                        <div className="flex text-yellow-400">
-                          {[...Array(5)].map((_, i) => <i key={i} className={`fas fa-star ${i < Math.floor(selectedProperty.rating) ? 'text-yellow-400' : 'text-gray-300'}`}></i>)}
-                        </div>
-                        <span className="text-sm text-muted-foreground">
-                          {selectedProperty.rating.toFixed(1)} ({selectedProperty.reviewCount || 0} reviews)
-                        </span>
-                      </div>}
-                  </div>
-
-                  {/* Property Stats */}
-                  <div className="grid grid-cols-2 gap-4 mb-6">
-                    <div className="bg-muted rounded-lg p-4 text-center">
-                      <div className="text-2xl font-bold text-brand-red mb-1">
-                        {selectedProperty.guests || 1}
-                      </div>
-                      <div className="text-sm text-muted-foreground">Max Guests</div>
-                    </div>
-                    <div className="bg-muted rounded-lg p-4 text-center">
-                      <div className="text-2xl font-bold text-brand-red mb-1">
-                        {selectedProperty.bedrooms || 1}
-                      </div>
-                      <div className="text-sm text-muted-foreground">Bedrooms</div>
-                    </div>
-                    <div className="bg-muted rounded-lg p-4 text-center">
-                      <div className="text-2xl font-bold text-brand-red mb-1">
-                        {selectedProperty.bathrooms || 1}
-                      </div>
-                      <div className="text-sm text-muted-foreground">Bathrooms</div>
-                    </div>
-                    <div className="bg-muted rounded-lg p-4 text-center">
-                      <div className="text-2xl font-bold text-brand-red mb-1">
-                        ₹{selectedProperty.price.toLocaleString()}
-                      </div>
-                      <div className="text-sm text-muted-foreground">Per Night</div>
-                    </div>
-                  </div>
-
-                   {/* Property Classification & Location */}
-                  <div className="mb-6">
-                    <h3 className="text-lg font-semibold text-foreground mb-3">Property Details</h3>
-                    <div className="space-y-3">
-                      {/* Property Type & Subtype - Enhanced to show more info */}
-                      <div className="flex items-center gap-2">
-                        <i className="fas fa-home text-brand-red"></i>
-                        <span className="text-sm text-muted-foreground">
-                          {selectedProperty.rawData?.property_type || selectedProperty.type || 'Property'}
-                          {selectedProperty.rawData?.property_subtype && ` • ${selectedProperty.rawData.property_subtype}`}
-                        </span>
-                        {selectedProperty.rawData?.is_featured && (
-                          <span className="px-2 py-1 bg-brand-red/10 text-brand-red rounded-full text-xs font-medium">
-                            <i className="fas fa-star mr-1"></i>Featured
-                          </span>
-                        )}
+                        {/* Property Type Badge */}
+                        <Badge className="absolute top-3 left-3">
+                          {property.type}
+                        </Badge>
                       </div>
 
-                      {/* Status - Show property status */}
-                      {selectedProperty.rawData?.status && (
-                        <div className="flex items-center gap-2">
-                          <i className="fas fa-check-circle text-green-500"></i>
-                          <span className="text-sm text-muted-foreground capitalize">
-                            Status: {selectedProperty.rawData.status}
-                          </span>
+                      <CardContent className="p-4">
+                        <h3 className="font-semibold text-lg mb-2 truncate">{property.name}</h3>
+                        
+                        <div className="flex items-center text-gray-600 mb-2">
+                          <MapPin className="w-4 h-4 mr-1" />
+                          <span className="text-sm truncate">{property.location}</span>
                         </div>
-                      )}
-                      
-                      {/* Full Address - Enhanced to show more location info */}
-                      <div className="flex items-start gap-2">
-                        <i className="fas fa-map-marker-alt text-brand-red mt-1"></i>
-                        <div className="text-sm text-muted-foreground">
-                          <div>{selectedProperty.rawData?.address || selectedProperty.address || selectedProperty.location}</div>
-                          {(selectedProperty.rawData?.postal_code || selectedProperty.rawData?.country) && (
-                            <div className="text-xs text-muted-foreground/70">
-                              {selectedProperty.rawData?.postal_code && `${selectedProperty.rawData.postal_code}, `}
-                              {selectedProperty.rawData?.country || 'India'}
+
+                        {/* Property Details */}
+                        <div className="flex items-center text-gray-600 text-sm mb-3 space-x-4">
+                          {property.capacity && (
+                            <div className="flex items-center">
+                              <Users className="w-4 h-4 mr-1" />
+                              <span>{property.capacity}</span>
                             </div>
                           )}
-                          {/* Show location JSON if available */}
-                          {selectedProperty.rawData?.location && typeof selectedProperty.rawData.location === 'object' && (
-                            <div className="text-xs text-muted-foreground/70 mt-1">
-                              {selectedProperty.rawData.location.city && `${selectedProperty.rawData.location.city}, `}
-                              {selectedProperty.rawData.location.state && `${selectedProperty.rawData.location.state}`}
+                          {property.bedrooms && property.bedrooms > 0 && (
+                            <div className="flex items-center">
+                              <Bed className="w-4 h-4 mr-1" />
+                              <span>{property.bedrooms}</span>
+                            </div>
+                          )}
+                          {property.bathrooms && property.bathrooms > 0 && (
+                            <div className="flex items-center">
+                              <Bath className="w-4 h-4 mr-1" />
+                              <span>{property.bathrooms}</span>
                             </div>
                           )}
                         </div>
-                      </div>
 
-                      {/* Contact & License - Enhanced to show any available contact info */}
-                      <div className="grid grid-cols-1 gap-3">
-                        {selectedProperty.rawData?.contact_phone && (
-                          <div className="flex items-center gap-2">
-                            <i className="fas fa-phone text-brand-red"></i>
-                            <a href={`tel:${selectedProperty.rawData.contact_phone}`} 
-                               className="text-sm text-brand-red hover:underline">
-                              {selectedProperty.rawData.contact_phone}
-                            </a>
-                          </div>
-                        )}
-                        {selectedProperty.rawData?.license_number && (
-                          <div className="flex items-center gap-2">
-                            <i className="fas fa-certificate text-brand-red"></i>
-                            <span className="text-sm text-muted-foreground">
-                              License: {selectedProperty.rawData.license_number}
+                        <div className="flex items-center justify-between">
+                          <div>
+                            <span className="text-xl font-bold text-green-600">
+                              ₹{property.price.toLocaleString()}
                             </span>
+                            <span className="text-gray-600 text-sm ml-1">/night</span>
                           </div>
-                        )}
-                        {/* Property ID for reference */}
-                        <div className="flex items-center gap-2">
-                          <i className="fas fa-tag text-brand-red"></i>
-                          <span className="text-xs text-muted-foreground/70">
-                            Property ID: {selectedProperty.id || selectedProperty.rawData?.id}
-                          </span>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Bed Configuration */}
-                  {selectedProperty.rawData?.bed_configuration?.beds && selectedProperty.rawData.bed_configuration.beds.length > 0 && (
-                    <div className="mb-6">
-                      <h3 className="text-lg font-semibold text-foreground mb-3">Bed Configuration</h3>
-                      <div className="grid grid-cols-2 gap-3">
-                        {selectedProperty.rawData.bed_configuration.beds.map((bed: any, index: number) => (
-                          <div key={index} className="flex items-center gap-2 text-sm text-muted-foreground bg-muted p-3 rounded-lg">
-                            <i className="fas fa-bed text-brand-red"></i>
-                            <span>{bed.count || 1} {bed.type || 'Bed'}{(bed.count || 1) > 1 ? 's' : ''}</span>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Booking Policies */}
-                  <div className="mb-6">
-                    <h3 className="text-lg font-semibold text-foreground mb-3">Booking Information</h3>
-                    <div className="grid grid-cols-2 gap-4">
-                      <div className="flex items-center gap-2">
-                        <i className="fas fa-clock text-brand-red"></i>
-                        <div className="text-sm">
-                          <div className="text-muted-foreground">Check-in</div>
-                          <div className="font-medium">{selectedProperty.rawData?.check_in_time || '15:00'}</div>
-                        </div>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <i className="fas fa-clock text-brand-red"></i>
-                        <div className="text-sm">
-                          <div className="text-muted-foreground">Check-out</div>
-                          <div className="font-medium">{selectedProperty.rawData?.check_out_time || '11:00'}</div>
-                        </div>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <i className="fas fa-calendar text-brand-red"></i>
-                        <div className="text-sm">
-                          <div className="text-muted-foreground">Min Stay</div>
-                          <div className="font-medium">{selectedProperty.rawData?.minimum_stay || 1} night{(selectedProperty.rawData?.minimum_stay || 1) > 1 ? 's' : ''}</div>
-                        </div>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <i className="fas fa-shield-alt text-brand-red"></i>
-                        <div className="text-sm">
-                          <div className="text-muted-foreground">Cancellation</div>
-                          <div className="font-medium capitalize">{selectedProperty.rawData?.cancellation_policy || 'Moderate'}</div>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Payment Methods - Show default if none specified */}
-                  <div className="mb-6">
-                    <h3 className="text-lg font-semibold text-foreground mb-3">Payment Methods</h3>
-                    <div className="flex gap-2 flex-wrap">
-                      {(selectedProperty.rawData?.payment_methods && selectedProperty.rawData.payment_methods.length > 0 
-                        ? selectedProperty.rawData.payment_methods 
-                        : ['card', 'cash']
-                      ).map((method: string, index: number) => (
-                        <span key={index} className="px-3 py-1 bg-brand-red/10 text-brand-red rounded-full text-sm capitalize">
-                          <i className={`fas fa-${method === 'card' ? 'credit-card' : 'money-bill'} mr-1`}></i>
-                          {method}
-                        </span>
-                      ))}
-                    </div>
-                  </div>
-
-                  {/* Meal Plans */}
-                  {selectedProperty.rawData?.meal_plans && selectedProperty.rawData.meal_plans.length > 0 && (
-                    <div className="mb-6">
-                      <h3 className="text-lg font-semibold text-foreground mb-3">Available Meal Plans</h3>
-                      <div className="flex gap-2 flex-wrap">
-                        {selectedProperty.rawData.meal_plans.map((meal: string, index: number) => (
-                          <span key={index} className="px-3 py-1 bg-green-100 text-green-700 rounded-full text-sm capitalize">
-                            <i className="fas fa-utensils mr-1"></i>
-                            {meal}
-                          </span>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Description */}
-                  {selectedProperty.description && (
-                    <div className="mb-6">
-                      <h3 className="text-lg font-semibold text-foreground mb-3">Description</h3>
-                      <p className="text-muted-foreground leading-relaxed">
-                        {selectedProperty.description}
-                      </p>
-                    </div>
-                  )}
-
-                  {/* House Rules */}
-                  {selectedProperty.rawData?.house_rules && Object.keys(selectedProperty.rawData.house_rules).length > 0 && (
-                    <div className="mb-6">
-                      <h3 className="text-lg font-semibold text-foreground mb-3">House Rules</h3>
-                      <div className="bg-muted p-4 rounded-lg space-y-2">
-                        {Object.entries(selectedProperty.rawData.house_rules).map(([key, value]: [string, any], index: number) => (
-                          <div key={index} className="flex items-center gap-2 text-sm text-muted-foreground">
-                            <i className={`fas fa-${value ? 'check text-green-500' : 'times text-red-500'}`}></i>
-                            <span className="capitalize">{key.replace(/_/g, ' ')}: {String(value)}</span>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Booking Rules */}
-                  {selectedProperty.rawData?.booking_rules && Object.keys(selectedProperty.rawData.booking_rules).length > 0 && (
-                    <div className="mb-6">
-                      <h3 className="text-lg font-semibold text-foreground mb-3">Booking Rules</h3>
-                      <div className="bg-brand-red/5 p-4 rounded-lg space-y-2">
-                        {Object.entries(selectedProperty.rawData.booking_rules).map(([key, value]: [string, any], index: number) => (
-                          <div key={index} className="flex items-start gap-2 text-sm text-muted-foreground">
-                            <i className="fas fa-info-circle text-brand-red mt-1"></i>
-                            <span><span className="font-medium capitalize">{key.replace(/_/g, ' ')}:</span> {String(value)}</span>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Arrival Instructions */}
-                  {selectedProperty.rawData?.arrival_instructions && (
-                    <div className="mb-6">
-                      <h3 className="text-lg font-semibold text-foreground mb-3">Arrival Instructions</h3>
-                      <p className="text-muted-foreground leading-relaxed bg-muted p-4 rounded-lg">
-                        <i className="fas fa-info-circle text-brand-red mr-2"></i>
-                        {selectedProperty.rawData.arrival_instructions}
-                      </p>
-                    </div>
-                  )}
-                </div>
-
-                {/* Right Column */}
-                <div>
-                  {/* Amenities */}
-                  {selectedProperty.amenities && selectedProperty.amenities.length > 0 && <div className="mb-6">
-                      <h3 className="text-lg font-semibold text-foreground mb-3">Amenities</h3>
-                      <div className="grid grid-cols-2 gap-3">
-                        {selectedProperty.amenities.map((amenity: string, index: number) => <div key={index} className="flex items-center gap-2 text-sm text-muted-foreground">
-                            <i className="fas fa-check text-green-500"></i>
-                            {amenity}
-                          </div>)}
-                      </div>
-                    </div>}
-
-                  {/* Pricing Details */}
-                  <div className="bg-muted rounded-lg p-6 mb-6">
-                    <h3 className="text-lg font-semibold text-foreground mb-4">Pricing & Fees</h3>
-                    <div className="space-y-3">
-                      <div className="flex justify-between">
-                        <span className="text-muted-foreground">Base price per night</span>
-                        <span className="font-semibold">₹{selectedProperty.price.toLocaleString()}</span>
-                      </div>
-                      <div className="flex justify-between text-sm text-muted-foreground">
-                        <span>Service fee</span>
-                        <span>₹{Math.round(selectedProperty.price * 0.1).toLocaleString()}</span>
-                      </div>
-                      
-                      {/* Tax Information */}
-                      {selectedProperty.rawData?.tax_information && Object.keys(selectedProperty.rawData.tax_information).length > 0 && (
-                        <div className="border-t border-border pt-2">
-                          {Object.entries(selectedProperty.rawData.tax_information).map(([key, value]: [string, any], index: number) => (
-                            <div key={index} className="flex justify-between text-sm text-muted-foreground">
-                              <span className="capitalize">{key.replace(/_/g, ' ')}</span>
-                              <span>{typeof value === 'number' ? `₹${value.toLocaleString()}` : String(value)}</span>
+                          
+                          {property.rating > 0 && (
+                            <div className="flex items-center">
+                              <Star className="w-4 h-4 fill-yellow-400 text-yellow-400 mr-1" />
+                              <span className="text-sm font-medium">{property.rating}</span>
+                              <span className="text-gray-500 text-xs ml-1">
+                                ({property.totalBookings})
+                              </span>
                             </div>
-                          ))}
+                          )}
                         </div>
-                      )}
 
-                      <div className="border-t border-border pt-3 flex justify-between font-semibold text-lg">
-                        <span>Total per night</span>
-                        <span>₹{Math.round(selectedProperty.price * 1.1).toLocaleString()}</span>
-                      </div>
-                      
-                      {/* Property Age Info - Enhanced with more metadata */}
-                      <div className="text-xs text-muted-foreground/70 pt-2 border-t border-border space-y-1">
-                        {selectedProperty.rawData?.created_at && (
-                          <div>
-                            <i className="fas fa-calendar-plus mr-1"></i>
-                            Listed: {new Date(selectedProperty.rawData.created_at).toLocaleDateString()}
-                          </div>
-                        )}
-                        {selectedProperty.rawData?.updated_at && (
-                          <div>
-                            <i className="fas fa-sync mr-1"></i>
-                            Updated: {new Date(selectedProperty.rawData.updated_at).toLocaleDateString()}
-                          </div>
-                        )}
-                        {selectedProperty.rawData?.owner_id && (
-                          <div>
-                            <i className="fas fa-user mr-1"></i>
-                            Owner ID: {selectedProperty.rawData.owner_id.substring(0, 8)}...
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Action Buttons */}
-                  <div className="space-y-3">
-                    <button 
-                      className="w-full bg-gradient-to-r from-brand-red to-brand-orange text-white py-4 rounded-lg font-semibold text-lg hover:scale-105 transition-transform duration-200"
-                      onClick={() => {
-                        setShowViewModal(false);
-                        navigate(`/property/${selectedProperty.id}`);
-                      }}
-                    >
-                      Book Now
-                    </button>
-                    <button 
-                      className="w-full border border-brand-red text-brand-red py-3 rounded-lg font-semibold hover:bg-brand-red hover:text-white transition-colors duration-200"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        const propertyId = selectedProperty?.id;
-                        if (propertyId) {
-                          if (isPropertySaved(propertyId)) {
-                            removeFromWishlist(propertyId);
-                          } else {
-                            addToWishlist(propertyId);
-                          }
-                        }
-                      }}
-                    >
-                      <i className={`fas fa-heart mr-2 ${selectedProperty?.id && isPropertySaved(selectedProperty.id) ? 'text-brand-red' : ''}`}></i>
-                      {selectedProperty?.id && isPropertySaved(selectedProperty.id) ? 'Remove from Wishlist' : 'Add to Wishlist'}
-                    </button>
-                  </div>
+                        <Button
+                          onClick={() => handleViewProperty(property)}
+                          className="w-full mt-4"
+                        >
+                          View Details
+                        </Button>
+                      </CardContent>
+                    </Card>
+                  ))}
                 </div>
-              </div>
-            </div>
-          </div>
-        </div>}
-        
-        {/* Enhanced Debug Component */}
-        {typeof window !== 'undefined' && (
-          <div className="fixed bottom-4 right-4 z-50">
-            <details className="bg-black/80 text-white text-xs p-2 rounded max-w-xs">
-              <summary className="cursor-pointer">🔧 Debug Info</summary>
-              <div className="mt-2 space-y-1">
-                <div>Properties: {properties.length}</div>
-                <div>Filtered: {filteredProperties.length}</div>
-                <div>Page: {currentPage}/{totalPages}</div>
-                <div>Cache: {localStorage.getItem('properties_cache') ? 'Active' : 'None'}</div>
-                {selectedProperty && (
-                  <div className="border-t border-gray-600 pt-2 mt-2">
-                    <div>Selected: {selectedProperty.name}</div>
-                    <div>Has rawData: {selectedProperty.rawData ? 'Yes' : 'No'}</div>
-                    {selectedProperty.rawData && (
-                      <div>Fields: {Object.keys(selectedProperty.rawData).length}</div>
-                    )}
+
+                {/* No Results */}
+                {filteredProperties.length === 0 && !loading && (
+                  <div className="text-center py-12">
+                    <MapPin className="w-16 h-16 text-gray-300 mx-auto mb-4" />
+                    <p className="text-gray-600 text-lg">No properties found</p>
+                    <p className="text-gray-500">Try adjusting your search filters</p>
                   </div>
                 )}
+
+                {/* Pagination */}
+                {totalPages > 1 && (
+                  <div className="flex items-center justify-center space-x-2 mt-8">
+                    <Button
+                      variant="outline"
+                      onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+                      disabled={currentPage === 1}
+                    >
+                      <ChevronLeft className="w-4 h-4" />
+                    </Button>
+                    
+                    {[...Array(totalPages)].map((_, index) => {
+                      const page = index + 1;
+                      if (
+                        page === 1 ||
+                        page === totalPages ||
+                        (page >= currentPage - 1 && page <= currentPage + 1)
+                      ) {
+                        return (
+                          <Button
+                            key={page}
+                            variant={currentPage === page ? "default" : "outline"}
+                            onClick={() => setCurrentPage(page)}
+                            className="w-10 h-10"
+                          >
+                            {page}
+                          </Button>
+                        );
+                      } else if (
+                        page === currentPage - 2 ||
+                        page === currentPage + 2
+                      ) {
+                        return <span key={page} className="px-2">...</span>;
+                      }
+                      return null;
+                    })}
+                    
+                    <Button
+                      variant="outline"
+                      onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
+                      disabled={currentPage === totalPages}
+                    >
+                      <ChevronRight className="w-4 h-4" />
+                    </Button>
+                  </div>
+                )}
+              </>
+            )}
+          </div>
+        ) : (
+          // Day Picnic Packages
+          <div>
+            <div className="flex items-center justify-between mb-6">
+              <h2 className="text-2xl font-bold text-gray-900">
+                Day Picnic Packages ({filteredDayPicnics.length})
+              </h2>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {filteredDayPicnics.map((pkg) => (
+                <Card key={pkg.id} className="overflow-hidden hover:shadow-lg transition-shadow">
+                  <div className="relative">
+                    {pkg.images && pkg.images.length > 0 ? (
+                      <img
+                        src={pkg.images[0]}
+                        alt={pkg.name}
+                        className="w-full h-48 object-cover"
+                      />
+                    ) : (
+                      <div className="w-full h-48 bg-gray-200 flex items-center justify-center">
+                        <MapPin className="w-12 h-12 text-gray-400" />
+                      </div>
+                    )}
+                    <Badge className="absolute top-3 left-3 bg-orange-500">
+                      Day Picnic
+                    </Badge>
+                  </div>
+
+                  <CardContent className="p-4">
+                    <h3 className="font-semibold text-lg mb-2">{pkg.name}</h3>
+                    
+                    <div className="flex items-center text-gray-600 mb-2">
+                      <MapPin className="w-4 h-4 mr-1" />
+                      <span className="text-sm truncate">{pkg.location}</span>
+                    </div>
+
+                    <div className="flex items-center text-gray-600 mb-3">
+                      <Clock className="w-4 h-4 mr-1" />
+                      <span className="text-sm">
+                        {formatTime12Hour(pkg.timing.start)} - {formatTime12Hour(pkg.timing.end)} 
+                        ({pkg.timing.duration}h)
+                      </span>
+                    </div>
+
+                    {pkg.mealPlan.length > 0 && (
+                      <div className="mb-3">
+                        <div className="flex flex-wrap gap-1">
+                          {pkg.mealPlan.slice(0, 3).map((meal: string) => (
+                            <Badge key={meal} variant="secondary" className="text-xs">
+                              {meal}
+                            </Badge>
+                          ))}
+                          {pkg.mealPlan.length > 3 && (
+                            <Badge variant="secondary" className="text-xs">
+                              +{pkg.mealPlan.length - 3}
+                            </Badge>
+                          )}
+                        </div>
+                      </div>
+                    )}
+
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <span className="text-xl font-bold text-green-600">
+                          ₹{pkg.price.toLocaleString()}
+                        </span>
+                        <span className="text-sm text-gray-600 ml-1">
+                          {pkg.pricingType.replace('_', ' ')}
+                        </span>
+                      </div>
+                      
+                      {pkg.rating > 0 && (
+                        <div className="flex items-center">
+                          <Star className="w-4 h-4 fill-yellow-400 text-yellow-400 mr-1" />
+                          <span className="text-sm font-medium">{pkg.rating}</span>
+                        </div>
+                      )}
+                    </div>
+
+                    <Button
+                      onClick={() => handleViewDayPicnic(pkg)}
+                      className="w-full mt-4"
+                    >
+                      Book Day Picnic
+                    </Button>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+
+            {filteredDayPicnics.length === 0 && (
+              <div className="text-center py-12">
+                <MapPin className="w-16 h-16 text-gray-300 mx-auto mb-4" />
+                <p className="text-gray-600 text-lg">No day picnic packages found</p>
+                <p className="text-gray-500">Try adjusting your search filters</p>
               </div>
-              <pre className="mt-2 whitespace-pre-wrap text-[10px]">
-                {JSON.stringify({
-                  hostname: window.location.hostname,
-                  propertiesCount: dbProperties.length,
-                  loading,
-                  error,
-                  propertiesLoaded,
-                  cacheDisabled,
-                  timestamp: new Date().toISOString()
-                }, null, 2)}
-              </pre>
-            </details>
+            )}
           </div>
         )}
-    </div>;
+      </main>
+    </div>
+  );
 };
+
 export default Properties;

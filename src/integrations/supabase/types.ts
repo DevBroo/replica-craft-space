@@ -71,6 +71,62 @@ export type Database = {
           },
         ]
       }
+      day_picnic_packages: {
+        Row: {
+          add_ons: Json
+          base_price: number
+          created_at: string
+          duration_hours: number
+          end_time: string
+          exclusions: Json
+          id: string
+          inclusions: Json
+          meal_plan: string[]
+          pricing_type: string
+          property_id: string
+          start_time: string
+          updated_at: string
+        }
+        Insert: {
+          add_ons?: Json
+          base_price?: number
+          created_at?: string
+          duration_hours?: number
+          end_time: string
+          exclusions?: Json
+          id?: string
+          inclusions?: Json
+          meal_plan?: string[]
+          pricing_type?: string
+          property_id: string
+          start_time: string
+          updated_at?: string
+        }
+        Update: {
+          add_ons?: Json
+          base_price?: number
+          created_at?: string
+          duration_hours?: number
+          end_time?: string
+          exclusions?: Json
+          id?: string
+          inclusions?: Json
+          meal_plan?: string[]
+          pricing_type?: string
+          property_id?: string
+          start_time?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "day_picnic_packages_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: true
+            referencedRelation: "properties"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       homepage_banners: {
         Row: {
           background_image: string | null
