@@ -1,41 +1,42 @@
 import React from 'react';
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
-import { QueryClient } from 'react-query';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { AuthProvider } from '@/contexts/AuthContext';
 import { PropertyCacheProvider } from '@/contexts/PropertyCacheContext';
 import { WishlistProvider } from '@/contexts/WishlistContext';
 import { Toaster } from '@/components/ui/toaster';
 
 // Public Pages
-import Home from '@/pages/Home';
+import Index from '@/pages/Index';
 import About from '@/pages/About';
 import Contact from '@/pages/Contact';
 import Properties from '@/pages/Properties';
 import PropertyDetails from '@/pages/PropertyDetails';
-import Blog from '@/pages/Blog';
-import BlogPost from '@/pages/BlogPost';
-import Terms from '@/pages/Terms';
-import Privacy from '@/pages/Privacy';
-import FAQ from '@/pages/FAQ';
 import NotFound from '@/pages/NotFound';
-import UnderConstruction from '@/pages/UnderConstruction';
+import TermsOfService from '@/pages/TermsOfService';
+import PrivacyPolicy from '@/pages/PrivacyPolicy';
+import HowItWorks from '@/pages/HowItWorks';
+import SafetyGuidelines from '@/pages/SafetyGuidelines';
+import TrustSafety from '@/pages/TrustSafety';
+import HelpCenter from '@/pages/HelpCenter';
+import BookingAssistance from '@/pages/BookingAssistance';
+import Locations from '@/pages/Locations';
 
 // Authentication Pages
-import Login from '@/pages/Login';
+import CustomerLogin from '@/pages/CustomerLogin';
 import Signup from '@/pages/Signup';
 import ForgotPassword from '@/pages/ForgotPassword';
 import ResetPassword from '@/pages/ResetPassword';
-import VerifyEmail from '@/pages/VerifyEmail';
-import ProfilePage from '@/pages/ProfilePage';
+import ResendVerification from '@/pages/ResendVerification';
+
+// Customer Pages
+import CustomerDashboard from '@/pages/CustomerDashboard';
+import BookingDetails from '@/pages/BookingDetails';
 
 // Admin Pages
-import AdminDashboard from '@/pages/admin/AdminDashboard';
-import Users from '@/pages/admin/Users';
-import AdminProperties from '@/pages/admin/AdminProperties';
-import Bookings from '@/pages/admin/Bookings';
-import Payments from '@/pages/admin/Payments';
-import Reviews from '@/pages/admin/Reviews';
-import Messages from '@/pages/admin/Messages';
+import AdminIndex from '@/pages/admin/Index';
+import ModernAdminDashboard from '@/pages/admin/ModernAdminDashboard';
+import AdminLoginPage from '@/pages/admin/LoginPage';
 import Settings from '@/pages/admin/Settings';
 
 // Host/Owner Pages
@@ -45,9 +46,11 @@ import HostDashboard from '@/pages/HostDashboard';
 import DayPicnicSetup from '@/components/owner/DayPicnicSetup';
 import DayPicnicBooking from '@/pages/DayPicnicBooking';
 
+const queryClient = new QueryClient();
+
 function App() {
   return (
-    <QueryClient>
+    <QueryClientProvider client={queryClient}>
       <AuthProvider>
         <PropertyCacheProvider>
           <WishlistProvider>
@@ -55,35 +58,36 @@ function App() {
               <div className="min-h-screen bg-background">
                 <Routes>
                   {/* Public Routes */}
-                  <Route path="/" element={<Home />} />
+                  <Route path="/" element={<Index />} />
                   <Route path="/about" element={<About />} />
                   <Route path="/contact" element={<Contact />} />
                   <Route path="/properties" element={<Properties />} />
                   <Route path="/property/:id" element={<PropertyDetails />} />
-                  <Route path="/blog" element={<Blog />} />
-                  <Route path="/blog/:id" element={<BlogPost />} />
-                  <Route path="/terms" element={<Terms />} />
-                  <Route path="/privacy" element={<Privacy />} />
-                  <Route path="/faq" element={<FAQ />} />
-                  <Route path="/under-construction" element={<UnderConstruction />} />
+                  <Route path="/terms-of-service" element={<TermsOfService />} />
+                  <Route path="/privacy-policy" element={<PrivacyPolicy />} />
+                  <Route path="/how-it-works" element={<HowItWorks />} />
+                  <Route path="/safety-guidelines" element={<SafetyGuidelines />} />
+                  <Route path="/trust-safety" element={<TrustSafety />} />
+                  <Route path="/help-center" element={<HelpCenter />} />
+                  <Route path="/booking-assistance" element={<BookingAssistance />} />
+                  <Route path="/locations" element={<Locations />} />
                   <Route path="*" element={<NotFound />} />
 
                   {/* Authentication Routes */}
-                  <Route path="/login" element={<Login />} />
+                  <Route path="/login" element={<CustomerLogin />} />
                   <Route path="/signup" element={<Signup />} />
                   <Route path="/forgot-password" element={<ForgotPassword />} />
                   <Route path="/reset-password" element={<ResetPassword />} />
-                  <Route path="/verify-email" element={<VerifyEmail />} />
-                  <Route path="/profile" element={<ProfilePage />} />
+                  <Route path="/resend-verification" element={<ResendVerification />} />
+
+                  {/* Customer Routes */}
+                  <Route path="/dashboard" element={<CustomerDashboard />} />
+                  <Route path="/booking/:id" element={<BookingDetails />} />
 
                   {/* Admin Routes */}
-                  <Route path="/admin/dashboard" element={<AdminDashboard />} />
-                  <Route path="/admin/users" element={<Users />} />
-                  <Route path="/admin/properties" element={<AdminProperties />} />
-                  <Route path="/admin/bookings" element={<Bookings />} />
-                  <Route path="/admin/payments" element={<Payments />} />
-                  <Route path="/admin/reviews" element={<Reviews />} />
-                  <Route path="/admin/messages" element={<Messages />} />
+                  <Route path="/admin" element={<AdminIndex />} />
+                  <Route path="/admin/login" element={<AdminLoginPage />} />
+                  <Route path="/admin/dashboard" element={<ModernAdminDashboard />} />
                   <Route path="/admin/settings" element={<Settings />} />
                   
                   {/* Host/Owner Routes */}
@@ -102,7 +106,7 @@ function App() {
           </WishlistProvider>
         </PropertyCacheProvider>
       </AuthProvider>
-    </QueryClient>
+    </QueryClientProvider>
   );
 }
 

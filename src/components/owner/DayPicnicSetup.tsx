@@ -101,12 +101,22 @@ const DayPicnicSetup: React.FC = () => {
         .single();
 
       if (data) {
+        const validPricingType = (data.pricing_type === 'per_person' || data.pricing_type === 'per_package') 
+          ? data.pricing_type as 'per_person' | 'per_package'
+          : 'per_person';
+          
         setPackage({
-          ...data,
-          meal_plan: data.meal_plan || [],
-          inclusions: data.inclusions || [],
-          exclusions: data.exclusions || [],
-          add_ons: data.add_ons || []
+          id: data.id,
+          property_id: data.property_id,
+          meal_plan: Array.isArray(data.meal_plan) ? data.meal_plan as string[] : [],
+          start_time: data.start_time || '09:00',
+          end_time: data.end_time || '18:00',
+          duration_hours: data.duration_hours || 9,
+          pricing_type: validPricingType,
+          base_price: data.base_price || 0,
+          inclusions: Array.isArray(data.inclusions) ? data.inclusions as string[] : [],
+          exclusions: Array.isArray(data.exclusions) ? data.exclusions as { item: string; reason: string }[] : [],
+          add_ons: Array.isArray(data.add_ons) ? data.add_ons as { name: string; price: number }[] : []
         });
       }
     } catch (error) {
