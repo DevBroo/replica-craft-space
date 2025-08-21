@@ -71,6 +71,88 @@ export type Database = {
           },
         ]
       }
+      day_picnic_hourly_rates: {
+        Row: {
+          created_at: string
+          hour_number: number
+          id: string
+          meal_plan: string
+          package_id: string
+          price_per_package: number
+          price_per_person: number
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          hour_number: number
+          id?: string
+          meal_plan: string
+          package_id: string
+          price_per_package?: number
+          price_per_person?: number
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          hour_number?: number
+          id?: string
+          meal_plan?: string
+          package_id?: string
+          price_per_package?: number
+          price_per_person?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "day_picnic_hourly_rates_package_id_fkey"
+            columns: ["package_id"]
+            isOneToOne: false
+            referencedRelation: "day_picnic_packages"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      day_picnic_option_prices: {
+        Row: {
+          created_at: string
+          id: string
+          is_required: boolean
+          name: string
+          option_type: string
+          package_id: string
+          price: number
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          is_required?: boolean
+          name: string
+          option_type: string
+          package_id: string
+          price?: number
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          is_required?: boolean
+          name?: string
+          option_type?: string
+          package_id?: string
+          price?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "day_picnic_option_prices_package_id_fkey"
+            columns: ["package_id"]
+            isOneToOne: false
+            referencedRelation: "day_picnic_packages"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       day_picnic_packages: {
         Row: {
           add_ons: Json
@@ -82,6 +164,7 @@ export type Database = {
           id: string
           inclusions: Json
           meal_plan: string[]
+          min_hours: number
           pricing_type: string
           property_id: string
           start_time: string
@@ -97,6 +180,7 @@ export type Database = {
           id?: string
           inclusions?: Json
           meal_plan?: string[]
+          min_hours?: number
           pricing_type?: string
           property_id: string
           start_time: string
@@ -112,6 +196,7 @@ export type Database = {
           id?: string
           inclusions?: Json
           meal_plan?: string[]
+          min_hours?: number
           pricing_type?: string
           property_id?: string
           start_time?: string

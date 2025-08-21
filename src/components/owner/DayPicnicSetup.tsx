@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
@@ -6,22 +7,18 @@ import { Button } from './ui/button';
 import { Input } from './ui/input';
 import { Label } from './ui/label';
 import { Checkbox } from './ui/checkbox';
-import { Textarea } from './ui/textarea';
-import { Badge } from './ui/badge';
 import { Alert, AlertDescription } from './ui/alert';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { 
   Clock, 
   Users, 
-  MapPin, 
-  CheckCircle, 
-  XCircle, 
-  Plus,
-  Trash2,
   Save,
   ArrowLeft 
 } from 'lucide-react';
+import HourlyPricingSection from './day-picnic/HourlyPricingSection';
+import OptionPricingSection from './day-picnic/OptionPricingSection';
+import PricingPreview from './day-picnic/PricingPreview';
 
 interface DayPicnicPackage {
   id?: string;
@@ -32,9 +29,25 @@ interface DayPicnicPackage {
   duration_hours: number;
   pricing_type: 'per_person' | 'per_package';
   base_price: number;
+  min_hours: number;
   inclusions: string[];
   exclusions: { item: string; reason: string }[];
   add_ons: { name: string; price: number }[];
+}
+
+interface HourlyRate {
+  meal_plan: string;
+  hour_number: number;
+  price_per_person: number;
+  price_per_package: number;
+}
+
+interface OptionPrice {
+  id?: string;
+  option_type: 'inclusion' | 'add_on';
+  name: string;
+  price: number;
+  is_required: boolean;
 }
 
 const DayPicnicSetup: React.FC = () => {
@@ -53,18 +66,16 @@ const DayPicnicSetup: React.FC = () => {
     duration_hours: 9,
     pricing_type: 'per_person',
     base_price: 0,
+    min_hours: 1,
     inclusions: [],
     exclusions: [],
     add_ons: []
   });
+  const [hourlyRates, setHourlyRates] = useState<HourlyRate[]>([]);
+  const [optionPrices, setOptionPrices] = useState<OptionPrice[]>([]);
 
   // Predefined options
   const mealPlanOptions = ['Breakfast', 'Lunch', 'Hi-Tea', 'Snacks', 'Dinner'];
-  const inclusionOptions = [
-    'Activities', 'Games', 'Facilities', 'Food', 'Pool Access', 
-    'Garden Area', 'Adventure Sports', 'Parking', 'Music System',
-    'Photography Area', 'Bonfire', 'BBQ Setup'
-  ];
 
   useEffect(() => {
     if (propertyId) {
@@ -94,33 +105,69 @@ const DayPicnicSetup: React.FC = () => {
 
   const fetchExistingPackage = async () => {
     try {
-      const { data, error } = await supabase
+      const { data: packageData, error: packageError } = await supabase
         .from('day_picnic_packages')
         .select('*')
         .eq('property_id', propertyId)
-        .single();
+        .maybeSingle();
 
-      if (data) {
-        const validPricingType = (data.pricing_type === 'per_person' || data.pricing_type === 'per_package') 
-          ? data.pricing_type as 'per_person' | 'per_package'
+      if (packageError && packageError.code !== 'PGRST116') throw packageError;
+
+      if (packageData) {
+        const validPricingType = (packageData.pricing_type === 'per_person' || packageData.pricing_type === 'per_package') 
+          ? packageData.pricing_type as 'per_person' | 'per_package'
           : 'per_person';
           
         setPackage({
-          id: data.id,
-          property_id: data.property_id,
-          meal_plan: Array.isArray(data.meal_plan) ? data.meal_plan as string[] : [],
-          start_time: data.start_time || '09:00',
-          end_time: data.end_time || '18:00',
-          duration_hours: data.duration_hours || 9,
+          id: packageData.id,
+          property_id: packageData.property_id,
+          meal_plan: Array.isArray(packageData.meal_plan) ? packageData.meal_plan as string[] : [],
+          start_time: packageData.start_time || '09:00',
+          end_time: packageData.end_time || '18:00',
+          duration_hours: packageData.duration_hours || 9,
           pricing_type: validPricingType,
-          base_price: data.base_price || 0,
-          inclusions: Array.isArray(data.inclusions) ? data.inclusions as string[] : [],
-          exclusions: Array.isArray(data.exclusions) ? data.exclusions as { item: string; reason: string }[] : [],
-          add_ons: Array.isArray(data.add_ons) ? data.add_ons as { name: string; price: number }[] : []
+          base_price: packageData.base_price || 0,
+          min_hours: packageData.min_hours || 1,
+          inclusions: Array.isArray(packageData.inclusions) ? packageData.inclusions as string[] : [],
+          exclusions: Array.isArray(packageData.exclusions) ? packageData.exclusions as { item: string; reason: string }[] : [],
+          add_ons: Array.isArray(packageData.add_ons) ? packageData.add_ons as { name: string; price: number }[] : []
         });
+
+        // Fetch hourly rates
+        const { data: ratesData, error: ratesError } = await supabase
+          .from('day_picnic_hourly_rates')
+          .select('*')
+          .eq('package_id', packageData.id);
+
+        if (ratesError) throw ratesError;
+        if (ratesData) {
+          setHourlyRates(ratesData.map(rate => ({
+            meal_plan: rate.meal_plan,
+            hour_number: rate.hour_number,
+            price_per_person: rate.price_per_person,
+            price_per_package: rate.price_per_package
+          })));
+        }
+
+        // Fetch option prices
+        const { data: optionsData, error: optionsError } = await supabase
+          .from('day_picnic_option_prices')
+          .select('*')
+          .eq('package_id', packageData.id);
+
+        if (optionsError) throw optionsError;
+        if (optionsData) {
+          setOptionPrices(optionsData.map(opt => ({
+            id: opt.id,
+            option_type: opt.option_type as 'inclusion' | 'add_on',
+            name: opt.name,
+            price: opt.price,
+            is_required: opt.is_required
+          })));
+        }
       }
     } catch (error) {
-      // No existing package, keep defaults
+      console.error('Error fetching package:', error);
     }
   };
 
@@ -157,61 +204,6 @@ const DayPicnicSetup: React.FC = () => {
     }));
   };
 
-  const handleInclusionChange = (inclusion: string, checked: boolean) => {
-    setPackage(prev => ({
-      ...prev,
-      inclusions: checked 
-        ? [...prev.inclusions, inclusion]
-        : prev.inclusions.filter(i => i !== inclusion)
-    }));
-  };
-
-  const addExclusion = () => {
-    setPackage(prev => ({
-      ...prev,
-      exclusions: [...prev.exclusions, { item: '', reason: 'Extra cost' }]
-    }));
-  };
-
-  const updateExclusion = (index: number, field: 'item' | 'reason', value: string) => {
-    setPackage(prev => ({
-      ...prev,
-      exclusions: prev.exclusions.map((exc, i) => 
-        i === index ? { ...exc, [field]: value } : exc
-      )
-    }));
-  };
-
-  const removeExclusion = (index: number) => {
-    setPackage(prev => ({
-      ...prev,
-      exclusions: prev.exclusions.filter((_, i) => i !== index)
-    }));
-  };
-
-  const addAddOn = () => {
-    setPackage(prev => ({
-      ...prev,
-      add_ons: [...prev.add_ons, { name: '', price: 0 }]
-    }));
-  };
-
-  const updateAddOn = (index: number, field: 'name' | 'price', value: string | number) => {
-    setPackage(prev => ({
-      ...prev,
-      add_ons: prev.add_ons.map((addon, i) => 
-        i === index ? { ...addon, [field]: value } : addon
-      )
-    }));
-  };
-
-  const removeAddOn = (index: number) => {
-    setPackage(prev => ({
-      ...prev,
-      add_ons: prev.add_ons.filter((_, i) => i !== index)
-    }));
-  };
-
   const handleSave = async () => {
     if (!package_.meal_plan.length) {
       toast({
@@ -222,10 +214,10 @@ const DayPicnicSetup: React.FC = () => {
       return;
     }
 
-    if (package_.base_price <= 0) {
+    if (hourlyRates.length === 0) {
       toast({
         title: "Validation Error", 
-        description: "Please set a base price",
+        description: "Please set hourly pricing for your meal plans",
         variant: "destructive"
       });
       return;
@@ -242,26 +234,89 @@ const DayPicnicSetup: React.FC = () => {
         duration_hours: package_.duration_hours,
         pricing_type: package_.pricing_type,
         base_price: package_.base_price,
+        min_hours: package_.min_hours,
         inclusions: package_.inclusions,
         exclusions: package_.exclusions,
         add_ons: package_.add_ons
       };
 
-      let result;
+      let packageResult;
+      let packageId = package_.id;
+
       if (package_.id) {
         // Update existing
-        result = await supabase
+        packageResult = await supabase
           .from('day_picnic_packages')
           .update(packageData)
-          .eq('id', package_.id);
+          .eq('id', package_.id)
+          .select()
+          .single();
       } else {
         // Create new
-        result = await supabase
+        packageResult = await supabase
           .from('day_picnic_packages')
-          .insert(packageData);
+          .insert(packageData)
+          .select()
+          .single();
+        
+        if (packageResult.data) {
+          packageId = packageResult.data.id;
+        }
       }
 
-      if (result.error) throw result.error;
+      if (packageResult.error) throw packageResult.error;
+
+      // Save hourly rates
+      if (packageId) {
+        // Delete existing rates
+        await supabase
+          .from('day_picnic_hourly_rates')
+          .delete()
+          .eq('package_id', packageId);
+
+        // Insert new rates
+        if (hourlyRates.length > 0) {
+          const ratesData = hourlyRates.map(rate => ({
+            package_id: packageId,
+            meal_plan: rate.meal_plan,
+            hour_number: rate.hour_number,
+            price_per_person: rate.price_per_person,
+            price_per_package: rate.price_per_package
+          }));
+
+          const { error: ratesError } = await supabase
+            .from('day_picnic_hourly_rates')
+            .insert(ratesData);
+
+          if (ratesError) throw ratesError;
+        }
+
+        // Save option prices
+        await supabase
+          .from('day_picnic_option_prices')
+          .delete()
+          .eq('package_id', packageId);
+
+        if (optionPrices.length > 0) {
+          const optionsData = optionPrices
+            .filter(opt => opt.name.trim() !== '')
+            .map(opt => ({
+              package_id: packageId,
+              option_type: opt.option_type,
+              name: opt.name,
+              price: opt.price,
+              is_required: opt.is_required
+            }));
+
+          if (optionsData.length > 0) {
+            const { error: optionsError } = await supabase
+              .from('day_picnic_option_prices')
+              .insert(optionsData);
+
+            if (optionsError) throw optionsError;
+          }
+        }
+      }
 
       toast({
         title: "Success",
@@ -280,14 +335,6 @@ const DayPicnicSetup: React.FC = () => {
     }
   };
 
-  const formatTime12Hour = (time24: string) => {
-    const [hour, minute] = time24.split(':');
-    const h = parseInt(hour, 10);
-    const ampm = h >= 12 ? 'PM' : 'AM';
-    const h12 = h % 12 || 12;
-    return `${h12}:${minute} ${ampm}`;
-  };
-
   if (!property) {
     return (
       <div className="flex items-center justify-center min-h-screen">
@@ -301,7 +348,7 @@ const DayPicnicSetup: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-gray-50 p-6">
-      <div className="max-w-4xl mx-auto">
+      <div className="max-w-7xl mx-auto">
         {/* Header */}
         <div className="flex items-center mb-6">
           <Button 
@@ -318,9 +365,9 @@ const DayPicnicSetup: React.FC = () => {
           </div>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
           {/* Main Form */}
-          <div className="lg:col-span-2 space-y-6">
+          <div className="lg:col-span-3 space-y-6">
             {/* Basic Details */}
             <Card>
               <CardHeader>
@@ -350,18 +397,33 @@ const DayPicnicSetup: React.FC = () => {
                     />
                   </div>
                 </div>
-                <div>
-                  <Label htmlFor="duration">Duration (Hours)</Label>
-                  <Input
-                    id="duration"
-                    type="number"
-                    step="0.5"
-                    value={package_.duration_hours}
-                    onChange={(e) => setPackage(prev => ({ 
-                      ...prev, 
-                      duration_hours: parseFloat(e.target.value) || 0 
-                    }))}
-                  />
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <Label htmlFor="duration">Duration (Hours)</Label>
+                    <Input
+                      id="duration"
+                      type="number"
+                      step="0.5"
+                      value={package_.duration_hours}
+                      onChange={(e) => setPackage(prev => ({ 
+                        ...prev, 
+                        duration_hours: parseFloat(e.target.value) || 0 
+                      }))}
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="min_hours">Minimum Hours</Label>
+                    <Input
+                      id="min_hours"
+                      type="number"
+                      min="1"
+                      value={package_.min_hours}
+                      onChange={(e) => setPackage(prev => ({ 
+                        ...prev, 
+                        min_hours: parseInt(e.target.value) || 1 
+                      }))}
+                    />
+                  </div>
                 </div>
               </CardContent>
             </Card>
@@ -369,7 +431,7 @@ const DayPicnicSetup: React.FC = () => {
             {/* Meal Plan */}
             <Card>
               <CardHeader>
-                <CardTitle>Meal Plan</CardTitle>
+                <CardTitle>Meal Plan Selection</CardTitle>
               </CardHeader>
               <CardContent>
                 <div className="grid grid-cols-2 gap-2">
@@ -387,221 +449,65 @@ const DayPicnicSetup: React.FC = () => {
               </CardContent>
             </Card>
 
-            {/* Pricing */}
+            {/* Pricing Type */}
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center">
                   <Users className="w-5 h-5 mr-2" />
-                  Pricing
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div>
-                  <Label>Pricing Type</Label>
-                  <div className="flex space-x-4 mt-2">
-                    <div className="flex items-center space-x-2">
-                      <input
-                        type="radio"
-                        id="per_person"
-                        name="pricing_type"
-                        value="per_person"
-                        checked={package_.pricing_type === 'per_person'}
-                        onChange={(e) => setPackage(prev => ({ ...prev, pricing_type: e.target.value as any }))}
-                      />
-                      <Label htmlFor="per_person">Per Person</Label>
-                    </div>
-                    <div className="flex items-center space-x-2">
-                      <input
-                        type="radio"
-                        id="per_package"
-                        name="pricing_type"
-                        value="per_package"
-                        checked={package_.pricing_type === 'per_package'}
-                        onChange={(e) => setPackage(prev => ({ ...prev, pricing_type: e.target.value as any }))}
-                      />
-                      <Label htmlFor="per_package">Per Package</Label>
-                    </div>
-                  </div>
-                </div>
-                <div>
-                  <Label htmlFor="base_price">Base Price (₹)</Label>
-                  <Input
-                    id="base_price"
-                    type="number"
-                    value={package_.base_price}
-                    onChange={(e) => setPackage(prev => ({ 
-                      ...prev, 
-                      base_price: parseFloat(e.target.value) || 0 
-                    }))}
-                  />
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* Inclusions */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center">
-                  <CheckCircle className="w-5 h-5 mr-2 text-green-600" />
-                  Inclusions
+                  Pricing Type
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="grid grid-cols-2 gap-2">
-                  {inclusionOptions.map(inclusion => (
-                    <div key={inclusion} className="flex items-center space-x-2">
-                      <Checkbox
-                        id={inclusion}
-                        checked={package_.inclusions.includes(inclusion)}
-                        onCheckedChange={(checked) => handleInclusionChange(inclusion, checked as boolean)}
-                      />
-                      <Label htmlFor={inclusion}>{inclusion}</Label>
-                    </div>
-                  ))}
+                <div className="flex space-x-4">
+                  <div className="flex items-center space-x-2">
+                    <input
+                      type="radio"
+                      id="per_person"
+                      name="pricing_type"
+                      value="per_person"
+                      checked={package_.pricing_type === 'per_person'}
+                      onChange={(e) => setPackage(prev => ({ ...prev, pricing_type: e.target.value as any }))}
+                    />
+                    <Label htmlFor="per_person">Per Person</Label>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <input
+                      type="radio"
+                      id="per_package"
+                      name="pricing_type"
+                      value="per_package"
+                      checked={package_.pricing_type === 'per_package'}
+                      onChange={(e) => setPackage(prev => ({ ...prev, pricing_type: e.target.value as any }))}
+                    />
+                    <Label htmlFor="per_package">Per Package</Label>
+                  </div>
                 </div>
               </CardContent>
             </Card>
 
-            {/* Exclusions */}
+            {/* Hourly Pricing */}
+            <HourlyPricingSection
+              selectedMealPlans={package_.meal_plan}
+              pricingType={package_.pricing_type}
+              durationHours={Math.floor(package_.duration_hours)}
+              hourlyRates={hourlyRates}
+              onUpdateHourlyRates={setHourlyRates}
+            />
+
+            {/* Option Pricing */}
+            <OptionPricingSection
+              optionPrices={optionPrices}
+              onUpdateOptionPrices={setOptionPrices}
+            />
+
+            {/* Save Button */}
             <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center">
-                  <XCircle className="w-5 h-5 mr-2 text-red-600" />
-                  Exclusions
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                {package_.exclusions.map((exclusion, index) => (
-                  <div key={index} className="flex items-center space-x-2">
-                    <Input
-                      placeholder="Item name"
-                      value={exclusion.item}
-                      onChange={(e) => updateExclusion(index, 'item', e.target.value)}
-                      className="flex-1"
-                    />
-                    <select
-                      value={exclusion.reason}
-                      onChange={(e) => updateExclusion(index, 'reason', e.target.value)}
-                      className="px-3 py-2 border rounded-md"
-                    >
-                      <option value="Extra cost">Extra cost</option>
-                      <option value="Not available">Not available</option>
-                      <option value="On request">On request</option>
-                    </select>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => removeExclusion(index)}
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </Button>
-                  </div>
-                ))}
-                <Button variant="outline" onClick={addExclusion}>
-                  <Plus className="w-4 h-4 mr-2" />
-                  Add Exclusion
-                </Button>
-              </CardContent>
-            </Card>
-
-            {/* Add-ons */}
-            <Card>
-              <CardHeader>
-                <CardTitle>Add-ons</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                {package_.add_ons.map((addon, index) => (
-                  <div key={index} className="flex items-center space-x-2">
-                    <Input
-                      placeholder="Add-on name"
-                      value={addon.name}
-                      onChange={(e) => updateAddOn(index, 'name', e.target.value)}
-                      className="flex-1"
-                    />
-                    <Input
-                      type="number"
-                      placeholder="Price"
-                      value={addon.price}
-                      onChange={(e) => updateAddOn(index, 'price', parseFloat(e.target.value) || 0)}
-                      className="w-24"
-                    />
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => removeAddOn(index)}
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </Button>
-                  </div>
-                ))}
-                <Button variant="outline" onClick={addAddOn}>
-                  <Plus className="w-4 h-4 mr-2" />
-                  Add Add-on
-                </Button>
-              </CardContent>
-            </Card>
-          </div>
-
-          {/* Preview */}
-          <div className="lg:col-span-1">
-            <Card className="sticky top-6">
-              <CardHeader>
-                <CardTitle>Package Preview</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div>
-                  <h3 className="font-semibold">Day Picnic at {property.title}</h3>
-                  <p className="text-sm text-gray-600 flex items-center mt-1">
-                    <MapPin className="w-4 h-4 mr-1" />
-                    {property.address}
-                  </p>
-                </div>
-
-                <div>
-                  <p className="font-medium">Timing</p>
-                  <p className="text-sm text-gray-600">
-                    {formatTime12Hour(package_.start_time)} - {formatTime12Hour(package_.end_time)} | {package_.duration_hours} Hours
-                  </p>
-                </div>
-
-                {package_.meal_plan.length > 0 && (
-                  <div>
-                    <p className="font-medium">Meal Plan</p>
-                    <div className="flex flex-wrap gap-1 mt-1">
-                      {package_.meal_plan.map(meal => (
-                        <Badge key={meal} variant="secondary" className="text-xs">
-                          {meal}
-                        </Badge>
-                      ))}
-                    </div>
-                  </div>
-                )}
-
-                <div>
-                  <p className="font-medium">Price</p>
-                  <p className="text-lg font-semibold text-green-600">
-                    ₹{package_.base_price} {package_.pricing_type.replace('_', ' ')}
-                  </p>
-                </div>
-
-                {package_.inclusions.length > 0 && (
-                  <div>
-                    <p className="font-medium text-green-600">✅ Inclusions</p>
-                    <ul className="text-sm text-gray-600 space-y-1">
-                      {package_.inclusions.slice(0, 3).map(inclusion => (
-                        <li key={inclusion}>• {inclusion}</li>
-                      ))}
-                      {package_.inclusions.length > 3 && (
-                        <li className="text-gray-400">+ {package_.inclusions.length - 3} more</li>
-                      )}
-                    </ul>
-                  </div>
-                )}
-
+              <CardContent className="pt-6">
                 <Button 
                   onClick={handleSave} 
                   disabled={loading}
                   className="w-full"
+                  size="lg"
                 >
                   {loading ? (
                     <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
@@ -612,6 +518,20 @@ const DayPicnicSetup: React.FC = () => {
                 </Button>
               </CardContent>
             </Card>
+          </div>
+
+          {/* Preview */}
+          <div className="lg:col-span-1">
+            <PricingPreview
+              property={property}
+              selectedMealPlans={package_.meal_plan}
+              pricingType={package_.pricing_type}
+              durationHours={Math.floor(package_.duration_hours)}
+              hourlyRates={hourlyRates}
+              optionPrices={optionPrices}
+              startTime={package_.start_time}
+              endTime={package_.end_time}
+            />
           </div>
         </div>
       </div>
