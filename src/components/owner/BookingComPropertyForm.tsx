@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { PropertyService } from '@/lib/propertyService';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/owner/ui/card';
@@ -84,6 +84,16 @@ const BookingComPropertyForm: React.FC<BookingComPropertyFormProps> = ({
 
     return extracted;
   };
+
+  // Clean up scroll locks on unmount
+  useEffect(() => {
+    return () => {
+      // Remove data-scroll-locked attribute
+      document.documentElement.removeAttribute('data-scroll-locked');
+      // Reset body overflow
+      document.body.style.overflow = '';
+    };
+  }, []);
 
   const [availableCities, setAvailableCities] = useState<string[]>([]);
   
