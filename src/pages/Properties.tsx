@@ -202,7 +202,7 @@ const Properties: React.FC = () => {
     const matchesLocation = !locationFilter || 
       property.location.toLowerCase().includes(locationFilter.toLowerCase());
     
-    const matchesType = !propertyTypeFilter || 
+    const matchesType = !propertyTypeFilter || propertyTypeFilter === 'all' ||
       property.type.toLowerCase() === propertyTypeFilter.toLowerCase();
     
     const matchesPrice = property.price >= priceRange[0] && property.price <= priceRange[1];
@@ -407,7 +407,7 @@ const Properties: React.FC = () => {
                     <SelectValue placeholder="Property Type" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="">All Types</SelectItem>
+                    <SelectItem value="all">All Types</SelectItem>
                     {propertyTypes.map(type => (
                       <SelectItem key={type} value={type}>{type}</SelectItem>
                     ))}
