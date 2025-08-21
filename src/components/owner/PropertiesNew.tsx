@@ -5,10 +5,11 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Plus } from 'lucide-react';
+import { Plus, Edit, Eye } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { Home, Calendar, DollarSign, Star, MessageSquare, User, Settings as SettingsIcon, BarChart3, Bell, Menu, X, LogOut } from 'lucide-react';
+import BookingComPropertyForm from './BookingComPropertyForm';
 
 interface PropertiesProps {
   sidebarCollapsed: boolean;
@@ -31,8 +32,11 @@ const Properties: React.FC<PropertiesProps> = ({
   const [loading, setLoading] = useState(false);
   const [showAddForm, setShowAddForm] = useState(false);
   const [showTypeSelector, setShowTypeSelector] = useState(false);
+  const [showFullPropertyForm, setShowFullPropertyForm] = useState(false);
   const [selectedPropertyType, setSelectedPropertyType] = useState('');
   const [propertyName, setPropertyName] = useState('');
+  const [editingProperty, setEditingProperty] = useState<any>(null);
+  const [isEditMode, setIsEditMode] = useState(false);
 
   const propertyTypes = [
     'Hotels',
@@ -72,14 +76,28 @@ const Properties: React.FC<PropertiesProps> = ({
   };
 
   const handleAddProperty = () => {
+    setEditingProperty(null);
+    setIsEditMode(false);
     setSelectedPropertyType('');
     setShowTypeSelector(false);
     setShowAddForm(true);
   };
 
+  const handleEditProperty = (property: any) => {
+    setEditingProperty(property);
+    setIsEditMode(true);
+    setShowFullPropertyForm(true);
+  };
+
   const handlePropertyTypeSelection = (type: string) => {
     setSelectedPropertyType(type);
     setShowTypeSelector(true);
+    
+    // If not Day Picnic, show full form
+    if (type !== 'Day Picnic') {
+      setShowFullPropertyForm(true);
+      setShowAddForm(false);
+    }
   };
 
   const handleCreateDayPicnicProperty = async () => {
@@ -139,64 +157,14 @@ const Properties: React.FC<PropertiesProps> = ({
     }
   };
 
-  const handlePropertySubmit = async () => {
-    setLoading(true);
-    try {
-      // Basic validation
-      if (!propertyName.trim()) {
-        toast({
-          title: "Error",
-          description: "Please enter a property name",
-          variant: "destructive"
-        });
-        return;
-      }
-
-      // Create property object
-      const newProperty = {
-        owner_id: user?.id,
-        title: propertyName.trim(),
-        description: 'To be updated',
-        address: 'To be updated',
-        property_type: selectedPropertyType,
-        max_guests: 2,
-        pricing: {
-          daily_rate: 1000,
-          currency: 'INR'
-        },
-        status: 'pending',
-        images: [],
-        amenities: []
-      };
-
-      // Call Supabase function to insert property
-      const { data, error } = await supabase
-        .from('properties')
-        .insert(newProperty)
-        .select()
-        .single();
-
-      if (error) throw error;
-
-      toast({
-        title: "Success",
-        description: "Property added successfully!",
-      });
-
-      // Reset state and refresh properties
-      setShowAddForm(false);
-      setPropertyName('');
-      setSelectedPropertyType('');
-      fetchProperties();
-    } catch (error: any) {
-      toast({
-        title: "Error",
-        description: error.message || "Failed to add property",
-        variant: "destructive"
-      });
-    } finally {
-      setLoading(false);
-    }
+  const handleCloseFullForm = () => {
+    setShowFullPropertyForm(false);
+    setShowAddForm(false);
+    setEditingProperty(null);
+    setIsEditMode(false);
+    setSelectedPropertyType('');
+    setPropertyName('');
+    fetchProperties(); // Refresh properties list
   };
 
   return (
@@ -309,6 +277,23 @@ const Properties: React.FC<PropertiesProps> = ({
                       ₹{property.pricing?.daily_rate || 0}/night
                     </p>
                   </div>
+                  <div className="flex items-center space-x-2">
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => handleEditProperty(property)}
+                      className="p-2"
+                    >
+                      <Edit className="w-4 h-4" />
+                    </Button>
+                    <div className={`px-2 py-1 rounded-full text-xs font-medium ${
+                      property.status === 'approved' ? 'bg-green-100 text-green-800' :
+                      property.status === 'pending' ? 'bg-yellow-100 text-yellow-800' :
+                      'bg-red-100 text-red-800'
+                    }`}>
+                      {property.status}
+                    </div>
+                  </div>
                   {/* <Badge variant="secondary" className={
                     property.status === 'approved' ? 'bg-green-100 text-green-800' :
                     property.status === 'pending' ? 'bg-yellow-100 text-yellow-800' :
@@ -396,21 +381,22 @@ const Properties: React.FC<PropertiesProps> = ({
                   onClick={
                     selectedPropertyType === 'Day Picnic' && showTypeSelector 
                       ? handleCreateDayPicnicProperty 
-                      : showTypeSelector 
-                        ? handlePropertySubmit 
+                      : selectedPropertyType && selectedPropertyType !== 'Day Picnic'
+                        ? () => {
+                            setShowFullPropertyForm(true);
+                            setShowAddForm(false);
+                          }
                         : () => {}
                   }
-                  disabled={!propertyName.trim() || (!selectedPropertyType && !showTypeSelector)}
+                  disabled={!propertyName.trim() || !selectedPropertyType}
                   className="flex-1"
                 >
                   {loading ? (
                     <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
                   ) : selectedPropertyType === 'Day Picnic' && showTypeSelector ? (
                     'Setup Day Picnic'
-                  ) : showTypeSelector && selectedPropertyType && selectedPropertyType !== 'Day Picnic' ? (
-                    'Create Property'
-                  ) : selectedPropertyType ? (
-                    'Continue'
+                  ) : selectedPropertyType && selectedPropertyType !== 'Day Picnic' ? (
+                    'Continue to Full Form'
                   ) : (
                     'Select Type'
                   )}
@@ -418,6 +404,21 @@ const Properties: React.FC<PropertiesProps> = ({
               </div>
             </CardContent>
           </Card>
+        </div>
+      )}
+
+      {/* Full Property Form Modal */}
+      {showFullPropertyForm && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-lg w-full max-w-4xl max-h-[90vh] overflow-hidden">
+            <BookingComPropertyForm 
+              onBack={handleCloseFullForm}
+              editingProperty={editingProperty}
+              isEdit={isEditMode}
+              selectedType={selectedPropertyType}
+              propertyName={propertyName}
+            />
+          </div>
         </div>
       )}
 

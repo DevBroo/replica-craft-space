@@ -18,6 +18,8 @@ interface BookingComPropertyFormProps {
   onBack: () => void;
   editingProperty?: any;
   isEdit?: boolean;
+  selectedType?: string;
+  propertyName?: string;
 }
 
 interface BedConfig {
@@ -29,7 +31,9 @@ interface BedConfig {
 const BookingComPropertyForm: React.FC<BookingComPropertyFormProps> = ({ 
   onBack, 
   editingProperty, 
-  isEdit = false 
+  isEdit = false,
+  selectedType = '',
+  propertyName = ''
 }) => {
   const { user, isAuthenticated } = useAuth();
   const [currentStep, setCurrentStep] = useState(1);
@@ -84,14 +88,16 @@ const BookingComPropertyForm: React.FC<BookingComPropertyFormProps> = ({
   const [availableCities, setAvailableCities] = useState<string[]>([]);
   
   const [formData, setFormData] = useState({
-    // Basic Information
-    title: '',
+    // Basic Information - Extended
+    title: propertyName || '',
     description: '',
-    property_type: '',
+    property_type: selectedType || '',
     property_subtype: '',
+    tagline: '',
+    star_rating: '',
     license_number: '',
     
-    // Location & Address
+    // Location & Address - Extended
     address: '',
     state: '',
     city: '',
@@ -99,44 +105,93 @@ const BookingComPropertyForm: React.FC<BookingComPropertyFormProps> = ({
     country: 'India',
     postal_code: '',
     coordinates: { lat: '', lng: '' },
+    landmarks: {
+      airport_distance: '',
+      train_station_distance: '',
+      metro_distance: '',
+      attractions: []
+    },
+    neighborhood_type: '',
     
-    // Room & Capacity Details
+    // Contact & Ownership - New section
+    owner_name: '',
+    manager_name: '',
+    contact_phone: '',
+    contact_email: '',
+    emergency_contact: '',
+    languages_spoken: [],
+    
+    // Room & Capacity Details - Extended
     max_guests: '',
     bedrooms: '',
     bathrooms: '',
+    room_types: [],
     bed_configuration: { beds: [] as BedConfig[] },
     
-    // Amenities & Facilities (Comprehensive categories)
+    // Facilities & Amenities - Extended
     amenities: [],
+    safety_features: [],
+    accessibility_features: [],
+    business_facilities: [],
+    family_facilities: [],
     
-    // Booking & Payment
+    // Booking & Payment - Extended
     check_in_time: '15:00',
     check_out_time: '11:00',
     minimum_stay: 1,
     cancellation_policy: 'moderate',
     payment_methods: ['card', 'cash'],
+    security_deposit: '',
+    id_requirements: [],
     
-    // Pricing Structure
-    pricing: { daily_rate: '', currency: 'INR' },
+    // Pricing Structure - Extended
+    pricing: { 
+      daily_rate: '', 
+      currency: 'INR',
+      weekend_rate: '',
+      peak_season_rate: '',
+      taxes_included: false,
+      service_charges: ''
+    },
     
-    // House Rules & Policies
+    // House Rules & Policies - Extended
     house_rules: {
       smoking: 'not_allowed',
       pets: 'not_allowed',
       parties: 'not_allowed',
-      quiet_hours: { start: '22:00', end: '08:00' }
+      quiet_hours: { start: '22:00', end: '08:00' },
+      child_policy: '',
+      additional_rules: []
     },
     
-    // Services & Extras
+    // Services & Extras - Extended
     meal_plans: [],
+    dining_options: [],
+    restaurant_timings: '',
+    special_diets: [],
     
-    // Business Information
-    contact_phone: '',
+    // Activities & Experiences - New section
+    on_site_activities: [],
+    nearby_activities: [],
+    entertainment_options: [],
+    
+    // Business & Legal Information - Extended
     arrival_instructions: '',
-    tax_information: {},
+    tax_information: {
+      gst_number: '',
+      pan_number: '',
+      business_registration: ''
+    },
+    certificates: {
+      fire_safety: false,
+      government_license: '',
+      local_authority_approval: ''
+    },
     
-    // Images
-    images: []
+    // Images & Media - Extended
+    images: [],
+    virtual_tour_url: '',
+    video_url: ''
   });
 
   // Initialize form data when editing
@@ -150,8 +205,10 @@ const BookingComPropertyForm: React.FC<BookingComPropertyFormProps> = ({
       setFormData({
         title: editingProperty.title || editingProperty.name || '',
         description: parsedDesc.cleanDescription,
-        property_type: editingProperty.type || '',
-        property_subtype: editingProperty.subtype || '',
+        property_type: editingProperty.type || editingProperty.property_type || '',
+        property_subtype: editingProperty.subtype || editingProperty.property_subtype || '',
+        tagline: editingProperty.tagline || '',
+        star_rating: editingProperty.star_rating?.toString() || '',
         license_number: parsedDesc.licenseNumber || editingProperty.license_number || '',
         
         address: editingProperty.location || editingProperty.address || '',
@@ -161,39 +218,83 @@ const BookingComPropertyForm: React.FC<BookingComPropertyFormProps> = ({
         country: editingProperty.country || 'India',
         postal_code: editingProperty.zip_code || editingProperty.postal_code || '',
         coordinates: { lat: editingProperty.latitude?.toString() || '', lng: editingProperty.longitude?.toString() || '' },
+        landmarks: editingProperty.landmarks || {
+          airport_distance: '',
+          train_station_distance: '',
+          metro_distance: '',
+          attractions: []
+        },
+        neighborhood_type: editingProperty.neighborhood_type || '',
+        
+        owner_name: editingProperty.owner_name || '',
+        manager_name: editingProperty.manager_name || '',
+        contact_phone: parsedDesc.contactPhone || editingProperty.contact_phone || '',
+        contact_email: editingProperty.contact_email || '',
+        emergency_contact: editingProperty.emergency_contact || '',
+        languages_spoken: editingProperty.languages_spoken || [],
         
         max_guests: editingProperty.capacity?.toString() || editingProperty.max_guests?.toString() || '',
         bedrooms: editingProperty.bedrooms?.toString() || '',
         bathrooms: editingProperty.bathrooms?.toString() || '',
+        room_types: editingProperty.room_types || [],
         bed_configuration: editingProperty.bed_configuration || { beds: [] },
         
         amenities: Array.isArray(editingProperty.amenities) ? editingProperty.amenities : [],
+        safety_features: editingProperty.safety_features || [],
+        accessibility_features: editingProperty.accessibility_features || [],
+        business_facilities: editingProperty.business_facilities || [],
+        family_facilities: editingProperty.family_facilities || [],
         
         check_in_time: editingProperty.check_in_time || '15:00',
         check_out_time: editingProperty.check_out_time || '11:00',
         minimum_stay: editingProperty.minimum_stay || 1,
         cancellation_policy: editingProperty.cancellation_policy || 'moderate',
         payment_methods: Array.isArray(editingProperty.payment_methods) ? editingProperty.payment_methods : ['card', 'cash'],
+        security_deposit: editingProperty.security_deposit?.toString() || '',
+        id_requirements: editingProperty.id_requirements || [],
         
         pricing: { 
           daily_rate: editingProperty.price?.toString() || editingProperty.pricing?.daily_rate?.toString() || '', 
-          currency: editingProperty.pricing?.currency || 'INR' 
+          currency: editingProperty.pricing?.currency || 'INR',
+          weekend_rate: editingProperty.pricing?.weekend_rate?.toString() || '',
+          peak_season_rate: editingProperty.pricing?.peak_season_rate?.toString() || '',
+          taxes_included: editingProperty.pricing?.taxes_included || false,
+          service_charges: editingProperty.pricing?.service_charges?.toString() || ''
         },
         
         house_rules: editingProperty.house_rules || {
           smoking: 'not_allowed',
           pets: 'not_allowed', 
           parties: 'not_allowed',
-          quiet_hours: { start: '22:00', end: '08:00' }
+          quiet_hours: { start: '22:00', end: '08:00' },
+          child_policy: '',
+          additional_rules: []
         },
         
         meal_plans: parsedDesc.mealPlans.length > 0 ? parsedDesc.mealPlans : (Array.isArray(editingProperty.meal_plans) ? editingProperty.meal_plans : []),
+        dining_options: editingProperty.dining_options || [],
+        restaurant_timings: editingProperty.restaurant_timings || '',
+        special_diets: editingProperty.special_diets || [],
         
-        contact_phone: parsedDesc.contactPhone || editingProperty.contact_phone || '',
+        on_site_activities: editingProperty.on_site_activities || [],
+        nearby_activities: editingProperty.nearby_activities || [],
+        entertainment_options: editingProperty.entertainment_options || [],
+        
         arrival_instructions: parsedDesc.arrivalInstructions || editingProperty.arrival_instructions || '',
-        tax_information: editingProperty.tax_information || {},
+        tax_information: editingProperty.tax_information || {
+          gst_number: '',
+          pan_number: '',
+          business_registration: ''
+        },
+        certificates: editingProperty.certificates || {
+          fire_safety: false,
+          government_license: '',
+          local_authority_approval: ''
+        },
         
-        images: Array.isArray(editingProperty.images) ? editingProperty.images : []
+        images: Array.isArray(editingProperty.images) ? editingProperty.images : [],
+        virtual_tour_url: editingProperty.virtual_tour_url || '',
+        video_url: editingProperty.video_url || ''
       });
     }
   }, [isEdit, editingProperty]);
@@ -349,13 +450,15 @@ const BookingComPropertyForm: React.FC<BookingComPropertyFormProps> = ({
   ];
 
   const steps = [
-    { number: 1, title: 'Property Basics', description: 'Name, type and description' },
-    { number: 2, title: 'Location & Address', description: 'Where is your property?' },
-    { number: 3, title: 'Rooms & Capacity', description: 'Beds, bathrooms and guests' },
-    { number: 4, title: 'Amenities & Features', description: 'What does your property offer?' },
-    { number: 5, title: 'Policies & Rules', description: 'Booking and house rules' },
-    { number: 6, title: 'Pricing & Services', description: 'Rates and additional services' },
-    { number: 7, title: 'Photos & Final Review', description: 'Upload images and review' }
+    { number: 1, title: 'Property Basics', description: 'Name, type, description and rating' },
+    { number: 2, title: 'Location & Contact', description: 'Address, landmarks and contact details' },
+    { number: 3, title: 'Rooms & Capacity', description: 'Beds, bathrooms and guest capacity' },
+    { number: 4, title: 'Facilities & Amenities', description: 'All features your property offers' },
+    { number: 5, title: 'Policies & Rules', description: 'Booking rules and house policies' },
+    { number: 6, title: 'Pricing & Services', description: 'Rates, meals and additional services' },
+    { number: 7, title: 'Activities & Experiences', description: 'Entertainment and nearby attractions' },
+    { number: 8, title: 'Legal & Business Info', description: 'Certificates, tax info and documents' },
+    { number: 9, title: 'Photos & Final Review', description: 'Upload images and review details' }
   ];
 
   const progressPercentage = (currentStep / steps.length) * 100;
@@ -461,7 +564,7 @@ const BookingComPropertyForm: React.FC<BookingComPropertyFormProps> = ({
       case 1:
         return !!(formData.title && formData.description && formData.property_type && formData.description.length >= 50);
       case 2:
-        return !!(formData.state && formData.city && formData.postal_code);
+        return !!(formData.state && formData.city && formData.postal_code && formData.contact_phone);
       case 3:
         return !!(formData.max_guests && formData.bedrooms && formData.bathrooms);
       case 4:
@@ -471,7 +574,11 @@ const BookingComPropertyForm: React.FC<BookingComPropertyFormProps> = ({
       case 6:
         return !!(formData.pricing.daily_rate && Number(formData.pricing.daily_rate) >= 500);
       case 7:
-        return !!(formData.contact_phone && formData.arrival_instructions);
+        return formData.on_site_activities.length > 0 || formData.nearby_activities.length > 0;
+      case 8:
+        return !!(formData.arrival_instructions);
+      case 9:
+        return true; // Final step, validation happens on submit
       default:
         return true;
     }
@@ -636,6 +743,33 @@ ${formData.license_number ? `**License:** ${formData.license_number}` : ''}`;
             </div>
 
             <div>
+              <Label htmlFor="tagline">Property Tagline</Label>
+              <Input
+                id="tagline"
+                value={formData.tagline}
+                onChange={(e) => handleInputChange('tagline', e.target.value)}
+                placeholder="A catchy tagline for your property (e.g., 'Your Home Away From Home')"
+                className="mt-2"
+              />
+            </div>
+
+            <div>
+              <Label htmlFor="star_rating">Star Rating (Optional)</Label>
+              <Select value={formData.star_rating} onValueChange={(value) => handleInputChange('star_rating', value)}>
+                <SelectTrigger className="mt-2">
+                  <SelectValue placeholder="Select star rating" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="1">1 Star</SelectItem>
+                  <SelectItem value="2">2 Stars</SelectItem>
+                  <SelectItem value="3">3 Stars</SelectItem>
+                  <SelectItem value="4">4 Stars</SelectItem>
+                  <SelectItem value="5">5 Stars</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div>
               <Label htmlFor="license_number">License/Registration Number</Label>
               <Input
                 id="license_number"
@@ -738,7 +872,60 @@ ${formData.license_number ? `**License:** ${formData.license_number}` : ''}`;
                   placeholder="Enter postal/ZIP code"
                   className="mt-2"
                 />
+            </div>
+
+            <div className="space-y-4">
+              <h3 className="font-medium">Contact Information</h3>
+              
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <Label htmlFor="contact_phone">Contact Phone *</Label>
+                  <Input
+                    id="contact_phone"
+                    value={formData.contact_phone}
+                    onChange={(e) => handleInputChange('contact_phone', e.target.value)}
+                    placeholder="Enter contact phone number"
+                    className="mt-2"
+                  />
+                </div>
+                
+                <div>
+                  <Label htmlFor="contact_email">Contact Email</Label>
+                  <Input
+                    id="contact_email"
+                    type="email"
+                    value={formData.contact_email}
+                    onChange={(e) => handleInputChange('contact_email', e.target.value)}
+                    placeholder="Enter contact email"
+                    className="mt-2"
+                  />
+                </div>
               </div>
+              
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <Label htmlFor="owner_name">Owner/Manager Name</Label>
+                  <Input
+                    id="owner_name"
+                    value={formData.owner_name}
+                    onChange={(e) => handleInputChange('owner_name', e.target.value)}
+                    placeholder="Enter owner or manager name"
+                    className="mt-2"
+                  />
+                </div>
+                
+                <div>
+                  <Label htmlFor="emergency_contact">Emergency Contact</Label>
+                  <Input
+                    id="emergency_contact"
+                    value={formData.emergency_contact}
+                    onChange={(e) => handleInputChange('emergency_contact', e.target.value)}
+                    placeholder="Emergency contact number"
+                    className="mt-2"
+                  />
+                </div>
+              </div>
+            </div>
 
               <div>
                 <Label htmlFor="country">Country</Label>
@@ -1145,6 +1332,168 @@ ${formData.license_number ? `**License:** ${formData.license_number}` : ''}`;
         );
 
       case 7:
+        return (
+          <div className="space-y-6">
+            <div>
+              <h3 className="font-medium text-lg mb-4">Activities & Entertainment</h3>
+              
+              <div className="space-y-4">
+                <div>
+                  <Label>On-site Activities</Label>
+                  <div className="grid grid-cols-2 md:grid-cols-3 gap-2 mt-2">
+                    {['Swimming', 'Gym', 'Spa', 'Games Room', 'Library', 'Garden Tours', 'Yoga Classes', 'Cooking Classes'].map((activity) => (
+                      <div key={activity} className="flex items-center space-x-2">
+                        <Checkbox
+                          id={`onsite-${activity}`}
+                          checked={formData.on_site_activities.includes(activity)}
+                          onCheckedChange={(checked) => {
+                            if (checked) {
+                              handleInputChange('on_site_activities', [...formData.on_site_activities, activity]);
+                            } else {
+                              handleInputChange('on_site_activities', formData.on_site_activities.filter(item => item !== activity));
+                            }
+                          }}
+                        />
+                        <Label htmlFor={`onsite-${activity}`} className="text-sm">{activity}</Label>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+                
+                <div>
+                  <Label>Nearby Attractions & Activities</Label>
+                  <div className="grid grid-cols-2 md:grid-cols-3 gap-2 mt-2">
+                    {['Beach', 'Hiking Trails', 'Shopping Mall', 'Restaurants', 'Tourist Sites', 'Adventure Sports', 'Museums', 'Markets'].map((activity) => (
+                      <div key={activity} className="flex items-center space-x-2">
+                        <Checkbox
+                          id={`nearby-${activity}`}
+                          checked={formData.nearby_activities.includes(activity)}
+                          onCheckedChange={(checked) => {
+                            if (checked) {
+                              handleInputChange('nearby_activities', [...formData.nearby_activities, activity]);
+                            } else {
+                              handleInputChange('nearby_activities', formData.nearby_activities.filter(item => item !== activity));
+                            }
+                          }}
+                        />
+                        <Label htmlFor={`nearby-${activity}`} className="text-sm">{activity}</Label>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+                
+                <div>
+                  <Label>Entertainment Options</Label>
+                  <div className="grid grid-cols-2 md:grid-cols-3 gap-2 mt-2">
+                    {['Live Music', 'DJ Events', 'Cultural Shows', 'Movie Nights', 'Karaoke', 'Dance Floor', 'Game Tournaments', 'Theme Parties'].map((entertainment) => (
+                      <div key={entertainment} className="flex items-center space-x-2">
+                        <Checkbox
+                          id={`entertainment-${entertainment}`}
+                          checked={formData.entertainment_options.includes(entertainment)}
+                          onCheckedChange={(checked) => {
+                            if (checked) {
+                              handleInputChange('entertainment_options', [...formData.entertainment_options, entertainment]);
+                            } else {
+                              handleInputChange('entertainment_options', formData.entertainment_options.filter(item => item !== entertainment));
+                            }
+                          }}
+                        />
+                        <Label htmlFor={`entertainment-${entertainment}`} className="text-sm">{entertainment}</Label>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        );
+        
+      case 8:
+        return (
+          <div className="space-y-6">
+            <div>
+              <h3 className="font-medium text-lg mb-4">Business & Legal Information</h3>
+              
+              <div className="space-y-4">
+                <div>
+                  <Label htmlFor="arrival_instructions">Arrival Instructions *</Label>
+                  <Textarea
+                    id="arrival_instructions"
+                    value={formData.arrival_instructions}
+                    onChange={(e) => handleInputChange('arrival_instructions', e.target.value)}
+                    placeholder="Provide detailed check-in instructions for guests..."
+                    rows={3}
+                    className="mt-2"
+                  />
+                </div>
+                
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <Label htmlFor="gst_number">GST Number</Label>
+                    <Input
+                      id="gst_number"
+                      value={formData.tax_information.gst_number}
+                      onChange={(e) => handleInputChange('tax_information', { ...formData.tax_information, gst_number: e.target.value })}
+                      placeholder="Enter GST number"
+                      className="mt-2"
+                    />
+                  </div>
+                  
+                  <div>
+                    <Label htmlFor="pan_number">PAN Number</Label>
+                    <Input
+                      id="pan_number"
+                      value={formData.tax_information.pan_number}
+                      onChange={(e) => handleInputChange('tax_information', { ...formData.tax_information, pan_number: e.target.value })}
+                      placeholder="Enter PAN number"
+                      className="mt-2"
+                    />
+                  </div>
+                </div>
+                
+                <div>
+                  <Label htmlFor="business_registration">Business Registration Certificate</Label>
+                  <Input
+                    id="business_registration"
+                    value={formData.tax_information.business_registration}
+                    onChange={(e) => handleInputChange('tax_information', { ...formData.tax_information, business_registration: e.target.value })}
+                    placeholder="Enter business registration number"
+                    className="mt-2"
+                  />
+                </div>
+                
+                <div className="space-y-2">
+                  <Label>Certificates & Licenses</Label>
+                  <div className="space-y-3">
+                    <div className="flex items-center space-x-2">
+                      <Checkbox
+                        id="fire_safety"
+                        checked={formData.certificates.fire_safety}
+                        onCheckedChange={(checked) => 
+                          handleInputChange('certificates', { ...formData.certificates, fire_safety: !!checked })
+                        }
+                      />
+                      <Label htmlFor="fire_safety">Fire Safety Certificate</Label>
+                    </div>
+                    
+                    <div>
+                      <Label htmlFor="government_license">Government License Number</Label>
+                      <Input
+                        id="government_license"
+                        value={formData.certificates.government_license}
+                        onChange={(e) => handleInputChange('certificates', { ...formData.certificates, government_license: e.target.value })}
+                        placeholder="Enter government license number"
+                        className="mt-1"
+                      />
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        );
+        
+      case 9:
         return (
           <div className="space-y-6">
             <div>
