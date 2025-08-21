@@ -106,7 +106,7 @@ const Properties: React.FC<PropertiesProps> = ({
           daily_rate: 0,
           currency: 'INR'
         },
-        status: 'draft', // Keep as draft until Day Picnic setup is complete
+        status: 'pending', // Keep as pending until Day Picnic setup is complete
         images: [],
         amenities: []
       };
