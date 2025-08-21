@@ -73,21 +73,13 @@ const Properties: React.FC<PropertiesProps> = ({
 
   const handleAddProperty = () => {
     setSelectedPropertyType('');
+    setShowTypeSelector(false);
     setShowAddForm(true);
   };
 
   const handlePropertyTypeSelection = (type: string) => {
     setSelectedPropertyType(type);
-    
-    // If Day Picnic is selected, redirect to Day Picnic setup
-    if (type === 'Day Picnic') {
-      // First create a basic property record, then redirect to Day Picnic setup
-      setShowAddForm(false);
-      setShowTypeSelector(true);
-    } else {
-      // For other types, continue with normal flow
-      setShowTypeSelector(false);
-    }
+    setShowTypeSelector(true);
   };
 
   const handleCreateDayPicnicProperty = async () => {
@@ -401,18 +393,26 @@ const Properties: React.FC<PropertiesProps> = ({
                   Cancel
                 </Button>
                 <Button 
-                  onClick={selectedPropertyType === 'Day Picnic' ? handleCreateDayPicnicProperty : () => setShowTypeSelector(true)}
-                  disabled={!propertyName.trim() || (!selectedPropertyType && showTypeSelector)}
+                  onClick={
+                    selectedPropertyType === 'Day Picnic' && showTypeSelector 
+                      ? handleCreateDayPicnicProperty 
+                      : showTypeSelector 
+                        ? handlePropertySubmit 
+                        : () => {}
+                  }
+                  disabled={!propertyName.trim() || (!selectedPropertyType && !showTypeSelector)}
                   className="flex-1"
                 >
                   {loading ? (
                     <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
-                  ) : selectedPropertyType === 'Day Picnic' ? (
+                  ) : selectedPropertyType === 'Day Picnic' && showTypeSelector ? (
                     'Setup Day Picnic'
-                  ) : showTypeSelector ? (
+                  ) : showTypeSelector && selectedPropertyType && selectedPropertyType !== 'Day Picnic' ? (
+                    'Create Property'
+                  ) : selectedPropertyType ? (
                     'Continue'
                   ) : (
-                    'Next'
+                    'Select Type'
                   )}
                 </Button>
               </div>
