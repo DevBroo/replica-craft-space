@@ -17,6 +17,7 @@ import {
   ArrowLeft 
 } from 'lucide-react';
 import HourlyPricingSection from './day-picnic/HourlyPricingSection';
+import MealPricingSection from './day-picnic/MealPricingSection';
 import OptionPricingSection from './day-picnic/OptionPricingSection';
 import PricingPreview from './day-picnic/PricingPreview';
 
@@ -38,6 +39,12 @@ interface DayPicnicPackage {
 interface HourlyRate {
   meal_plan: string;
   hour_number: number;
+  price_per_person: number;
+  price_per_package: number;
+}
+
+interface MealPrice {
+  meal_plan: string;
   price_per_person: number;
   price_per_package: number;
 }
@@ -72,6 +79,7 @@ const DayPicnicSetup: React.FC = () => {
     add_ons: []
   });
   const [hourlyRates, setHourlyRates] = useState<HourlyRate[]>([]);
+  const [mealPrices, setMealPrices] = useState<MealPrice[]>([]);
   const [optionPrices, setOptionPrices] = useState<OptionPrice[]>([]);
 
   // Predefined options
@@ -149,6 +157,21 @@ const DayPicnicSetup: React.FC = () => {
           })));
         }
 
+        // Fetch meal prices
+        const { data: mealData, error: mealError } = await supabase
+          .from('day_picnic_meal_prices')
+          .select('*')
+          .eq('package_id', packageData.id);
+
+        if (mealError) throw mealError;
+        if (mealData) {
+          setMealPrices(mealData.map(meal => ({
+            meal_plan: meal.meal_plan,
+            price_per_person: meal.price_per_person,
+            price_per_package: meal.price_per_package
+          })));
+        }
+
         // Fetch option prices
         const { data: optionsData, error: optionsError } = await supabase
           .from('day_picnic_option_prices')
@@ -214,10 +237,19 @@ const DayPicnicSetup: React.FC = () => {
       return;
     }
 
-    if (hourlyRates.length === 0) {
+    if (hourlyRates.filter(r => r.meal_plan === 'ALL').length === 0) {
       toast({
         title: "Validation Error", 
-        description: "Please set hourly pricing for your meal plans",
+        description: "Please set hourly pricing",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    if (mealPrices.length === 0) {
+      toast({
+        title: "Validation Error", 
+        description: "Please set meal prices",
         variant: "destructive"
       });
       return;
@@ -274,9 +306,10 @@ const DayPicnicSetup: React.FC = () => {
           .delete()
           .eq('package_id', packageId);
 
-        // Insert new rates
-        if (hourlyRates.length > 0) {
-          const ratesData = hourlyRates.map(rate => ({
+        // Insert new rates (only ALL rates)
+        const allRates = hourlyRates.filter(r => r.meal_plan === 'ALL');
+        if (allRates.length > 0) {
+          const ratesData = allRates.map(rate => ({
             package_id: packageId,
             meal_plan: rate.meal_plan,
             hour_number: rate.hour_number,
@@ -289,6 +322,27 @@ const DayPicnicSetup: React.FC = () => {
             .insert(ratesData);
 
           if (ratesError) throw ratesError;
+        }
+
+        // Save meal prices
+        await supabase
+          .from('day_picnic_meal_prices')
+          .delete()
+          .eq('package_id', packageId);
+
+        if (mealPrices.length > 0) {
+          const mealData = mealPrices.map(meal => ({
+            package_id: packageId,
+            meal_plan: meal.meal_plan,
+            price_per_person: meal.price_per_person,
+            price_per_package: meal.price_per_package
+          }));
+
+          const { error: mealError } = await supabase
+            .from('day_picnic_meal_prices')
+            .insert(mealData);
+
+          if (mealError) throw mealError;
         }
 
         // Save option prices
@@ -487,11 +541,18 @@ const DayPicnicSetup: React.FC = () => {
 
             {/* Hourly Pricing */}
             <HourlyPricingSection
-              selectedMealPlans={package_.meal_plan}
               pricingType={package_.pricing_type}
               durationHours={Math.floor(package_.duration_hours)}
               hourlyRates={hourlyRates}
               onUpdateHourlyRates={setHourlyRates}
+            />
+
+            {/* Meal Pricing */}
+            <MealPricingSection
+              selectedMealPlans={package_.meal_plan}
+              pricingType={package_.pricing_type}
+              mealPrices={mealPrices}
+              onUpdateMealPrices={setMealPrices}
             />
 
             {/* Option Pricing */}
@@ -528,6 +589,7 @@ const DayPicnicSetup: React.FC = () => {
               pricingType={package_.pricing_type}
               durationHours={Math.floor(package_.duration_hours)}
               hourlyRates={hourlyRates}
+              mealPrices={mealPrices}
               optionPrices={optionPrices}
               startTime={package_.start_time}
               endTime={package_.end_time}

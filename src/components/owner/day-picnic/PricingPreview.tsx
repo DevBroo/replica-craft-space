@@ -11,6 +11,12 @@ interface HourlyRate {
   price_per_package: number;
 }
 
+interface MealPrice {
+  meal_plan: string;
+  price_per_person: number;
+  price_per_package: number;
+}
+
 interface OptionPrice {
   option_type: 'inclusion' | 'add_on';
   name: string;
@@ -24,6 +30,7 @@ interface Props {
   pricingType: 'per_person' | 'per_package';
   durationHours: number;
   hourlyRates: HourlyRate[];
+  mealPrices: MealPrice[];
   optionPrices: OptionPrice[];
   startTime: string;
   endTime: string;
@@ -35,6 +42,7 @@ const PricingPreview: React.FC<Props> = ({
   pricingType,
   durationHours,
   hourlyRates,
+  mealPrices,
   optionPrices,
   startTime,
   endTime
@@ -47,23 +55,31 @@ const PricingPreview: React.FC<Props> = ({
     return `${h12}:${minute} ${ampm}`;
   };
 
-  const calculateSamplePrice = () => {
-    if (hourlyRates.length === 0) return 0;
-    
+  const calculateSampleHourlyPrice = () => {
     // Calculate for 4 hours as sample
     const sampleHours = Math.min(4, durationHours);
     let total = 0;
     
-    selectedMealPlans.forEach(meal => {
-      for (let hour = 1; hour <= sampleHours; hour++) {
-        const rate = hourlyRates.find(r => r.meal_plan === meal && r.hour_number === hour);
-        if (rate) {
-          total += pricingType === 'per_person' ? rate.price_per_person : rate.price_per_package;
-        }
+    for (let hour = 1; hour <= sampleHours; hour++) {
+      const rate = hourlyRates.find(r => r.meal_plan === 'ALL' && r.hour_number === hour);
+      if (rate) {
+        total += pricingType === 'per_person' ? rate.price_per_person : rate.price_per_package;
       }
-    });
+    }
     
     return total;
+  };
+
+  const calculateSampleMealPrice = () => {
+    if (selectedMealPlans.length === 0 || mealPrices.length === 0) return 0;
+    
+    // Take first meal plan as sample
+    const firstMeal = selectedMealPlans[0];
+    const mealPrice = mealPrices.find(mp => mp.meal_plan === firstMeal);
+    
+    if (!mealPrice) return 0;
+    
+    return pricingType === 'per_person' ? mealPrice.price_per_person : mealPrice.price_per_package;
   };
 
   const requiredInclusions = optionPrices.filter(opt => opt.option_type === 'inclusion' && opt.is_required);
@@ -71,8 +87,9 @@ const PricingPreview: React.FC<Props> = ({
   const addOns = optionPrices.filter(opt => opt.option_type === 'add_on');
 
   const requiredInclusionsPrice = requiredInclusions.reduce((sum, inc) => sum + inc.price, 0);
-  const sampleBasePrice = calculateSamplePrice();
-  const sampleTotalPrice = sampleBasePrice + requiredInclusionsPrice;
+  const sampleHourlyPrice = calculateSampleHourlyPrice();
+  const sampleMealPrice = calculateSampleMealPrice();
+  const sampleTotalPrice = sampleHourlyPrice + sampleMealPrice + requiredInclusionsPrice;
 
   return (
     <Card className="sticky top-6">
@@ -100,7 +117,7 @@ const PricingPreview: React.FC<Props> = ({
 
         {selectedMealPlans.length > 0 && (
           <div>
-            <p className="font-medium">Meal Plans</p>
+            <p className="font-medium">Meal Plans Available</p>
             <div className="flex flex-wrap gap-1 mt-1">
               {selectedMealPlans.map(meal => (
                 <Badge key={meal} variant="secondary" className="text-xs">
@@ -111,14 +128,20 @@ const PricingPreview: React.FC<Props> = ({
           </div>
         )}
 
-        {hourlyRates.length > 0 && (
+        {sampleHourlyPrice > 0 && (
           <div>
-            <p className="font-medium">Sample Pricing (4 hours)</p>
-            <p className="text-lg font-semibold text-green-600">
-              ₹{sampleBasePrice} {pricingType.replace('_', ' ')}
+            <p className="font-medium">Sample Hourly Pricing (4h)</p>
+            <p className="text-lg font-semibold text-blue-600">
+              ₹{sampleHourlyPrice} {pricingType.replace('_', ' ')}
             </p>
-            <p className="text-xs text-gray-500">
-              Varies by meal plan and duration selected
+          </div>
+        )}
+
+        {sampleMealPrice > 0 && selectedMealPlans.length > 0 && (
+          <div>
+            <p className="font-medium">Sample Meal Price ({selectedMealPlans[0]})</p>
+            <p className="text-lg font-semibold text-orange-600">
+              ₹{sampleMealPrice} {pricingType.replace('_', ' ')}
             </p>
           </div>
         )}
@@ -176,12 +199,17 @@ const PricingPreview: React.FC<Props> = ({
 
         {sampleTotalPrice > 0 && (
           <div className="pt-3 border-t">
-            <p className="font-medium">Sample Total (4h + required)</p>
-            <p className="text-xl font-bold text-green-600">
+            <p className="font-medium">Sample Total</p>
+            <div className="text-sm text-gray-600 space-y-1">
+              {sampleHourlyPrice > 0 && <p>Hours (4h): ₹{sampleHourlyPrice}</p>}
+              {sampleMealPrice > 0 && <p>Meal: ₹{sampleMealPrice}</p>}
+              {requiredInclusionsPrice > 0 && <p>Required: ₹{requiredInclusionsPrice}</p>}
+            </div>
+            <p className="text-xl font-bold text-green-600 mt-2">
               ₹{sampleTotalPrice}
             </p>
             <p className="text-xs text-gray-500">
-              Final price depends on selections
+              Final price depends on duration, meal & selections
             </p>
           </div>
         )}
