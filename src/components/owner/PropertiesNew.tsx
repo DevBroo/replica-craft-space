@@ -396,7 +396,7 @@ const Properties: React.FC<PropertiesProps> = ({
               onBack={handleCloseFullForm}
               editingProperty={editingProperty}
               isEdit={isEditMode}
-              selectedType={selectedPropertyType}
+              selectedType={selectedPropertyType === 'Day Picnic' ? 'day_picnic' : selectedPropertyType.toLowerCase().replace(/\s+/g, '_')}
               propertyName={propertyName}
             />
           </div>

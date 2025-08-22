@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { PropertyService } from '@/lib/propertyService';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/owner/ui/card';
@@ -36,6 +37,7 @@ const BookingComPropertyForm: React.FC<BookingComPropertyFormProps> = ({
   propertyName = ''
 }) => {
   const { user, isAuthenticated } = useAuth();
+  const navigate = useNavigate();
   const [currentStep, setCurrentStep] = useState(1);
   const [isLoading, setIsLoading] = useState(false);
 
@@ -348,6 +350,10 @@ const BookingComPropertyForm: React.FC<BookingComPropertyFormProps> = ({
     'guest_house': {
       label: 'Guest Houses',
       subtypes: ['Budget Guest House', 'Luxury Guest House', 'Heritage Guest House']
+    },
+    'day_picnic': {
+      label: 'Day Picnic',
+      subtypes: ['Garden Picnic', 'Lakeside Picnic', 'Beach Picnic', 'Farm Picnic', 'Hill Station Picnic', 'Resort Day Picnic']
     }
   };
 
@@ -684,7 +690,17 @@ ${formData.license_number ? `**License:** ${formData.license_number}` : ''}`;
           title: "Success!",
           description: `Property ${isEdit ? 'updated' : 'added'} successfully.`,
         });
-        setTimeout(() => onBack(), 2000);
+        
+        // Handle Day Picnic redirect
+        if (formData.property_type === 'day_picnic' && !isEdit) {
+          toast({
+            title: "Redirecting to Day Picnic Setup",
+            description: "Complete your day picnic package configuration.",
+          });
+          setTimeout(() => navigate(`/host/day-picnic-setup/${result.id}`), 1500);
+        } else {
+          setTimeout(() => onBack(), 2000);
+        }
       }
     } catch (error) {
       console.error('Error saving property:', error);
@@ -993,7 +1009,7 @@ ${formData.license_number ? `**License:** ${formData.license_number}` : ''}`;
         return (
           <div className="space-y-6">
             {/* Capacity Configuration - Dynamic based on property type */}
-            {formData.property_type === 'Day Picnic' ? (
+            {formData.property_type === 'day_picnic' ? (
               <div className="bg-orange-50 border border-orange-200 rounded-lg p-4">
                 <h4 className="font-semibold text-orange-800 mb-3">Day Picnic Capacity</h4>
                 <div>
