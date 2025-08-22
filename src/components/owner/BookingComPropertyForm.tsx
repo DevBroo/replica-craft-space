@@ -13,6 +13,7 @@ import { Progress } from '@/components/owner/ui/progress';
 import { toast } from '@/hooks/use-toast';
 import { getAllStates, getCitiesByState, getPopularCitiesByState } from '@/data/indianLocations';
 import { normalizeTypeKey } from '@/lib/utils';
+import { Plus, X } from 'lucide-react';
 
 interface BookingComPropertyFormProps {
   onBack: () => void;
@@ -54,6 +55,8 @@ const BookingComPropertyForm: React.FC<BookingComPropertyFormProps> = ({ onBack,
   const [states, setStates] = useState<string[]>([]);
   const [cities, setCities] = useState<string[]>([]);
   const [popularCities, setPopularCities] = useState<string[]>([]);
+  const [imageUrlInput, setImageUrlInput] = useState('');
+  const [imageUrlError, setImageUrlError] = useState('');
 
   const availableAmenities = [
     'Free Wifi', 'Parking', 'Swimming Pool', 'Gym', 'Spa', 'Restaurant',
@@ -147,6 +150,62 @@ const BookingComPropertyForm: React.FC<BookingComPropertyFormProps> = ({ onBack,
       };
 
       reader.readAsDataURL(file);
+    }
+  };
+
+  const isLikelyImageUrl = (url: string): boolean => {
+    return url.startsWith('http://') || url.startsWith('https://') || url.startsWith('data:image/');
+  };
+
+  const addImageUrls = () => {
+    if (!imageUrlInput.trim()) return;
+
+    // Clear previous error
+    setImageUrlError('');
+
+    // Split by comma or newline and clean up
+    const urls = imageUrlInput
+      .split(/[,\n]/)
+      .map(url => url.trim())
+      .filter(url => url.length > 0);
+
+    // Validate URLs
+    const invalidUrls = urls.filter(url => !isLikelyImageUrl(url));
+    if (invalidUrls.length > 0) {
+      setImageUrlError(`Invalid URLs: ${invalidUrls.join(', ')}`);
+      return;
+    }
+
+    // Remove duplicates
+    const existingImages = new Set(formData.images);
+    const newUrls = urls.filter(url => !existingImages.has(url));
+
+    if (newUrls.length === 0) {
+      setImageUrlError('All URLs are already added');
+      return;
+    }
+
+    // Add to form data
+    setFormData(prev => ({ ...prev, images: [...prev.images, ...newUrls] }));
+    setImageUrlInput('');
+    
+    toast({
+      title: "Images Added",
+      description: `${newUrls.length} image(s) added successfully.`,
+    });
+  };
+
+  const removeImageAt = (index: number) => {
+    setFormData(prev => ({
+      ...prev,
+      images: prev.images.filter((_, i) => i !== index)
+    }));
+  };
+
+  const handleUrlInputKeyPress = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      addImageUrls();
     }
   };
 
@@ -648,15 +707,46 @@ const BookingComPropertyForm: React.FC<BookingComPropertyFormProps> = ({ onBack,
               <CardTitle>Images</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
-              <Label htmlFor="images">Upload Images</Label>
-              <Input
-                id="images"
-                type="file"
-                multiple
-                accept="image/*"
-                onChange={handleImageUpload}
-                disabled={uploading}
-              />
+              <div>
+                <Label htmlFor="images">Upload Images</Label>
+                <Input
+                  id="images"
+                  type="file"
+                  multiple
+                  accept="image/*"
+                  onChange={handleImageUpload}
+                  disabled={uploading}
+                />
+              </div>
+
+              {/* Add Image by URL */}
+              <div className="space-y-2">
+                <Label>Add Image by URL</Label>
+                <div className="flex space-x-2">
+                  <Input
+                    placeholder="Enter image URL(s) - separate multiple URLs with comma or new line"
+                    value={imageUrlInput}
+                    onChange={(e) => setImageUrlInput(e.target.value)}
+                    onKeyPress={handleUrlInputKeyPress}
+                    className={imageUrlError ? 'border-red-500' : ''}
+                  />
+                  <Button
+                    type="button"
+                    onClick={addImageUrls}
+                    disabled={!imageUrlInput.trim()}
+                    variant="outline"
+                    size="icon"
+                  >
+                    <Plus className="h-4 w-4" />
+                  </Button>
+                </div>
+                {imageUrlError && (
+                  <p className="text-red-500 text-sm">{imageUrlError}</p>
+                )}
+                <p className="text-gray-500 text-xs">
+                  Paste image URLs (http/https). Separate multiple URLs with commas or new lines. Press Enter to add.
+                </p>
+              </div>
 
               {uploading && (
                 <div className="space-y-2">
@@ -665,13 +755,35 @@ const BookingComPropertyForm: React.FC<BookingComPropertyFormProps> = ({ onBack,
                 </div>
               )}
 
-              <div className="grid grid-cols-3 gap-4">
-                {formData.images.map((image, index) => (
-                  <div key={index} className="relative">
-                    <img src={image} alt={`Property Image ${index + 1}`} className="rounded-md" />
+              {/* Image Preview Grid */}
+              {formData.images.length > 0 && (
+                <div className="space-y-2">
+                  <Label>Image Previews ({formData.images.length})</Label>
+                  <div className="grid grid-cols-3 gap-4">
+                    {formData.images.map((image, index) => (
+                      <div key={index} className="relative group">
+                        <img 
+                          src={image} 
+                          alt={`Property Image ${index + 1}`} 
+                          className="w-full h-24 object-cover rounded-md border"
+                          onError={(e) => {
+                            e.currentTarget.src = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAwIiBoZWlnaHQ9IjIwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMjAwIiBoZWlnaHQ9IjIwMCIgZmlsbD0iI2VlZSIvPjx0ZXh0IHg9IjEwMCIgeT0iMTAwIiBmb250LWZhbWlseT0iQXJpYWwiIGZvbnQtc2l6ZT0iMTQiIGZpbGw9IiM5OTkiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGR5PSIuM2VtIj5JbWFnZSBub3QgZm91bmQ8L3RleHQ+PC9zdmc+';
+                          }}
+                        />
+                        <Button
+                          type="button"
+                          variant="destructive"
+                          size="icon"
+                          className="absolute top-1 right-1 h-6 w-6 opacity-0 group-hover:opacity-100 transition-opacity"
+                          onClick={() => removeImageAt(index)}
+                        >
+                          <X className="h-3 w-3" />
+                        </Button>
+                      </div>
+                    ))}
                   </div>
-                ))}
-              </div>
+                </div>
+              )}
             </CardContent>
           </Card>
 
