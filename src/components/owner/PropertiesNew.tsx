@@ -93,11 +93,9 @@ const Properties: React.FC<PropertiesProps> = ({
     setSelectedPropertyType(type);
     setShowTypeSelector(true);
     
-    // If not Day Picnic, show full form
-    if (type !== 'Day Picnic') {
-      setShowFullPropertyForm(true);
-      setShowAddForm(false);
-    }
+    // Show full form for all property types including Day Picnic
+    setShowFullPropertyForm(true);
+    setShowAddForm(false);
   };
 
   const handleCreateDayPicnicProperty = async () => {
@@ -358,22 +356,6 @@ const Properties: React.FC<PropertiesProps> = ({
                 </div>
               )}
 
-              {showTypeSelector && selectedPropertyType === 'Day Picnic' && (
-                <div className="rounded-md bg-orange-50 p-4">
-                  <div className="flex">
-                    <div className="flex-shrink-0">
-                      <svg className="h-5 w-5 text-orange-400" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
-                        <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.214-1.36 2.979 0l3.72 6.6c.765 1.36-.214 3-1.48 3H4.014c-1.266 0-2.245-1.64-1.48-3l3.72-6.6zM10 13a1 1 0 100-2 1 1 0 000 2z" clipRule="evenodd" />
-                      </svg>
-                    </div>
-                    <div className="ml-3 flex-1 md:flex md:justify-between">
-                      <p className="text-sm text-orange-700">
-                        You'll be redirected to set up your Day Picnic package with meal plans, timing, and pricing.
-                      </p>
-                    </div>
-                  </div>
-                </div>
-              )}
 
               <div className="flex space-x-2">
                 <Button 
@@ -389,28 +371,16 @@ const Properties: React.FC<PropertiesProps> = ({
                   Cancel
                 </Button>
                 <Button 
-                  onClick={
-                    selectedPropertyType === 'Day Picnic' && showTypeSelector 
-                      ? handleCreateDayPicnicProperty 
-                      : selectedPropertyType && selectedPropertyType !== 'Day Picnic'
-                        ? () => {
-                            setShowFullPropertyForm(true);
-                            setShowAddForm(false);
-                          }
-                        : () => {}
-                  }
+                  onClick={() => {
+                    if (selectedPropertyType) {
+                      setShowFullPropertyForm(true);
+                      setShowAddForm(false);
+                    }
+                  }}
                   disabled={!propertyName.trim() || !selectedPropertyType}
                   className="flex-1"
                 >
-                  {loading ? (
-                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
-                  ) : selectedPropertyType === 'Day Picnic' && showTypeSelector ? (
-                    'Setup Day Picnic'
-                  ) : selectedPropertyType && selectedPropertyType !== 'Day Picnic' ? (
-                    'Continue to Full Form'
-                  ) : (
-                    'Select Type'
-                  )}
+                  {selectedPropertyType ? 'Continue to Full Form' : 'Select Type'}
                 </Button>
               </div>
             </CardContent>

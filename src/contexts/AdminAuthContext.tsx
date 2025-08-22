@@ -18,7 +18,14 @@ const AdminAuthContext = createContext<AdminAuthContextType | undefined>(undefin
 export const useAdminAuth = () => {
   const context = useContext(AdminAuthContext);
   if (!context) {
-    throw new Error('useAdminAuth must be used within an AdminAuthProvider');
+    console.error('useAdminAuth called outside of AdminAuthProvider');
+    // Return default values instead of throwing error
+    return {
+      adminUser: null,
+      isAdminAuthenticated: false,
+      adminLogin: () => false,
+      adminLogout: () => {}
+    };
   }
   return context;
 };
