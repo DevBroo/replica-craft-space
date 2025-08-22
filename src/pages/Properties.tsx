@@ -162,6 +162,8 @@ const Properties: React.FC = () => {
 
   const fetchDayPicnicPackages = async () => {
     try {
+      console.log('🔍 Fetching day picnic packages...');
+      
       // First, fetch day picnic packages with proper setup
       const { data: packagesData, error: packagesError } = await supabase
         .from('day_picnic_packages')
@@ -179,23 +181,29 @@ const Properties: React.FC = () => {
         `)
         .eq('properties.status', 'approved');
 
-      if (packagesError) throw packagesError;
+      if (packagesError) {
+        console.error('❌ Error fetching day picnic packages:', packagesError);
+        throw packagesError;
+      }
       
-      const formattedPackages = packagesData?.map(pkg => ({
+      console.log('✅ Day picnic packages fetched:', packagesData?.length || 0);
+      
+      // Filter out packages with null properties and format the data
+      const formattedPackages = packagesData?.filter(pkg => pkg.properties && pkg.properties.id).map(pkg => ({
         id: pkg.id,
         propertyId: pkg.properties.id,
-        name: `Day Picnic at ${pkg.properties.title}`,
-        title: `Day Picnic at ${pkg.properties.title}`,
-        location: pkg.properties.address,
-        price: pkg.base_price,
-        pricingType: pkg.pricing_type,
+        name: `Day Picnic at ${pkg.properties.title || 'Property'}`,
+        title: `Day Picnic at ${pkg.properties.title || 'Property'}`,
+        location: pkg.properties.address || 'Location not specified',
+        price: pkg.base_price || 0,
+        pricingType: pkg.pricing_type || 'per_person',
         rating: pkg.properties.rating || 0,
         totalBookings: pkg.properties.review_count || 0,
         images: pkg.properties.images || [],
         timing: {
-          start: pkg.start_time,
-          end: pkg.end_time,
-          duration: pkg.duration_hours
+          start: pkg.start_time || '10:00',
+          end: pkg.end_time || '18:00',
+          duration: pkg.duration_hours || 8
         },
         mealPlan: pkg.meal_plan || [],
         inclusions: pkg.inclusions || [],
@@ -211,20 +219,22 @@ const Properties: React.FC = () => {
         .select('*')
         .eq('status', 'approved');
       
+      if (propertiesError) {
+        console.error('❌ Error fetching properties:', propertiesError);
+        throw propertiesError;
+      }
+
       // Filter for day picnic properties using normalizeTypeKey to handle inconsistent types
       const dayPicnicProperties = allApprovedProperties?.filter(property => 
-        normalizeTypeKey(property.property_type || '') === 'day_picnic'
-      );
+        property && property.property_type && normalizeTypeKey(property.property_type) === 'day_picnic'
+      ) || [];
 
-      if (propertiesError) throw propertiesError;
-
-      console.log('🎯 Day Picnic properties from properties_public:', dayPicnicProperties?.length || 0);
-      console.log('🎯 Day Picnic properties data:', dayPicnicProperties);
+      console.log('🎯 Day Picnic properties from properties_public:', dayPicnicProperties.length);
 
       // Convert day picnic properties to package format
-      const dayPicnicPropsAsPackages = dayPicnicProperties?.filter(property => {
-        // Only include properties that don't already have packages
-        return !formattedPackages.some(pkg => pkg.propertyId === property.id);
+      const dayPicnicPropsAsPackages = dayPicnicProperties.filter(property => {
+        // Only include properties that don't already have packages and have valid data
+        return property.id && property.title && !formattedPackages.some(pkg => pkg.propertyId === property.id);
       }).map(property => {
         const locationData = property.location as any;
         const city = locationData?.city || '';
@@ -255,14 +265,21 @@ const Properties: React.FC = () => {
           type: 'Day Picnic',
           hasPackage: false
         };
-      }) || [];
+      });
 
       // Merge both arrays
       const allDayPicnics = [...formattedPackages, ...dayPicnicPropsAsPackages];
       
+      console.log('✅ Total day picnic listings:', allDayPicnics.length);
       setDayPicnicPackages(allDayPicnics);
     } catch (error) {
-      console.error('Error fetching day picnic data:', error);
+      console.error('❌ Error fetching day picnic data:', error);
+      setDayPicnicPackages([]);
+      toast({
+        title: "Error",
+        description: "Failed to load day picnic packages. Please try again.",
+        variant: "destructive"
+      });
     }
   };
 
@@ -342,8 +359,26 @@ const Properties: React.FC = () => {
   };
 
   const handleViewDayPicnic = (pkg: any) => {
-    // Navigate to day picnic booking page (we'll create this later)
-    navigate(`/day-picnic/${pkg.propertyId}`);
+    try {
+      if (!pkg.propertyId) {
+        toast({
+          title: "Error",
+          description: "Property information is missing. Please try again.",
+          variant: "destructive"
+        });
+        return;
+      }
+      
+      // Navigate to day picnic booking page
+      navigate(`/day-picnic/${pkg.propertyId}`);
+    } catch (error) {
+      console.error('❌ Error navigating to day picnic:', error);
+      toast({
+        title: "Error",
+        description: "Failed to open day picnic booking. Please try again.",
+        variant: "destructive"
+      });
+    }
   };
 
   const propertyTypes = [
