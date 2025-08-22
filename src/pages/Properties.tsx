@@ -285,15 +285,18 @@ const Properties: React.FC = () => {
 
   // Filter properties based on search criteria
   const filteredProperties = properties.filter(property => {
+    const propertyName = property.name || '';
+    const propertyLocation = property.location || '';
+    
     const matchesSearch = !searchTerm || 
-      property.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      property.location.toLowerCase().includes(searchTerm.toLowerCase());
+      propertyName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      propertyLocation.toLowerCase().includes(searchTerm.toLowerCase());
     
     const matchesLocation = !locationFilter || 
-      property.location.toLowerCase().includes(locationFilter.toLowerCase());
+      propertyLocation.toLowerCase().includes(locationFilter.toLowerCase());
     
     const matchesType = !propertyTypeFilter || propertyTypeFilter === 'all' ||
-      normalizeTypeKey(property.type) === normalizeTypeKey(propertyTypeFilter);
+      normalizeTypeKey(property.type || '') === normalizeTypeKey(propertyTypeFilter);
     
     const matchesPrice = property.price >= priceRange[0] && property.price <= priceRange[1];
     
@@ -302,8 +305,9 @@ const Properties: React.FC = () => {
 
   // Filter functions for day picnics
   const filteredDayPicnics = dayPicnicPackages.filter(pkg => {
+    const pkgLocation = pkg.location || '';
     const matchesLocation = !locationFilter || 
-      pkg.location.toLowerCase().includes(locationFilter.toLowerCase());
+      pkgLocation.toLowerCase().includes(locationFilter.toLowerCase());
     const matchesPrice = pkg.price >= priceRange[0] && pkg.price <= priceRange[1];
     
     // Duration filter logic
