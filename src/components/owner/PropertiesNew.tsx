@@ -89,6 +89,13 @@ const Properties: React.FC<PropertiesProps> = ({
   };
 
   const handleEditProperty = (property: any) => {
+    // For Day Picnic properties, navigate to DayPicnicSetup
+    if (property.property_type === 'Day Picnic') {
+      navigate(`/host/day-picnic-setup/${property.id}`);
+      return;
+    }
+    
+    // For other property types, open PropertyWizard
     setEditingProperty(property);
     setIsEditMode(true);
     setShowFullPropertyForm(true);

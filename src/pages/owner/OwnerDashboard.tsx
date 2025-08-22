@@ -16,6 +16,15 @@ const OwnerDashboard: React.FC = () => {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [activeTab, setActiveTab] = useState('dashboard');
 
+  // Handle tab query parameter
+  useEffect(() => {
+    const urlParams = new URLSearchParams(window.location.search);
+    const tabParam = urlParams.get('tab');
+    if (tabParam) {
+      setActiveTab(tabParam);
+    }
+  }, []);
+
   // Handle authentication state
   useEffect(() => {
     console.log('🔐 OwnerDashboard: Auth state check:', { 

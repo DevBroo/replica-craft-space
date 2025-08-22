@@ -411,7 +411,7 @@ const DayPicnicSetup: React.FC = () => {
         description: "Day Picnic package saved successfully!",
       });
 
-      navigate('/host/dashboard?tab=properties');
+      navigate('/owner/dashboard?tab=properties');
     } catch (error: any) {
       toast({
         title: "Error",
@@ -441,7 +441,7 @@ const DayPicnicSetup: React.FC = () => {
         <div className="flex items-center mb-6">
           <Button 
             variant="ghost" 
-            onClick={() => navigate('/host/dashboard?tab=properties')}
+            onClick={() => navigate('/owner/dashboard?tab=properties')}
             className="mr-4"
           >
             <ArrowLeft className="w-4 h-4 mr-2" />
