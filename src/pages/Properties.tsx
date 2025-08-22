@@ -68,6 +68,12 @@ const Properties: React.FC = () => {
   const [showDayPicnics, setShowDayPicnics] = useState(searchParams.get('tab') === 'day_picnics');
   const [durationFilter, setDurationFilter] = useState('');
 
+  // Update showDayPicnics when URL changes
+  useEffect(() => {
+    const tab = searchParams.get('tab');
+    setShowDayPicnics(tab === 'day_picnics');
+  }, [searchParams]);
+
   // Fetch properties on component mount
   useEffect(() => {
     fetchProperties();
@@ -194,7 +200,7 @@ const Properties: React.FC = () => {
         inclusions: pkg.inclusions || [],
         exclusions: pkg.exclusions || [],
         addOns: pkg.add_ons || [],
-        type: 'day_picnic',
+        type: 'Day Picnic',
         hasPackage: true
       })) || [];
 
@@ -208,6 +214,7 @@ const Properties: React.FC = () => {
       if (propertiesError) throw propertiesError;
 
       console.log('🎯 Day Picnic properties from properties_public:', dayPicnicProperties?.length || 0);
+      console.log('🎯 Day Picnic properties data:', dayPicnicProperties);
 
       // Convert day picnic properties to package format
       const dayPicnicPropsAsPackages = dayPicnicProperties?.filter(property => {
@@ -240,7 +247,7 @@ const Properties: React.FC = () => {
           inclusions: [],
           exclusions: [],
           addOns: [],
-          type: 'day_picnic',
+          type: 'Day Picnic',
           hasPackage: false
         };
       }) || [];
@@ -437,14 +444,26 @@ const Properties: React.FC = () => {
           <div className="bg-white rounded-lg p-1 shadow-sm">
             <Button
               variant={!showDayPicnics ? "default" : "ghost"}
-              onClick={() => setShowDayPicnics(false)}
+              onClick={() => {
+                setShowDayPicnics(false);
+                const params = new URLSearchParams(window.location.search);
+                params.delete('tab');
+                const newUrl = `${window.location.pathname}${params.toString() ? '?' + params.toString() : ''}`;
+                window.history.pushState({}, '', newUrl);
+              }}
               className="px-6 py-2"
             >
               Stay Properties
             </Button>
             <Button
               variant={showDayPicnics ? "default" : "ghost"}
-              onClick={() => setShowDayPicnics(true)}
+              onClick={() => {
+                setShowDayPicnics(true);
+                const params = new URLSearchParams(window.location.search);
+                params.set('tab', 'day_picnics');
+                const newUrl = `${window.location.pathname}?${params.toString()}`;
+                window.history.pushState({}, '', newUrl);
+              }}
               className="px-6 py-2"
             >
               Day Picnics

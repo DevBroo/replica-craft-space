@@ -697,7 +697,10 @@ ${formData.license_number ? `**License:** ${formData.license_number}` : ''}`;
             title: "Day Picnic Property Added!",
             description: "Your property is now visible in the Day Picnics section.",
           });
-          setTimeout(() => navigate('/properties?tab=day_picnics'), 1500);
+          // Add a small delay to ensure the property is saved, then redirect
+          setTimeout(() => {
+            window.location.href = '/properties?tab=day_picnics';
+          }, 1500);
         } else {
           setTimeout(() => onBack(), 2000);
         }
