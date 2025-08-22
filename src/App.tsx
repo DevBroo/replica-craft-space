@@ -96,6 +96,7 @@ function App() {
 
                   {/* Customer Routes */}
                   <Route path="/dashboard" element={<CustomerDashboard />} />
+                  <Route path="/customer/dashboard" element={<CustomerDashboard />} />
                   <Route path="/booking/:id" element={<BookingDetails />} />
 
                   {/* Admin Routes */}
