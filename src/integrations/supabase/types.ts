@@ -63,6 +63,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "bookings_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: false
+            referencedRelation: "properties_public"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "bookings_user_id_fkey"
             columns: ["user_id"]
             isOneToOne: false
@@ -208,6 +215,13 @@ export type Database = {
             columns: ["property_id"]
             isOneToOne: true
             referencedRelation: "properties"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "day_picnic_packages_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: true
+            referencedRelation: "properties_public"
             referencedColumns: ["id"]
           },
         ]
@@ -498,6 +512,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "reviews_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: false
+            referencedRelation: "properties_public"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "reviews_user_id_fkey"
             columns: ["user_id"]
             isOneToOne: false
@@ -536,15 +557,138 @@ export type Database = {
             referencedRelation: "properties"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "fk_user_saved_properties_property_id"
+            columns: ["property_id"]
+            isOneToOne: false
+            referencedRelation: "properties_public"
+            referencedColumns: ["id"]
+          },
         ]
       }
     }
     Views: {
-      [_ in never]: never
+      properties_public: {
+        Row: {
+          amenities: string[] | null
+          arrival_instructions: string | null
+          bathrooms: number | null
+          bed_configuration: Json | null
+          bedrooms: number | null
+          booking_rules: Json | null
+          cancellation_policy: string | null
+          check_in_time: string | null
+          check_out_time: string | null
+          coordinates: Json | null
+          country: string | null
+          created_at: string | null
+          description: string | null
+          general_location: string | null
+          house_rules: Json | null
+          id: string | null
+          images: string[] | null
+          is_featured: boolean | null
+          location: Json | null
+          max_guests: number | null
+          meal_plans: string[] | null
+          minimum_stay: number | null
+          payment_methods: string[] | null
+          postal_code: string | null
+          pricing: Json | null
+          property_subtype: string | null
+          property_type: string | null
+          rating: number | null
+          review_count: number | null
+          status: string | null
+          title: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          amenities?: string[] | null
+          arrival_instructions?: string | null
+          bathrooms?: number | null
+          bed_configuration?: Json | null
+          bedrooms?: number | null
+          booking_rules?: Json | null
+          cancellation_policy?: string | null
+          check_in_time?: string | null
+          check_out_time?: string | null
+          coordinates?: Json | null
+          country?: string | null
+          created_at?: string | null
+          description?: string | null
+          general_location?: never
+          house_rules?: Json | null
+          id?: string | null
+          images?: string[] | null
+          is_featured?: boolean | null
+          location?: Json | null
+          max_guests?: number | null
+          meal_plans?: string[] | null
+          minimum_stay?: number | null
+          payment_methods?: string[] | null
+          postal_code?: string | null
+          pricing?: Json | null
+          property_subtype?: string | null
+          property_type?: string | null
+          rating?: number | null
+          review_count?: number | null
+          status?: string | null
+          title?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          amenities?: string[] | null
+          arrival_instructions?: string | null
+          bathrooms?: number | null
+          bed_configuration?: Json | null
+          bedrooms?: number | null
+          booking_rules?: Json | null
+          cancellation_policy?: string | null
+          check_in_time?: string | null
+          check_out_time?: string | null
+          coordinates?: Json | null
+          country?: string | null
+          created_at?: string | null
+          description?: string | null
+          general_location?: never
+          house_rules?: Json | null
+          id?: string | null
+          images?: string[] | null
+          is_featured?: boolean | null
+          location?: Json | null
+          max_guests?: number | null
+          meal_plans?: string[] | null
+          minimum_stay?: number | null
+          payment_methods?: string[] | null
+          postal_code?: string | null
+          pricing?: Json | null
+          property_subtype?: string | null
+          property_type?: string | null
+          rating?: number | null
+          review_count?: number | null
+          status?: string | null
+          title?: string | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
+      get_property_contact_info: {
+        Args: { property_id: string }
+        Returns: {
+          contact_phone: string
+          owner_email: string
+          property_title: string
+        }[]
+      }
       is_admin: {
         Args: Record<PropertyKey, never>
+        Returns: boolean
+      }
+      log_contact_access: {
+        Args: { property_id: string; user_id?: string }
         Returns: boolean
       }
     }
