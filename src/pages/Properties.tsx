@@ -219,7 +219,7 @@ const Properties: React.FC = () => {
     const matchesPrice = pkg.price >= priceRange[0] && pkg.price <= priceRange[1];
     
     // Duration filter logic
-    const matchesDuration = !durationFilter || (() => {
+    const matchesDuration = !durationFilter || durationFilter === 'all' || (() => {
       const duration = pkg.timing.duration;
       switch (durationFilter) {
         case 'half-day':
@@ -440,7 +440,7 @@ const Properties: React.FC = () => {
                     <SelectValue placeholder="Duration" />
                   </SelectTrigger>
                   <SelectContent className="bg-white z-50">
-                    <SelectItem value="">All Durations</SelectItem>
+                    <SelectItem value="all">All Durations</SelectItem>
                     <SelectItem value="half-day">Half day (4-5 hrs)</SelectItem>
                     <SelectItem value="full-day">Full day (6-8 hrs)</SelectItem>
                     <SelectItem value="extended-day">Extended Day (10+ hrs)</SelectItem>
