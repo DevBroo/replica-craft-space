@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
-import Properties from '../../components/owner/Properties';
+import PropertiesNew from '../../components/owner/PropertiesNew';
 import Bookings from '../../components/owner/Bookings';
 import Earnings from '../../components/owner/Earnings';
 import Reviews from '../../components/owner/Reviews';
@@ -290,7 +290,8 @@ const OwnerDashboard: React.FC = () => {
 
   // Render dashboard based on active tab
   if (activeTab === 'properties') {
-    return <Properties 
+    console.log('🔧 Rendering PropertiesNew component for properties tab');
+    return <PropertiesNew 
       sidebarCollapsed={sidebarCollapsed} 
       toggleSidebar={toggleSidebar}
       activeTab={activeTab}

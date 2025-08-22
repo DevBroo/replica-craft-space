@@ -10,7 +10,7 @@ import { Plus, Edit, Eye } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { Home, Calendar, DollarSign, Star, MessageSquare, User, Settings as SettingsIcon, BarChart3, Bell, Menu, X, LogOut } from 'lucide-react';
-import BookingComPropertyForm from './BookingComPropertyForm';
+import PropertyWizard from './PropertyWizard';
 
 interface PropertiesProps {
   sidebarCollapsed?: boolean;
@@ -85,9 +85,13 @@ const Properties: React.FC<PropertiesProps> = ({
   };
 
   const handleEditProperty = (property: any) => {
+    console.log('🔧 Edit button clicked for property:', property.title, 'Type:', property.property_type);
     setEditingProperty(property);
     setIsEditMode(true);
+    setSelectedPropertyType(property.property_type); // Set the property type from the property
+    setPropertyName(property.title); // Set property name for initial title
     setShowFullPropertyForm(true);
+    console.log('✅ Edit modal opening with property type:', property.property_type);
   };
 
   const handlePropertyTypeSelection = (type: string) => {
@@ -392,13 +396,12 @@ const Properties: React.FC<PropertiesProps> = ({
       {/* Full Property Form Modal */}
       {showFullPropertyForm && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-lg w-full max-w-4xl h-[90vh] overflow-y-auto">
-            <BookingComPropertyForm 
+          <div className="bg-white rounded-lg w-full max-w-6xl h-[95vh] overflow-y-auto">
+            <PropertyWizard 
               onBack={handleCloseFullForm}
-              editProperty={editingProperty}
-              isEdit={isEditMode}
-              selectedType={selectedPropertyType === 'Day Picnic' ? 'day_picnic' : selectedPropertyType.toLowerCase().replace(/\s+/g, '_')}
-              propertyName={propertyName}
+              propertyId={editingProperty?.id}
+              initialTitle={propertyName}
+              initialPropertyType={selectedPropertyType}
             />
           </div>
         </div>
