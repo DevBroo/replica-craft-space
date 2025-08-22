@@ -358,6 +358,22 @@ const Properties: React.FC = () => {
     return `${h12}:${minute} ${ampm}`;
   };
 
+  // Get duration-based price for display
+  const getDurationBasedPrice = (pkg: any) => {
+    if (!durationFilter || durationFilter === 'all') {
+      return pkg.price;
+    }
+    
+    // Apply duration-based pricing multipliers
+    const multipliers = {
+      'half-day': 0.6,
+      'full-day': 1.0,
+      'extended-day': 1.5
+    };
+    
+    return Math.round(pkg.price * (multipliers[durationFilter as keyof typeof multipliers] || 1));
+  };
+
   const handleViewDayPicnic = (pkg: any) => {
     try {
       if (!pkg.propertyId) {
@@ -369,8 +385,11 @@ const Properties: React.FC = () => {
         return;
       }
       
-      // Navigate to day picnic booking page
-      navigate(`/day-picnic/${pkg.propertyId}`);
+      // Navigate to day picnic booking page with duration filter
+      const url = durationFilter && durationFilter !== 'all' 
+        ? `/day-picnic/${pkg.propertyId}?duration=${durationFilter}`
+        : `/day-picnic/${pkg.propertyId}`;
+      navigate(url);
     } catch (error) {
       console.error('❌ Error navigating to day picnic:', error);
       toast({
@@ -868,15 +887,21 @@ const Properties: React.FC = () => {
                       </div>
                     )}
 
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <span className="text-xl font-bold text-green-600">
-                          ₹{pkg.price.toLocaleString()}
-                        </span>
-                        <span className="text-sm text-gray-600 ml-1">
-                          {pkg.pricingType.replace('_', ' ')}
-                        </span>
-                      </div>
+                     <div className="flex items-center justify-between">
+                       <div>
+                         <span className="text-xl font-bold text-green-600">
+                           ₹{getDurationBasedPrice(pkg).toLocaleString()}
+                         </span>
+                         <span className="text-sm text-gray-600 ml-1">
+                           {pkg.pricingType.replace('_', ' ')}
+                         </span>
+                         {durationFilter && durationFilter !== 'all' && (
+                           <div className="text-xs text-orange-600 font-medium">
+                             {durationFilter === 'half-day' ? 'Half Day' : 
+                              durationFilter === 'full-day' ? 'Full Day' : 'Extended Day'}
+                           </div>
+                         )}
+                       </div>
                       
                       {pkg.rating > 0 && (
                         <div className="flex items-center">

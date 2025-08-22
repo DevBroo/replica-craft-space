@@ -50,6 +50,15 @@ const DayPicnicBooking: React.FC = () => {
     }
   }, [propertyId]);
 
+  // Initialize duration from URL parameters
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const durationParam = params.get('duration');
+    if (durationParam) {
+      setSelectedDuration(durationParam.replace('-', '_'));
+    }
+  }, []);
+
   // Set initial duration based on package duration_hours
   useEffect(() => {
     if (package_?.duration_hours && !selectedDuration) {
@@ -108,23 +117,33 @@ const DayPicnicBooking: React.FC = () => {
     
     let basePrice = 0;
     
+    // Apply duration-based pricing multipliers
+    const durationMultipliers = {
+      'half_day': 0.6,
+      'full_day': 1.0,
+      'extended_day': 1.5
+    };
+    
+    const multiplier = durationMultipliers[selectedDuration as keyof typeof durationMultipliers] || 1.0;
+    const adjustedBasePrice = package_.base_price * multiplier;
+    
     if (package_.pricing_type === 'per_person') {
       // Calculate price for adults
-      basePrice += package_.base_price * guests.adults;
+      basePrice += adjustedBasePrice * guests.adults;
       
       // Calculate price for children based on age
       guests.children.forEach(child => {
         if (child.priceCategory === 'free') {
           basePrice += 0;
         } else if (child.priceCategory === 'half') {
-          basePrice += package_.base_price * 0.5;
+          basePrice += adjustedBasePrice * 0.5;
         } else {
-          basePrice += package_.base_price;
+          basePrice += adjustedBasePrice;
         }
       });
     } else {
       // Fixed price regardless of guest count
-      basePrice = package_.base_price;
+      basePrice = adjustedBasePrice;
     }
     
     const addOnPrice = selectedAddOns.reduce((total, addOnName) => {
@@ -380,21 +399,31 @@ const DayPicnicBooking: React.FC = () => {
                   />
                 </div>
 
-                <div>
-                  <Label htmlFor="duration">Time Duration</Label>
-                  <Select value={selectedDuration} onValueChange={setSelectedDuration}>
-                    <SelectTrigger className="w-full">
-                      <SelectValue placeholder="Select duration" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {durationOptions.map((option) => (
-                        <SelectItem key={option.value} value={option.value}>
-                          {option.label}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
+                 <div>
+                   <Label htmlFor="duration">Time Duration</Label>
+                   <Select value={selectedDuration} onValueChange={setSelectedDuration}>
+                     <SelectTrigger className="w-full">
+                       <SelectValue placeholder="Select duration" />
+                     </SelectTrigger>
+                     <SelectContent>
+                       {durationOptions.map((option) => (
+                         <SelectItem key={option.value} value={option.value}>
+                           {option.label}
+                         </SelectItem>
+                       ))}
+                     </SelectContent>
+                   </Select>
+                   {selectedDuration && (
+                     <div className="mt-2 p-2 bg-blue-50 rounded-md">
+                       <p className="text-sm text-blue-700">
+                         Selected: {durationOptions.find(opt => opt.value === selectedDuration)?.label}
+                       </p>
+                       <p className="text-xs text-blue-600">
+                         Price adjusted for selected duration
+                       </p>
+                     </div>
+                   )}
+                 </div>
 
                 <div>
                   <Label>Select Guests</Label>

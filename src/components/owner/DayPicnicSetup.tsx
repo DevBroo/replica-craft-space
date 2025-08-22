@@ -7,6 +7,7 @@ import { Button } from './ui/button';
 import { Input } from './ui/input';
 import { Label } from './ui/label';
 import { Checkbox } from './ui/checkbox';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
 import { Alert, AlertDescription } from './ui/alert';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
@@ -503,37 +504,71 @@ const DayPicnicSetup: React.FC = () => {
               </CardContent>
             </Card>
 
-            {/* Pricing Type */}
+            {/* Base Price Setup */}
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center">
                   <Users className="w-5 h-5 mr-2" />
-                  Pricing Type
+                  Base Pricing
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="flex space-x-4">
-                  <div className="flex items-center space-x-2">
-                    <input
-                      type="radio"
-                      id="per_person"
-                      name="pricing_type"
-                      value="per_person"
-                      checked={package_.pricing_type === 'per_person'}
-                      onChange={(e) => setPackage(prev => ({ ...prev, pricing_type: e.target.value as any }))}
-                    />
-                    <Label htmlFor="per_person">Per Person</Label>
+                <div className="space-y-4">
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <Label htmlFor="pricing-type">Pricing Type</Label>
+                      <Select 
+                        value={package_.pricing_type} 
+                        onValueChange={(value: 'per_person' | 'per_package') => 
+                          setPackage(prev => ({ ...prev, pricing_type: value }))
+                        }
+                      >
+                        <SelectTrigger>
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="per_person">Per Person</SelectItem>
+                          <SelectItem value="per_package">Per Package</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    
+                    <div>
+                      <Label htmlFor="base-price">Base Price - Full Day (₹)</Label>
+                      <Input
+                        id="base-price"
+                        type="number"
+                        min="0"
+                        step="100"
+                        value={package_.base_price}
+                        onChange={(e) => setPackage(prev => ({ 
+                          ...prev, 
+                          base_price: parseFloat(e.target.value) || 0 
+                        }))}
+                        placeholder="Enter full day base price"
+                      />
+                    </div>
                   </div>
-                  <div className="flex items-center space-x-2">
-                    <input
-                      type="radio"
-                      id="per_package"
-                      name="pricing_type"
-                      value="per_package"
-                      checked={package_.pricing_type === 'per_package'}
-                      onChange={(e) => setPackage(prev => ({ ...prev, pricing_type: e.target.value as any }))}
-                    />
-                    <Label htmlFor="per_package">Per Package</Label>
+                  
+                  <div className="bg-blue-50 p-4 rounded-lg">
+                    <h4 className="font-medium text-sm mb-2">Duration-Based Pricing</h4>
+                    <div className="grid grid-cols-3 gap-4 text-sm">
+                      <div className="text-center">
+                        <div className="font-medium text-blue-600">Half Day (4-5h)</div>
+                        <div className="text-gray-700">₹{Math.round(package_.base_price * 0.6)}</div>
+                        <div className="text-xs text-gray-500">60% of full day</div>
+                      </div>
+                      <div className="text-center">
+                        <div className="font-medium text-green-600">Full Day (6-8h)</div>  
+                        <div className="text-gray-700">₹{package_.base_price}</div>
+                        <div className="text-xs text-gray-500">Base price</div>
+                      </div>
+                      <div className="text-center">
+                        <div className="font-medium text-purple-600">Extended (10+h)</div>
+                        <div className="text-gray-700">₹{Math.round(package_.base_price * 1.5)}</div>
+                        <div className="text-xs text-gray-500">150% of full day</div>
+                      </div>
+                    </div>
                   </div>
                 </div>
               </CardContent>

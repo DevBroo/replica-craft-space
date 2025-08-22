@@ -199,7 +199,7 @@ const PricingPreview: React.FC<Props> = ({
 
         {sampleTotalPrice > 0 && (
           <div className="pt-3 border-t">
-            <p className="font-medium">Sample Total</p>
+            <p className="font-medium">Sample Total (Full Day)</p>
             <div className="text-sm text-gray-600 space-y-1">
               {sampleHourlyPrice > 0 && <p>Hours (4h): ₹{sampleHourlyPrice}</p>}
               {sampleMealPrice > 0 && <p>Meal: ₹{sampleMealPrice}</p>}
@@ -208,7 +208,26 @@ const PricingPreview: React.FC<Props> = ({
             <p className="text-xl font-bold text-green-600 mt-2">
               ₹{sampleTotalPrice}
             </p>
-            <p className="text-xs text-gray-500">
+            
+            <div className="mt-3 bg-gray-50 p-3 rounded-md">
+              <p className="text-xs font-medium text-gray-700 mb-2">Duration-based pricing:</p>
+              <div className="grid grid-cols-3 gap-2 text-xs">
+                <div className="text-center">
+                  <div className="text-blue-600 font-medium">Half Day</div>
+                  <div>₹{Math.round(sampleTotalPrice * 0.6)}</div>
+                </div>
+                <div className="text-center">
+                  <div className="text-green-600 font-medium">Full Day</div>
+                  <div>₹{sampleTotalPrice}</div>
+                </div>
+                <div className="text-center">
+                  <div className="text-purple-600 font-medium">Extended</div>
+                  <div>₹{Math.round(sampleTotalPrice * 1.5)}</div>
+                </div>
+              </div>
+            </div>
+            
+            <p className="text-xs text-gray-500 mt-2">
               Final price depends on duration, meal & selections
             </p>
           </div>
