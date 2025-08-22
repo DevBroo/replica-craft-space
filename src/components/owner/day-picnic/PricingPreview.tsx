@@ -32,6 +32,7 @@ interface Props {
   hourlyRates: HourlyRate[];
   mealPrices: MealPrice[];
   optionPrices: OptionPrice[];
+  durationPrices: { duration_type: string; price: number }[];
   startTime: string;
   endTime: string;
 }
@@ -44,6 +45,7 @@ const PricingPreview: React.FC<Props> = ({
   hourlyRates,
   mealPrices,
   optionPrices,
+  durationPrices,
   startTime,
   endTime
 }) => {
@@ -214,15 +216,39 @@ const PricingPreview: React.FC<Props> = ({
               <div className="grid grid-cols-3 gap-2 text-xs">
                 <div className="text-center">
                   <div className="text-blue-600 font-medium">Half Day</div>
-                  <div>₹{Math.round(sampleTotalPrice * 0.6)}</div>
+                  <div>
+                    {durationPrices.find(dp => dp.duration_type === 'half_day') 
+                      ? `₹${durationPrices.find(dp => dp.duration_type === 'half_day')?.price}` 
+                      : `₹${Math.round(sampleTotalPrice * 0.6)}`
+                    }
+                  </div>
+                  <div className="text-xs text-gray-500">
+                    {durationPrices.find(dp => dp.duration_type === 'half_day') ? 'Owner set' : '60% of full day'}
+                  </div>
                 </div>
                 <div className="text-center">
                   <div className="text-green-600 font-medium">Full Day</div>
-                  <div>₹{sampleTotalPrice}</div>
+                  <div>
+                    {durationPrices.find(dp => dp.duration_type === 'full_day') 
+                      ? `₹${durationPrices.find(dp => dp.duration_type === 'full_day')?.price}` 
+                      : `₹${sampleTotalPrice}`
+                    }
+                  </div>
+                  <div className="text-xs text-gray-500">
+                    {durationPrices.find(dp => dp.duration_type === 'full_day') ? 'Owner set' : 'Base price'}
+                  </div>
                 </div>
                 <div className="text-center">
                   <div className="text-purple-600 font-medium">Extended</div>
-                  <div>₹{Math.round(sampleTotalPrice * 1.5)}</div>
+                  <div>
+                    {durationPrices.find(dp => dp.duration_type === 'extended_day') 
+                      ? `₹${durationPrices.find(dp => dp.duration_type === 'extended_day')?.price}` 
+                      : `₹${Math.round(sampleTotalPrice * 1.5)}`
+                    }
+                  </div>
+                  <div className="text-xs text-gray-500">
+                    {durationPrices.find(dp => dp.duration_type === 'extended_day') ? 'Owner set' : '150% of full day'}
+                  </div>
                 </div>
               </div>
             </div>

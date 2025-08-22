@@ -20,6 +20,7 @@ import {
 import HourlyPricingSection from './day-picnic/HourlyPricingSection';
 import MealPricingSection from './day-picnic/MealPricingSection';
 import OptionPricingSection from './day-picnic/OptionPricingSection';
+import DurationPricingSection from './day-picnic/DurationPricingSection';
 import PricingPreview from './day-picnic/PricingPreview';
 
 interface DayPicnicPackage {
@@ -58,6 +59,11 @@ interface OptionPrice {
   is_required: boolean;
 }
 
+interface DurationPrice {
+  duration_type: 'half_day' | 'full_day' | 'extended_day';
+  price: number;
+}
+
 const DayPicnicSetup: React.FC = () => {
   const { propertyId } = useParams<{ propertyId: string }>();
   const navigate = useNavigate();
@@ -82,6 +88,7 @@ const DayPicnicSetup: React.FC = () => {
   const [hourlyRates, setHourlyRates] = useState<HourlyRate[]>([]);
   const [mealPrices, setMealPrices] = useState<MealPrice[]>([]);
   const [optionPrices, setOptionPrices] = useState<OptionPrice[]>([]);
+  const [durationPrices, setDurationPrices] = useState<DurationPrice[]>([]);
 
   // Predefined options
   const mealPlanOptions = ['Breakfast', 'Lunch', 'Hi-Tea', 'Snacks', 'Dinner'];
@@ -181,12 +188,20 @@ const DayPicnicSetup: React.FC = () => {
 
         if (optionsError) throw optionsError;
         if (optionsData) {
-          setOptionPrices(optionsData.map(opt => ({
+          const options = optionsData.filter(opt => opt.option_type !== 'duration');
+          const durations = optionsData.filter(opt => opt.option_type === 'duration');
+          
+          setOptionPrices(options.map(opt => ({
             id: opt.id,
             option_type: opt.option_type as 'inclusion' | 'add_on',
             name: opt.name,
             price: opt.price,
             is_required: opt.is_required
+          })));
+          
+          setDurationPrices(durations.map(dur => ({
+            duration_type: dur.name as 'half_day' | 'full_day' | 'extended_day',
+            price: dur.price
           })));
         }
       }
@@ -352,6 +367,9 @@ const DayPicnicSetup: React.FC = () => {
           .delete()
           .eq('package_id', packageId);
 
+        const allPricingData = [];
+
+        // Add regular options (inclusions and add-ons)
         if (optionPrices.length > 0) {
           const optionsData = optionPrices
             .filter(opt => opt.name.trim() !== '')
@@ -362,14 +380,29 @@ const DayPicnicSetup: React.FC = () => {
               price: opt.price,
               is_required: opt.is_required
             }));
+          allPricingData.push(...optionsData);
+        }
 
-          if (optionsData.length > 0) {
-            const { error: optionsError } = await supabase
-              .from('day_picnic_option_prices')
-              .insert(optionsData);
+        // Add duration prices
+        if (durationPrices.length > 0) {
+          const durationData = durationPrices
+            .filter(dur => dur.price > 0)
+            .map(dur => ({
+              package_id: packageId,
+              option_type: 'duration',
+              name: dur.duration_type,
+              price: dur.price,
+              is_required: false
+            }));
+          allPricingData.push(...durationData);
+        }
 
-            if (optionsError) throw optionsError;
-          }
+        if (allPricingData.length > 0) {
+          const { error: optionsError } = await supabase
+            .from('day_picnic_option_prices')
+            .insert(allPricingData);
+
+          if (optionsError) throw optionsError;
         }
       }
 
@@ -596,6 +629,13 @@ const DayPicnicSetup: React.FC = () => {
               onUpdateOptionPrices={setOptionPrices}
             />
 
+            {/* Duration Pricing */}
+            <DurationPricingSection
+              durationPrices={durationPrices}
+              onUpdateDurationPrices={setDurationPrices}
+              pricingType={package_.pricing_type}
+            />
+
             {/* Save Button */}
             <Card>
               <CardContent className="pt-6">
@@ -626,6 +666,7 @@ const DayPicnicSetup: React.FC = () => {
               hourlyRates={hourlyRates}
               mealPrices={mealPrices}
               optionPrices={optionPrices}
+              durationPrices={durationPrices}
               startTime={package_.start_time}
               endTime={package_.end_time}
             />

@@ -36,6 +36,7 @@ const DayPicnicBooking: React.FC = () => {
   const [selectedDuration, setSelectedDuration] = useState('');
   const [guests, setGuests] = useState<GuestBreakdown>({ adults: 2, children: [] });
   const [selectedAddOns, setSelectedAddOns] = useState<string[]>([]);
+  const [durationPrices, setDurationPrices] = useState<{ duration_type: string; price: number }[]>([]);
 
   // Time duration options
   const durationOptions = [
@@ -94,6 +95,21 @@ const DayPicnicBooking: React.FC = () => {
 
       if (packageError) throw packageError;
       setPackage(packageData);
+
+      // Fetch duration prices
+      const { data: durationData, error: durationError } = await supabase
+        .from('day_picnic_option_prices')
+        .select('*')
+        .eq('package_id', packageData.id)
+        .eq('option_type', 'duration');
+
+      if (durationError) throw durationError;
+      if (durationData) {
+        setDurationPrices(durationData.map(dur => ({
+          duration_type: dur.name,
+          price: dur.price
+        })));
+      }
     } catch (error: any) {
       toast({
         title: "Error",
@@ -117,33 +133,58 @@ const DayPicnicBooking: React.FC = () => {
     
     let basePrice = 0;
     
-    // Apply duration-based pricing multipliers
-    const durationMultipliers = {
-      'half_day': 0.6,
-      'full_day': 1.0,
-      'extended_day': 1.5
-    };
+    // Check if owner has set explicit duration prices
+    const durationPrice = durationPrices.find(dp => dp.duration_type === selectedDuration);
     
-    const multiplier = durationMultipliers[selectedDuration as keyof typeof durationMultipliers] || 1.0;
-    const adjustedBasePrice = package_.base_price * multiplier;
-    
-    if (package_.pricing_type === 'per_person') {
-      // Calculate price for adults
-      basePrice += adjustedBasePrice * guests.adults;
-      
-      // Calculate price for children based on age
-      guests.children.forEach(child => {
-        if (child.priceCategory === 'free') {
-          basePrice += 0;
-        } else if (child.priceCategory === 'half') {
-          basePrice += adjustedBasePrice * 0.5;
-        } else {
-          basePrice += adjustedBasePrice;
-        }
-      });
+    if (durationPrice) {
+      // Use explicit duration price set by owner
+      if (package_.pricing_type === 'per_person') {
+        // Calculate price for adults
+        basePrice += durationPrice.price * guests.adults;
+        
+        // Calculate price for children based on age
+        guests.children.forEach(child => {
+          if (child.priceCategory === 'free') {
+            basePrice += 0;
+          } else if (child.priceCategory === 'half') {
+            basePrice += durationPrice.price * 0.5;
+          } else {
+            basePrice += durationPrice.price;
+          }
+        });
+      } else {
+        // Fixed price regardless of guest count
+        basePrice = durationPrice.price;
+      }
     } else {
-      // Fixed price regardless of guest count
-      basePrice = adjustedBasePrice;
+      // Fall back to multiplier-based pricing
+      const durationMultipliers = {
+        'half_day': 0.6,
+        'full_day': 1.0,
+        'extended_day': 1.5
+      };
+      
+      const multiplier = durationMultipliers[selectedDuration as keyof typeof durationMultipliers] || 1.0;
+      const adjustedBasePrice = package_.base_price * multiplier;
+      
+      if (package_.pricing_type === 'per_person') {
+        // Calculate price for adults
+        basePrice += adjustedBasePrice * guests.adults;
+        
+        // Calculate price for children based on age
+        guests.children.forEach(child => {
+          if (child.priceCategory === 'free') {
+            basePrice += 0;
+          } else if (child.priceCategory === 'half') {
+            basePrice += adjustedBasePrice * 0.5;
+          } else {
+            basePrice += adjustedBasePrice;
+          }
+        });
+      } else {
+        // Fixed price regardless of guest count
+        basePrice = adjustedBasePrice;
+      }
     }
     
     const addOnPrice = selectedAddOns.reduce((total, addOnName) => {
@@ -399,7 +440,7 @@ const DayPicnicBooking: React.FC = () => {
                   />
                 </div>
 
-                 <div>
+                  <div>
                    <Label htmlFor="duration">Time Duration</Label>
                    <Select value={selectedDuration} onValueChange={setSelectedDuration}>
                      <SelectTrigger className="w-full">
@@ -418,9 +459,13 @@ const DayPicnicBooking: React.FC = () => {
                        <p className="text-sm text-blue-700">
                          Selected: {durationOptions.find(opt => opt.value === selectedDuration)?.label}
                        </p>
-                       <p className="text-xs text-blue-600">
-                         Price adjusted for selected duration
-                       </p>
+                       <div className="text-xs text-blue-600 mt-1">
+                         {durationPrices.find(dp => dp.duration_type === selectedDuration) ? (
+                           <span>Using owner-set pricing: ₹{durationPrices.find(dp => dp.duration_type === selectedDuration)?.price} {package_?.pricing_type?.replace('_', ' ')}</span>
+                         ) : (
+                           <span>Using standard pricing with duration multiplier</span>
+                         )}
+                       </div>
                      </div>
                    )}
                  </div>
