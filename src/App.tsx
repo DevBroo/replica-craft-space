@@ -43,6 +43,8 @@ import Settings from '@/pages/admin/Settings';
 import HostLogin from '@/pages/HostLogin';
 import HostSignup from '@/pages/HostSignup';
 import HostDashboard from '@/pages/HostDashboard';
+import OwnerDashboard from '@/pages/owner/OwnerDashboard';
+import OwnerDashboardView from '@/pages/owner/OwnerDashboardView';
 import DayPicnicSetup from '@/components/owner/DayPicnicSetup';
 import DayPicnicBooking from '@/pages/DayPicnicBooking';
 
@@ -95,6 +97,12 @@ function App() {
                   <Route path="/host/signup" element={<HostSignup />} />
                   <Route path="/host/dashboard" element={<HostDashboard />} />
                   <Route path="/host/day-picnic-setup/:propertyId" element={<DayPicnicSetup />} />
+                  
+                  {/* Owner Portal Routes */}
+                  <Route path="/owner/login" element={<HostLogin />} />
+                  <Route path="/owner/signup" element={<HostSignup />} />
+                  <Route path="/owner/dashboard" element={<OwnerDashboard />} />
+                  <Route path="/owner/view" element={<OwnerDashboardView />} />
                   
                   {/* Day Picnic Routes */}
                   <Route path="/day-picnic/:propertyId" element={<DayPicnicBooking />} />
