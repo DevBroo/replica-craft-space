@@ -6,7 +6,7 @@ import { Input } from '@/components/owner/ui/input';
 import { Label } from '@/components/owner/ui/label';
 import { Textarea } from '@/components/owner/ui/textarea';
 import { Checkbox } from '@/components/owner/ui/checkbox';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue, SelectLabel, SelectSeparator } from '@/components/owner/ui/select';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue, SelectLabel, SelectSeparator, SelectGroup } from '@/components/owner/ui/select';
 import { Alert, AlertDescription } from '@/components/owner/ui/alert';
 import { PropertyService } from '@/lib/propertyService';
 import { Progress } from '@/components/owner/ui/progress';
@@ -459,18 +459,20 @@ const BookingComPropertyForm: React.FC<BookingComPropertyFormProps> = ({ onBack,
                     </SelectTrigger>
                     <SelectContent>
                       {popularCities.length > 0 && (
-                        <>
+                        <SelectGroup>
                           <SelectLabel>Popular Cities</SelectLabel>
                           {popularCities.map(city => (
                             <SelectItem key={city} value={city}>{city}</SelectItem>
                           ))}
-                          <SelectSeparator />
-                        </>
+                        </SelectGroup>
                       )}
-                      <SelectLabel>All Cities</SelectLabel>
-                      {cities.map(city => (
-                        <SelectItem key={city} value={city}>{city}</SelectItem>
-                      ))}
+                      {popularCities.length > 0 && <SelectSeparator />}
+                      <SelectGroup>
+                        <SelectLabel>All Cities</SelectLabel>
+                        {cities.map(city => (
+                          <SelectItem key={city} value={city}>{city}</SelectItem>
+                        ))}
+                      </SelectGroup>
                     </SelectContent>
                   </Select>
                   {validationErrors.city && (
@@ -667,18 +669,6 @@ const BookingComPropertyForm: React.FC<BookingComPropertyFormProps> = ({ onBack,
                 {formData.images.map((image, index) => (
                   <div key={index} className="relative">
                     <img src={image} alt={`Property Image ${index + 1}`} className="rounded-md" />
-                    {/* <Button
-                      variant="ghost"
-                      size="icon"
-                      className="absolute top-2 right-2 bg-white/50 hover:bg-white/70"
-                      onClick={() => {
-                        const newImages = [...formData.images];
-                        newImages.splice(index, 1);
-                        setFormData(prev => ({ ...prev, images: newImages }));
-                      }}
-                    >
-                      <X className="h-4 w-4" />
-                    </Button> */}
                   </div>
                 ))}
               </div>
