@@ -358,6 +358,7 @@ export type Database = {
           country: string | null
           created_at: string
           day_picnic_capacity: number | null
+          day_picnic_duration_category: string | null
           description: string | null
           house_rules: Json | null
           id: string
@@ -399,6 +400,7 @@ export type Database = {
           country?: string | null
           created_at?: string
           day_picnic_capacity?: number | null
+          day_picnic_duration_category?: string | null
           description?: string | null
           house_rules?: Json | null
           id?: string
@@ -440,6 +442,7 @@ export type Database = {
           country?: string | null
           created_at?: string
           day_picnic_capacity?: number | null
+          day_picnic_duration_category?: string | null
           description?: string | null
           house_rules?: Json | null
           id?: string

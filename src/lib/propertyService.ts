@@ -24,6 +24,7 @@ export interface PropertyFormData {
   rooms_count?: number | null;
   capacity_per_room?: number | null;
   day_picnic_capacity?: number | null;
+  day_picnic_duration_category?: string;
   description: string;
   amenities: string[];
   images: string[];
@@ -74,6 +75,7 @@ export class PropertyService {
         rooms_count: propertyData.rooms_count,
         capacity_per_room: propertyData.capacity_per_room,
         day_picnic_capacity: propertyData.day_picnic_capacity,
+        day_picnic_duration_category: propertyData.day_picnic_duration_category || null,
         postal_code: (propertyData as any).postal_code,
         contact_phone: (propertyData as any).contact_phone,
         license_number: (propertyData as any).license_number,
@@ -147,6 +149,7 @@ export class PropertyService {
         rooms_count: propertyData.rooms_count,
         capacity_per_room: propertyData.capacity_per_room,
         day_picnic_capacity: propertyData.day_picnic_capacity,
+        day_picnic_duration_category: propertyData.day_picnic_duration_category || null,
         postal_code: (propertyData as any).postal_code,
         contact_phone: (propertyData as any).contact_phone,
         license_number: (propertyData as any).license_number
@@ -425,6 +428,10 @@ export class PropertyService {
       capacity: dbProperty.max_guests,
       bedrooms: dbProperty.bedrooms || 0,
       bathrooms: dbProperty.bathrooms || 0,
+      rooms_count: dbProperty.rooms_count,
+      capacity_per_room: dbProperty.capacity_per_room,
+      day_picnic_capacity: dbProperty.day_picnic_capacity,
+      day_picnic_duration_category: dbProperty.day_picnic_duration_category,
       status: dbProperty.status,
       rating: dbProperty.rating,
       totalBookings: dbProperty.review_count,
@@ -454,6 +461,7 @@ export class PropertyService {
       capacity: frontendProperty.capacity,
       bedrooms: frontendProperty.bedrooms,
       bathrooms: frontendProperty.bathrooms,
+      day_picnic_duration_category: frontendProperty.day_picnic_duration_category,
       description: frontendProperty.description,
       amenities: frontendProperty.amenities,
       images: frontendProperty.images
