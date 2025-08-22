@@ -595,6 +595,132 @@ export class PropertyService {
   }
 
   /**
+   * Convert database property to wizard form format
+   */
+  static convertToWizardFormat(dbProperty: Property): any {
+    const locationData = dbProperty.location as any;
+    const pricingData = dbProperty.pricing as any;
+    const amenitiesDetails = dbProperty.amenities_details as any;
+    const facilitiesData = dbProperty.facilities as any;
+    const roomsDetails = dbProperty.rooms_details as any;
+    const safetyData = dbProperty.safety_security as any;
+    const nearbyData = dbProperty.nearby_attractions as any;
+    const policiesData = dbProperty.policies_extended as any;
+    const seasonalData = dbProperty.seasonal_pricing as any;
+    const extrasData = dbProperty.extra_services as any;
+    const bedConfig = dbProperty.bed_configuration as any;
+
+    return {
+      title: dbProperty.title || '',
+      property_type: dbProperty.property_type || '',
+      property_subtype: dbProperty.property_subtype || '',
+      description: dbProperty.description || '',
+      address: dbProperty.address || '',
+      postal_code: dbProperty.postal_code || '',
+      country: dbProperty.country || 'India',
+      contact_phone: dbProperty.contact_phone || '',
+      license_number: dbProperty.license_number || '',
+      star_rating: dbProperty.star_rating || 3,
+      languages_spoken: typeof dbProperty.languages_spoken === 'string' 
+        ? JSON.parse(dbProperty.languages_spoken) 
+        : (dbProperty.languages_spoken as string[]) || ['English', 'Hindi'],
+      
+      location: {
+        city: locationData?.city || '',
+        state: locationData?.state || '',
+        coordinates: locationData?.coordinates
+      },
+      
+      rooms_count: dbProperty.rooms_count || 1,
+      capacity_per_room: dbProperty.capacity_per_room || 2,
+      max_guests: dbProperty.max_guests || 2,
+      bedrooms: dbProperty.bedrooms || 1,
+      bathrooms: dbProperty.bathrooms || 1,
+      day_picnic_capacity: dbProperty.day_picnic_capacity,
+      day_picnic_duration_category: dbProperty.day_picnic_duration_category,
+      
+      rooms_details: roomsDetails || {
+        types: [],
+        configurations: {},
+        amenities_per_room: {}
+      },
+      
+      amenities: dbProperty.amenities || [],
+      amenities_details: {
+        property_facilities: amenitiesDetails?.property_facilities || [],
+        room_features: amenitiesDetails?.room_features || [],
+        connectivity: amenitiesDetails?.connectivity || {},
+        recreation: amenitiesDetails?.recreation || [],
+        services: amenitiesDetails?.services || [],
+        accessibility: amenitiesDetails?.accessibility || []
+      },
+      
+      facilities: {
+        parking: facilitiesData?.parking || {},
+        internet: facilitiesData?.internet || {},
+        recreation: facilitiesData?.recreation || [],
+        business: facilitiesData?.business || [],
+        family: facilitiesData?.family || []
+      },
+      
+      pricing: {
+        currency: pricingData?.currency || 'INR',
+        daily_rate: pricingData?.daily_rate || 1000
+      },
+      
+      seasonal_pricing: {
+        seasons: seasonalData?.seasons || [],
+        special_rates: seasonalData?.special_rates || {},
+        discounts: seasonalData?.discounts || {}
+      },
+      
+      minimum_stay: dbProperty.minimum_stay || 1,
+      cancellation_policy: dbProperty.cancellation_policy || 'moderate',
+      check_in_time: dbProperty.check_in_time || '15:00',
+      check_out_time: dbProperty.check_out_time || '11:00',
+      payment_methods: dbProperty.payment_methods || ['card', 'cash'],
+      
+      policies_extended: {
+        child_policy: policiesData?.child_policy || {},
+        pet_policy: policiesData?.pet_policy || {},
+        smoking_policy: policiesData?.smoking_policy || {},
+        damage_policy: policiesData?.damage_policy || {},
+        group_booking_policy: policiesData?.group_booking_policy || {}
+      },
+      
+      safety_security: {
+        fire_safety: safetyData?.fire_safety || [],
+        security_features: safetyData?.security_features || [],
+        emergency_procedures: safetyData?.emergency_procedures || [],
+        health_safety: safetyData?.health_safety || []
+      },
+      
+      nearby_attractions: {
+        landmarks: nearbyData?.landmarks || [],
+        transport: nearbyData?.transport || {},
+        dining: nearbyData?.dining || [],
+        entertainment: nearbyData?.entertainment || [],
+        distances: nearbyData?.distances || {}
+      },
+      
+      images: dbProperty.images || [],
+      photos_with_captions: [], // Note: This would be fetched separately if needed
+      
+      extra_services: {
+        meals: extrasData?.meals || {},
+        transportation: extrasData?.transportation || [],
+        activities: extrasData?.activities || [],
+        spa_wellness: extrasData?.spa_wellness || []
+      },
+      
+      meal_plans: dbProperty.meal_plans || [],
+      bed_configuration: {
+        beds: bedConfig?.beds || {}
+      }
+    };
+  }
+
+  /**
    * Convert frontend property to database format
    */
   static convertToDatabaseFormat(frontendProperty: any): PropertyFormData {

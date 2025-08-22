@@ -271,8 +271,8 @@ const PropertyWizard: React.FC<PropertyWizardProps> = ({ onBack, propertyId, ini
       setIsLoading(true);
       const property = await PropertyService.getPropertyById(propertyId);
       if (property) {
-        // Convert database format to form data
-        setFormData(PropertyService.convertToFrontendFormat(property));
+        // Convert database format to wizard form data
+        setFormData(PropertyService.convertToWizardFormat(property));
       }
     } catch (error) {
       console.error('Error loading property:', error);
