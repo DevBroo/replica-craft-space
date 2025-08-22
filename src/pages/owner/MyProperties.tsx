@@ -2,15 +2,21 @@
 import React from 'react';
 import Properties from '@/components/owner/Properties';
 import PropertiesNew from '@/components/owner/PropertiesNew';
+import OwnerLayout from '@/components/owner/OwnerLayout';
 
-const MyProperties: React.FC = () => {
-  const [sidebarCollapsed, setSidebarCollapsed] = React.useState(false);
-  const [activeTab, setActiveTab] = React.useState('properties');
+interface MyPropertiesProps {
+  sidebarCollapsed?: boolean;
+  toggleSidebar?: () => void;
+  activeTab?: string;
+  setActiveTab?: (tab: string) => void;
+}
 
-  const toggleSidebar = () => {
-    setSidebarCollapsed(!sidebarCollapsed);
-  };
-
+const MyProperties: React.FC<MyPropertiesProps> = ({
+  sidebarCollapsed = false,
+  toggleSidebar = () => {},
+  activeTab = 'properties',
+  setActiveTab = () => {}
+}) => {
   const handleCloseFullForm = () => {
     setActiveTab('properties');
   };
