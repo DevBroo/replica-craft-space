@@ -56,12 +56,15 @@ const BasicDetails: React.FC<BasicDetailsProps> = ({
   };
 
   const handleLanguageToggle = (language: string) => {
-    setFormData(prev => ({
-      ...prev,
-      languages_spoken: prev.languages_spoken.includes(language)
-        ? prev.languages_spoken.filter(l => l !== language)
-        : [...prev.languages_spoken, language]
-    }));
+    setFormData(prev => {
+      const currentLanguages = prev.languages_spoken || [];
+      return {
+        ...prev,
+        languages_spoken: currentLanguages.includes(language)
+          ? currentLanguages.filter(l => l !== language)
+          : [...currentLanguages, language]
+      };
+    });
   };
 
   const canProceed = formData.title && formData.property_type && formData.description && 
@@ -262,19 +265,23 @@ const BasicDetails: React.FC<BasicDetailsProps> = ({
           <div>
             <Label>Languages Spoken by Staff</Label>
             <div className="mt-2 flex flex-wrap gap-2">
-              {LANGUAGES.map(language => (
-                <Badge
-                  key={language}
-                  variant={formData.languages_spoken.includes(language) ? "default" : "outline"}
-                  className="cursor-pointer hover:bg-primary/10"
-                  onClick={() => handleLanguageToggle(language)}
-                >
-                  {language}
-                  {formData.languages_spoken.includes(language) && (
-                    <X className="w-3 h-3 ml-1" />
-                  )}
-                </Badge>
-              ))}
+              {LANGUAGES.map(language => {
+                const languagesSpoken = formData.languages_spoken || [];
+                const isSelected = languagesSpoken.includes(language);
+                return (
+                  <Badge
+                    key={language}
+                    variant={isSelected ? "default" : "outline"}
+                    className="cursor-pointer hover:bg-primary/10"
+                    onClick={() => handleLanguageToggle(language)}
+                  >
+                    {language}
+                    {isSelected && (
+                      <X className="w-3 h-3 ml-1" />
+                    )}
+                  </Badge>
+                );
+              })}
             </div>
           </div>
         </CardContent>
