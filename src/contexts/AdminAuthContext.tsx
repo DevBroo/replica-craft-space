@@ -28,6 +28,7 @@ interface AdminAuthProviderProps {
 }
 
 export const AdminAuthProvider: React.FC<AdminAuthProviderProps> = ({ children }) => {
+  console.log('🔧 AdminAuthProvider initialized');
   const [adminUser, setAdminUser] = useState<AdminUser | null>(null);
   const [isAdminAuthenticated, setIsAdminAuthenticated] = useState(false);
 

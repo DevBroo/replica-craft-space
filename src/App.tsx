@@ -52,6 +52,7 @@ import DayPicnicBooking from '@/pages/DayPicnicBooking';
 const queryClient = new QueryClient();
 
 function App() {
+  console.log('🚀 App component initializing');
   return (
     <QueryClientProvider client={queryClient}>
       <AuthProvider>

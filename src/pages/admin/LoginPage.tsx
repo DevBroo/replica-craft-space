@@ -4,11 +4,13 @@ import { Eye, EyeOff, Lock, Mail } from 'lucide-react';
 import { useAdminAuth } from '@/contexts/AdminAuthContext';
 
 const LoginPage: React.FC = () => {
+  console.log('🔑 AdminLoginPage component rendering');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
   const navigate = useNavigate();
+  console.log('🔑 About to call useAdminAuth');
   const { adminLogin } = useAdminAuth();
 
   const handleLogin = (e: React.FormEvent) => {
