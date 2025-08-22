@@ -63,6 +63,7 @@ const Properties: React.FC = () => {
   // Day Picnic state
   const [dayPicnicPackages, setDayPicnicPackages] = useState<any[]>([]);
   const [showDayPicnics, setShowDayPicnics] = useState(false);
+  const [durationFilter, setDurationFilter] = useState('');
 
   // Fetch properties on component mount
   useEffect(() => {
@@ -76,10 +77,11 @@ const Properties: React.FC = () => {
     if (searchTerm) params.set('search', searchTerm);
     if (locationFilter) params.set('location', locationFilter);
     if (propertyTypeFilter) params.set('type', propertyTypeFilter);
+    if (durationFilter) params.set('duration', durationFilter);
     
     const newUrl = `${window.location.pathname}${params.toString() ? '?' + params.toString() : ''}`;
     window.history.replaceState({}, '', newUrl);
-  }, [searchTerm, locationFilter, propertyTypeFilter]);
+  }, [searchTerm, locationFilter, propertyTypeFilter, durationFilter]);
 
   const fetchProperties = async () => {
     try {
@@ -215,7 +217,23 @@ const Properties: React.FC = () => {
     const matchesLocation = !locationFilter || 
       pkg.location.toLowerCase().includes(locationFilter.toLowerCase());
     const matchesPrice = pkg.price >= priceRange[0] && pkg.price <= priceRange[1];
-    return matchesLocation && matchesPrice;
+    
+    // Duration filter logic
+    const matchesDuration = !durationFilter || (() => {
+      const duration = pkg.timing.duration;
+      switch (durationFilter) {
+        case 'half-day':
+          return duration >= 4 && duration <= 5;
+        case 'full-day':
+          return duration >= 6 && duration <= 8;
+        case 'extended-day':
+          return duration >= 10;
+        default:
+          return true;
+      }
+    })();
+    
+    return matchesLocation && matchesPrice && matchesDuration;
   });
 
   // Sort properties
@@ -411,6 +429,21 @@ const Properties: React.FC = () => {
                     {propertyTypes.map(type => (
                       <SelectItem key={type} value={type}>{type}</SelectItem>
                     ))}
+                  </SelectContent>
+                </Select>
+              )}
+
+              {/* Duration Filter for Day Picnics */}
+              {showDayPicnics && (
+                <Select value={durationFilter} onValueChange={setDurationFilter}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Duration" />
+                  </SelectTrigger>
+                  <SelectContent className="bg-white z-50">
+                    <SelectItem value="">All Durations</SelectItem>
+                    <SelectItem value="half-day">Half day (4-5 hrs)</SelectItem>
+                    <SelectItem value="full-day">Full day (6-8 hrs)</SelectItem>
+                    <SelectItem value="extended-day">Extended Day (10+ hrs)</SelectItem>
                   </SelectContent>
                 </Select>
               )}
