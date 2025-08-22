@@ -111,7 +111,7 @@ const ReviewSubmit: React.FC<ReviewSubmitProps> = ({
 
               <div className="text-right">
                 <div className="text-2xl font-bold text-primary">
-                  ₹{formData.pricing.daily_rate.toLocaleString()}
+                  ₹{(formData.pricing.daily_rate || 0).toLocaleString()}
                 </div>
                 <div className="text-sm text-muted-foreground">per night</div>
               </div>

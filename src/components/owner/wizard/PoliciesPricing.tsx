@@ -81,9 +81,10 @@ const PoliciesPricing: React.FC<PoliciesPricingProps> = ({
   };
 
   const addSeasonalRate = () => {
+    const baseRate = formData.pricing.daily_rate || 0;
     const newSeason = {
       name: 'Peak Season',
-      rate: formData.pricing.daily_rate * 1.5,
+      rate: baseRate * 1.5,
       start_date: '',
       end_date: ''
     };
