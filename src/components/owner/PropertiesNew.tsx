@@ -395,10 +395,7 @@ const Properties: React.FC<PropertiesProps> = ({
           <div className="bg-white rounded-lg w-full max-w-4xl h-[90vh] overflow-y-auto">
             <BookingComPropertyForm 
               onBack={handleCloseFullForm}
-              editingProperty={editingProperty}
-              isEdit={isEditMode}
-              selectedType={selectedPropertyType === 'Day Picnic' ? 'day_picnic' : selectedPropertyType.toLowerCase().replace(/\s+/g, '_')}
-              propertyName={propertyName}
+              editProperty={editingProperty}
             />
           </div>
         </div>

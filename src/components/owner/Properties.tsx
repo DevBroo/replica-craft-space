@@ -1,4 +1,15 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { useAuth } from '@/contexts/AuthContext';
+import { formatPropertyType } from '@/lib/utils';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Plus, Edit, Eye } from 'lucide-react';
+import { useToast } from '@/hooks/use-toast';
+import { supabase } from '@/integrations/supabase/client';
+import { Home, Calendar, DollarSign, Star, MessageSquare, User, Settings as SettingsIcon, BarChart3, Bell, Menu, X, LogOut } from 'lucide-react';
 import BookingComPropertyForm from './BookingComPropertyForm';
 
 interface PropertiesProps {
@@ -8,500 +19,410 @@ interface PropertiesProps {
   setActiveTab: (tab: string) => void;
 }
 
-const Properties: React.FC<PropertiesProps> = ({ sidebarCollapsed, toggleSidebar, activeTab, setActiveTab }) => {
-  const [statusFilter, setStatusFilter] = useState('all');
-  const [sortBy, setSortBy] = useState('name');
-  const [searchQuery, setSearchQuery] = useState('');
-  const [currentPage, setCurrentPage] = useState(1);
-  const [showAddProperty, setShowAddProperty] = useState(false);
+const Properties: React.FC<PropertiesProps> = ({ 
+  sidebarCollapsed, 
+  toggleSidebar, 
+  activeTab, 
+  setActiveTab 
+}) => {
+  const navigate = useNavigate();
+  const { user } = useAuth();
+  const { toast } = useToast();
+
+  const [properties, setProperties] = useState<any[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [showAddForm, setShowAddForm] = useState(false);
+  const [showTypeSelector, setShowTypeSelector] = useState(false);
+  const [showFullPropertyForm, setShowFullPropertyForm] = useState(false);
+  const [selectedPropertyType, setSelectedPropertyType] = useState('');
+  const [propertyName, setPropertyName] = useState('');
   const [editingProperty, setEditingProperty] = useState<any>(null);
-  const propertiesPerPage = 9;
+  const [isEditMode, setIsEditMode] = useState(false);
 
-  if (showAddProperty) {
-    return (
-      <BookingComPropertyForm 
-        onBack={() => {
-          setShowAddProperty(false);
-          setEditingProperty(null);
-        }} 
-        editingProperty={editingProperty}
-        isEdit={!!editingProperty}
-      />
-    );
-  }
-
-  const menuItems = [
-    { id: 'dashboard', label: 'Dashboard', icon: 'fas fa-tachometer-alt' },
-    { id: 'properties', label: 'My Properties', icon: 'fas fa-home' },
-    { id: 'bookings', label: 'Bookings', icon: 'fas fa-calendar-check' },
-    { id: 'earnings', label: 'Earnings', icon: 'fas fa-dollar-sign' },
-    { id: 'reviews', label: 'Reviews', icon: 'fas fa-star' },
-    { id: 'messages', label: 'Messages', icon: 'fas fa-envelope' },
-    { id: 'profile', label: 'Profile', icon: 'fas fa-user' },
-    { id: 'settings', label: 'Settings', icon: 'fas fa-cog' },
+  const propertyTypes = [
+    'Hotels',
+    'Apartments', 
+    'Resorts',
+    'Villas',
+    'Homestays',
+    'Farm Houses',
+    'Day Picnic',  // Added Day Picnic type
+    'Other'
   ];
 
-  const properties = [
-    {
-      id: 1,
-      name: 'Oceanview Villa',
-      location: 'Mumbai, Maharashtra',
-      status: 'active',
-      bookings: 24,
-      revenue: '₹4,85,000',
-      monthlyRevenue: '₹1,85,000',
-      image: 'https://readdy.ai/api/search-image?query=luxury%20oceanview%20villa%20in%20Mumbai%20with%20modern%20architecture%20and%20beautiful%20sea%20view%20contemporary%20Indian%20design%20elements%20bright%20natural%20lighting%20clean%20background&width=400&height=250&seq=property-001&orientation=landscape',
-      rating: 4.8,
-      dateAdded: '2024-01-15'
-    },
-    {
-      id: 2,
-      name: 'Ahmedabad Heights',
-      location: 'Ahmedabad, Gujarat',
-      status: 'active',
-      bookings: 18,
-      revenue: '₹3,25,000',
-      monthlyRevenue: '₹1,25,000',
-      image: 'https://readdy.ai/api/search-image?query=modern%20luxury%20apartment%20complex%20in%20Ahmedabad%20with%20contemporary%20architecture%20and%20landscaping%20Indian%20style%20bright%20lighting%20clean%20background&width=400&height=250&seq=property-002&orientation=landscape',
-      rating: 4.6,
-      dateAdded: '2024-02-20'
-    },
-    {
-      id: 3,
-      name: 'Gandhinagar Villa',
-      location: 'Gandhinagar, Gujarat',
-      status: 'inactive',
-      bookings: 12,
-      revenue: '₹2,15,000',
-      monthlyRevenue: '₹0',
-      image: 'https://readdy.ai/api/search-image?query=beautiful%20villa%20in%20Gandhinagar%20with%20modern%20Indian%20architecture%20and%20garden%20traditional%20elements%20fusion%20bright%20natural%20lighting%20clean%20background&width=400&height=250&seq=property-003&orientation=landscape',
-      rating: 4.5,
-      dateAdded: '2024-01-10'
-    },
-    {
-      id: 4,
-      name: 'Pune Penthouse',
-      location: 'Pune, Maharashtra',
-      status: 'active',
-      bookings: 31,
-      revenue: '₹6,75,000',
-      monthlyRevenue: '₹2,25,000',
-      image: 'https://readdy.ai/api/search-image?query=luxury%20penthouse%20in%20Pune%20with%20modern%20interior%20design%20and%20city%20view%20contemporary%20Indian%20architecture%20bright%20natural%20lighting%20clean%20background&width=400&height=250&seq=property-004&orientation=landscape',
-      rating: 4.9,
-      dateAdded: '2023-12-05'
-    },
-    {
-      id: 5,
-      name: 'Goa Beach House',
-      location: 'Goa',
-      status: 'active',
-      bookings: 42,
-      revenue: '₹8,95,000',
-      monthlyRevenue: '₹3,15,000',
-      image: 'https://readdy.ai/api/search-image?query=beautiful%20beach%20house%20in%20Goa%20with%20tropical%20architecture%20and%20ocean%20view%20modern%20Indian%20coastal%20design%20bright%20natural%20lighting%20clean%20background&width=400&height=250&seq=property-005&orientation=landscape',
-      rating: 4.7,
-      dateAdded: '2023-11-20'
-    },
-    {
-      id: 6,
-      name: 'Delhi Apartment',
-      location: 'New Delhi',
-      status: 'active',
-      bookings: 28,
-      revenue: '₹5,45,000',
-      monthlyRevenue: '₹1,95,000',
-      image: 'https://readdy.ai/api/search-image?query=modern%20apartment%20in%20New%20Delhi%20with%20contemporary%20interior%20design%20and%20city%20view%20Indian%20architecture%20bright%20natural%20lighting%20clean%20background&width=400&height=250&seq=property-006&orientation=landscape',
-      rating: 4.4,
-      dateAdded: '2024-03-01'
-    },
-    {
-      id: 7,
-      name: 'Bangalore Studio',
-      location: 'Bangalore, Karnataka',
-      status: 'inactive',
-      bookings: 8,
-      revenue: '₹1,25,000',
-      monthlyRevenue: '₹0',
-      image: 'https://readdy.ai/api/search-image?query=modern%20studio%20apartment%20in%20Bangalore%20with%20minimalist%20design%20and%20tech%20city%20view%20contemporary%20Indian%20architecture%20bright%20natural%20lighting%20clean%20background&width=400&height=250&seq=property-007&orientation=landscape',
-      rating: 4.2,
-      dateAdded: '2024-02-15'
-    },
-    {
-      id: 8,
-      name: 'Jaipur Heritage',
-      location: 'Jaipur, Rajasthan',
-      status: 'active',
-      bookings: 35,
-      revenue: '₹7,25,000',
-      monthlyRevenue: '₹2,85,000',
-      image: 'https://readdy.ai/api/search-image?query=heritage%20property%20in%20Jaipur%20with%20traditional%20Rajasthani%20architecture%20and%20modern%20amenities%20royal%20Indian%20design%20bright%20natural%20lighting%20clean%20background&width=400&height=250&seq=property-008&orientation=landscape',
-      rating: 4.8,
-      dateAdded: '2023-10-12'
-    },
-    {
-      id: 9,
-      name: 'Chennai Marina',
-      location: 'Chennai, Tamil Nadu',
-      status: 'active',
-      bookings: 22,
-      revenue: '₹4,15,000',
-      monthlyRevenue: '₹1,65,000',
-      image: 'https://readdy.ai/api/search-image?query=modern%20apartment%20near%20Marina%20Beach%20in%20Chennai%20with%20contemporary%20South%20Indian%20architecture%20and%20sea%20view%20bright%20natural%20lighting%20clean%20background&width=400&height=250&seq=property-009&orientation=landscape',
-      rating: 4.6,
-      dateAdded: '2024-01-25'
-    },
-    {
-      id: 10,
-      name: 'Hyderabad Towers',
-      location: 'Hyderabad, Telangana',
-      status: 'active',
-      bookings: 19,
-      revenue: '₹3,85,000',
-      monthlyRevenue: '₹1,45,000',
-      image: 'https://readdy.ai/api/search-image?query=luxury%20high%20rise%20apartment%20in%20Hyderabad%20with%20modern%20architecture%20and%20city%20skyline%20view%20contemporary%20Indian%20design%20bright%20natural%20lighting%20clean%20background&width=400&height=250&seq=property-010&orientation=landscape',
-      rating: 4.5,
-      dateAdded: '2024-02-28'
-    },
-    {
-      id: 11,
-      name: 'Kochi Waterfront',
-      location: 'Kochi, Kerala',
-      status: 'inactive',
-      bookings: 15,
-      revenue: '₹2,95,000',
-      monthlyRevenue: '₹0',
-      image: 'https://readdy.ai/api/search-image?query=waterfront%20property%20in%20Kochi%20with%20traditional%20Kerala%20architecture%20and%20backwater%20view%20modern%20amenities%20bright%20natural%20lighting%20clean%20background&width=400&height=250&seq=property-011&orientation=landscape',
-      rating: 4.3,
-      dateAdded: '2024-01-08'
-    },
-    {
-      id: 12,
-      name: 'Kolkata Heritage',
-      location: 'Kolkata, West Bengal',
-      status: 'active',
-      bookings: 26,
-      revenue: '₹5,15,000',
-      monthlyRevenue: '₹1,75,000',
-      image: 'https://readdy.ai/api/search-image?query=heritage%20property%20in%20Kolkata%20with%20colonial%20architecture%20and%20modern%20renovations%20traditional%20Bengali%20design%20elements%20bright%20natural%20lighting%20clean%20background&width=400&height=250&seq=property-012&orientation=landscape',
-      rating: 4.7,
-      dateAdded: '2023-12-18'
+  useEffect(() => {
+    fetchProperties();
+  }, []);
+
+  const fetchProperties = async () => {
+    setLoading(true);
+    try {
+      const { data, error } = await supabase
+        .from('properties')
+        .select('*')
+        .eq('owner_id', user?.id)
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+      setProperties(data || []);
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to load properties",
+        variant: "destructive"
+      });
+    } finally {
+      setLoading(false);
     }
-  ];
+  };
 
-  const filteredProperties = properties.filter(property => {
-    const matchesStatus = statusFilter === 'all' || property.status === statusFilter;
-    const matchesSearch = property.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      property.location.toLowerCase().includes(searchQuery.toLowerCase());
-    return matchesStatus && matchesSearch;
-  });
+  const handleAddProperty = () => {
+    setEditingProperty(null);
+    setIsEditMode(false);
+    setSelectedPropertyType('');
+    setShowTypeSelector(false);
+    setShowAddForm(true);
+  };
 
-  const sortedProperties = [...filteredProperties].sort((a, b) => {
-    switch (sortBy) {
-      case 'name':
-        return a.name.localeCompare(b.name);
-      case 'date':
-        return new Date(b.dateAdded).getTime() - new Date(a.dateAdded).getTime();
-      case 'revenue':
-        return parseInt(b.revenue.replace(/[₹,]/g, '')) - parseInt(a.revenue.replace(/[₹,]/g, ''));
-      default:
-        return 0;
+  const handleEditProperty = (property: any) => {
+    setEditingProperty(property);
+    setIsEditMode(true);
+    setShowFullPropertyForm(true);
+  };
+
+  const handlePropertyTypeSelection = (type: string) => {
+    setSelectedPropertyType(type);
+    setShowTypeSelector(true);
+    
+    // Show full form for all property types including Day Picnic
+    setShowFullPropertyForm(true);
+    setShowAddForm(false);
+  };
+
+  const handleCreateDayPicnicProperty = async () => {
+    if (!propertyName.trim()) {
+      toast({
+        title: "Error",
+        description: "Please enter a property name first",
+        variant: "destructive"
+      });
+      return;
     }
-  });
 
-  const totalPages = Math.ceil(sortedProperties.length / propertiesPerPage);
-  const startIndex = (currentPage - 1) * propertiesPerPage;
-  const currentProperties = sortedProperties.slice(startIndex, startIndex + propertiesPerPage);
+    setLoading(true);
+    try {
+      // Create basic property record first
+      const basicPropertyData = {
+        owner_id: user?.id,
+        title: propertyName.trim(),
+        description: 'Day Picnic Property - Setup in progress',
+        address: 'To be updated',
+        property_type: 'Day Picnic',
+        max_guests: 1,
+        pricing: {
+          daily_rate: 0,
+          currency: 'INR'
+        },
+        status: 'pending', // Keep as pending until Day Picnic setup is complete
+        images: [],
+        amenities: []
+      };
+
+      const { data, error } = await supabase
+        .from('properties')
+        .insert(basicPropertyData)
+        .select()
+        .single();
+
+      if (error) throw error;
+
+      toast({
+        title: "Success", 
+        description: "Property created! Complete your Day Picnic setup.",
+      });
+
+      // Navigate to Day Picnic setup page
+      navigate(`/host/day-picnic-setup/${data.id}`);
+      
+    } catch (error: any) {
+      console.error('Error creating Day Picnic property:', error);
+      toast({
+        title: "Error",
+        description: error.message || "Failed to create property",
+        variant: "destructive"
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleCloseFullForm = () => {
+    setShowFullPropertyForm(false);
+    setShowAddForm(false);
+    setEditingProperty(null);
+    setIsEditMode(false);
+    setSelectedPropertyType('');
+    setPropertyName('');
+    fetchProperties(); // Refresh properties list
+  };
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      {/* Sidebar */}
-      <div className={`fixed left-0 top-0 h-full bg-white shadow-lg transition-all duration-300 z-40 ${sidebarCollapsed ? 'w-16' : 'w-64'}`}>
-        <div className="flex items-center justify-between p-4 border-b">
-          {!sidebarCollapsed && (
-            <div className="flex items-center space-x-2">
-              <img
-                src="https://static.readdy.ai/image/15b9112da3f324084e8b4fa88fcbe450/72b18a0ae9a329ec72d4c44a4f7ac86d.png"
-                alt="Picnify Logo"
-                className="h-8 w-auto"
-              />
-            </div>
-          )}
-          <button
-            onClick={toggleSidebar}
-            className="p-2 rounded-lg hover:bg-gray-100 cursor-pointer"
-          >
-            <i className="fas fa-bars text-gray-600"></i>
-          </button>
+    <div className="space-y-6">
+      {/* Header */}
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-3xl font-bold text-gray-900">
+            Your Properties
+          </h1>
+          <p className="text-gray-600 mt-1">
+            Manage your properties and listings
+          </p>
         </div>
-        <nav className="mt-4">
-          {menuItems.map((item) => (
-            <button
-              key={item.id}
-              onClick={() => setActiveTab(item.id)}
-              className={`w-full flex items-center px-4 py-3 text-left hover:bg-blue-50 transition-colors cursor-pointer ${
-                activeTab === item.id ? 'bg-blue-50 border-r-2 border-blue-600 text-blue-600' : 'text-gray-600'
-              }`}
-            >
-              <i className={`${item.icon} w-5 text-center`}></i>
-              {!sidebarCollapsed && <span className="ml-3">{item.label}</span>}
-            </button>
-          ))}
-        </nav>
+        <div className="flex items-center space-x-2">
+          <Button variant="outline" size="sm">
+            <Bell className="w-4 h-4" />
+          </Button>
+        </div>
       </div>
 
-      {/* Main Content */}
-      <div className={`transition-all duration-300 ${sidebarCollapsed ? 'ml-16' : 'ml-64'}`}>
-        {/* Header */}
-        <header className="bg-white shadow-sm border-b px-6 py-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-4">
-              <h1 className="text-2xl font-semibold text-gray-800">My Properties</h1>
-              <div className="text-sm text-gray-500">
-                <span>{filteredProperties.length} properties found</span>
-              </div>
-            </div>
-            <div className="flex items-center space-x-4">
-              <div className="relative">
-                <input
-                  type="text"
-                  placeholder="Search properties..."
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className="pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm w-64"
-                />
-                <i className="fas fa-search absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 text-sm"></i>
-              </div>
-              <div className="relative">
-                <button className="p-2 rounded-lg hover:bg-gray-100 cursor-pointer">
-                  <i className="fas fa-bell text-gray-600"></i>
-                  <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">5</span>
-                </button>
-              </div>
-              <div className="flex items-center space-x-2">
-                <img
-                  src="https://readdy.ai/api/search-image?query=professional%20Indian%20property%20owner%20businessman%20avatar%20headshot%20with%20traditional%20modern%20fusion%20style%20confident%20expression&width=40&height=40&seq=owner-avatar-001&orientation=squarish"
-                  alt="Owner Avatar"
-                  className="w-8 h-8 rounded-full object-cover"
-                />
-                <span className="text-sm font-medium text-gray-700">Rajesh Patel</span>
-                <i className="fas fa-chevron-down text-gray-400 text-xs"></i>
-              </div>
-            </div>
-          </div>
-        </header>
+      {/* Stats Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Total Properties</CardTitle>
+            <Home className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{properties.length}</div>
+            <p className="text-xs text-muted-foreground">
+              +20% from last month
+            </p>
+          </CardContent>
+        </Card>
 
-        {/* Filter Bar */}
-        <div className="bg-white border-b px-6 py-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-4">
-              <div className="flex items-center space-x-2">
-                <label className="text-sm font-medium text-gray-700">Status:</label>
-                <div className="relative">
-                  <button
-                    onClick={() => {
-                      const dropdown = document.getElementById('status-dropdown');
-                      if (dropdown) {
-                        dropdown.classList.toggle('hidden');
-                      }
-                    }}
-                    className="flex items-center space-x-2 px-3 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 cursor-pointer text-sm"
-                  >
-                    <span>{statusFilter === 'all' ? 'All Properties' : statusFilter === 'active' ? 'Active' : 'Inactive'}</span>
-                    <i className="fas fa-chevron-down text-gray-400"></i>
-                  </button>
-                  <div id="status-dropdown" className="hidden absolute top-full left-0 mt-1 bg-white border border-gray-200 rounded-lg shadow-lg z-10 min-w-full">
-                    <button
-                      onClick={() => {
-                        setStatusFilter('all');
-                        document.getElementById('status-dropdown')?.classList.add('hidden');
-                      }}
-                      className="w-full px-4 py-2 text-left hover:bg-gray-50 cursor-pointer text-sm"
-                    >
-                      All Properties
-                    </button>
-                    <button
-                      onClick={() => {
-                        setStatusFilter('active');
-                        document.getElementById('status-dropdown')?.classList.add('hidden');
-                      }}
-                      className="w-full px-4 py-2 text-left hover:bg-gray-50 cursor-pointer text-sm"
-                    >
-                      Active
-                    </button>
-                    <button
-                      onClick={() => {
-                        setStatusFilter('inactive');
-                        document.getElementById('status-dropdown')?.classList.add('hidden');
-                      }}
-                      className="w-full px-4 py-2 text-left hover:bg-gray-50 cursor-pointer text-sm"
-                    >
-                      Inactive
-                    </button>
-                  </div>
-                </div>
-              </div>
-              <div className="flex items-center space-x-2">
-                <label className="text-sm font-medium text-gray-700">Sort by:</label>
-                <div className="relative">
-                  <button
-                    onClick={() => {
-                      const dropdown = document.getElementById('sort-dropdown');
-                      if (dropdown) {
-                        dropdown.classList.toggle('hidden');
-                      }
-                    }}
-                    className="flex items-center space-x-2 px-3 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 cursor-pointer text-sm"
-                  >
-                    <span>{sortBy === 'name' ? 'Name' : sortBy === 'date' ? 'Date Added' : 'Revenue'}</span>
-                    <i className="fas fa-chevron-down text-gray-400"></i>
-                  </button>
-                  <div id="sort-dropdown" className="hidden absolute top-full left-0 mt-1 bg-white border border-gray-200 rounded-lg shadow-lg z-10 min-w-full">
-                    <button
-                      onClick={() => {
-                        setSortBy('name');
-                        document.getElementById('sort-dropdown')?.classList.add('hidden');
-                      }}
-                      className="w-full px-4 py-2 text-left hover:bg-gray-50 cursor-pointer text-sm"
-                    >
-                      Name
-                    </button>
-                    <button
-                      onClick={() => {
-                        setSortBy('date');
-                        document.getElementById('sort-dropdown')?.classList.add('hidden');
-                      }}
-                      className="w-full px-4 py-2 text-left hover:bg-gray-50 cursor-pointer text-sm"
-                    >
-                      Date Added
-                    </button>
-                    <button
-                      onClick={() => {
-                        setSortBy('revenue');
-                        document.getElementById('sort-dropdown')?.classList.add('hidden');
-                      }}
-                      className="w-full px-4 py-2 text-left hover:bg-gray-50 cursor-pointer text-sm"
-                    >
-                      Revenue
-                    </button>
-                  </div>
-                </div>
-              </div>
-            </div>
-            <button
-              onClick={() => setShowAddProperty(true)}
-              className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors cursor-pointer !rounded-button whitespace-nowrap inline-flex items-center"
-            >
-              <i className="fas fa-plus mr-2"></i>
-              Add New Property
-            </button>
-          </div>
-        </div>
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Active Bookings</CardTitle>
+            <Calendar className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">45</div>
+            <p className="text-xs text-muted-foreground">
+              +10% from last month
+            </p>
+          </CardContent>
+        </Card>
 
-        {/* Properties Grid */}
-        <main className="p-6">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
-            {currentProperties.map((property) => (
-              <div key={property.id} className="bg-white rounded-lg shadow-sm border hover:shadow-md transition-shadow">
-                <div className="relative overflow-hidden rounded-t-lg">
-                  <img
-                    src={property.image}
-                    alt={property.name}
-                    className="w-full h-48 object-cover object-top"
-                  />
-                  <div className="absolute top-4 right-4">
-                    <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                      property.status === 'active'
-                        ? 'bg-green-100 text-green-800'
-                        : 'bg-red-100 text-red-800'
-                    }`}>
-                      {property.status === 'active' ? 'Active' : 'Inactive'}
-                    </span>
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Total Revenue</CardTitle>
+            <DollarSign className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">₹23,456</div>
+            <p className="text-xs text-muted-foreground">
+              +180.1% from last month
+            </p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Avg Rating</CardTitle>
+            <Star className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">4.5</div>
+            <p className="text-xs text-muted-foreground">
+              +19% from last month
+            </p>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Properties List */}
+      <Card>
+        <CardHeader className="flex flex-row items-center justify-between">
+          <CardTitle>Your Properties</CardTitle>
+          <Button onClick={handleAddProperty}>
+            <Plus className="w-4 h-4 mr-2" />
+            Add Property
+          </Button>
+        </CardHeader>
+        <CardContent>
+          {loading ? (
+            <div className="text-center py-4 text-muted-foreground">Loading properties...</div>
+          ) : properties.length > 0 ? (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {properties.map((property) => (
+                <div key={property.id} className="flex items-center space-x-3 p-3 bg-gray-50 rounded">
+                  <div className="w-12 h-12 bg-gray-200 rounded-lg overflow-hidden">
+                    {property.images && property.images.length > 0 ? (
+                      <img 
+                        src={property.images[0]} 
+                        alt={property.title}
+                        className="w-full h-full object-cover"
+                      />
+                    ) : (
+                      <div className="w-full h-full flex items-center justify-center">
+                        <Home className="w-6 h-6 text-gray-400" />
+                      </div>
+                    )}
                   </div>
-                  <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/50 to-transparent p-4">
-                    <div className="flex items-center text-white text-sm">
-                      <i className="fas fa-star text-yellow-400 mr-1"></i>
-                      <span>{property.rating}</span>
-                    </div>
-                  </div>
-                </div>
-                <div className="p-4">
-                  <h3 className="text-lg font-semibold text-gray-800 mb-1">{property.name}</h3>
-                  <p className="text-sm text-gray-600 mb-3 flex items-center">
-                    <i className="fas fa-map-marker-alt mr-1"></i>
-                    {property.location}
-                  </p>
-                  <div className="grid grid-cols-2 gap-4 mb-4">
-                    <div>
-                      <p className="text-xs text-gray-500">Total Bookings</p>
-                      <p className="text-lg font-semibold text-gray-800">{property.bookings}</p>
-                    </div>
-                    <div>
-                      <p className="text-xs text-gray-500">Total Revenue</p>
-                      <p className="text-lg font-semibold text-green-600">{property.revenue}</p>
-                    </div>
-                  </div>
-                  <div className="mb-4">
-                    <p className="text-xs text-gray-500">Monthly Revenue</p>
-                    <p className="text-sm font-medium text-gray-800">{property.monthlyRevenue}</p>
+                   <div className="flex-1">
+                     <p className="font-medium">{property.title}</p>
+                     <p className="text-sm text-gray-600">{formatPropertyType(property.property_type)}</p>
+                     <p className="text-xs text-gray-500">
+                       ₹{property.pricing?.daily_rate || 0}/night
+                     </p>
+                    <p className="text-xs text-blue-600 font-medium">
+                      {property.property_type === 'Day Picnic' ? (
+                        `Max: ${property.day_picnic_capacity || property.max_guests || 0} guests for day picnic`
+                      ) : (
+                        property.rooms_count && property.capacity_per_room ? (
+                          `Max: ${property.max_guests || 0} guests (${property.rooms_count} rooms × ${property.capacity_per_room} each)`
+                        ) : (
+                          `Max: ${property.max_guests || 0} guests`
+                        )
+                      )}
+                    </p>
                   </div>
                   <div className="flex items-center space-x-2">
-                    <button 
-                      onClick={() => {
-                        setEditingProperty(property);
-                        setShowAddProperty(true);
-                      }}
-                      className="flex-1 bg-blue-600 text-white py-2 px-3 rounded-lg hover:bg-blue-700 transition-colors cursor-pointer !rounded-button whitespace-nowrap text-sm"
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => handleEditProperty(property)}
+                      className="p-2"
                     >
-                      <i className="fas fa-edit mr-1"></i>
-                      Edit
-                    </button>
-                    <button className="flex-1 bg-gray-100 text-gray-700 py-2 px-3 rounded-lg hover:bg-gray-200 transition-colors cursor-pointer !rounded-button whitespace-nowrap text-sm">
-                      <i className="fas fa-eye mr-1"></i>
-                      View
-                    </button>
-                    <button className="bg-gray-100 text-gray-700 py-2 px-3 rounded-lg hover:bg-gray-200 transition-colors cursor-pointer !rounded-button whitespace-nowrap text-sm">
-                      <i className="fas fa-cog"></i>
-                    </button>
+                      <Edit className="w-4 h-4" />
+                    </Button>
+                    <div className={`px-2 py-1 rounded-full text-xs font-medium ${
+                      property.status === 'approved' ? 'bg-green-100 text-green-800' :
+                      property.status === 'pending' ? 'bg-yellow-100 text-yellow-800' :
+                      'bg-red-100 text-red-800'
+                    }`}>
+                      {property.status}
+                    </div>
+                  </div>
+                  {/* <Badge variant="secondary" className={
+                    property.status === 'approved' ? 'bg-green-100 text-green-800' :
+                    property.status === 'pending' ? 'bg-yellow-100 text-yellow-800' :
+                    'bg-red-100 text-red-800'
+                  }>
+                    {property.status}
+                  </Badge> */}
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="text-center py-4 text-muted-foreground">No properties yet</div>
+          )}
+        </CardContent>
+      </Card>
+
+      {/* Add Property Modal */}
+      {showAddForm && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <Card className="w-full max-w-md mx-4">
+            <CardHeader>
+              <CardTitle>Add New Property</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div>
+                <Label htmlFor="property-name">Property Name</Label>
+                <Input
+                  id="property-name"
+                  placeholder="Enter property name"
+                  value={propertyName}
+                  onChange={(e) => setPropertyName(e.target.value)}
+                />
+              </div>
+              
+              {!showTypeSelector && (
+                <div>
+                  <Label>Property Type</Label>
+                  <div className="grid grid-cols-2 gap-2 mt-2">
+                    {propertyTypes.map((type) => (
+                      <Button
+                        key={type}
+                        variant={selectedPropertyType === type ? "default" : "outline"}
+                        size="sm"
+                        onClick={() => handlePropertyTypeSelection(type)}
+                        className={type === 'Day Picnic' ? 'bg-orange-100 hover:bg-orange-200 text-orange-800 border-orange-300' : ''}
+                      >
+                        {type}
+                      </Button>
+                    ))}
                   </div>
                 </div>
-              </div>
-            ))}
-          </div>
+              )}
 
-          {/* Pagination */}
-          {totalPages > 1 && (
-            <div className="flex items-center justify-center space-x-2">
-              <button
-                onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
-                disabled={currentPage === 1}
-                className="px-3 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer !rounded-button whitespace-nowrap"
-              >
-                <i className="fas fa-chevron-left"></i>
-              </button>
-              {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
-                <button
-                  key={page}
-                  onClick={() => setCurrentPage(page)}
-                  className={`px-3 py-2 border rounded-lg cursor-pointer !rounded-button whitespace-nowrap ${
-                    currentPage === page
-                      ? 'bg-blue-600 text-white border-blue-600'
-                      : 'border-gray-300 hover:bg-gray-50'
-                  }`}
+
+              <div className="flex space-x-2">
+                <Button 
+                  variant="outline" 
+                  onClick={() => {
+                    setShowAddForm(false);
+                    setShowTypeSelector(false);
+                    setSelectedPropertyType('');
+                    setPropertyName('');
+                  }}
+                  className="flex-1"
                 >
-                  {page}
-                </button>
-              ))}
-              <button
-                onClick={() => setCurrentPage(Math.min(totalPages, currentPage + 1))}
-                disabled={currentPage === totalPages}
-                className="px-3 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer !rounded-button whitespace-nowrap"
-              >
-                <i className="fas fa-chevron-right"></i>
-              </button>
-            </div>
-          )}
-        </main>
-      </div>
+                  Cancel
+                </Button>
+                <Button 
+                  onClick={() => {
+                    if (selectedPropertyType) {
+                      setShowFullPropertyForm(true);
+                      setShowAddForm(false);
+                    }
+                  }}
+                  disabled={!propertyName.trim() || !selectedPropertyType}
+                  className="flex-1"
+                >
+                  {selectedPropertyType ? 'Continue to Full Form' : 'Select Type'}
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      )}
+
+      {/* Full Property Form Modal */}
+      {showFullPropertyForm && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-lg w-full max-w-4xl h-[90vh] overflow-y-auto">
+            <BookingComPropertyForm 
+              onBack={handleCloseFullForm}
+              editProperty={editingProperty}
+              isEdit={isEditMode}
+              selectedType={selectedPropertyType === 'Day Picnic' ? 'day_picnic' : selectedPropertyType.toLowerCase().replace(/\s+/g, '_')}
+              propertyName={propertyName}
+            />
+          </div>
+        </div>
+      )}
+
+      {/* Delete Confirmation Modal */}
+      {/* <AlertDialog>
+        <AlertDialogTrigger asChild>
+          <Button variant="destructive">Delete</Button>
+        </AlertDialogTrigger>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This action cannot be undone. This will permanently delete your property
+              and remove your data from our servers.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction>Continue</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog> */}
     </div>
   );
 };

@@ -6,7 +6,7 @@ import { Input } from '@/components/owner/ui/input';
 import { Label } from '@/components/owner/ui/label';
 import { Textarea } from '@/components/owner/ui/textarea';
 import { Checkbox } from '@/components/owner/ui/checkbox';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/owner/ui/select';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue, SelectLabel, SelectSeparator } from '@/components/owner/ui/select';
 import { Alert, AlertDescription } from '@/components/owner/ui/alert';
 import { PropertyService } from '@/lib/propertyService';
 import { Progress } from '@/components/owner/ui/progress';
