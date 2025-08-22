@@ -64,10 +64,15 @@ const PropertyDetails = () => {
           const formattedProperty = {
             id: propertyData.id,
             title: propertyData.title,
+            type: propertyData.property_type,
             location: `${(propertyData.location as any)?.city || ''}, ${(propertyData.location as any)?.state || ''}`,
             price: (propertyData.pricing as any)?.daily_rate || 0,
             rating: propertyData.rating || 0,
             reviews: propertyData.review_count || 0,
+            max_guests: propertyData.max_guests,
+            rooms_count: propertyData.rooms_count,
+            capacity_per_room: propertyData.capacity_per_room,
+            day_picnic_capacity: propertyData.day_picnic_capacity,
             images: propertyData.images && propertyData.images.length > 0 
               ? propertyData.images 
               : ['/placeholder.svg'],
@@ -377,6 +382,20 @@ const PropertyDetails = () => {
                 <div className="flex items-center">
                   <Star className="w-4 h-4 mr-1 fill-yellow-400 text-yellow-400" />
                   {property.rating} ({property.reviews} reviews)
+                </div>
+                <div className="flex items-center">
+                  <Users className="w-4 h-4 mr-1" />
+                  {property.type === 'Day Picnic' ? (
+                    property.day_picnic_capacity || property.max_guests ? (
+                      `Max capacity: ${property.day_picnic_capacity || property.max_guests} guests for day picnic`
+                    ) : 'Capacity not specified'
+                  ) : (
+                    property.rooms_count && property.capacity_per_room ? (
+                      `Max capacity: ${property.max_guests} guests (${property.rooms_count} rooms × ${property.capacity_per_room} guests each)`
+                    ) : property.max_guests ? (
+                      `Max capacity: ${property.max_guests} guests`
+                    ) : 'Capacity not specified'
+                  )}
                 </div>
               </div>
             </div>

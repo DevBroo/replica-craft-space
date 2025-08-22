@@ -350,12 +350,14 @@ export type Database = {
           bedrooms: number | null
           booking_rules: Json | null
           cancellation_policy: string | null
+          capacity_per_room: number | null
           check_in_time: string | null
           check_out_time: string | null
           contact_phone: string | null
           coordinates: Json | null
           country: string | null
           created_at: string
+          day_picnic_capacity: number | null
           description: string | null
           house_rules: Json | null
           id: string
@@ -374,6 +376,7 @@ export type Database = {
           property_type: string
           rating: number | null
           review_count: number | null
+          rooms_count: number | null
           status: string | null
           tax_information: Json | null
           title: string
@@ -388,12 +391,14 @@ export type Database = {
           bedrooms?: number | null
           booking_rules?: Json | null
           cancellation_policy?: string | null
+          capacity_per_room?: number | null
           check_in_time?: string | null
           check_out_time?: string | null
           contact_phone?: string | null
           coordinates?: Json | null
           country?: string | null
           created_at?: string
+          day_picnic_capacity?: number | null
           description?: string | null
           house_rules?: Json | null
           id?: string
@@ -412,6 +417,7 @@ export type Database = {
           property_type: string
           rating?: number | null
           review_count?: number | null
+          rooms_count?: number | null
           status?: string | null
           tax_information?: Json | null
           title: string
@@ -426,12 +432,14 @@ export type Database = {
           bedrooms?: number | null
           booking_rules?: Json | null
           cancellation_policy?: string | null
+          capacity_per_room?: number | null
           check_in_time?: string | null
           check_out_time?: string | null
           contact_phone?: string | null
           coordinates?: Json | null
           country?: string | null
           created_at?: string
+          day_picnic_capacity?: number | null
           description?: string | null
           house_rules?: Json | null
           id?: string
@@ -450,6 +458,7 @@ export type Database = {
           property_type?: string
           rating?: number | null
           review_count?: number | null
+          rooms_count?: number | null
           status?: string | null
           tax_information?: Json | null
           title?: string

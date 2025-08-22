@@ -20,6 +20,9 @@ export interface PropertyFormData {
   capacity: number;
   bedrooms: number;
   bathrooms: number;
+  rooms_count?: number | null;
+  capacity_per_room?: number | null;
+  day_picnic_capacity?: number | null;
   description: string;
   amenities: string[];
   images: string[];
@@ -67,6 +70,9 @@ export class PropertyService {
         max_guests: propertyData.capacity,
         bedrooms: propertyData.bedrooms,
         bathrooms: propertyData.bathrooms,
+        rooms_count: propertyData.rooms_count,
+        capacity_per_room: propertyData.capacity_per_room,
+        day_picnic_capacity: propertyData.day_picnic_capacity,
         postal_code: (propertyData as any).postal_code,
         contact_phone: (propertyData as any).contact_phone,
         license_number: (propertyData as any).license_number,
@@ -137,6 +143,9 @@ export class PropertyService {
         max_guests: propertyData.capacity,
         bedrooms: propertyData.bedrooms,
         bathrooms: propertyData.bathrooms,
+        rooms_count: propertyData.rooms_count,
+        capacity_per_room: propertyData.capacity_per_room,
+        day_picnic_capacity: propertyData.day_picnic_capacity,
         postal_code: (propertyData as any).postal_code,
         contact_phone: (propertyData as any).contact_phone,
         license_number: (propertyData as any).license_number

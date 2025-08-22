@@ -276,6 +276,17 @@ const Properties: React.FC<PropertiesProps> = ({
                     <p className="text-xs text-gray-500">
                       ₹{property.pricing?.daily_rate || 0}/night
                     </p>
+                    <p className="text-xs text-blue-600 font-medium">
+                      {property.property_type === 'Day Picnic' ? (
+                        `Max: ${property.day_picnic_capacity || property.max_guests || 0} guests for day picnic`
+                      ) : (
+                        property.rooms_count && property.capacity_per_room ? (
+                          `Max: ${property.max_guests || 0} guests (${property.rooms_count} rooms × ${property.capacity_per_room} each)`
+                        ) : (
+                          `Max: ${property.max_guests || 0} guests`
+                        )
+                      )}
+                    </p>
                   </div>
                   <div className="flex items-center space-x-2">
                     <Button

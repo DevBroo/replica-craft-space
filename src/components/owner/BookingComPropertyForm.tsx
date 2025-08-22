@@ -135,6 +135,9 @@ const BookingComPropertyForm: React.FC<BookingComPropertyFormProps> = ({
     max_guests: '',
     bedrooms: '',
     bathrooms: '',
+    rooms_count: '',
+    capacity_per_room: '',
+    day_picnic_capacity: '',
     room_types: [],
     bed_configuration: { beds: [] as BedConfig[] },
     
@@ -246,6 +249,9 @@ const BookingComPropertyForm: React.FC<BookingComPropertyFormProps> = ({
         max_guests: editingProperty.capacity?.toString() || editingProperty.max_guests?.toString() || '',
         bedrooms: editingProperty.bedrooms?.toString() || '',
         bathrooms: editingProperty.bathrooms?.toString() || '',
+        rooms_count: editingProperty.rooms_count?.toString() || '',
+        capacity_per_room: editingProperty.capacity_per_room?.toString() || '',
+        day_picnic_capacity: editingProperty.day_picnic_capacity?.toString() || '',
         room_types: editingProperty.room_types || [],
         bed_configuration: editingProperty.bed_configuration || { beds: [] },
         
@@ -634,6 +640,9 @@ const BookingComPropertyForm: React.FC<BookingComPropertyFormProps> = ({
         capacity: Number(formData.max_guests),
         bedrooms: Number(formData.bedrooms),
         bathrooms: Number(formData.bathrooms),
+        rooms_count: formData.rooms_count ? Number(formData.rooms_count) : null,
+        capacity_per_room: formData.capacity_per_room ? Number(formData.capacity_per_room) : null,
+        day_picnic_capacity: formData.day_picnic_capacity ? Number(formData.day_picnic_capacity) : null,
         description: formData.description,
         amenities: formData.amenities,
         images: formData.images,
@@ -983,19 +992,96 @@ ${formData.license_number ? `**License:** ${formData.license_number}` : ''}`;
       case 3:
         return (
           <div className="space-y-6">
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div>
-                <Label htmlFor="max_guests">Maximum Guests *</Label>
-                <Input
-                  id="max_guests"
-                  type="number"
-                  min="1"
-                  value={formData.max_guests}
-                  onChange={(e) => handleInputChange('max_guests', e.target.value)}
-                  className="mt-2"
-                />
+            {/* Capacity Configuration - Dynamic based on property type */}
+            {formData.property_type === 'Day Picnic' ? (
+              <div className="bg-orange-50 border border-orange-200 rounded-lg p-4">
+                <h4 className="font-semibold text-orange-800 mb-3">Day Picnic Capacity</h4>
+                <div>
+                  <Label htmlFor="day_picnic_capacity">Maximum Day Picnic Guests *</Label>
+                  <Input
+                    id="day_picnic_capacity"
+                    type="number"
+                    min="1"
+                    value={formData.day_picnic_capacity}
+                    onChange={(e) => {
+                      handleInputChange('day_picnic_capacity', e.target.value);
+                      handleInputChange('max_guests', e.target.value); // Auto-sync max_guests
+                    }}
+                    placeholder="e.g., 150"
+                    className="mt-2"
+                  />
+                  <p className="text-sm text-orange-600 mt-1">
+                    Total guests allowed for day picnic events
+                  </p>
+                </div>
               </div>
+            ) : (
+              <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                <h4 className="font-semibold text-blue-800 mb-3">Stay Property Capacity</h4>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div>
+                    <Label htmlFor="rooms_count">Number of Rooms *</Label>
+                    <Input
+                      id="rooms_count"
+                      type="number"
+                      min="1"
+                      value={formData.rooms_count}
+                      onChange={(e) => {
+                        handleInputChange('rooms_count', e.target.value);
+                        // Auto-calculate max_guests when both fields are filled
+                        if (formData.capacity_per_room) {
+                          const newMaxGuests = Number(e.target.value) * Number(formData.capacity_per_room);
+                          handleInputChange('max_guests', newMaxGuests.toString());
+                        }
+                      }}
+                      placeholder="e.g., 3"
+                      className="mt-2"
+                    />
+                  </div>
 
+                  <div>
+                    <Label htmlFor="capacity_per_room">Capacity per Room *</Label>
+                    <Input
+                      id="capacity_per_room"
+                      type="number"
+                      min="1"
+                      value={formData.capacity_per_room}
+                      onChange={(e) => {
+                        handleInputChange('capacity_per_room', e.target.value);
+                        // Auto-calculate max_guests when both fields are filled
+                        if (formData.rooms_count) {
+                          const newMaxGuests = Number(formData.rooms_count) * Number(e.target.value);
+                          handleInputChange('max_guests', newMaxGuests.toString());
+                        }
+                      }}
+                      placeholder="e.g., 4"
+                      className="mt-2"
+                    />
+                  </div>
+
+                  <div>
+                    <Label htmlFor="max_guests">Total Capacity *</Label>
+                    <Input
+                      id="max_guests"
+                      type="number"
+                      min="1"
+                      value={formData.max_guests}
+                      onChange={(e) => handleInputChange('max_guests', e.target.value)}
+                      className="mt-2 bg-gray-50"
+                      readOnly
+                    />
+                    <p className="text-sm text-blue-600 mt-1">
+                      {formData.rooms_count && formData.capacity_per_room 
+                        ? `${formData.rooms_count} rooms × ${formData.capacity_per_room} guests each = ${formData.max_guests || 0} total`
+                        : 'Calculated automatically'
+                      }
+                    </p>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <Label htmlFor="bedrooms">Bedrooms *</Label>
                 <Input

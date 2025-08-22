@@ -37,6 +37,9 @@ interface Property {
   capacity?: number;
   bedrooms?: number;
   bathrooms?: number;
+  rooms_count?: number;
+  capacity_per_room?: number;
+  day_picnic_capacity?: number;
   amenities?: string[];
 }
 
@@ -128,6 +131,9 @@ const Properties: React.FC = () => {
           capacity: property.max_guests,
           bedrooms: property.bedrooms || 0,
           bathrooms: property.bathrooms || 0,
+          rooms_count: property.rooms_count,
+          capacity_per_room: property.capacity_per_room,
+          day_picnic_capacity: property.day_picnic_capacity,
           amenities: property.amenities || []
         };
       });
@@ -567,25 +573,37 @@ const Properties: React.FC = () => {
                         </div>
 
                         {/* Property Details */}
-                        <div className="flex items-center text-gray-600 text-sm mb-3 space-x-4">
-                          {property.capacity && (
-                            <div className="flex items-center">
-                              <Users className="w-4 h-4 mr-1" />
-                              <span>{property.capacity}</span>
-                            </div>
-                          )}
-                          {property.bedrooms && property.bedrooms > 0 && (
-                            <div className="flex items-center">
-                              <Bed className="w-4 h-4 mr-1" />
-                              <span>{property.bedrooms}</span>
-                            </div>
-                          )}
-                          {property.bathrooms && property.bathrooms > 0 && (
-                            <div className="flex items-center">
-                              <Bath className="w-4 h-4 mr-1" />
-                              <span>{property.bathrooms}</span>
-                            </div>
-                          )}
+                        <div className="space-y-2 mb-3">
+                          {/* Capacity Display */}
+                          <div className="text-sm text-blue-600 font-medium">
+                            {property.type === 'Day Picnic' ? (
+                              property.day_picnic_capacity || property.capacity ? (
+                                `Max capacity: ${property.day_picnic_capacity || property.capacity} guests for day picnic`
+                              ) : 'Capacity not specified'
+                            ) : (
+                              property.rooms_count && property.capacity_per_room ? (
+                                `Max capacity: ${property.capacity || 0} guests (${property.rooms_count} rooms × ${property.capacity_per_room} each)`
+                              ) : property.capacity ? (
+                                `Max capacity: ${property.capacity} guests`
+                              ) : 'Capacity not specified'
+                            )}
+                          </div>
+                          
+                          {/* Additional Details */}
+                          <div className="flex items-center text-gray-600 text-sm space-x-4">
+                            {property.bedrooms && property.bedrooms > 0 && (
+                              <div className="flex items-center">
+                                <Bed className="w-4 h-4 mr-1" />
+                                <span>{property.bedrooms} BR</span>
+                              </div>
+                            )}
+                            {property.bathrooms && property.bathrooms > 0 && (
+                              <div className="flex items-center">
+                                <Bath className="w-4 h-4 mr-1" />
+                                <span>{property.bathrooms} BA</span>
+                              </div>
+                            )}
+                          </div>
                         </div>
 
                         <div className="flex items-center justify-between">

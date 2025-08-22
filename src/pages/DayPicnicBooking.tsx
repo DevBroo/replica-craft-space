@@ -239,9 +239,13 @@ const DayPicnicBooking: React.FC = () => {
                       <MapPin className="w-4 h-4 mr-1" />
                       {property.address}
                     </p>
-                    <p className="text-gray-600 flex items-center">
+                    <p className="text-gray-600 flex items-center mb-2">
                       <Clock className="w-4 h-4 mr-1" />
                       {formatTime12Hour(package_.start_time)} - {formatTime12Hour(package_.end_time)} ({package_.duration_hours}h)
+                    </p>
+                    <p className="text-blue-600 flex items-center font-medium">
+                      <Users className="w-4 h-4 mr-1" />
+                      Max capacity: {property.day_picnic_capacity || property.max_guests || 0} guests for day picnic
                     </p>
                   </div>
                 </div>
