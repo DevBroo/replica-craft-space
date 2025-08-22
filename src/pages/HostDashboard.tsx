@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
+import { formatPropertyType } from '@/lib/utils';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -258,13 +259,13 @@ const HostDashboard: React.FC = () => {
                         </div>
                       )}
                     </div>
-                    <div className="flex-1">
-                      <p className="font-medium">{property.title}</p>
-                      <p className="text-sm text-gray-600">{property.property_type}</p>
-                      <p className="text-xs text-gray-500">
-                        ₹{property.pricing?.daily_rate || 0}/night
-                      </p>
-                    </div>
+                     <div className="flex-1">
+                       <p className="font-medium">{property.title}</p>
+                       <p className="text-sm text-gray-600">{formatPropertyType(property.property_type)}</p>
+                       <p className="text-xs text-gray-500">
+                         ₹{property.pricing?.daily_rate || 0}/night
+                       </p>
+                     </div>
                     <Badge variant="secondary" className={
                       property.status === 'approved' ? 'bg-green-100 text-green-800' :
                       property.status === 'pending' ? 'bg-yellow-100 text-yellow-800' :

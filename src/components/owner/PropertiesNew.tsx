@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
+import { formatPropertyType } from '@/lib/utils';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -268,12 +269,12 @@ const Properties: React.FC<PropertiesProps> = ({
                       </div>
                     )}
                   </div>
-                  <div className="flex-1">
-                    <p className="font-medium">{property.title}</p>
-                    <p className="text-sm text-gray-600">{property.property_type}</p>
-                    <p className="text-xs text-gray-500">
-                      ₹{property.pricing?.daily_rate || 0}/night
-                    </p>
+                   <div className="flex-1">
+                     <p className="font-medium">{property.title}</p>
+                     <p className="text-sm text-gray-600">{formatPropertyType(property.property_type)}</p>
+                     <p className="text-xs text-gray-500">
+                       ₹{property.pricing?.daily_rate || 0}/night
+                     </p>
                     <p className="text-xs text-blue-600 font-medium">
                       {property.property_type === 'Day Picnic' ? (
                         `Max: ${property.day_picnic_capacity || property.max_guests || 0} guests for day picnic`

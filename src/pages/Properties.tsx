@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
+import { formatPropertyType, normalizeTypeKey } from '@/lib/utils';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -271,8 +272,7 @@ const Properties: React.FC = () => {
       property.location.toLowerCase().includes(locationFilter.toLowerCase());
     
     const matchesType = !propertyTypeFilter || propertyTypeFilter === 'all' ||
-      property.type.toLowerCase() === propertyTypeFilter.toLowerCase() ||
-      (propertyTypeFilter.toLowerCase() === 'day picnic' && ['day_picnic', 'day picnic'].includes(property.type.toLowerCase()));
+      normalizeTypeKey(property.type) === normalizeTypeKey(propertyTypeFilter);
     
     const matchesPrice = property.price >= priceRange[0] && property.price <= priceRange[1];
     
@@ -631,10 +631,10 @@ const Properties: React.FC = () => {
                           <Heart className="w-4 h-4 text-gray-600" />
                         </button>
 
-                        {/* Property Type Badge */}
-                        <Badge className="absolute top-3 left-3">
-                          {property.type}
-                        </Badge>
+                         {/* Property Type Badge */}
+                         <Badge className="absolute top-3 left-3">
+                           {formatPropertyType(property.type)}
+                         </Badge>
                       </div>
 
                       <CardContent className="p-4">
@@ -648,8 +648,8 @@ const Properties: React.FC = () => {
                         {/* Property Details */}
                         <div className="space-y-2 mb-3">
                           {/* Capacity Display */}
-                          <div className="text-sm text-blue-600 font-medium">
-                            {property.type === 'Day Picnic' ? (
+                           <div className="text-sm text-blue-600 font-medium">
+                             {normalizeTypeKey(property.type) === 'day_picnic' ? (
                               property.day_picnic_capacity || property.capacity ? (
                                 `Max capacity: ${property.day_picnic_capacity || property.capacity} guests for day picnic`
                               ) : 'Capacity not specified'

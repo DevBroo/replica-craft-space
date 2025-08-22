@@ -638,7 +638,7 @@ const BookingComPropertyForm: React.FC<BookingComPropertyFormProps> = ({
       // Transform comprehensive form data to match PropertyFormData interface
       const transformedData = {
         name: formData.title,
-        type: formData.property_type,
+        type: 'Day Picnic',
         location: `${formData.city}, ${formData.state}`, // Generate clean location string
         city: formData.city,
         state: formData.state,
@@ -692,7 +692,7 @@ ${formData.license_number ? `**License:** ${formData.license_number}` : ''}`;
         });
         
         // Handle Day Picnic redirect
-        if (formData.property_type === 'day_picnic' && !isEdit) {
+        if (formData.property_type === 'Day Picnic' && !isEdit) {
           toast({
             title: "Day Picnic Property Added!",
             description: "Your property is now visible in the Day Picnics section.",
@@ -1012,7 +1012,7 @@ ${formData.license_number ? `**License:** ${formData.license_number}` : ''}`;
         return (
           <div className="space-y-6">
             {/* Capacity Configuration - Dynamic based on property type */}
-            {formData.property_type === 'day_picnic' ? (
+            {formData.property_type === 'Day Picnic' ? (
               <div className="bg-orange-50 border border-orange-200 rounded-lg p-4">
                 <h4 className="font-semibold text-orange-800 mb-3">Day Picnic Capacity</h4>
                 <div>

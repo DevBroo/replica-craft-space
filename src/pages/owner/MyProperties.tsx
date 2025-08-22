@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { PropertyService } from '@/lib/propertyService';
+import { formatPropertyType } from '@/lib/utils';
 import ImageCarousel from '@/components/owner/ImageCarousel';
 import BookingComPropertyForm from '@/components/owner/BookingComPropertyForm';
 
@@ -131,15 +132,7 @@ const MyProperties: React.FC<{
   };
 
   const getTypeLabel = (type: string) => {
-    switch (type) {
-      case 'villa': return 'Villa';
-      case 'resort': return 'Resort';
-      case 'farmhouse': return 'Farmhouse';
-      case 'homestay': return 'Homestay';
-      case 'heritage': return 'Heritage Palace';
-      case 'day-picnic': return 'Day Picnic';
-      default: return type;
-    }
+    return formatPropertyType(type);
   };
 
   const handleAddProperty = () => {
