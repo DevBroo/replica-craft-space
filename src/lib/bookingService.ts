@@ -7,7 +7,7 @@ export interface BookingData {
   check_out_date: string;
   guests: number;
   total_amount: number;
-  booking_details?: any;
+  booking_details?: Record<string, any>;
   status?: string;
 }
 

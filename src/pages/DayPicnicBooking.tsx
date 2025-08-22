@@ -10,6 +10,7 @@ import { Badge } from '@/components/ui/badge';
 import { Checkbox } from '@/components/ui/checkbox';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
+import GuestSelector, { GuestBreakdown } from '@/components/ui/GuestSelector';
 import { 
   Clock, 
   MapPin, 
@@ -31,7 +32,7 @@ const DayPicnicBooking: React.FC = () => {
   const [property, setProperty] = useState<any>(null);
   const [package_, setPackage] = useState<any>(null);
   const [selectedDate, setSelectedDate] = useState('');
-  const [guestCount, setGuestCount] = useState(1);
+  const [guests, setGuests] = useState<GuestBreakdown>({ adults: 2, children: [] });
   const [selectedAddOns, setSelectedAddOns] = useState<string[]>([]);
 
   useEffect(() => {
@@ -82,9 +83,26 @@ const DayPicnicBooking: React.FC = () => {
   const calculateTotalPrice = () => {
     if (!package_) return 0;
     
-    const basePrice = package_.pricing_type === 'per_person' 
-      ? package_.base_price * guestCount 
-      : package_.base_price;
+    let basePrice = 0;
+    
+    if (package_.pricing_type === 'per_person') {
+      // Calculate price for adults
+      basePrice += package_.base_price * guests.adults;
+      
+      // Calculate price for children based on age
+      guests.children.forEach(child => {
+        if (child.priceCategory === 'free') {
+          basePrice += 0;
+        } else if (child.priceCategory === 'half') {
+          basePrice += package_.base_price * 0.5;
+        } else {
+          basePrice += package_.base_price;
+        }
+      });
+    } else {
+      // Fixed price regardless of guest count
+      basePrice = package_.base_price;
+    }
     
     const addOnPrice = selectedAddOns.reduce((total, addOnName) => {
       const addOn = package_.add_ons.find((ao: any) => ao.name === addOnName);
@@ -121,7 +139,7 @@ const DayPicnicBooking: React.FC = () => {
         user_id: user?.id,
         check_in_date: selectedDate,
         check_out_date: selectedDate, // Same day for day picnics
-        guests: guestCount,
+        guests: guests.adults + guests.children.length,
         total_amount: calculateTotalPrice(),
         booking_details: {
           booking_type: 'day_picnic',
@@ -130,7 +148,8 @@ const DayPicnicBooking: React.FC = () => {
           end_time: package_.end_time,
           meal_plan: package_.meal_plan,
           selected_add_ons: selectedAddOns,
-          pricing_type: package_.pricing_type
+          pricing_type: package_.pricing_type,
+          guest_breakdown: JSON.parse(JSON.stringify(guests))
         }
       };
 
@@ -334,27 +353,40 @@ const DayPicnicBooking: React.FC = () => {
                 </div>
 
                 <div>
-                  <Label htmlFor="guests">Number of Guests</Label>
-                  <Input
-                    id="guests"
-                    type="number"
-                    min="1"
-                    max={property.max_guests}
-                    value={guestCount}
-                    onChange={(e) => setGuestCount(parseInt(e.target.value) || 1)}
+                  <Label>Select Guests</Label>
+                  <GuestSelector
+                    maxGuests={property.max_guests}
+                    onGuestsChange={setGuests}
+                    initialGuests={guests}
                   />
                 </div>
 
                 <div className="border-t pt-4">
                   <h4 className="font-semibold mb-2">Price Breakdown</h4>
                   <div className="space-y-2">
-                    <div className="flex justify-between">
-                      <span>Base Price ({package_.pricing_type.replace('_', ' ')})</span>
-                      <span>₹{package_.pricing_type === 'per_person' 
-                        ? (package_.base_price * guestCount).toLocaleString()
-                        : package_.base_price.toLocaleString()
-                      }</span>
-                    </div>
+                    {package_.pricing_type === 'per_person' ? (
+                      <>
+                        <div className="flex justify-between">
+                          <span>Adults ({guests.adults})</span>
+                          <span>₹{(package_.base_price * guests.adults).toLocaleString()}</span>
+                        </div>
+                        {guests.children.map((child, index) => (
+                          <div key={index} className="flex justify-between text-sm">
+                            <span>Child {index + 1} (Age {child.age})</span>
+                            <span>
+                              {child.priceCategory === 'free' && '₹0 (Free)'}
+                              {child.priceCategory === 'half' && `₹${(package_.base_price * 0.5).toLocaleString()} (Half)`}
+                              {child.priceCategory === 'full' && `₹${package_.base_price.toLocaleString()} (Full)`}
+                            </span>
+                          </div>
+                        ))}
+                      </>
+                    ) : (
+                      <div className="flex justify-between">
+                        <span>Base Price (Fixed)</span>
+                        <span>₹{package_.base_price.toLocaleString()}</span>
+                      </div>
+                    )}
                     {selectedAddOns.map(addOnName => {
                       const addOn = package_.add_ons.find((ao: any) => ao.name === addOnName);
                       return (

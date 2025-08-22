@@ -9,6 +9,7 @@ import { BookingService } from "@/lib/bookingService";
 import { useAuth } from "@/contexts/AuthContext";
 import { useWishlist } from "@/contexts/WishlistContext";
 import { useToast } from "@/hooks/use-toast";
+import GuestSelector, { GuestBreakdown } from '@/components/ui/GuestSelector';
 
 // No dummy data - load from database using PropertyService
 
@@ -16,7 +17,7 @@ const PropertyDetails = () => {
   const { id } = useParams();
   const navigate = useNavigate();
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
-  const [guests, setGuests] = useState(2);
+  const [guests, setGuests] = useState<GuestBreakdown>({ adults: 2, children: [] });
   const [property, setProperty] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [checkInDate, setCheckInDate] = useState('');
@@ -34,7 +35,7 @@ const PropertyDetails = () => {
         const bookingData = JSON.parse(pendingBookingData);
         setCheckInDate(bookingData.checkInDate || '');
         setCheckOutDate(bookingData.checkOutDate || '');
-        setGuests(bookingData.guests || 2);
+        setGuests(bookingData.guests || { adults: 2, children: [] });
         
         // Clear the stored data
         sessionStorage.removeItem('pendingBookingData');
@@ -246,7 +247,8 @@ const PropertyDetails = () => {
     }
 
     // Validate guest count
-    if (guests > property.max_guests) {
+    const totalGuests = guests.adults + guests.children.length;
+    if (totalGuests > property.max_guests) {
       toast({
         title: "Guest Limit Exceeded",
         description: `This property accommodates up to ${property.max_guests} guests. Please adjust your guest count.`,
@@ -255,7 +257,7 @@ const PropertyDetails = () => {
       return;
     }
 
-    if (guests < 1) {
+    if (totalGuests < 1) {
       toast({
         title: "Invalid Guest Count",
         description: "At least one guest is required for booking.",
@@ -281,12 +283,13 @@ const PropertyDetails = () => {
         user_id: user.id,
         check_in_date: checkInDate,
         check_out_date: checkOutDate,
-        guests,
+        guests: totalGuests,
         total_amount: calculateTotal(),
         booking_details: {
           property_title: property.title,
           property_location: property.location,
-          nights: calculateNights()
+          nights: calculateNights(),
+          guest_breakdown: JSON.parse(JSON.stringify(guests))
         }
       });
 
@@ -576,31 +579,15 @@ const PropertyDetails = () => {
                     />
                   </div>
                   
-                  <div>
-                    <label className="block text-sm font-medium mb-2">Guests</label>
-                    <div className="flex items-center justify-between p-3 border rounded-lg">
-                      <div className="flex items-center">
-                        <Users className="w-4 h-4 mr-2" />
-                        <span>{guests} guests</span>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <Button 
-                          variant="outline" 
-                          size="sm"
-                          onClick={() => setGuests(Math.max(1, guests - 1))}
-                        >
-                          -
-                        </Button>
-                        <Button 
-                          variant="outline" 
-                          size="sm"
-                          onClick={() => setGuests(guests + 1)}
-                        >
-                          +
-                        </Button>
-                      </div>
-                    </div>
-                  </div>
+                   <div>
+                     <label className="block text-sm font-medium mb-2">Guests</label>
+                     <GuestSelector
+                       maxGuests={property.roomTypes[0]?.features.find(f => f.includes('Capacity:'))?.match(/\d+/)?.[0] ? parseInt(property.roomTypes[0].features.find(f => f.includes('Capacity:')).match(/\d+/)[0]) : 10}
+                       onGuestsChange={setGuests}
+                       initialGuests={guests}
+                       className="border-0 p-0"
+                     />
+                   </div>
                 </div>
 
                 <Button 
