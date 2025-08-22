@@ -5,6 +5,11 @@ type PropertyInsert = Database['public']['Tables']['properties']['Insert'];
 type PropertyUpdate = Database['public']['Tables']['properties']['Update'];
 type Property = Database['public']['Tables']['properties']['Row'];
 
+// Type for the secure public properties view (excludes sensitive fields)
+type PublicProperty = Omit<Property, 'owner_id' | 'contact_phone' | 'license_number' | 'address' | 'tax_information'> & {
+  general_location: string;
+};
+
 export interface PropertyFormData {
   name: string;
   type: string;
@@ -234,20 +239,20 @@ export class PropertyService {
   }
 
   /**
-   * Get all active properties for public display
+   * Get all active properties for public display (using secure public view)
    */
-  static async getActiveProperties(): Promise<Property[]> {
+  static async getActiveProperties(): Promise<any[]> {
     try {
-      console.log('🔍 Fetching properties for public display');
+      console.log('🔍 Fetching properties for public display using secure view');
       console.log('🔧 Environment check:', {
         isProduction: window.location.hostname !== 'localhost',
         hostname: window.location.hostname
       });
       
+      // Use the secure public view that masks sensitive information
       const { data, error } = await supabase
-        .from('properties')
+        .from('properties_public')
         .select('*')
-        .in('status', ['approved', 'pending'])
         .order('created_at', { ascending: false });
 
       if (error) {
@@ -265,7 +270,7 @@ export class PropertyService {
         return [];
       }
 
-      console.log('✅ Properties fetched successfully:', {
+      console.log('✅ Properties fetched successfully from secure view:', {
         count: data.length,
         firstProperty: data[0] ? {
           id: data[0].id,
@@ -274,7 +279,18 @@ export class PropertyService {
         } : 'none'
       });
       
-      return data;
+      // Convert public properties to match expected interface for existing code
+      const convertedData = data.map(publicProperty => ({
+        ...publicProperty,
+        // Add missing fields with safe defaults for compatibility
+        address: publicProperty.general_location || 'Location Available',
+        contact_phone: null, // Explicitly excluded for security
+        license_number: null, // Explicitly excluded for security  
+        owner_id: null, // Explicitly excluded for security
+        tax_information: null // Explicitly excluded for security
+      }));
+      
+      return convertedData;
     } catch (error: any) {
       console.error('❌ Failed to fetch properties:', {
         name: error?.name || 'Unknown',
@@ -285,6 +301,40 @@ export class PropertyService {
       
       // Return empty array instead of throwing to prevent app crash
       return [];
+    }
+  }
+
+  /**
+   * Get property contact information (authenticated users only)
+   */
+  static async getPropertyContactInfo(propertyId: string): Promise<{
+    contact_phone?: string;
+    owner_email?: string;
+    property_title?: string;
+  } | null> {
+    try {
+      console.log('📞 Fetching contact info for property:', propertyId);
+      
+      // Check if user is authenticated
+      const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+      if (sessionError || !session) {
+        throw new Error('Authentication required to access contact information');
+      }
+      
+      const { data, error } = await supabase.rpc('get_property_contact_info', {
+        property_id: propertyId
+      });
+
+      if (error) {
+        console.error('❌ Error fetching contact info:', error);
+        throw error;
+      }
+
+      console.log('✅ Contact info fetched successfully');
+      return data?.[0] || null;
+    } catch (error) {
+      console.error('❌ Failed to fetch contact info:', error);
+      throw error;
     }
   }
 
