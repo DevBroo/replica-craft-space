@@ -302,6 +302,17 @@ const BookingComPropertyForm: React.FC<BookingComPropertyFormProps> = ({ onBack,
 
     try {
       const propertyData = {
+        // New required fields
+        title: formData.name,
+        property_type: formData.type,
+        address: formData.location,
+        max_guests: formData.capacity,
+        pricing: {
+          daily_rate: formData.price,
+          currency: 'INR'
+        },
+        
+        // Legacy compatibility fields
         name: formData.name,
         type: formData.type,
         location: formData.location,

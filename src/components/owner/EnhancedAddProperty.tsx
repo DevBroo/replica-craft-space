@@ -270,6 +270,17 @@ const EnhancedAddProperty: React.FC<AddPropertyProps> = ({ onBack }) => {
 
     try {
       const propertyData = {
+        // New required fields
+        title: formData.name,
+        property_type: formData.propertyType,
+        address: formData.location,
+        max_guests: Number(formData.maxGuests),
+        pricing: {
+          daily_rate: Number(formData.pricing.daily_rate),
+          currency: 'INR'
+        },
+        
+        // Legacy compatibility fields
         name: formData.name,
         type: formData.propertyType,
         location: formData.location,

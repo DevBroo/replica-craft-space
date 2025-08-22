@@ -142,7 +142,9 @@ export interface PropertyFormData {
 
 interface PropertyWizardProps {
   onBack: () => void;
-  propertyId?: string; // For editing existing property
+  propertyId?: string;
+  initialTitle?: string;
+  initialPropertyType?: string;
 }
 
 const WIZARD_STEPS = [
@@ -156,7 +158,7 @@ const WIZARD_STEPS = [
   { id: 'review', title: 'Review & Submit', description: 'Final review and submission' }
 ];
 
-const PropertyWizard: React.FC<PropertyWizardProps> = ({ onBack, propertyId }) => {
+const PropertyWizard: React.FC<PropertyWizardProps> = ({ onBack, propertyId, initialTitle, initialPropertyType }) => {
   const { user, isAuthenticated } = useAuth();
   const { toast } = useToast();
   
@@ -249,14 +251,20 @@ const PropertyWizard: React.FC<PropertyWizardProps> = ({ onBack, propertyId }) =
     return () => clearInterval(saveInterval);
   }, [formData]);
 
-  // Load existing property for editing
+  // Load existing property data if editing or initialize with props
   useEffect(() => {
     if (propertyId) {
-      loadExistingProperty();
+      loadPropertyData();
+    } else if (initialTitle || initialPropertyType) {
+      setFormData(prev => ({
+        ...prev,
+        title: initialTitle || prev.title,
+        property_type: initialPropertyType || prev.property_type
+      }));
     }
-  }, [propertyId]);
+  }, [propertyId, initialTitle, initialPropertyType]);
 
-  const loadExistingProperty = async () => {
+  const loadPropertyData = async () => {
     if (!propertyId) return;
     
     try {

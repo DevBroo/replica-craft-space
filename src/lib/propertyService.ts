@@ -12,22 +12,71 @@ type PublicProperty = Omit<Property, 'owner_id' | 'contact_phone' | 'license_num
 };
 
 export interface PropertyFormData {
-  name: string;
-  type: string;
-  location: string;
+  // Basic details
+  title: string;
+  property_type: string;
+  property_subtype?: string;
+  description: string;
+  address: string;
   city: string;
   state: string;
-  price: number;
-  capacity: number;
+  postal_code?: string;
+  country?: string;
+  contact_phone?: string;
+  license_number?: string;
+  star_rating?: number;
+  languages_spoken?: string[];
+  
+  // Rooms & capacity
+  max_guests: number;
   bedrooms: number;
   bathrooms: number;
   rooms_count?: number | null;
   capacity_per_room?: number | null;
   day_picnic_capacity?: number | null;
   day_picnic_duration_category?: string;
-  description: string;
+  rooms_details?: any;
+  
+  // Amenities & facilities
   amenities: string[];
+  amenities_details?: any;
+  facilities?: any;
+  
+  // Media
   images: string[];
+  photos_with_captions?: Array<{
+    image_url: string;
+    caption?: string;
+    alt_text?: string;
+    category?: string;
+    display_order?: number;
+    is_primary?: boolean;
+  }>;
+  
+  // Pricing & policies
+  pricing: {
+    daily_rate: number;
+    currency: string;
+  };
+  seasonal_pricing?: any;
+  minimum_stay?: number;
+  cancellation_policy?: string;
+  check_in_time?: string;
+  check_out_time?: string;
+  payment_methods?: string[];
+  policies_extended?: any;
+  meal_plans?: string[];
+  
+  // Safety & nearby
+  safety_security?: any;
+  nearby_attractions?: any;
+  
+  // Legacy compatibility
+  name: string;
+  type: string;
+  location: string;
+  price: number;
+  capacity: number;
 }
 
 export class PropertyService {
@@ -54,31 +103,48 @@ export class PropertyService {
       
       const propertyInsert: PropertyInsert = {
         owner_id: ownerId,
-        title: propertyData.name,
+        title: propertyData.title || propertyData.name,
         description: propertyData.description,
         location: {
           city: propertyData.city,
           state: propertyData.state,
-          address: propertyData.location
+          address: propertyData.address || propertyData.location
         },
-        address: `${propertyData.location}, ${propertyData.city}, ${propertyData.state}`,
-        property_type: formatPropertyType(propertyData.type),
+        address: propertyData.address || `${propertyData.location}, ${propertyData.city}, ${propertyData.state}`,
+        property_type: propertyData.property_type || formatPropertyType(propertyData.type),
+        property_subtype: propertyData.property_subtype,
         amenities: propertyData.amenities,
-        pricing: {
-          daily_rate: propertyData.price,
+        pricing: propertyData.pricing || {
+          daily_rate: propertyData.price || 0,
           currency: 'INR'
         },
         images: propertyData.images,
-        max_guests: propertyData.capacity,
-        bedrooms: propertyData.bedrooms,
-        bathrooms: propertyData.bathrooms,
+        max_guests: propertyData.max_guests || propertyData.capacity,
+        bedrooms: propertyData.bedrooms || 0,
+        bathrooms: propertyData.bathrooms || 0,
         rooms_count: propertyData.rooms_count,
         capacity_per_room: propertyData.capacity_per_room,
         day_picnic_capacity: propertyData.day_picnic_capacity,
         day_picnic_duration_category: propertyData.day_picnic_duration_category || null,
-        postal_code: (propertyData as any).postal_code,
-        contact_phone: (propertyData as any).contact_phone,
-        license_number: (propertyData as any).license_number,
+        postal_code: propertyData.postal_code,
+        country: propertyData.country || 'India',
+        contact_phone: propertyData.contact_phone,
+        license_number: propertyData.license_number,
+        star_rating: propertyData.star_rating,
+        languages_spoken: propertyData.languages_spoken ? JSON.stringify(propertyData.languages_spoken) : null,
+        minimum_stay: propertyData.minimum_stay || 1,
+        cancellation_policy: propertyData.cancellation_policy || 'moderate',
+        check_in_time: propertyData.check_in_time || '15:00',
+        check_out_time: propertyData.check_out_time || '11:00',
+        payment_methods: propertyData.payment_methods || ['card', 'cash'],
+        meal_plans: propertyData.meal_plans || [],
+        rooms_details: propertyData.rooms_details || { types: [], configurations: {}, amenities_per_room: {} },
+        amenities_details: propertyData.amenities_details || { services: [], recreation: [], connectivity: {}, accessibility: [], room_features: [], property_facilities: [] },
+        facilities: propertyData.facilities || { family: [], parking: {}, business: [], internet: {}, recreation: [] },
+        safety_security: propertyData.safety_security || { fire_safety: [], health_safety: [], security_features: [], emergency_procedures: [] },
+        nearby_attractions: propertyData.nearby_attractions || { dining: [], distances: {}, landmarks: [], transport: {}, entertainment: [] },
+        seasonal_pricing: propertyData.seasonal_pricing || { seasons: [], discounts: {}, special_rates: {} },
+        policies_extended: propertyData.policies_extended || { pet_policy: {}, child_policy: {}, damage_policy: {}, smoking_policy: {}, group_booking_policy: {} },
         status: 'pending',
         is_featured: false,
         rating: 0,
@@ -113,6 +179,12 @@ export class PropertyService {
       }
 
       console.log('✅ Property added to database successfully:', data);
+      
+      // Handle photos with captions if provided
+      if (propertyData.photos_with_captions && propertyData.photos_with_captions.length > 0) {
+        await this.savePhotosWithCaptions(data.id, propertyData.photos_with_captions);
+      }
+      
       return data;
     } catch (error) {
       console.error('❌ Failed to add property to database:', error);
@@ -128,31 +200,48 @@ export class PropertyService {
       console.log('💾 Updating property in database:', propertyId, propertyData);
       
       const propertyUpdate: PropertyUpdate = {
-        title: propertyData.name,
+        title: propertyData.title || propertyData.name,
         description: propertyData.description,
         location: {
           city: propertyData.city,
           state: propertyData.state,
-          address: propertyData.location
+          address: propertyData.address || propertyData.location
         },
-        address: `${propertyData.location}, ${propertyData.city}, ${propertyData.state}`,
-        property_type: formatPropertyType(propertyData.type),
+        address: propertyData.address || `${propertyData.location}, ${propertyData.city}, ${propertyData.state}`,
+        property_type: propertyData.property_type || formatPropertyType(propertyData.type),
+        property_subtype: propertyData.property_subtype,
         amenities: propertyData.amenities,
-        pricing: {
-          daily_rate: propertyData.price,
+        pricing: propertyData.pricing || {
+          daily_rate: propertyData.price || 0,
           currency: 'INR'
         },
         images: propertyData.images,
-        max_guests: propertyData.capacity,
-        bedrooms: propertyData.bedrooms,
-        bathrooms: propertyData.bathrooms,
+        max_guests: propertyData.max_guests || propertyData.capacity,
+        bedrooms: propertyData.bedrooms || 0,
+        bathrooms: propertyData.bathrooms || 0,
         rooms_count: propertyData.rooms_count,
         capacity_per_room: propertyData.capacity_per_room,
         day_picnic_capacity: propertyData.day_picnic_capacity,
         day_picnic_duration_category: propertyData.day_picnic_duration_category || null,
-        postal_code: (propertyData as any).postal_code,
-        contact_phone: (propertyData as any).contact_phone,
-        license_number: (propertyData as any).license_number
+        postal_code: propertyData.postal_code,
+        country: propertyData.country || 'India',
+        contact_phone: propertyData.contact_phone,
+        license_number: propertyData.license_number,
+        star_rating: propertyData.star_rating,
+        languages_spoken: propertyData.languages_spoken ? JSON.stringify(propertyData.languages_spoken) : null,
+        minimum_stay: propertyData.minimum_stay || 1,
+        cancellation_policy: propertyData.cancellation_policy || 'moderate',
+        check_in_time: propertyData.check_in_time || '15:00',
+        check_out_time: propertyData.check_out_time || '11:00',
+        payment_methods: propertyData.payment_methods || ['card', 'cash'],
+        meal_plans: propertyData.meal_plans || [],
+        rooms_details: propertyData.rooms_details || { types: [], configurations: {}, amenities_per_room: {} },
+        amenities_details: propertyData.amenities_details || { services: [], recreation: [], connectivity: {}, accessibility: [], room_features: [], property_facilities: [] },
+        facilities: propertyData.facilities || { family: [], parking: {}, business: [], internet: {}, recreation: [] },
+        safety_security: propertyData.safety_security || { fire_safety: [], health_safety: [], security_features: [], emergency_procedures: [] },
+        nearby_attractions: propertyData.nearby_attractions || { dining: [], distances: {}, landmarks: [], transport: {}, entertainment: [] },
+        seasonal_pricing: propertyData.seasonal_pricing || { seasons: [], discounts: {}, special_rates: {} },
+        policies_extended: propertyData.policies_extended || { pet_policy: {}, child_policy: {}, damage_policy: {}, smoking_policy: {}, group_booking_policy: {} }
       };
 
       const { data, error } = await supabase
@@ -168,6 +257,12 @@ export class PropertyService {
       }
 
       console.log('✅ Property updated in database successfully:', data);
+      
+      // Handle photos with captions if provided
+      if (propertyData.photos_with_captions && propertyData.photos_with_captions.length > 0) {
+        await this.savePhotosWithCaptions(propertyId, propertyData.photos_with_captions);
+      }
+      
       return data;
     } catch (error) {
       console.error('❌ Failed to update property in database:', error);
@@ -448,23 +543,115 @@ export class PropertyService {
   }
 
   /**
+   * Save photos with captions to database
+   */
+  static async savePhotosWithCaptions(propertyId: string, photos: Array<{
+    image_url: string;
+    caption?: string;
+    alt_text?: string;
+    category?: string;
+    display_order?: number;
+    is_primary?: boolean;
+  }>): Promise<void> {
+    try {
+      console.log('💾 Saving photos with captions for property:', propertyId);
+      
+      // Clear existing photos for this property
+      const { error: deleteError } = await supabase
+        .from('photos_with_captions')
+        .delete()
+        .eq('property_id', propertyId);
+      
+      if (deleteError) {
+        console.error('❌ Error deleting existing photos:', deleteError);
+        throw deleteError;
+      }
+      
+      // Insert new photos
+      const photosToInsert = photos.map((photo, index) => ({
+        property_id: propertyId,
+        image_url: photo.image_url,
+        caption: photo.caption || null,
+        alt_text: photo.alt_text || null,
+        category: photo.category || null,
+        display_order: photo.display_order || index,
+        is_primary: photo.is_primary || false
+      }));
+      
+      const { error: insertError } = await supabase
+        .from('photos_with_captions')
+        .insert(photosToInsert);
+      
+      if (insertError) {
+        console.error('❌ Error inserting photos with captions:', insertError);
+        throw insertError;
+      }
+      
+      console.log('✅ Photos with captions saved successfully');
+    } catch (error) {
+      console.error('❌ Failed to save photos with captions:', error);
+      // Don't throw error to prevent property creation from failing
+    }
+  }
+
+  /**
    * Convert frontend property to database format
    */
   static convertToDatabaseFormat(frontendProperty: any): PropertyFormData {
     return {
-      name: frontendProperty.name,
-      type: frontendProperty.type,
-      location: frontendProperty.location,
+      // New wizard fields
+      title: frontendProperty.title || frontendProperty.name,
+      property_type: frontendProperty.property_type || frontendProperty.type,
+      property_subtype: frontendProperty.property_subtype,
+      description: frontendProperty.description,
+      address: frontendProperty.address || frontendProperty.location,
       city: frontendProperty.city,
       state: frontendProperty.state,
-      price: frontendProperty.price,
-      capacity: frontendProperty.capacity,
+      postal_code: frontendProperty.postal_code,
+      country: frontendProperty.country,
+      contact_phone: frontendProperty.contact_phone,
+      license_number: frontendProperty.license_number,
+      star_rating: frontendProperty.star_rating,
+      languages_spoken: frontendProperty.languages_spoken,
+      
+      max_guests: frontendProperty.max_guests || frontendProperty.capacity,
       bedrooms: frontendProperty.bedrooms,
       bathrooms: frontendProperty.bathrooms,
+      rooms_count: frontendProperty.rooms_count,
+      capacity_per_room: frontendProperty.capacity_per_room,
+      day_picnic_capacity: frontendProperty.day_picnic_capacity,
       day_picnic_duration_category: frontendProperty.day_picnic_duration_category,
-      description: frontendProperty.description,
+      rooms_details: frontendProperty.rooms_details,
+      
       amenities: frontendProperty.amenities,
-      images: frontendProperty.images
+      amenities_details: frontendProperty.amenities_details,
+      facilities: frontendProperty.facilities,
+      
+      images: frontendProperty.images,
+      photos_with_captions: frontendProperty.photos_with_captions,
+      
+      pricing: frontendProperty.pricing || {
+        daily_rate: frontendProperty.price || 0,
+        currency: 'INR'
+      },
+      seasonal_pricing: frontendProperty.seasonal_pricing,
+      minimum_stay: frontendProperty.minimum_stay,
+      cancellation_policy: frontendProperty.cancellation_policy,
+      check_in_time: frontendProperty.check_in_time,
+      check_out_time: frontendProperty.check_out_time,
+      payment_methods: frontendProperty.payment_methods,
+      policies_extended: frontendProperty.policies_extended,
+      meal_plans: frontendProperty.meal_plans,
+      
+      safety_security: frontendProperty.safety_security,
+      nearby_attractions: frontendProperty.nearby_attractions,
+      
+      // Legacy compatibility
+      name: frontendProperty.name || frontendProperty.title,
+      type: frontendProperty.type || frontendProperty.property_type,
+      location: frontendProperty.location || frontendProperty.address,
+      price: frontendProperty.price || frontendProperty.pricing?.daily_rate || 0,
+      capacity: frontendProperty.capacity || frontendProperty.max_guests
     };
   }
 
