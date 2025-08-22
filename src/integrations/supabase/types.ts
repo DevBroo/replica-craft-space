@@ -307,6 +307,45 @@ export type Database = {
         }
         Relationships: []
       }
+      photos_with_captions: {
+        Row: {
+          alt_text: string | null
+          caption: string | null
+          category: string | null
+          created_at: string
+          display_order: number | null
+          id: string
+          image_url: string
+          is_primary: boolean | null
+          property_id: string
+          updated_at: string
+        }
+        Insert: {
+          alt_text?: string | null
+          caption?: string | null
+          category?: string | null
+          created_at?: string
+          display_order?: number | null
+          id?: string
+          image_url: string
+          is_primary?: boolean | null
+          property_id: string
+          updated_at?: string
+        }
+        Update: {
+          alt_text?: string | null
+          caption?: string | null
+          category?: string | null
+          created_at?: string
+          display_order?: number | null
+          id?: string
+          image_url?: string
+          is_primary?: boolean | null
+          property_id?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           avatar_url: string | null
@@ -344,6 +383,7 @@ export type Database = {
         Row: {
           address: string
           amenities: string[] | null
+          amenities_details: Json | null
           arrival_instructions: string | null
           bathrooms: number | null
           bed_configuration: Json | null
@@ -360,17 +400,22 @@ export type Database = {
           day_picnic_capacity: number | null
           day_picnic_duration_category: string | null
           description: string | null
+          extra_services: Json | null
+          facilities: Json | null
           house_rules: Json | null
           id: string
           images: string[] | null
           is_featured: boolean | null
+          languages_spoken: Json | null
           license_number: string | null
           location: Json | null
           max_guests: number
           meal_plans: string[] | null
           minimum_stay: number | null
+          nearby_attractions: Json | null
           owner_id: string
           payment_methods: string[] | null
+          policies_extended: Json | null
           postal_code: string | null
           pricing: Json
           property_subtype: string | null
@@ -378,6 +423,10 @@ export type Database = {
           rating: number | null
           review_count: number | null
           rooms_count: number | null
+          rooms_details: Json | null
+          safety_security: Json | null
+          seasonal_pricing: Json | null
+          star_rating: number | null
           status: string | null
           tax_information: Json | null
           title: string
@@ -386,6 +435,7 @@ export type Database = {
         Insert: {
           address: string
           amenities?: string[] | null
+          amenities_details?: Json | null
           arrival_instructions?: string | null
           bathrooms?: number | null
           bed_configuration?: Json | null
@@ -402,17 +452,22 @@ export type Database = {
           day_picnic_capacity?: number | null
           day_picnic_duration_category?: string | null
           description?: string | null
+          extra_services?: Json | null
+          facilities?: Json | null
           house_rules?: Json | null
           id?: string
           images?: string[] | null
           is_featured?: boolean | null
+          languages_spoken?: Json | null
           license_number?: string | null
           location?: Json | null
           max_guests?: number
           meal_plans?: string[] | null
           minimum_stay?: number | null
+          nearby_attractions?: Json | null
           owner_id: string
           payment_methods?: string[] | null
+          policies_extended?: Json | null
           postal_code?: string | null
           pricing?: Json
           property_subtype?: string | null
@@ -420,6 +475,10 @@ export type Database = {
           rating?: number | null
           review_count?: number | null
           rooms_count?: number | null
+          rooms_details?: Json | null
+          safety_security?: Json | null
+          seasonal_pricing?: Json | null
+          star_rating?: number | null
           status?: string | null
           tax_information?: Json | null
           title: string
@@ -428,6 +487,7 @@ export type Database = {
         Update: {
           address?: string
           amenities?: string[] | null
+          amenities_details?: Json | null
           arrival_instructions?: string | null
           bathrooms?: number | null
           bed_configuration?: Json | null
@@ -444,17 +504,22 @@ export type Database = {
           day_picnic_capacity?: number | null
           day_picnic_duration_category?: string | null
           description?: string | null
+          extra_services?: Json | null
+          facilities?: Json | null
           house_rules?: Json | null
           id?: string
           images?: string[] | null
           is_featured?: boolean | null
+          languages_spoken?: Json | null
           license_number?: string | null
           location?: Json | null
           max_guests?: number
           meal_plans?: string[] | null
           minimum_stay?: number | null
+          nearby_attractions?: Json | null
           owner_id?: string
           payment_methods?: string[] | null
+          policies_extended?: Json | null
           postal_code?: string | null
           pricing?: Json
           property_subtype?: string | null
@@ -462,6 +527,10 @@ export type Database = {
           rating?: number | null
           review_count?: number | null
           rooms_count?: number | null
+          rooms_details?: Json | null
+          safety_security?: Json | null
+          seasonal_pricing?: Json | null
+          star_rating?: number | null
           status?: string | null
           tax_information?: Json | null
           title?: string
