@@ -1,7 +1,7 @@
+
 import React from 'react';
-import { Properties } from '@/components/owner/Properties';
-import { PropertiesNew } from '@/components/owner/PropertiesNew';
-import OwnerLayout from '@/components/owner/OwnerLayout';
+import Properties from '@/components/owner/Properties';
+import PropertiesNew from '@/components/owner/PropertiesNew';
 
 const MyProperties: React.FC = () => {
   const [sidebarCollapsed, setSidebarCollapsed] = React.useState(false);
@@ -16,21 +16,16 @@ const MyProperties: React.FC = () => {
   };
 
   return (
-    <OwnerLayout
-      sidebarCollapsed={sidebarCollapsed}
-      toggleSidebar={toggleSidebar}
-      activeTab={activeTab}
-      setActiveTab={setActiveTab}
-    >
-        <PropertiesNew 
-          onBack={handleCloseFullForm}
-          editProperty={null}
-          sidebarCollapsed={sidebarCollapsed}
-          toggleSidebar={toggleSidebar}
-          activeTab={activeTab}
-          setActiveTab={setActiveTab}
-        />
-    </OwnerLayout>
+    <div className="min-h-screen bg-gray-50">
+      <PropertiesNew 
+        onBack={handleCloseFullForm}
+        editProperty={null}
+        sidebarCollapsed={sidebarCollapsed}
+        toggleSidebar={toggleSidebar}
+        activeTab={activeTab}
+        setActiveTab={setActiveTab}
+      />
+    </div>
   );
 };
 

@@ -17,11 +17,14 @@ import { normalizeTypeKey } from '@/lib/utils';
 interface BookingComPropertyFormProps {
   onBack: () => void;
   editProperty?: any;
+  isEdit?: boolean;
+  selectedType?: string;
+  propertyName?: string;
 }
 
-const BookingComPropertyForm: React.FC<BookingComPropertyFormProps> = ({ onBack, editProperty }) => {
+const BookingComPropertyForm: React.FC<BookingComPropertyFormProps> = ({ onBack, editProperty, isEdit, selectedType, propertyName }) => {
   const navigate = useNavigate();
-  const isEdit = !!editProperty;
+  const isEditMode = !!editProperty;
 
   const [formData, setFormData] = useState({
     name: '',
@@ -262,7 +265,7 @@ const BookingComPropertyForm: React.FC<BookingComPropertyFormProps> = ({ onBack,
       };
 
       let result;
-      if (isEdit) {
+      if (isEditMode) {
         result = await PropertyService.updateProperty(editProperty.id, propertyData);
       } else {
         const ownerId = localStorage.getItem('ownerId');
@@ -274,14 +277,14 @@ const BookingComPropertyForm: React.FC<BookingComPropertyFormProps> = ({ onBack,
 
       if (result) {
         toast({
-          title: isEdit ? "Property Updated!" : "Property Added!",
-          description: isEdit 
+          title: isEditMode ? "Property Updated!" : "Property Added!",
+          description: isEditMode 
             ? "Your property has been updated successfully." 
             : "Your property has been added successfully and is pending approval.",
         });
         
         // Handle Day Picnic redirect
-        if (normalizeTypeKey(formData.type) === 'day_picnic' && !isEdit) {
+        if (normalizeTypeKey(formData.type) === 'day_picnic' && !isEditMode) {
           toast({
             title: "Day Picnic Property Added!",
             description: "Your property is now visible in the Day Picnic section.",
@@ -310,9 +313,9 @@ const BookingComPropertyForm: React.FC<BookingComPropertyFormProps> = ({ onBack,
             ← Back to Properties
           </Button>
           <h1 className="text-3xl font-bold text-gray-900">
-            {isEdit ? 'Edit Property' : 'Add New Property'}
+            {isEditMode ? 'Edit Property' : 'Add New Property'}
           </h1>
-          <p className="text-gray-600">Fill in the details to {isEdit ? 'update' : 'list'} your property</p>
+          <p className="text-gray-600">Fill in the details to {isEditMode ? 'update' : 'list'} your property</p>
         </div>
 
         {/* Progress Bar */}
@@ -690,7 +693,7 @@ const BookingComPropertyForm: React.FC<BookingComPropertyFormProps> = ({ onBack,
                 <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white ml-2"></div>
               </>
             ) : (
-              isEdit ? 'Update Property' : 'Add Property'
+              isEditMode ? 'Update Property' : 'Add Property'
             )}
           </Button>
         </form>

@@ -13,17 +13,17 @@ import { Home, Calendar, DollarSign, Star, MessageSquare, User, Settings as Sett
 import BookingComPropertyForm from './BookingComPropertyForm';
 
 interface PropertiesProps {
-  sidebarCollapsed: boolean;
-  toggleSidebar: () => void;
-  activeTab: string;
-  setActiveTab: (tab: string) => void;
+  sidebarCollapsed?: boolean;
+  toggleSidebar?: () => void;
+  activeTab?: string;
+  setActiveTab?: (tab: string) => void;
 }
 
 const Properties: React.FC<PropertiesProps> = ({ 
-  sidebarCollapsed, 
-  toggleSidebar, 
-  activeTab, 
-  setActiveTab 
+  sidebarCollapsed = false, 
+  toggleSidebar = () => {}, 
+  activeTab = 'properties', 
+  setActiveTab = () => {} 
 }) => {
   const navigate = useNavigate();
   const { user } = useAuth();
