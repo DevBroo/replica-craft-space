@@ -39,6 +39,15 @@ import AdminIndex from '@/pages/admin/Index';
 import ModernAdminDashboard from '@/pages/admin/ModernAdminDashboard';
 import AdminLoginPage from '@/pages/admin/LoginPage';
 import Settings from '@/pages/admin/Settings';
+import OwnerManagement from '@/pages/admin/OwnerManagement';
+import AgentManagement from '@/pages/admin/AgentManagement';
+import PropertyApproval from '@/pages/admin/PropertyApproval';
+import BookingManagement from '@/pages/admin/BookingManagement';
+import CommissionDisbursement from '@/pages/admin/CommissionDisbursement';
+import CMSManagement from '@/pages/admin/CMSManagement';
+import NotificationsManagement from '@/pages/admin/NotificationsManagement';
+import SupportTickets from '@/pages/admin/SupportTickets';
+import ProtectedRoute from '@/components/admin/ProtectedRoute';
 
 // Host/Owner Pages
 import HostLogin from '@/pages/HostLogin';
@@ -92,8 +101,16 @@ function App() {
                   {/* Admin Routes */}
                   <Route path="/admin" element={<AdminIndex />} />
                   <Route path="/admin/login" element={<AdminLoginPage />} />
-                  <Route path="/admin/dashboard" element={<ModernAdminDashboard />} />
-                  <Route path="/admin/settings" element={<Settings />} />
+                  <Route path="/admin/dashboard" element={<ProtectedRoute><ModernAdminDashboard /></ProtectedRoute>} />
+                  <Route path="/admin/owner-management" element={<ProtectedRoute><OwnerManagement /></ProtectedRoute>} />
+                  <Route path="/admin/agent-management" element={<ProtectedRoute><AgentManagement /></ProtectedRoute>} />
+                  <Route path="/admin/property-approval" element={<ProtectedRoute><PropertyApproval /></ProtectedRoute>} />
+                  <Route path="/admin/booking-management" element={<ProtectedRoute><BookingManagement /></ProtectedRoute>} />
+                  <Route path="/admin/commission-disbursement" element={<ProtectedRoute><CommissionDisbursement /></ProtectedRoute>} />
+                  <Route path="/admin/cms-management" element={<ProtectedRoute><CMSManagement /></ProtectedRoute>} />
+                  <Route path="/admin/notifications-management" element={<ProtectedRoute><NotificationsManagement /></ProtectedRoute>} />
+                  <Route path="/admin/support-tickets" element={<ProtectedRoute><SupportTickets /></ProtectedRoute>} />
+                  <Route path="/admin/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
                   
                   {/* Host/Owner Routes */}
                   <Route path="/host/login" element={<HostLogin />} />
