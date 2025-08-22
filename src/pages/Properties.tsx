@@ -89,12 +89,12 @@ const Properties: React.FC = () => {
   const fetchProperties = async () => {
     try {
       setLoading(true);
-      console.log('🔍 Fetching properties from Supabase...');
+      console.log('🔍 Fetching properties from properties_public...');
       
       const { data, error } = await supabase
-        .from('properties')
+        .from('properties_public')
         .select('*')
-        .in('status', ['approved', 'pending'])
+        .eq('status', 'approved')
         .order('created_at', { ascending: false });
 
       if (error) {
@@ -116,7 +116,7 @@ const Properties: React.FC = () => {
         const city = locationData?.city || '';
         const state = locationData?.state || '';
         const displayLocation = city && state ? `${city}, ${state}` : 
-                               city || state || property.address || 'Location not specified';
+                                city || state || property.general_location || 'Location not specified';
         
         return {
           id: property.id,
@@ -131,9 +131,9 @@ const Properties: React.FC = () => {
           capacity: property.max_guests,
           bedrooms: property.bedrooms || 0,
           bathrooms: property.bathrooms || 0,
-          rooms_count: property.rooms_count,
-          capacity_per_room: property.capacity_per_room,
-          day_picnic_capacity: property.day_picnic_capacity,
+          rooms_count: undefined, // Not available in properties_public
+          capacity_per_room: undefined, // Not available in properties_public
+          day_picnic_capacity: undefined, // Not available in properties_public
           amenities: property.amenities || []
         };
       });
@@ -154,7 +154,8 @@ const Properties: React.FC = () => {
 
   const fetchDayPicnicPackages = async () => {
     try {
-      const { data, error } = await supabase
+      // First, fetch day picnic packages with proper setup
+      const { data: packagesData, error: packagesError } = await supabase
         .from('day_picnic_packages')
         .select(`
           *,
@@ -170,9 +171,9 @@ const Properties: React.FC = () => {
         `)
         .eq('properties.status', 'approved');
 
-      if (error) throw error;
+      if (packagesError) throw packagesError;
       
-      const formattedPackages = data?.map(pkg => ({
+      const formattedPackages = packagesData?.map(pkg => ({
         id: pkg.id,
         propertyId: pkg.properties.id,
         name: `Day Picnic at ${pkg.properties.title}`,
@@ -192,12 +193,61 @@ const Properties: React.FC = () => {
         inclusions: pkg.inclusions || [],
         exclusions: pkg.exclusions || [],
         addOns: pkg.add_ons || [],
-        type: 'day_picnic'
+        type: 'day_picnic',
+        hasPackage: true
       })) || [];
+
+      // Second, fetch day picnic properties without packages from properties_public
+      const { data: dayPicnicProperties, error: propertiesError } = await supabase
+        .from('properties_public')
+        .select('*')
+        .eq('status', 'approved')
+        .eq('property_type', 'Day Picnic');
+
+      if (propertiesError) throw propertiesError;
+
+      // Convert day picnic properties to package format
+      const dayPicnicPropsAsPackages = dayPicnicProperties?.filter(property => {
+        // Only include properties that don't already have packages
+        return !formattedPackages.some(pkg => pkg.propertyId === property.id);
+      }).map(property => {
+        const locationData = property.location as any;
+        const city = locationData?.city || '';
+        const state = locationData?.state || '';
+        const displayLocation = city && state ? `${city}, ${state}` : 
+                                city || state || property.general_location || 'Location not specified';
+        
+        return {
+          id: property.id,
+          propertyId: property.id,
+          name: `Day Picnic at ${property.title}`,
+          title: `Day Picnic at ${property.title}`,
+          location: displayLocation,
+          price: (property.pricing as any)?.daily_rate || 0,
+          pricingType: 'per_person',
+          rating: property.rating || 0,
+          totalBookings: property.review_count || 0,
+          images: property.images || [],
+          timing: {
+            start: '10:00',
+            end: '18:00',
+            duration: 8
+          },
+          mealPlan: property.meal_plans || [],
+          inclusions: [],
+          exclusions: [],
+          addOns: [],
+          type: 'day_picnic',
+          hasPackage: false
+        };
+      }) || [];
+
+      // Merge both arrays
+      const allDayPicnics = [...formattedPackages, ...dayPicnicPropsAsPackages];
       
-      setDayPicnicPackages(formattedPackages);
+      setDayPicnicPackages(allDayPicnics);
     } catch (error) {
-      console.error('Error fetching day picnic packages:', error);
+      console.error('Error fetching day picnic data:', error);
     }
   };
 
