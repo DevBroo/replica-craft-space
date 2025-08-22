@@ -205,12 +205,16 @@ const Properties: React.FC = () => {
         hasPackage: true
       })) || [];
 
-      // Second, fetch day picnic properties without packages from properties_public
-      const { data: dayPicnicProperties, error: propertiesError } = await supabase
+      // Second, fetch all approved properties and filter for day picnic variants
+      const { data: allApprovedProperties, error: propertiesError } = await supabase
         .from('properties_public')
         .select('*')
-        .eq('status', 'approved')
-        .eq('property_type', 'Day Picnic');
+        .eq('status', 'approved');
+      
+      // Filter for day picnic properties using normalizeTypeKey to handle inconsistent types
+      const dayPicnicProperties = allApprovedProperties?.filter(property => 
+        normalizeTypeKey(property.property_type || '') === 'day_picnic'
+      );
 
       if (propertiesError) throw propertiesError;
 

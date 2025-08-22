@@ -14,6 +14,7 @@ import { Separator } from '@/components/owner/ui/separator';
 import { Progress } from '@/components/owner/ui/progress';
 import { toast } from '@/hooks/use-toast';
 import { getAllStates, getCitiesByState, getPopularCitiesByState } from '@/data/indianLocations';
+import { normalizeTypeKey } from '@/lib/utils';
 
 interface BookingComPropertyFormProps {
   onBack: () => void;
@@ -692,7 +693,7 @@ ${formData.license_number ? `**License:** ${formData.license_number}` : ''}`;
         });
         
         // Handle Day Picnic redirect
-        if (formData.property_type === 'Day Picnic' && !isEdit) {
+        if (normalizeTypeKey(formData.property_type) === 'day_picnic' && !isEdit) {
           toast({
             title: "Day Picnic Property Added!",
             description: "Your property is now visible in the Day Picnic section.",

@@ -1,5 +1,6 @@
 import { supabase } from '@/integrations/supabase/client';
 import type { Database } from '@/integrations/supabase/types';
+import { formatPropertyType } from '@/lib/utils';
 
 type PropertyInsert = Database['public']['Tables']['properties']['Insert'];
 type PropertyUpdate = Database['public']['Tables']['properties']['Update'];
@@ -60,7 +61,7 @@ export class PropertyService {
           address: propertyData.location
         },
         address: `${propertyData.location}, ${propertyData.city}, ${propertyData.state}`,
-        property_type: propertyData.type,
+        property_type: formatPropertyType(propertyData.type),
         amenities: propertyData.amenities,
         pricing: {
           daily_rate: propertyData.price,
@@ -133,7 +134,7 @@ export class PropertyService {
           address: propertyData.location
         },
         address: `${propertyData.location}, ${propertyData.city}, ${propertyData.state}`,
-        property_type: propertyData.type,
+        property_type: formatPropertyType(propertyData.type),
         amenities: propertyData.amenities,
         pricing: {
           daily_rate: propertyData.price,
