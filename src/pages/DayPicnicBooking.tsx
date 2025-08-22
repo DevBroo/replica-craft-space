@@ -21,6 +21,7 @@ import {
   ArrowLeft,
   CreditCard
 } from 'lucide-react';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 const DayPicnicBooking: React.FC = () => {
   const { propertyId } = useParams<{ propertyId: string }>();
@@ -32,14 +33,36 @@ const DayPicnicBooking: React.FC = () => {
   const [property, setProperty] = useState<any>(null);
   const [package_, setPackage] = useState<any>(null);
   const [selectedDate, setSelectedDate] = useState('');
+  const [selectedDuration, setSelectedDuration] = useState('');
   const [guests, setGuests] = useState<GuestBreakdown>({ adults: 2, children: [] });
   const [selectedAddOns, setSelectedAddOns] = useState<string[]>([]);
+
+  // Time duration options
+  const durationOptions = [
+    { value: 'half_day', label: 'Half Day (4-5 hrs)', hours: '4-5' },
+    { value: 'full_day', label: 'Full Day (6-8 hrs)', hours: '6-8' },
+    { value: 'extended_day', label: 'Extended Day (10+ hrs)', hours: '10+' }
+  ];
 
   useEffect(() => {
     if (propertyId) {
       fetchPropertyAndPackage();
     }
   }, [propertyId]);
+
+  // Set initial duration based on package duration_hours
+  useEffect(() => {
+    if (package_?.duration_hours && !selectedDuration) {
+      const hours = package_.duration_hours;
+      if (hours >= 10) {
+        setSelectedDuration('extended_day');
+      } else if (hours >= 6) {
+        setSelectedDuration('full_day');
+      } else {
+        setSelectedDuration('half_day');
+      }
+    }
+  }, [package_, selectedDuration]);
 
   const fetchPropertyAndPackage = async () => {
     try {
@@ -146,6 +169,7 @@ const DayPicnicBooking: React.FC = () => {
           package_id: package_.id,
           start_time: package_.start_time,
           end_time: package_.end_time,
+          duration: selectedDuration,
           meal_plan: package_.meal_plan,
           selected_add_ons: selectedAddOns,
           pricing_type: package_.pricing_type,
@@ -354,6 +378,22 @@ const DayPicnicBooking: React.FC = () => {
                     onChange={(e) => setSelectedDate(e.target.value)}
                     min={new Date().toISOString().split('T')[0]}
                   />
+                </div>
+
+                <div>
+                  <Label htmlFor="duration">Time Duration</Label>
+                  <Select value={selectedDuration} onValueChange={setSelectedDuration}>
+                    <SelectTrigger className="w-full">
+                      <SelectValue placeholder="Select duration" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {durationOptions.map((option) => (
+                        <SelectItem key={option.value} value={option.value}>
+                          {option.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                 </div>
 
                 <div>
