@@ -695,7 +695,7 @@ ${formData.license_number ? `**License:** ${formData.license_number}` : ''}`;
         if (formData.property_type === 'Day Picnic' && !isEdit) {
           toast({
             title: "Day Picnic Property Added!",
-            description: "Your property is now visible in the Day Picnics section.",
+            description: "Your property is now visible in the Day Picnic section.",
           });
           // Add a small delay to ensure the property is saved, then redirect
           setTimeout(() => {

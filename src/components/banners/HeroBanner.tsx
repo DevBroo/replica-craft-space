@@ -70,7 +70,7 @@ const HeroBanner = () => {
           <div className="mb-12 animate-fade-in animation-delay-500">
             <p className="text-xl md:text-2xl lg:text-3xl text-white/90 max-w-4xl mx-auto leading-relaxed font-medium">
               <span className="drop-shadow-lg">
-                From day picnics to weekend retreats, find unique properties and experiences across India
+                From Day Picnic to weekend retreats, find unique properties and experiences across India
               </span>
             </p>
           </div>
