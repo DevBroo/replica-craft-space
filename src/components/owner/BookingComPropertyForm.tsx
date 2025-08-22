@@ -694,10 +694,10 @@ ${formData.license_number ? `**License:** ${formData.license_number}` : ''}`;
         // Handle Day Picnic redirect
         if (formData.property_type === 'day_picnic' && !isEdit) {
           toast({
-            title: "Redirecting to Day Picnic Setup",
-            description: "Complete your day picnic package configuration.",
+            title: "Day Picnic Property Added!",
+            description: "Your property is now visible in the Day Picnics section.",
           });
-          setTimeout(() => navigate(`/host/day-picnic-setup/${result.id}`), 1500);
+          setTimeout(() => navigate('/properties?tab=day_picnics'), 1500);
         } else {
           setTimeout(() => onBack(), 2000);
         }

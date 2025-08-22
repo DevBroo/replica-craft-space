@@ -65,7 +65,7 @@ const Properties: React.FC = () => {
 
   // Day Picnic state
   const [dayPicnicPackages, setDayPicnicPackages] = useState<any[]>([]);
-  const [showDayPicnics, setShowDayPicnics] = useState(false);
+  const [showDayPicnics, setShowDayPicnics] = useState(searchParams.get('tab') === 'day_picnics');
   const [durationFilter, setDurationFilter] = useState('');
 
   // Fetch properties on component mount
@@ -81,10 +81,11 @@ const Properties: React.FC = () => {
     if (locationFilter) params.set('location', locationFilter);
     if (propertyTypeFilter) params.set('type', propertyTypeFilter);
     if (durationFilter) params.set('duration', durationFilter);
+    if (showDayPicnics) params.set('tab', 'day_picnics');
     
     const newUrl = `${window.location.pathname}${params.toString() ? '?' + params.toString() : ''}`;
     window.history.replaceState({}, '', newUrl);
-  }, [searchTerm, locationFilter, propertyTypeFilter, durationFilter]);
+  }, [searchTerm, locationFilter, propertyTypeFilter, durationFilter, showDayPicnics]);
 
   const fetchProperties = async () => {
     try {
@@ -206,6 +207,8 @@ const Properties: React.FC = () => {
 
       if (propertiesError) throw propertiesError;
 
+      console.log('🎯 Day Picnic properties from properties_public:', dayPicnicProperties?.length || 0);
+
       // Convert day picnic properties to package format
       const dayPicnicPropsAsPackages = dayPicnicProperties?.filter(property => {
         // Only include properties that don't already have packages
@@ -261,7 +264,8 @@ const Properties: React.FC = () => {
       property.location.toLowerCase().includes(locationFilter.toLowerCase());
     
     const matchesType = !propertyTypeFilter || propertyTypeFilter === 'all' ||
-      property.type.toLowerCase() === propertyTypeFilter.toLowerCase();
+      property.type.toLowerCase() === propertyTypeFilter.toLowerCase() ||
+      (propertyTypeFilter.toLowerCase() === 'day picnic' && ['day_picnic', 'day picnic'].includes(property.type.toLowerCase()));
     
     const matchesPrice = property.price >= priceRange[0] && property.price <= priceRange[1];
     
