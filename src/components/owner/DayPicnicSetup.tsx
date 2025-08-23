@@ -291,28 +291,27 @@ const DayPicnicSetup: React.FC = () => {
       let packageResult;
       let packageId = package_.id;
 
-      if (package_.id) {
-        // Update existing
-        packageResult = await supabase
-          .from('day_picnic_packages')
-          .update(packageData)
-          .eq('id', package_.id)
-          .select()
-          .single();
-      } else {
-        // Create new
-        packageResult = await supabase
-          .from('day_picnic_packages')
-          .insert(packageData)
-          .select()
-          .single();
-        
-        if (packageResult.data) {
-          packageId = packageResult.data.id;
+      // Use upsert to handle both insert and update cases
+      packageResult = await supabase
+        .from('day_picnic_packages')
+        .upsert(packageData, { 
+          onConflict: 'property_id',
+          ignoreDuplicates: false 
+        })
+        .select()
+        .single();
+
+      if (packageResult.error) {
+        // Handle specific 409 conflict errors with helpful messages
+        if (packageResult.error.code === '23505' || packageResult.error.message?.includes('duplicate')) {
+          throw new Error('A day picnic package already exists for this property. Please try refreshing the page.');
         }
+        throw packageResult.error;
       }
 
-      if (packageResult.error) throw packageResult.error;
+      if (packageResult.data) {
+        packageId = packageResult.data.id;
+      }
 
       // Save hourly rates
       if (packageId) {
