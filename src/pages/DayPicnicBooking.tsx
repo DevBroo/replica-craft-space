@@ -76,39 +76,73 @@ const DayPicnicBooking: React.FC = () => {
 
   const fetchPropertyAndPackage = async () => {
     try {
-      // Fetch property details
+      // Fetch property details from properties_public first
       const { data: propertyData, error: propertyError } = await supabase
-        .from('properties')
+        .from('properties_public')
         .select('*')
         .eq('id', propertyId)
-        .single();
+        .maybeSingle();
 
       if (propertyError) throw propertyError;
+      if (!propertyData) {
+        toast({
+          title: "Property Not Found",
+          description: "The requested property could not be found",
+          variant: "destructive"
+        });
+        navigate('/properties');
+        return;
+      }
       setProperty(propertyData);
 
-      // Fetch day picnic package
+      // Fetch day picnic package - use maybeSingle to handle missing packages
       const { data: packageData, error: packageError } = await supabase
         .from('day_picnic_packages')
         .select('*')
         .eq('property_id', propertyId)
-        .single();
+        .limit(1)
+        .maybeSingle();
 
       if (packageError) throw packageError;
-      setPackage(packageData);
 
-      // Fetch duration prices
-      const { data: durationData, error: durationError } = await supabase
-        .from('day_picnic_option_prices')
-        .select('*')
-        .eq('package_id', packageData.id)
-        .eq('option_type', 'duration');
+      // Create virtual package if none exists
+      if (!packageData) {
+        const virtualPackage = {
+          id: null,
+          property_id: propertyId,
+          meal_plan: ["Lunch", "Snacks"],
+          start_time: "09:00:00",
+          end_time: "18:00:00",
+          duration_hours: 9,
+          pricing_type: "per_person",
+          base_price: (propertyData.pricing as any)?.daily_rate || 1500,
+          inclusions: ["Basic facilities", "Parking", "Common areas access"],
+          exclusions: [
+            { item: "Food & beverages", reason: "Available separately" },
+            { item: "Transportation", reason: "Not included" }
+          ],
+          add_ons: [],
+          min_hours: 4
+        };
+        setPackage(virtualPackage);
+        setDurationPrices([]); // No explicit duration prices for virtual packages
+      } else {
+        setPackage(packageData);
 
-      if (durationError) throw durationError;
-      if (durationData) {
-        setDurationPrices(durationData.map(dur => ({
-          duration_type: dur.name,
-          price: dur.price
-        })));
+        // Fetch duration prices only if real package exists
+        const { data: durationData, error: durationError } = await supabase
+          .from('day_picnic_option_prices')
+          .select('*')
+          .eq('package_id', packageData.id)
+          .eq('option_type', 'duration');
+
+        if (durationError) throw durationError;
+        if (durationData) {
+          setDurationPrices(durationData.map(dur => ({
+            duration_type: dur.name,
+            price: dur.price
+          })));
+        }
       }
     } catch (error: any) {
       toast({
