@@ -36,14 +36,19 @@ const HostLogin: React.FC = () => {
     }
   }, [location.state]);
 
-  // Redirect if already authenticated and is host
+  // Redirect if already authenticated and is host (with grace period)
   useEffect(() => {
     if (!loading && isAuthenticated && user) {
-      if (user.role === 'owner' || user.role === 'agent') {
-        navigate('/host/dashboard', { replace: true });
-      } else if (user.role === 'customer') {
-        navigate('/', { replace: true });
-      }
+      // Add 1.5 second grace period for role resolution
+      const timer = setTimeout(() => {
+        if (user.role === 'owner' || user.role === 'agent') {
+          navigate('/host/dashboard', { replace: true });
+        } else if (user.role === 'customer') {
+          navigate('/', { replace: true });
+        }
+      }, 1500);
+      
+      return () => clearTimeout(timer);
     }
   }, [loading, isAuthenticated, user, navigate]);
 

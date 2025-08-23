@@ -55,7 +55,7 @@ const HostDashboard: React.FC = () => {
     }
   }, [location.state]);
 
-  // Redirect if not authenticated or not a host
+  // Redirect if not authenticated or not a host (with grace period)
   useEffect(() => {
     if (!loading && (!isAuthenticated || !user)) {
       navigate('/host/login', { replace: true });
@@ -63,12 +63,16 @@ const HostDashboard: React.FC = () => {
     }
     
     if (!loading && user && user.role !== 'owner' && user.role !== 'agent') {
-      // Redirect non-hosts to appropriate login
-      if (user.role === 'customer') {
-        navigate('/', { replace: true });
-      } else {
-        navigate('/login', { replace: true });
-      }
+      // Add 1.5 second grace period before redirecting non-hosts
+      const timer = setTimeout(() => {
+        if (user.role === 'customer') {
+          navigate('/', { replace: true });
+        } else {
+          navigate('/login', { replace: true });
+        }
+      }, 1500);
+      
+      return () => clearTimeout(timer);
     }
   }, [loading, isAuthenticated, user, navigate]);
 

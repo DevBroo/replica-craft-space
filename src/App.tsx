@@ -56,6 +56,7 @@ const ProtectedRoute = React.lazy(() => import('@/components/admin/ProtectedRout
 const HostLogin = React.lazy(() => import('@/pages/HostLogin'));
 const HostSignup = React.lazy(() => import('@/pages/HostSignup'));
 const HostDashboard = React.lazy(() => import('@/pages/HostDashboard'));
+const OwnerLogin = React.lazy(() => import('@/pages/owner/OwnerLogin'));
 const OwnerDashboard = React.lazy(() => import('@/pages/owner/OwnerDashboard'));
 const OwnerDashboardView = React.lazy(() => import('@/pages/owner/OwnerDashboardView'));
 const DayPicnicSetup = React.lazy(() => import('@/components/owner/DayPicnicSetup'));
@@ -208,7 +209,7 @@ function App() {
                   {/* Owner Portal Routes - Lazy Loaded */}
                   <Route path="/owner/login" element={
                     <Suspense fallback={<LoadingSpinner />}>
-                      <HostLogin />
+                      <OwnerLogin />
                     </Suspense>
                   } />
                   <Route path="/owner/signup" element={
