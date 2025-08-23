@@ -127,7 +127,139 @@ const OwnerDashboard: React.FC = () => {
     );
   }
 
-  const renderDashboard = () => (
+  const renderContent = () => {
+    switch (activeTab) {
+      case 'properties':
+        console.log('🔧 Rendering PropertiesNew component for properties tab');
+        return <PropertiesNew onBack={() => setActiveTab('dashboard')} editProperty={null} />;
+      case 'bookings':
+        return <Bookings 
+          sidebarCollapsed={sidebarCollapsed} 
+          toggleSidebar={toggleSidebar}
+          activeTab={activeTab}
+          setActiveTab={setActiveTab}
+        />;
+      case 'earnings':
+        return <Earnings 
+          sidebarCollapsed={sidebarCollapsed} 
+          toggleSidebar={toggleSidebar}
+          activeTab={activeTab}
+          setActiveTab={setActiveTab}
+        />;
+      case 'reviews':
+        return <Reviews 
+          sidebarCollapsed={sidebarCollapsed} 
+          toggleSidebar={toggleSidebar}
+          activeTab={activeTab}
+          setActiveTab={setActiveTab}
+        />;
+      case 'profile':
+        return <Profile 
+          sidebarCollapsed={sidebarCollapsed} 
+          toggleSidebar={toggleSidebar}
+          activeTab={activeTab}
+          setActiveTab={setActiveTab}
+        />;
+      case 'settings':
+        return <Settings 
+          sidebarCollapsed={sidebarCollapsed} 
+          toggleSidebar={toggleSidebar}
+          activeTab={activeTab}
+          setActiveTab={setActiveTab}
+        />;
+      default:
+        return (
+          <>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+              <div className="bg-white rounded-lg shadow-sm p-6 border-l-4 border-blue-500">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-gray-600 text-sm">Total Properties</p>
+                    <p className="text-2xl font-bold text-gray-800">0</p>
+                    <p className="text-xs text-gray-500">No properties listed yet</p>
+                  </div>
+                  <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center">
+                    <i className="fas fa-home text-blue-600 text-xl"></i>
+                  </div>
+                </div>
+              </div>
+              <div className="bg-white rounded-lg shadow-sm p-6 border-l-4 border-green-500">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-gray-600 text-sm">Active Bookings</p>
+                    <p className="text-2xl font-bold text-gray-800">0</p>
+                    <p className="text-xs text-gray-500">No bookings yet</p>
+                  </div>
+                  <div className="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center">
+                    <i className="fas fa-calendar-check text-green-600 text-xl"></i>
+                  </div>
+                </div>
+              </div>
+              <div className="bg-white rounded-lg shadow-sm p-6 border-l-4 border-yellow-500">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-gray-600 text-sm">Monthly Revenue</p>
+                    <p className="text-2xl font-bold text-gray-800">₹0</p>
+                    <p className="text-xs text-gray-500">Start listing to earn</p>
+                  </div>
+                  <div className="w-12 h-12 bg-yellow-100 rounded-lg flex items-center justify-center">
+                    <i className="fas fa-dollar-sign text-yellow-600 text-xl"></i>
+                  </div>
+                </div>
+              </div>
+              <div className="bg-white rounded-lg shadow-sm p-6 border-l-4 border-purple-500">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-gray-600 text-sm">Average Rating</p>
+                    <p className="text-2xl font-bold text-gray-800">-</p>
+                    <p className="text-xs text-gray-500">No reviews yet</p>
+                  </div>
+                  <div className="w-12 h-12 bg-purple-100 rounded-lg flex items-center justify-center">
+                    <i className="fas fa-star text-purple-600 text-xl"></i>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              <div className="bg-white rounded-lg shadow-sm p-6">
+                <h3 className="text-lg font-semibold text-gray-800 mb-4">Recent Bookings</h3>
+                <div className="space-y-4">
+                  <div className="text-center py-8">
+                    <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                      <i className="fas fa-calendar-plus text-gray-400 text-xl"></i>
+                    </div>
+                    <h4 className="text-lg font-medium text-gray-800 mb-2">No bookings yet</h4>
+                    <p className="text-gray-600 mb-4">Start by listing your first property to receive bookings</p>
+                    <button 
+                      onClick={() => setActiveTab('properties')}
+                      className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors"
+                    >
+                      <i className="fas fa-plus mr-2"></i>
+                      Add Your First Property
+                    </button>
+                  </div>
+                </div>
+              </div>
+              <div className="bg-white rounded-lg shadow-sm p-6">
+                <h3 className="text-lg font-semibold text-gray-800 mb-4">Recent Messages</h3>
+                <div className="space-y-4">
+                  <div className="text-center py-8">
+                    <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                      <i className="fas fa-comments text-gray-400 text-xl"></i>
+                    </div>
+                    <h4 className="text-lg font-medium text-gray-800 mb-2">No messages yet</h4>
+                    <p className="text-gray-600 mb-4">You'll receive messages from guests once you have bookings</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </>
+        );
+    }
+  };
+
+  // Always render the full dashboard layout with sidebar
+  return (
     <div className="min-h-screen bg-gray-50">
       {/* Sidebar */}
       <div className={`fixed left-0 top-0 h-full bg-white shadow-lg transition-all duration-300 z-40 ${sidebarCollapsed ? 'w-16' : 'w-64'}`}>
@@ -219,142 +351,11 @@ const OwnerDashboard: React.FC = () => {
 
         {/* Dashboard Content */}
         <main className="p-6">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-            <div className="bg-white rounded-lg shadow-sm p-6 border-l-4 border-blue-500">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-gray-600 text-sm">Total Properties</p>
-                  <p className="text-2xl font-bold text-gray-800">0</p>
-                  <p className="text-xs text-gray-500">No properties listed yet</p>
-                </div>
-                <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center">
-                  <i className="fas fa-home text-blue-600 text-xl"></i>
-                </div>
-              </div>
-            </div>
-            <div className="bg-white rounded-lg shadow-sm p-6 border-l-4 border-green-500">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-gray-600 text-sm">Active Bookings</p>
-                  <p className="text-2xl font-bold text-gray-800">0</p>
-                  <p className="text-xs text-gray-500">No bookings yet</p>
-                </div>
-                <div className="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center">
-                  <i className="fas fa-calendar-check text-green-600 text-xl"></i>
-                </div>
-              </div>
-            </div>
-            <div className="bg-white rounded-lg shadow-sm p-6 border-l-4 border-yellow-500">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-gray-600 text-sm">Monthly Revenue</p>
-                  <p className="text-2xl font-bold text-gray-800">₹0</p>
-                  <p className="text-xs text-gray-500">Start listing to earn</p>
-                </div>
-                <div className="w-12 h-12 bg-yellow-100 rounded-lg flex items-center justify-center">
-                  <i className="fas fa-dollar-sign text-yellow-600 text-xl"></i>
-                </div>
-              </div>
-            </div>
-            <div className="bg-white rounded-lg shadow-sm p-6 border-l-4 border-purple-500">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-gray-600 text-sm">Average Rating</p>
-                  <p className="text-2xl font-bold text-gray-800">-</p>
-                  <p className="text-xs text-gray-500">No reviews yet</p>
-                </div>
-                <div className="w-12 h-12 bg-purple-100 rounded-lg flex items-center justify-center">
-                  <i className="fas fa-star text-purple-600 text-xl"></i>
-                </div>
-              </div>
-            </div>
-          </div>
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <div className="bg-white rounded-lg shadow-sm p-6">
-              <h3 className="text-lg font-semibold text-gray-800 mb-4">Recent Bookings</h3>
-              <div className="space-y-4">
-                <div className="text-center py-8">
-                  <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                    <i className="fas fa-calendar-plus text-gray-400 text-xl"></i>
-                  </div>
-                  <h4 className="text-lg font-medium text-gray-800 mb-2">No bookings yet</h4>
-                  <p className="text-gray-600 mb-4">Start by listing your first property to receive bookings</p>
-                  <button className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors">
-                    <i className="fas fa-plus mr-2"></i>
-                    Add Your First Property
-                  </button>
-                </div>
-              </div>
-            </div>
-            <div className="bg-white rounded-lg shadow-sm p-6">
-              <h3 className="text-lg font-semibold text-gray-800 mb-4">Recent Messages</h3>
-              <div className="space-y-4">
-                <div className="text-center py-8">
-                  <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                    <i className="fas fa-comments text-gray-400 text-xl"></i>
-                  </div>
-                  <h4 className="text-lg font-medium text-gray-800 mb-2">No messages yet</h4>
-                  <p className="text-gray-600 mb-4">You'll receive messages from guests once you have bookings</p>
-                </div>
-              </div>
-            </div>
-          </div>
+          {renderContent()}
         </main>
       </div>
     </div>
   );
-
-  // Render dashboard based on active tab
-  if (activeTab === 'properties') {
-    console.log('🔧 Rendering PropertiesNew component for properties tab');
-    return <PropertiesNew 
-      sidebarCollapsed={sidebarCollapsed} 
-      toggleSidebar={toggleSidebar}
-      activeTab={activeTab}
-      setActiveTab={setActiveTab}
-    />;
-  }
-  if (activeTab === 'bookings') {
-    return <Bookings 
-      sidebarCollapsed={sidebarCollapsed} 
-      toggleSidebar={toggleSidebar}
-      activeTab={activeTab}
-      setActiveTab={setActiveTab}
-    />;
-  }
-  if (activeTab === 'earnings') {
-    return <Earnings 
-      sidebarCollapsed={sidebarCollapsed} 
-      toggleSidebar={toggleSidebar}
-      activeTab={activeTab}
-      setActiveTab={setActiveTab}
-    />;
-  }
-  if (activeTab === 'reviews') {
-    return <Reviews 
-      sidebarCollapsed={sidebarCollapsed} 
-      toggleSidebar={toggleSidebar}
-      activeTab={activeTab}
-      setActiveTab={setActiveTab}
-    />;
-  }
-  if (activeTab === 'profile') {
-    return <Profile 
-      sidebarCollapsed={sidebarCollapsed} 
-      toggleSidebar={toggleSidebar}
-      activeTab={activeTab}
-      setActiveTab={setActiveTab}
-    />;
-  }
-  if (activeTab === 'settings') {
-    return <Settings 
-      sidebarCollapsed={sidebarCollapsed} 
-      toggleSidebar={toggleSidebar}
-      activeTab={activeTab}
-      setActiveTab={setActiveTab}
-    />;
-  }
-  return renderDashboard();
 };
 
 export default OwnerDashboard;

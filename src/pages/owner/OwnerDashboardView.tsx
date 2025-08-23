@@ -89,7 +89,151 @@ const OwnerDashboardView: React.FC = () => {
     );
   }
 
-  const renderDashboard = () => (
+  const renderContent = () => {
+    switch (activeTab) {
+      case 'properties':
+        return <MyProperties />;
+      case 'bookings':
+        return (
+          <div className="text-center py-16">
+            <h2 className="text-2xl font-bold text-gray-800 mb-4">Bookings</h2>
+            <p className="text-gray-600">Bookings management coming soon...</p>
+          </div>
+        );
+      case 'earnings':
+        return (
+          <div className="text-center py-16">
+            <h2 className="text-2xl font-bold text-gray-800 mb-4">Earnings</h2>
+            <p className="text-gray-600">Earnings management coming soon...</p>
+          </div>
+        );
+      case 'reviews':
+        return (
+          <div className="text-center py-16">
+            <h2 className="text-2xl font-bold text-gray-800 mb-4">Reviews</h2>
+            <p className="text-gray-600">Reviews management coming soon...</p>
+          </div>
+        );
+      case 'profile':
+        return (
+          <div className="text-center py-16">
+            <h2 className="text-2xl font-bold text-gray-800 mb-4">Profile</h2>
+            <p className="text-gray-600">Profile management coming soon...</p>
+          </div>
+        );
+      case 'settings':
+        return (
+          <div className="text-center py-16">
+            <h2 className="text-2xl font-bold text-gray-800 mb-4">Settings</h2>
+            <p className="text-gray-600">Settings management coming soon...</p>
+          </div>
+        );
+      default:
+        return (
+          <>
+            {/* Role Information Banner */}
+            <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-6">
+              <div className="flex items-center">
+                <i className="fas fa-info-circle text-yellow-600 mr-3"></i>
+                <div>
+                  <h3 className="text-sm font-medium text-yellow-800">Dashboard Access Granted</h3>
+                  <p className="text-sm text-yellow-700 mt-1">
+                    You are accessing the Property Owner Dashboard. Your current role is: <strong>{user?.role || 'Unknown'}</strong>
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+              <div className="bg-white rounded-lg shadow-sm p-6 border-l-4 border-blue-500">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-gray-600 text-sm">Total Properties</p>
+                    <p className="text-2xl font-bold text-gray-800">0</p>
+                    <p className="text-xs text-gray-500">No properties listed yet</p>
+                  </div>
+                  <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center">
+                    <i className="fas fa-home text-blue-600 text-xl"></i>
+                  </div>
+                </div>
+              </div>
+              <div className="bg-white rounded-lg shadow-sm p-6 border-l-4 border-green-500">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-gray-600 text-sm">Active Bookings</p>
+                    <p className="text-2xl font-bold text-gray-800">0</p>
+                    <p className="text-xs text-gray-500">No bookings yet</p>
+                  </div>
+                  <div className="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center">
+                    <i className="fas fa-calendar-check text-green-600 text-xl"></i>
+                  </div>
+                </div>
+              </div>
+              <div className="bg-white rounded-lg shadow-sm p-6 border-l-4 border-yellow-500">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-gray-600 text-sm">Monthly Revenue</p>
+                    <p className="text-2xl font-bold text-gray-800">₹0</p>
+                    <p className="text-xs text-gray-500">Start listing to earn</p>
+                  </div>
+                  <div className="w-12 h-12 bg-yellow-100 rounded-lg flex items-center justify-center">
+                    <i className="fas fa-dollar-sign text-yellow-600 text-xl"></i>
+                  </div>
+                </div>
+              </div>
+              <div className="bg-white rounded-lg shadow-sm p-6 border-l-4 border-purple-500">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-gray-600 text-sm">Average Rating</p>
+                    <p className="text-2xl font-bold text-gray-800">-</p>
+                    <p className="text-xs text-gray-500">No reviews yet</p>
+                  </div>
+                  <div className="w-12 h-12 bg-purple-100 rounded-lg flex items-center justify-center">
+                    <i className="fas fa-star text-purple-600 text-xl"></i>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              <div className="bg-white rounded-lg shadow-sm p-6">
+                <h3 className="text-lg font-semibold text-gray-800 mb-4">Recent Bookings</h3>
+                <div className="space-y-4">
+                  <div className="text-center py-8">
+                    <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                      <i className="fas fa-calendar-plus text-gray-400 text-xl"></i>
+                    </div>
+                    <h4 className="text-lg font-medium text-gray-800 mb-2">No bookings yet</h4>
+                    <p className="text-gray-600 mb-4">Start by listing your first property to receive bookings</p>
+                    <button 
+                      onClick={() => setActiveTab('properties')}
+                      className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors"
+                    >
+                      <i className="fas fa-plus mr-2"></i>
+                      Add Your First Property
+                    </button>
+                  </div>
+                </div>
+              </div>
+              <div className="bg-white rounded-lg shadow-sm p-6">
+                <h3 className="text-lg font-semibold text-gray-800 mb-4">Recent Messages</h3>
+                <div className="space-y-4">
+                  <div className="text-center py-8">
+                    <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                      <i className="fas fa-comments text-gray-400 text-xl"></i>
+                    </div>
+                    <h4 className="text-lg font-medium text-gray-800 mb-2">No messages yet</h4>
+                    <p className="text-gray-600 mb-4">You'll receive messages from guests once you have bookings</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </>
+        );
+    }
+  };
+
+  // Always render the full dashboard layout with sidebar
+  return (
     <div className="min-h-screen bg-gray-50">
       {/* Sidebar */}
       <div className={`fixed left-0 top-0 h-full bg-white shadow-lg transition-all duration-300 z-40 ${sidebarCollapsed ? 'w-16' : 'w-64'}`}>
@@ -175,196 +319,11 @@ const OwnerDashboardView: React.FC = () => {
 
         {/* Dashboard Content */}
         <main className="p-6">
-          {/* Role Information Banner */}
-          <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-6">
-            <div className="flex items-center">
-              <i className="fas fa-info-circle text-yellow-600 mr-3"></i>
-              <div>
-                <h3 className="text-sm font-medium text-yellow-800">Dashboard Access Granted</h3>
-                <p className="text-sm text-yellow-700 mt-1">
-                  You are accessing the Property Owner Dashboard. Your current role is: <strong>{user?.role || 'Unknown'}</strong>
-                </p>
-              </div>
-            </div>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-            <div className="bg-white rounded-lg shadow-sm p-6 border-l-4 border-blue-500">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-gray-600 text-sm">Total Properties</p>
-                  <p className="text-2xl font-bold text-gray-800">0</p>
-                  <p className="text-xs text-gray-500">No properties listed yet</p>
-                </div>
-                <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center">
-                  <i className="fas fa-home text-blue-600 text-xl"></i>
-                </div>
-              </div>
-            </div>
-            <div className="bg-white rounded-lg shadow-sm p-6 border-l-4 border-green-500">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-gray-600 text-sm">Active Bookings</p>
-                  <p className="text-2xl font-bold text-gray-800">0</p>
-                  <p className="text-xs text-gray-500">No bookings yet</p>
-                </div>
-                <div className="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center">
-                  <i className="fas fa-calendar-check text-green-600 text-xl"></i>
-                </div>
-              </div>
-            </div>
-            <div className="bg-white rounded-lg shadow-sm p-6 border-l-4 border-yellow-500">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-gray-600 text-sm">Monthly Revenue</p>
-                  <p className="text-2xl font-bold text-gray-800">₹0</p>
-                  <p className="text-xs text-gray-500">Start listing to earn</p>
-                </div>
-                <div className="w-12 h-12 bg-yellow-100 rounded-lg flex items-center justify-center">
-                  <i className="fas fa-dollar-sign text-yellow-600 text-xl"></i>
-                </div>
-              </div>
-            </div>
-            <div className="bg-white rounded-lg shadow-sm p-6 border-l-4 border-purple-500">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-gray-600 text-sm">Average Rating</p>
-                  <p className="text-2xl font-bold text-gray-800">-</p>
-                  <p className="text-xs text-gray-500">No reviews yet</p>
-                </div>
-                <div className="w-12 h-12 bg-purple-100 rounded-lg flex items-center justify-center">
-                  <i className="fas fa-star text-purple-600 text-xl"></i>
-                </div>
-              </div>
-            </div>
-          </div>
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <div className="bg-white rounded-lg shadow-sm p-6">
-              <h3 className="text-lg font-semibold text-gray-800 mb-4">Recent Bookings</h3>
-              <div className="space-y-4">
-                <div className="text-center py-8">
-                  <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                    <i className="fas fa-calendar-plus text-gray-400 text-xl"></i>
-                  </div>
-                  <h4 className="text-lg font-medium text-gray-800 mb-2">No bookings yet</h4>
-                  <p className="text-gray-600 mb-4">Start by listing your first property to receive bookings</p>
-                  <button className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors">
-                    <i className="fas fa-plus mr-2"></i>
-                    Add Your First Property
-                  </button>
-                </div>
-              </div>
-            </div>
-            <div className="bg-white rounded-lg shadow-sm p-6">
-              <h3 className="text-lg font-semibold text-gray-800 mb-4">Recent Messages</h3>
-              <div className="space-y-4">
-                <div className="text-center py-8">
-                  <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                    <i className="fas fa-comments text-gray-400 text-xl"></i>
-                  </div>
-                  <h4 className="text-lg font-medium text-gray-800 mb-2">No messages yet</h4>
-                  <p className="text-gray-600 mb-4">You'll receive messages from guests once you have bookings</p>
-                </div>
-              </div>
-            </div>
-          </div>
+          {renderContent()}
         </main>
       </div>
     </div>
   );
-
-  // Render dashboard based on active tab
-  if (activeTab === 'properties') {
-    return (
-      <MyProperties
-        sidebarCollapsed={sidebarCollapsed}
-        toggleSidebar={toggleSidebar}
-        activeTab={activeTab}
-        setActiveTab={setActiveTab}
-      />
-    );
-  }
-  if (activeTab === 'bookings') {
-    return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-center">
-          <h2 className="text-2xl font-bold text-gray-800 mb-4">Bookings</h2>
-          <p className="text-gray-600">Bookings management coming soon...</p>
-          <button 
-            onClick={() => setActiveTab('dashboard')}
-            className="mt-4 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors"
-          >
-            Back to Dashboard
-          </button>
-        </div>
-      </div>
-    );
-  }
-  if (activeTab === 'earnings') {
-    return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-center">
-          <h2 className="text-2xl font-bold text-gray-800 mb-4">Earnings</h2>
-          <p className="text-gray-600">Earnings management coming soon...</p>
-          <button 
-            onClick={() => setActiveTab('dashboard')}
-            className="mt-4 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors"
-          >
-            Back to Dashboard
-          </button>
-        </div>
-      </div>
-    );
-  }
-  if (activeTab === 'reviews') {
-    return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-center">
-          <h2 className="text-2xl font-bold text-gray-800 mb-4">Reviews</h2>
-          <p className="text-gray-600">Reviews management coming soon...</p>
-          <button 
-            onClick={() => setActiveTab('dashboard')}
-            className="mt-4 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors"
-          >
-            Back to Dashboard
-          </button>
-        </div>
-      </div>
-    );
-  }
-  if (activeTab === 'profile') {
-    return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-center">
-          <h2 className="text-2xl font-bold text-gray-800 mb-4">Profile</h2>
-          <p className="text-gray-600">Profile management coming soon...</p>
-          <button 
-            onClick={() => setActiveTab('dashboard')}
-            className="mt-4 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors"
-          >
-            Back to Dashboard
-          </button>
-        </div>
-      </div>
-    );
-  }
-  if (activeTab === 'settings') {
-    return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-center">
-          <h2 className="text-2xl font-bold text-gray-800 mb-4">Settings</h2>
-          <p className="text-gray-600">Settings management coming soon...</p>
-          <button 
-            onClick={() => setActiveTab('dashboard')}
-            className="mt-4 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors"
-          >
-            Back to Dashboard
-          </button>
-        </div>
-      </div>
-    );
-  }
-  return renderDashboard();
 };
 
 export default OwnerDashboardView;
