@@ -798,7 +798,7 @@ export class PropertyService {
       },
       
       images: dbProperty.images || [],
-      photos_with_captions: [], // Note: This would be fetched separately if needed
+      photos_with_captions: [], // Will be loaded separately in PropertyWizard
       
       extra_services: {
         meals: extrasData?.meals || {},
@@ -815,9 +815,37 @@ export class PropertyService {
   }
 
   /**
+   * Get property photos with captions
+   */
+  static async getPropertyPhotos(propertyId: string): Promise<any[]> {
+    try {
+      const { data, error } = await supabase
+        .from('photos_with_captions')
+        .select('*')
+        .eq('property_id', propertyId)
+        .order('display_order', { ascending: true });
+
+      if (error) {
+        console.error('❌ Error fetching property photos:', error);
+        return [];
+      }
+
+      return data || [];
+    } catch (error) {
+      console.error('❌ Failed to fetch property photos:', error);
+      return [];
+    }
+  }
+
+  /**
    * Convert frontend property to database format
    */
   static convertToDatabaseFormat(frontendProperty: any): PropertyFormData {
+    // Sync images array from photos_with_captions
+    const images = frontendProperty.photos_with_captions?.length > 0 
+      ? frontendProperty.photos_with_captions.map((photo: any) => photo.image_url)
+      : frontendProperty.images || [];
+
     return {
       // New wizard fields
       title: frontendProperty.title || frontendProperty.name,
@@ -847,7 +875,7 @@ export class PropertyService {
       amenities_details: frontendProperty.amenities_details,
       facilities: frontendProperty.facilities,
       
-      images: frontendProperty.images,
+      images: images, // Synchronized from photos_with_captions
       photos_with_captions: frontendProperty.photos_with_captions,
       
       pricing: frontendProperty.pricing || {

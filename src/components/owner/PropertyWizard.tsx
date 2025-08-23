@@ -272,7 +272,28 @@ const PropertyWizard: React.FC<PropertyWizardProps> = ({ onBack, propertyId, ini
       const property = await PropertyService.getPropertyById(propertyId);
       if (property) {
         // Convert database format to wizard form data
-        setFormData(PropertyService.convertToWizardFormat(property));
+        const wizardData = PropertyService.convertToWizardFormat(property);
+        
+        // Load photos with captions
+        const photos = await PropertyService.getPropertyPhotos(propertyId);
+        
+        // If we have photos_with_captions, use them; otherwise fall back to images array
+        if (photos && photos.length > 0) {
+          wizardData.photos_with_captions = photos;
+          wizardData.images = photos.map(photo => photo.image_url);
+        } else if (property.images && property.images.length > 0) {
+          // Convert existing images to photos_with_captions format
+          wizardData.photos_with_captions = property.images.map((url, index) => ({
+            image_url: url,
+            caption: '',
+            alt_text: '',
+            category: 'exterior',
+            display_order: index,
+            is_primary: index === 0
+          }));
+        }
+        
+        setFormData(wizardData);
       }
     } catch (error) {
       console.error('Error loading property:', error);
