@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
@@ -11,6 +10,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import GuestSelector, { GuestBreakdown } from '@/components/ui/GuestSelector';
+import { CouponService, Coupon } from '@/lib/couponService';
 import { 
   Clock, 
   MapPin, 
@@ -19,7 +19,9 @@ import {
   CheckCircle,
   XCircle,
   ArrowLeft,
-  CreditCard
+  CreditCard,
+  Tag,
+  Loader2
 } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
@@ -37,6 +39,12 @@ const DayPicnicBooking: React.FC = () => {
   const [guests, setGuests] = useState<GuestBreakdown>({ adults: 2, children: [] });
   const [selectedAddOns, setSelectedAddOns] = useState<string[]>([]);
   const [durationPrices, setDurationPrices] = useState<{ duration_type: string; price: number }[]>([]);
+  
+  // Coupon related state
+  const [couponCode, setCouponCode] = useState('');
+  const [appliedCoupon, setAppliedCoupon] = useState<Coupon | null>(null);
+  const [couponLoading, setCouponLoading] = useState(false);
+  const [couponError, setCouponError] = useState<string | null>(null);
 
   // Time duration options
   const durationOptions = [
@@ -162,7 +170,52 @@ const DayPicnicBooking: React.FC = () => {
     );
   };
 
-  const calculateTotalPrice = () => {
+  const handleCouponApply = async () => {
+    if (!couponCode.trim()) {
+      setCouponError('Please enter a coupon code');
+      return;
+    }
+
+    setCouponLoading(true);
+    setCouponError(null);
+
+    try {
+      const coupon = await CouponService.validateCoupon(couponCode, propertyId);
+      
+      if (!coupon) {
+        setCouponError('Invalid or expired coupon code');
+        return;
+      }
+
+      const subtotal = calculateSubtotal();
+      if (subtotal < coupon.min_order_amount) {
+        setCouponError(`Minimum order amount is ₹${coupon.min_order_amount}`);
+        return;
+      }
+
+      setAppliedCoupon(coupon);
+      toast({
+        title: "Coupon Applied!",
+        description: `${coupon.description || `${coupon.discount_value}${coupon.discount_type === 'percentage' ? '%' : ''} discount applied`}`,
+      });
+    } catch (error) {
+      setCouponError('Failed to validate coupon');
+    } finally {
+      setCouponLoading(false);
+    }
+  };
+
+  const handleCouponRemove = () => {
+    setAppliedCoupon(null);
+    setCouponCode('');
+    setCouponError(null);
+    toast({
+      title: "Coupon Removed",
+      description: "Coupon has been removed from your booking",
+    });
+  };
+
+  const calculateSubtotal = () => {
     if (!package_) return 0;
     
     let basePrice = 0;
@@ -229,6 +282,17 @@ const DayPicnicBooking: React.FC = () => {
     return basePrice + addOnPrice;
   };
 
+  const calculateDiscount = () => {
+    if (!appliedCoupon) return 0;
+    return CouponService.calculateDiscount(appliedCoupon, calculateSubtotal());
+  };
+
+  const calculateTotalPrice = () => {
+    const subtotal = calculateSubtotal();
+    const discount = calculateDiscount();
+    return Math.max(0, subtotal - discount);
+  };
+
   const handleBooking = async () => {
     if (!isAuthenticated) {
       toast({
@@ -267,7 +331,13 @@ const DayPicnicBooking: React.FC = () => {
           meal_plan: package_.meal_plan,
           selected_add_ons: selectedAddOns,
           pricing_type: package_.pricing_type,
-          guest_breakdown: JSON.parse(JSON.stringify(guests))
+          guest_breakdown: JSON.parse(JSON.stringify(guests)),
+          coupon_details: appliedCoupon ? {
+            code: appliedCoupon.code,
+            discount_type: appliedCoupon.discount_type,
+            discount_value: appliedCoupon.discount_value,
+            discount_amount: calculateDiscount()
+          } : null
         }
       };
 
@@ -535,6 +605,60 @@ const DayPicnicBooking: React.FC = () => {
                   />
                 </div>
 
+                {/* Coupon Code Section */}
+                <div className="border-t pt-4">
+                  <Label className="text-base font-semibold mb-3 block">Coupon Code</Label>
+                  {!appliedCoupon ? (
+                    <div className="space-y-2">
+                      <div className="flex gap-2">
+                        <Input
+                          placeholder="Enter coupon code"
+                          value={couponCode}
+                          onChange={(e) => {
+                            setCouponCode(e.target.value.toUpperCase());
+                            setCouponError(null);
+                          }}
+                          className="flex-1"
+                        />
+                        <Button
+                          onClick={handleCouponApply}
+                          disabled={couponLoading || !couponCode.trim()}
+                          variant="outline"
+                          size="sm"
+                        >
+                          {couponLoading ? (
+                            <Loader2 className="w-4 h-4 animate-spin" />
+                          ) : (
+                            <Tag className="w-4 h-4" />
+                          )}
+                        </Button>
+                      </div>
+                      {couponError && (
+                        <p className="text-sm text-red-600">{couponError}</p>
+                      )}
+                    </div>
+                  ) : (
+                    <div className="bg-green-50 border border-green-200 rounded-lg p-3">
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <p className="font-medium text-green-800">{appliedCoupon.code}</p>
+                          <p className="text-sm text-green-600">
+                            {appliedCoupon.description || `${appliedCoupon.discount_value}${appliedCoupon.discount_type === 'percentage' ? '%' : ''} discount`}
+                          </p>
+                        </div>
+                        <Button
+                          onClick={handleCouponRemove}
+                          variant="ghost"
+                          size="sm"
+                          className="text-green-700 hover:text-green-800"
+                        >
+                          Remove
+                        </Button>
+                      </div>
+                    </div>
+                  )}
+                </div>
+
                 <div className="border-t pt-4">
                   <h4 className="font-semibold mb-2">Price Breakdown</h4>
                   <div className="space-y-2">
@@ -570,6 +694,20 @@ const DayPicnicBooking: React.FC = () => {
                         </div>
                       );
                     })}
+                    
+                    {appliedCoupon && (
+                      <>
+                        <div className="flex justify-between border-t pt-2">
+                          <span>Subtotal</span>
+                          <span>₹{calculateSubtotal().toLocaleString()}</span>
+                        </div>
+                        <div className="flex justify-between text-green-600">
+                          <span>Discount ({appliedCoupon.code})</span>
+                          <span>-₹{calculateDiscount().toLocaleString()}</span>
+                        </div>
+                      </>
+                    )}
+                    
                     <div className="flex justify-between font-bold text-lg border-t pt-2">
                       <span>Total</span>
                       <span className="text-green-600">₹{calculateTotalPrice().toLocaleString()}</span>
