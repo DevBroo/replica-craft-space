@@ -6,10 +6,12 @@ import { Badge } from "@/components/ui/badge";
 import { useState, useEffect } from "react";
 import { PropertyService } from "@/lib/propertyService";
 import { BookingService } from "@/lib/bookingService";
+import { CouponService, Coupon } from "@/lib/couponService";
 import { useAuth } from "@/contexts/AuthContext";
 import { useWishlist } from "@/contexts/WishlistContext";
 import { useToast } from "@/hooks/use-toast";
 import GuestSelector, { GuestBreakdown } from '@/components/ui/GuestSelector';
+import { Input } from "@/components/ui/input";
 
 // No dummy data - load from database using PropertyService
 
@@ -23,6 +25,9 @@ const PropertyDetails = () => {
   const [checkInDate, setCheckInDate] = useState('');
   const [checkOutDate, setCheckOutDate] = useState('');
   const [isBooking, setIsBooking] = useState(false);
+  const [couponCode, setCouponCode] = useState('');
+  const [appliedCoupon, setAppliedCoupon] = useState<Coupon | null>(null);
+  const [isCouponLoading, setIsCouponLoading] = useState(false);
   const { user, isAuthenticated } = useAuth();
   const { toast } = useToast();
   const { isPropertySaved, addToWishlist, removeFromWishlist } = useWishlist();
@@ -128,7 +133,76 @@ const PropertyDetails = () => {
     const nights = calculateNights();
     const basePrice = property.price * nights;
     const serviceFee = Math.round(basePrice * 0.1);
-    return basePrice + serviceFee;
+    const subtotal = basePrice + serviceFee;
+    
+    // Apply coupon discount if available
+    if (appliedCoupon) {
+      const discount = CouponService.calculateDiscount(appliedCoupon, subtotal);
+      return subtotal - discount;
+    }
+    
+    return subtotal;
+  };
+
+  const handleCouponApply = async () => {
+    if (!couponCode.trim()) {
+      toast({
+        title: "Enter Coupon Code",
+        description: "Please enter a coupon code to apply.",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    setIsCouponLoading(true);
+    try {
+      const coupon = await CouponService.validateCoupon(couponCode, property.id);
+      
+      if (coupon) {
+        const nights = calculateNights();
+        const basePrice = property.price * nights;
+        const serviceFee = Math.round(basePrice * 0.1);
+        const subtotal = basePrice + serviceFee;
+        
+        if (subtotal < coupon.min_order_amount) {
+          toast({
+            title: "Minimum Order Not Met",
+            description: `This coupon requires a minimum order of $${coupon.min_order_amount}. Your current total is $${subtotal}.`,
+            variant: "destructive"
+          });
+          return;
+        }
+        
+        setAppliedCoupon(coupon);
+        toast({
+          title: "Coupon Applied! 🎉",
+          description: `${coupon.description || 'Discount applied successfully'}`,
+        });
+      } else {
+        toast({
+          title: "Invalid Coupon",
+          description: "This coupon code is invalid, expired, or not applicable to this property.",
+          variant: "destructive"
+        });
+      }
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to validate coupon code. Please try again.",
+        variant: "destructive"
+      });
+    } finally {
+      setIsCouponLoading(false);
+    }
+  };
+
+  const handleCouponRemove = () => {
+    setAppliedCoupon(null);
+    setCouponCode('');
+    toast({
+      title: "Coupon Removed",
+      description: "The coupon discount has been removed from your booking."
+    });
   };
 
   const handleBooking = async () => {
@@ -254,7 +328,13 @@ const PropertyDetails = () => {
           property_title: property.title,
           property_location: property.location,
           nights: calculateNights(),
-          guest_breakdown: JSON.parse(JSON.stringify(guests))
+          guest_breakdown: JSON.parse(JSON.stringify(guests)),
+          coupon_applied: appliedCoupon ? {
+            code: appliedCoupon.code,
+            discount_type: appliedCoupon.discount_type,
+            discount_value: appliedCoupon.discount_value,
+            discount_amount: appliedCoupon ? CouponService.calculateDiscount(appliedCoupon, (property.price * calculateNights()) + Math.round(property.price * calculateNights() * 0.1)) : 0
+          } : null
         }
       });
 
@@ -572,10 +652,54 @@ const PropertyDetails = () => {
                        initialGuests={guests}
                        className="border-0 p-0"
                      />
-                   </div>
-                </div>
+                    </div>
 
-                {/* Show Day Picnic booking button for Day Picnic properties */}
+                    {/* Coupon Code Section - Only for stay bookings */}
+                    {property.type !== 'Day Picnic' && (
+                      <div>
+                        <label className="block text-sm font-medium mb-2">Coupon Code</label>
+                        <div className="flex gap-2">
+                          <Input
+                            type="text"
+                            placeholder="Enter coupon code"
+                            value={couponCode}
+                            onChange={(e) => setCouponCode(e.target.value.toUpperCase())}
+                            className="flex-1"
+                            disabled={!!appliedCoupon}
+                          />
+                          {appliedCoupon ? (
+                            <Button
+                              variant="outline"
+                              onClick={handleCouponRemove}
+                              className="text-red-600 hover:text-red-700"
+                            >
+                              Remove
+                            </Button>
+                          ) : (
+                            <Button
+                              variant="outline"
+                              onClick={handleCouponApply}
+                              disabled={isCouponLoading || !couponCode.trim()}
+                            >
+                              {isCouponLoading ? 'Validating...' : 'Apply'}
+                            </Button>
+                          )}
+                        </div>
+                        {appliedCoupon && (
+                          <div className="mt-2 p-2 bg-green-50 border border-green-200 rounded-lg">
+                            <div className="text-green-700 text-sm">
+                              ✓ Coupon "{appliedCoupon.code}" applied
+                              {appliedCoupon.description && (
+                                <div className="text-xs text-green-600 mt-1">{appliedCoupon.description}</div>
+                              )}
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    )}
+                 </div>
+
+                 {/* Show Day Picnic booking button for Day Picnic properties */}
                 {property.type === 'Day Picnic' ? (
                   <Button 
                     className="w-full mb-4 bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700" 
@@ -599,24 +723,30 @@ const PropertyDetails = () => {
                   You won't be charged yet
                 </div>
 
-                {checkInDate && checkOutDate && (
-                  <div className="border-t pt-4 mt-4">
-                    <div className="flex justify-between items-center text-sm mb-2">
-                      <span>${property.price} × {calculateNights()} nights</span>
-                      <span>${property.price * calculateNights()}</span>
-                    </div>
-                    <div className="flex justify-between items-center text-sm mb-2">
-                      <span>Service fee</span>
-                      <span>${Math.round(property.price * calculateNights() * 0.1)}</span>
-                    </div>
-                    <div className="border-t pt-2 mt-2">
-                      <div className="flex justify-between items-center font-semibold">
-                        <span>Total</span>
-                        <span>${calculateTotal()}</span>
-                      </div>
-                    </div>
-                  </div>
-                )}
+                 {checkInDate && checkOutDate && (
+                   <div className="border-t pt-4 mt-4">
+                     <div className="flex justify-between items-center text-sm mb-2">
+                       <span>${property.price} × {calculateNights()} nights</span>
+                       <span>${property.price * calculateNights()}</span>
+                     </div>
+                     <div className="flex justify-between items-center text-sm mb-2">
+                       <span>Service fee</span>
+                       <span>${Math.round(property.price * calculateNights() * 0.1)}</span>
+                     </div>
+                     {appliedCoupon && (
+                       <div className="flex justify-between items-center text-sm mb-2 text-green-600">
+                         <span>Discount ({appliedCoupon.code})</span>
+                         <span>-${CouponService.calculateDiscount(appliedCoupon, (property.price * calculateNights()) + Math.round(property.price * calculateNights() * 0.1))}</span>
+                       </div>
+                     )}
+                     <div className="border-t pt-2 mt-2">
+                       <div className="flex justify-between items-center font-semibold">
+                         <span>Total</span>
+                         <span>${calculateTotal()}</span>
+                       </div>
+                     </div>
+                   </div>
+                 )}
               </CardContent>
             </Card>
           </div>
