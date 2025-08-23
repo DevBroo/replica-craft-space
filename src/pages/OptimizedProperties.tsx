@@ -55,8 +55,8 @@ const OptimizedProperties = () => {
   
   // State management
   const [searchTerm, setSearchTerm] = useState('');
-  const [selectedLocation, setSelectedLocation] = useState('');
-  const [selectedType, setSelectedType] = useState('');
+  const [selectedLocation, setSelectedLocation] = useState('all');
+  const [selectedType, setSelectedType] = useState('all');
   const [priceRange, setPriceRange] = useState([0, 10000]);
   const [sortBy, setSortBy] = useState('newest');
   const [currentPage, setCurrentPage] = useState(1);
@@ -131,10 +131,10 @@ const OptimizedProperties = () => {
         property.title.toLowerCase().includes(debouncedSearchTerm.toLowerCase()) ||
         property.general_location?.toLowerCase().includes(debouncedSearchTerm.toLowerCase());
       
-      const matchesLocation = !selectedLocation || 
+      const matchesLocation = selectedLocation === 'all' || 
         property.general_location?.includes(selectedLocation);
       
-      const matchesType = !selectedType || 
+      const matchesType = selectedType === 'all' || 
         property.property_type === selectedType;
       
       const matchesPrice = property.pricing?.daily_rate >= priceRange[0] && 
@@ -326,7 +326,7 @@ const OptimizedProperties = () => {
                 <SelectValue placeholder="Select location" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">All Locations</SelectItem>
+                <SelectItem value="all">All Locations</SelectItem>
                 <SelectItem value="Mumbai">Mumbai</SelectItem>
                 <SelectItem value="Delhi">Delhi</SelectItem>
                 <SelectItem value="Bangalore">Bangalore</SelectItem>
@@ -339,7 +339,7 @@ const OptimizedProperties = () => {
                 <SelectValue placeholder="Property type" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">All Types</SelectItem>
+                <SelectItem value="all">All Types</SelectItem>
                 <SelectItem value="Villa">Villa</SelectItem>
                 <SelectItem value="Farmhouse">Farmhouse</SelectItem>
                 <SelectItem value="Resort">Resort</SelectItem>
@@ -467,8 +467,8 @@ const OptimizedProperties = () => {
                 </p>
                 <Button onClick={() => {
                   setSearchTerm('');
-                  setSelectedLocation('');
-                  setSelectedType('');
+                  setSelectedLocation('all');
+                  setSelectedType('all');
                   setPriceRange([0, 10000]);
                 }}>
                   Clear Filters
