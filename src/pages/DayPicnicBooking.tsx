@@ -32,7 +32,7 @@ const DayPicnicBooking: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const [property, setProperty] = useState<any>(null);
   const [package_, setPackage] = useState<any>(null);
-  const [selectedDate, setSelectedDate] = useState('');
+  const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
   const [selectedDuration, setSelectedDuration] = useState('');
   const [guests, setGuests] = useState<GuestBreakdown>({ adults: 2, children: [] });
   const [selectedAddOns, setSelectedAddOns] = useState<string[]>([]);
@@ -236,7 +236,7 @@ const DayPicnicBooking: React.FC = () => {
         description: "Please login to book this day picnic",
         variant: "destructive"
       });
-      navigate('/login');
+      navigate('/login', { state: { returnTo: window.location.pathname } });
       return;
     }
 
@@ -284,8 +284,8 @@ const DayPicnicBooking: React.FC = () => {
         description: "Your day picnic has been booked successfully",
       });
 
-      // Navigate to booking confirmation or user dashboard
-      navigate(`/booking-details/${data.id}`);
+      // Navigate to booking confirmation page
+      navigate(`/booking/${data.id}`);
     } catch (error: any) {
       toast({
         title: "Booking Failed",
@@ -472,6 +472,9 @@ const DayPicnicBooking: React.FC = () => {
                     onChange={(e) => setSelectedDate(e.target.value)}
                     min={new Date().toISOString().split('T')[0]}
                   />
+                  {!selectedDate && (
+                    <p className="text-sm text-muted-foreground mt-1">Please select a date to enable booking</p>
+                  )}
                 </div>
 
                 <div>
