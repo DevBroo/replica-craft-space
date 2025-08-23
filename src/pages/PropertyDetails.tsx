@@ -609,14 +609,25 @@ const PropertyDetails = () => {
                    </div>
                 </div>
 
-                <Button 
-                  className="w-full mb-4" 
-                  onClick={handleBooking}
-                  disabled={isBooking || !checkInDate || !checkOutDate || !isAuthenticated}
-                >
-                  {isBooking ? 'Creating Booking...' : 
-                   !isAuthenticated ? 'Sign In to Book' : 'Reserve Now'}
-                </Button>
+                {/* Show Day Picnic booking button for Day Picnic properties */}
+                {property.type === 'Day Picnic' ? (
+                  <Button 
+                    className="w-full mb-4 bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700" 
+                    onClick={() => navigate(`/day-picnic/${property.id}`)}
+                  >
+                    <Calendar className="w-4 h-4 mr-2" />
+                    Book Day Picnic
+                  </Button>
+                ) : (
+                  <Button 
+                    className="w-full mb-4" 
+                    onClick={handleBooking}
+                    disabled={isBooking || !checkInDate || !checkOutDate || !isAuthenticated}
+                  >
+                    {isBooking ? 'Creating Booking...' : 
+                     !isAuthenticated ? 'Sign In to Book' : 'Reserve Now'}
+                  </Button>
+                )}
                 
                 <div className="text-center text-sm text-muted-foreground">
                   You won't be charged yet

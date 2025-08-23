@@ -440,35 +440,54 @@ const DayPicnicBooking: React.FC = () => {
                   />
                 </div>
 
-                  <div>
-                   <Label htmlFor="duration">Time Duration</Label>
-                   <Select value={selectedDuration} onValueChange={setSelectedDuration}>
-                     <SelectTrigger className="w-full">
-                       <SelectValue placeholder="Select duration" />
-                     </SelectTrigger>
-                     <SelectContent>
-                       {durationOptions.map((option) => (
-                         <SelectItem key={option.value} value={option.value}>
-                           {option.label}
-                         </SelectItem>
-                       ))}
-                     </SelectContent>
-                   </Select>
-                   {selectedDuration && (
-                     <div className="mt-2 p-2 bg-blue-50 rounded-md">
-                       <p className="text-sm text-blue-700">
-                         Selected: {durationOptions.find(opt => opt.value === selectedDuration)?.label}
-                       </p>
-                       <div className="text-xs text-blue-600 mt-1">
-                         {durationPrices.find(dp => dp.duration_type === selectedDuration) ? (
-                           <span>Using owner-set pricing: ₹{durationPrices.find(dp => dp.duration_type === selectedDuration)?.price} {package_?.pricing_type?.replace('_', ' ')}</span>
-                         ) : (
-                           <span>Using standard pricing with duration multiplier</span>
-                         )}
-                       </div>
-                     </div>
-                   )}
-                 </div>
+                <div>
+                  <Label className="text-base font-semibold mb-3 block">Choose Duration</Label>
+                  <div className="space-y-3">
+                    {durationOptions.map((option) => {
+                      const durationPrice = durationPrices.find(dp => dp.duration_type === option.value);
+                      const fallbackMultipliers = {
+                        'half_day': 0.6,
+                        'full_day': 1.0,
+                        'extended_day': 1.5
+                      };
+                      const fallbackPrice = package_?.base_price * (fallbackMultipliers[option.value as keyof typeof fallbackMultipliers] || 1.0);
+                      const displayPrice = durationPrice?.price || fallbackPrice;
+                      
+                      return (
+                        <div 
+                          key={option.value}
+                          onClick={() => setSelectedDuration(option.value)}
+                          className={`p-4 border-2 rounded-lg cursor-pointer transition-all hover:border-primary/50 ${
+                            selectedDuration === option.value 
+                              ? 'border-primary bg-primary/5 ring-2 ring-primary/20' 
+                              : 'border-gray-200 hover:border-gray-300'
+                          }`}
+                        >
+                          <div className="flex justify-between items-center">
+                            <div>
+                              <h4 className="font-semibold text-gray-900">{option.label}</h4>
+                              <p className="text-sm text-gray-600">{option.hours} hours of fun</p>
+                              {durationPrice ? (
+                                <p className="text-xs text-green-600 mt-1">✓ Owner-set pricing</p>
+                              ) : (
+                                <p className="text-xs text-blue-600 mt-1">Standard pricing with duration multiplier</p>
+                              )}
+                            </div>
+                            <div className="text-right">
+                              <p className="text-lg font-bold text-primary">₹{Math.round(displayPrice)}</p>
+                              <p className="text-xs text-gray-500">{package_?.pricing_type?.replace('_', ' ')}</p>
+                            </div>
+                          </div>
+                          {selectedDuration === option.value && (
+                            <div className="mt-2 pt-2 border-t border-gray-200">
+                              <p className="text-sm text-primary">✓ Selected for your day picnic</p>
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
 
                 <div>
                   <Label>Select Guests</Label>
