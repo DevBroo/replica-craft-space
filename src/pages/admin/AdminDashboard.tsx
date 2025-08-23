@@ -64,17 +64,17 @@ const AdminDashboard: React.FC = () => {
 
       console.log('✅ Properties data loaded:', propertiesData);
 
-      // Process properties data
-      const processedProperties = propertiesData?.map(property => {
+      // Process properties data with proper type assertions
+      const processedProperties: Property[] = propertiesData?.map(property => {
         const owner = ownersData?.find(o => o.id === property.owner_id);
         return {
-          id: property.id,
-          title: property.title || 'Untitled Property',
-          owner_id: property.owner_id,
+          id: String(property.id),
+          title: String(property.title || 'Untitled Property'),
+          owner_id: String(property.owner_id),
           owner_email: owner?.email || 'Unknown',
-          status: property.status || 'pending',
-          created_at: property.created_at,
-          property_type: property.property_type || 'Property',
+          status: (property.status as 'pending' | 'approved' | 'rejected') || 'pending',
+          created_at: String(property.created_at),
+          property_type: String(property.property_type || 'Property'),
           location: property.location || null
         };
       }) || [];
