@@ -368,6 +368,19 @@ const HostDashboard: React.FC = () => {
 
       {/* Main Content */}
       <div className="flex-1 p-6">
+        {/* Back to Home Button */}
+        <div className="mb-4">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => navigate('/')}
+            className="flex items-center gap-2"
+          >
+            <Home className="w-4 h-4" />
+            Back to Home
+          </Button>
+        </div>
+        
         {activeTab === 'dashboard' && renderDashboard()}
         {activeTab === 'properties' && (
           <Properties
