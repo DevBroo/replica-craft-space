@@ -2,6 +2,7 @@
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
 import { Input } from '../ui/input';
+import { NumericInput } from '../ui/NumericInput';
 import { Label } from '../ui/label';
 import { Button } from '../ui/button';
 import { Checkbox } from '../ui/checkbox';
@@ -69,16 +70,15 @@ const OptionPricingSection: React.FC<Props> = ({
                 onChange={(e) => updateOption(actualIndex, 'name', e.target.value)}
                 className="flex-1"
               />
-              <div className="w-24">
-                <Input
-                  type="number"
-                  placeholder="Price"
-                  min="0"
-                  step="0.01"
+               <div className="w-24">
+                 <NumericInput
                   value={option.price}
-                  onChange={(e) => updateOption(actualIndex, 'price', parseFloat(e.target.value) || 0)}
+                  onValueChange={(value) => updateOption(actualIndex, 'price', value)}
+                  min={0}
+                  step={0.01}
+                  placeholder="0.00"
                 />
-              </div>
+               </div>
               <div className="flex items-center space-x-2">
                 <Checkbox
                   id={`required-${actualIndex}`}
@@ -87,10 +87,11 @@ const OptionPricingSection: React.FC<Props> = ({
                 />
                 <Label htmlFor={`required-${actualIndex}`} className="text-sm">Required</Label>
               </div>
-              <Button
+               <Button
                 variant="ghost"
                 size="sm"
                 onClick={() => removeOption(actualIndex)}
+                aria-label="Delete option"
               >
                 <Trash2 className="w-4 h-4" />
               </Button>
@@ -116,7 +117,7 @@ const OptionPricingSection: React.FC<Props> = ({
         </CardHeader>
         <CardContent className="space-y-4">
           {renderOptionList(inclusions, 'inclusion')}
-          <Button variant="outline" onClick={() => addOption('inclusion')}>
+           <Button variant="outline" onClick={() => addOption('inclusion')} aria-label="Add new inclusion option">
             <Plus className="w-4 h-4 mr-2" />
             Add Inclusion
           </Button>
@@ -136,7 +137,7 @@ const OptionPricingSection: React.FC<Props> = ({
         </CardHeader>
         <CardContent className="space-y-4">
           {renderOptionList(addOns, 'add_on')}
-          <Button variant="outline" onClick={() => addOption('add_on')}>
+           <Button variant="outline" onClick={() => addOption('add_on')} aria-label="Add new add-on option">
             <Plus className="w-4 h-4 mr-2" />
             Add Add-on
           </Button>

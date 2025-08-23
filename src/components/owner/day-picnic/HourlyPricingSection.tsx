@@ -1,6 +1,6 @@
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
-import { Input } from '../ui/input';
+import { NumericInput } from '../ui/NumericInput';
 import { Label } from '../ui/label';
 import { Clock } from 'lucide-react';
 
@@ -97,12 +97,12 @@ const HourlyPricingSection: React.FC<Props> = ({
               {pricingType === 'per_person' && (
                 <div>
                   <Label className="text-xs text-gray-500">Per Person (₹)</Label>
-                  <Input
-                    type="number"
-                    min="0"
-                    step="0.01"
+                   <NumericInput
                     value={getRateValue(hour, 'price_per_person')}
-                    onChange={(e) => updateRate(hour, 'price_per_person', parseFloat(e.target.value) || 0)}
+                    onValueChange={(value) => updateRate(hour, 'price_per_person', value)}
+                    min={0}
+                    step={0.01}
+                    placeholder="0.00"
                     className="h-8"
                   />
                 </div>
@@ -110,12 +110,12 @@ const HourlyPricingSection: React.FC<Props> = ({
               {pricingType === 'per_package' && (
                 <div>
                   <Label className="text-xs text-gray-500">Per Package (₹)</Label>
-                  <Input
-                    type="number"
-                    min="0"
-                    step="0.01"
+                   <NumericInput
                     value={getRateValue(hour, 'price_per_package')}
-                    onChange={(e) => updateRate(hour, 'price_per_package', parseFloat(e.target.value) || 0)}
+                    onValueChange={(value) => updateRate(hour, 'price_per_package', value)}
+                    min={0}
+                    step={0.01}
+                    placeholder="0.00"
                     className="h-8"
                   />
                 </div>

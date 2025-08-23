@@ -5,6 +5,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
 import { Button } from './ui/button';
 import { Input } from './ui/input';
+import { NumericInput } from './ui/NumericInput';
 import { Label } from './ui/label';
 import { Checkbox } from './ui/checkbox';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
@@ -485,32 +486,32 @@ const DayPicnicSetup: React.FC = () => {
                   </div>
                 </div>
                 <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <Label htmlFor="duration">Duration (Hours)</Label>
-                    <Input
-                      id="duration"
-                      type="number"
-                      step="0.5"
-                      value={package_.duration_hours}
-                      onChange={(e) => setPackage(prev => ({ 
-                        ...prev, 
-                        duration_hours: parseFloat(e.target.value) || 0 
-                      }))}
-                    />
-                  </div>
-                  <div>
-                    <Label htmlFor="min_hours">Minimum Hours</Label>
-                    <Input
-                      id="min_hours"
-                      type="number"
-                      min="1"
-                      value={package_.min_hours}
-                      onChange={(e) => setPackage(prev => ({ 
-                        ...prev, 
-                        min_hours: parseInt(e.target.value) || 1 
-                      }))}
-                    />
-                  </div>
+                   <div>
+                     <Label htmlFor="duration">Duration (Hours)</Label>
+                     <NumericInput
+                       value={package_.duration_hours}
+                       onValueChange={(value) => setPackage(prev => ({ 
+                         ...prev, 
+                         duration_hours: value 
+                       }))}
+                       min={0.5}
+                       step={0.5}
+                       placeholder="9.0"
+                     />
+                   </div>
+                   <div>
+                     <Label htmlFor="min_hours">Minimum Hours</Label>
+                     <NumericInput
+                       value={package_.min_hours}
+                       onValueChange={(value) => setPackage(prev => ({ 
+                         ...prev, 
+                         min_hours: Math.max(1, Math.round(value))
+                       }))}
+                       min={1}
+                       step={1}
+                       placeholder="1"
+                     />
+                   </div>
                 </div>
               </CardContent>
             </Card>
@@ -565,21 +566,19 @@ const DayPicnicSetup: React.FC = () => {
                       </Select>
                     </div>
                     
-                    <div>
-                      <Label htmlFor="base-price">Base Price - Full Day (₹)</Label>
-                      <Input
-                        id="base-price"
-                        type="number"
-                        min="0"
-                        step="100"
-                        value={package_.base_price}
-                        onChange={(e) => setPackage(prev => ({ 
-                          ...prev, 
-                          base_price: parseFloat(e.target.value) || 0 
-                        }))}
-                        placeholder="Enter full day base price"
-                      />
-                    </div>
+                     <div>
+                       <Label htmlFor="base-price">Base Price - Full Day (₹)</Label>
+                       <NumericInput
+                         value={package_.base_price}
+                         onValueChange={(value) => setPackage(prev => ({ 
+                           ...prev, 
+                           base_price: value 
+                         }))}
+                         min={0}
+                         step={100}
+                         placeholder="Enter full day base price"
+                       />
+                     </div>
                   </div>
                   
                   <div className="bg-blue-50 p-4 rounded-lg">
@@ -638,10 +637,11 @@ const DayPicnicSetup: React.FC = () => {
             {/* Save Button */}
             <Card>
               <CardContent className="pt-6">
-                <Button 
+                 <Button 
                   onClick={handleSave} 
                   disabled={loading}
-                  className="w-full"
+                  aria-busy={loading}
+                  className="w-full focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
                   size="lg"
                 >
                   {loading ? (

@@ -1,6 +1,6 @@
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
-import { Input } from '../ui/input';
+import { NumericInput } from '../ui/NumericInput';
 import { Label } from '../ui/label';
 import { Clock } from 'lucide-react';
 
@@ -77,13 +77,12 @@ const DurationPricingSection: React.FC<Props> = ({
               </div>
               <div className="flex items-center space-x-2">
                 <span className="text-sm text-gray-600">₹</span>
-                <Input
-                  type="number"
-                  placeholder="0"
-                  min="0"
-                  step="0.01"
+                 <NumericInput
                   value={getDurationPrice(category.key)}
-                  onChange={(e) => updateDurationPrice(category.key, parseFloat(e.target.value) || 0)}
+                  onValueChange={(value) => updateDurationPrice(category.key, value)}
+                  min={0}
+                  step={0.01}
+                  placeholder="0.00"
                   className="w-32"
                 />
                 <span className="text-sm text-gray-500">

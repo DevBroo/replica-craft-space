@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
-import { Input } from '../ui/input';
+import { NumericInput } from '../ui/NumericInput';
 import { Label } from '../ui/label';
 import { Badge } from '../ui/badge';
 import { Utensils } from 'lucide-react';
@@ -94,12 +94,11 @@ const MealPricingSection: React.FC<Props> = ({
               {pricingType === 'per_person' && (
                 <div>
                   <Label className="text-sm font-medium">Per Person (₹)</Label>
-                  <Input
-                    type="number"
-                    min="0"
-                    step="0.01"
+                   <NumericInput
                     value={getMealPriceValue(meal, 'price_per_person')}
-                    onChange={(e) => updateMealPrice(meal, 'price_per_person', parseFloat(e.target.value) || 0)}
+                    onValueChange={(value) => updateMealPrice(meal, 'price_per_person', value)}
+                    min={0}
+                    step={0.01}
                     placeholder="0.00"
                   />
                 </div>
@@ -108,12 +107,11 @@ const MealPricingSection: React.FC<Props> = ({
               {pricingType === 'per_package' && (
                 <div>
                   <Label className="text-sm font-medium">Per Package (₹)</Label>
-                  <Input
-                    type="number"
-                    min="0"
-                    step="0.01"
+                   <NumericInput
                     value={getMealPriceValue(meal, 'price_per_package')}
-                    onChange={(e) => updateMealPrice(meal, 'price_per_package', parseFloat(e.target.value) || 0)}
+                    onValueChange={(value) => updateMealPrice(meal, 'price_per_package', value)}
+                    min={0}
+                    step={0.01}
                     placeholder="0.00"
                   />
                 </div>
