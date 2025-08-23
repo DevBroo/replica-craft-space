@@ -103,48 +103,8 @@ const PropertyDetails = () => {
           setProperty(formattedProperty);
           console.log('✅ Property details loaded successfully');
         } else {
-          // Fallback to localStorage for testing
-          console.log('📋 Property not found in database, checking localStorage...');
-          const storageKey = 'properties_venteskraft@gmail.com';
-          const savedProperties = localStorage.getItem(storageKey);
-          if (savedProperties) {
-            const parsedProperties = JSON.parse(savedProperties);
-            const localProperty = parsedProperties.find((p: any) => p.id === id && p.status === 'active');
-            if (localProperty) {
-              const formattedProperty = {
-                id: localProperty.id,
-                title: localProperty.name,
-                location: `${localProperty.city}, ${localProperty.state}`,
-                price: localProperty.price,
-                rating: localProperty.rating,
-                reviews: localProperty.totalBookings,
-                images: localProperty.images && localProperty.images.length > 0 
-                  ? localProperty.images 
-                  : ['/placeholder.svg'],
-                description: localProperty.description || 'No description available.',
-                amenities: localProperty.amenities?.map((a: string) => ({ 
-                  icon: Wifi, 
-                  name: a.charAt(0).toUpperCase() + a.slice(1) 
-                })) || [],
-                roomTypes: [
-                  {
-                    name: `${localProperty.type.charAt(0).toUpperCase() + localProperty.type.slice(1)} Room`,
-                    price: localProperty.price,
-                    features: [`${localProperty.bedrooms} Bedrooms`, `${localProperty.bathrooms} Bathrooms`, `Capacity: ${localProperty.capacity} guests`]
-                  }
-                ],
-                highlights: [
-                  `${localProperty.bedrooms} Bedrooms`,
-                  `${localProperty.bathrooms} Bathrooms`,
-                  `Capacity: ${localProperty.capacity} guests`,
-                  `${localProperty.type.charAt(0).toUpperCase() + localProperty.type.slice(1)} Type`,
-                  'Active Property'
-                ]
-              };
-              setProperty(formattedProperty);
-              console.log('✅ Property details loaded from localStorage');
-            }
-          }
+          console.log('ℹ️ Property not found or not approved');
+          setProperty(null);
         }
       } catch (error) {
         console.error('❌ Error loading property details:', error);
@@ -348,10 +308,16 @@ const PropertyDetails = () => {
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
           <h1 className="text-2xl font-bold mb-4">Property Not Found</h1>
-          <Button onClick={() => navigate("/")} variant="outline">
-            <ArrowLeft className="w-4 h-4 mr-2" />
-            Back to Home
-          </Button>
+          <p className="text-muted-foreground mb-6">This property may not exist or is not yet approved for public viewing.</p>
+          <div className="flex gap-3">
+            <Button onClick={() => navigate(-1)} variant="outline">
+              <ArrowLeft className="mr-2 h-4 w-4" />
+              Go Back
+            </Button>
+            <Button onClick={() => navigate("/")} variant="default">
+              Back to Home
+            </Button>
+          </div>
         </div>
       </div>
     );

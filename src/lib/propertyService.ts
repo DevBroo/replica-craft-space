@@ -458,18 +458,18 @@ export class PropertyService {
         .update({ status })
         .eq('id', propertyId)
         .select()
-        .single();
+        .maybeSingle();
 
       if (error) {
         console.error('❌ Error updating property status:', error);
-        throw error;
+        return null;
       }
 
       console.log('✅ Property status updated successfully:', data);
       return data;
     } catch (error) {
       console.error('❌ Failed to update property status:', error);
-      throw error;
+      return null;
     }
   }
 
@@ -480,22 +480,40 @@ export class PropertyService {
     try {
       console.log('🔍 Fetching property by ID:', propertyId);
       
+      // First try to get from the public view (for approved properties)
+      const { data: publicData, error: publicError } = await supabase
+        .from('properties_public')
+        .select('*')
+        .eq('id', propertyId)
+        .maybeSingle();
+
+      if (publicData) {
+        console.log('✅ Property fetched from public view:', publicData);
+        return publicData as any;
+      }
+
+      // If not found in public view, try the main properties table (for owners/admins)
       const { data, error } = await supabase
         .from('properties')
         .select('*')
         .eq('id', propertyId)
-        .single();
+        .maybeSingle();
 
       if (error) {
         console.error('❌ Error fetching property by ID:', error);
-        throw error;
+        return null;
+      }
+
+      if (!data) {
+        console.log('ℹ️ Property not found:', propertyId);
+        return null;
       }
 
       console.log('✅ Property fetched successfully:', data);
       return data;
     } catch (error) {
       console.error('❌ Failed to fetch property by ID:', error);
-      throw error;
+      return null;
     }
   }
 
