@@ -876,6 +876,46 @@ export class PropertyService {
   }
 
   /**
+   * Get approved day picnic packages with minimal property data
+   */
+  static async getApprovedDayPicnics(): Promise<any[]> {
+    try {
+      const { data, error } = await supabase
+        .from('day_picnic_packages')
+        .select(`
+          id,
+          start_time,
+          end_time,
+          duration_hours,
+          base_price,
+          pricing_type,
+          property_id,
+          properties!inner (
+            id,
+            title,
+            images,
+            general_location,
+            rating,
+            review_count,
+            status
+          )
+        `)
+        .eq('properties.status', 'approved')
+        .order('created_at', { ascending: false });
+
+      if (error) {
+        console.error('❌ Error fetching day picnic packages:', error);
+        return [];
+      }
+
+      return data || [];
+    } catch (error) {
+      console.error('❌ Exception fetching day picnic packages:', error);
+      return [];
+    }
+  }
+
+  /**
    * Clear all properties from database (DANGEROUS - use with caution)
    */
   static async clearAllProperties(): Promise<boolean> {

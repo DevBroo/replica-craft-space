@@ -1,5 +1,5 @@
-import React, { useState, useMemo, useCallback } from 'react';
-import { useQuery } from '@tanstack/react-query';
+import React, { useState, useMemo, useCallback, useEffect } from 'react';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Link, useNavigate } from 'react-router-dom';
 import { Search, MapPin, Users, Star, Calendar, Bed, Bath, Filter, Grid3X3, List } from 'lucide-react';
 import { useDebounce } from '@/hooks/useDebounce';
@@ -51,6 +51,7 @@ const ITEMS_PER_PAGE = 12;
 
 const OptimizedProperties = () => {
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   
   // State management
   const [searchTerm, setSearchTerm] = useState('');
@@ -83,11 +84,7 @@ const OptimizedProperties = () => {
     isLoading: isLoadingDayPicnics 
   } = useQuery({
     queryKey: ['day_picnics', 'approved'],
-    queryFn: async () => {
-      // This would be implemented in PropertyService
-      // For now, return empty array
-      return [];
-    },
+    queryFn: () => PropertyService.getApprovedDayPicnics(),
     enabled: activeTab === 'day-picnics',
     staleTime: 5 * 60 * 1000,
     gcTime: 10 * 60 * 1000,
@@ -96,6 +93,36 @@ const OptimizedProperties = () => {
   const properties = propertiesData?.properties || [];
   const totalCount = propertiesData?.totalCount || 0;
   const totalPages = Math.ceil(totalCount / ITEMS_PER_PAGE);
+
+  // Prefetch next page for instant pagination
+  useEffect(() => {
+    if (currentPage < totalPages) {
+      queryClient.prefetchQuery({
+        queryKey: ['properties_public', 'paginated', currentPage + 1, ITEMS_PER_PAGE],
+        queryFn: () => PropertyService.getPaginatedProperties(currentPage + 1, ITEMS_PER_PAGE),
+        staleTime: 5 * 60 * 1000,
+      });
+    }
+  }, [currentPage, totalPages, queryClient]);
+
+  // Defer day picnic prefetch when idle
+  useEffect(() => {
+    if (activeTab === 'properties') {
+      const prefetchDayPicnics = () => {
+        queryClient.prefetchQuery({
+          queryKey: ['day_picnics', 'approved'],
+          queryFn: () => PropertyService.getApprovedDayPicnics(),
+          staleTime: 5 * 60 * 1000,
+        });
+      };
+
+      if ('requestIdleCallback' in window) {
+        requestIdleCallback(prefetchDayPicnics);
+      } else {
+        setTimeout(prefetchDayPicnics, 2000);
+      }
+    }
+  }, [activeTab, queryClient]);
 
   // Memoized filtered and sorted properties
   const filteredProperties = useMemo(() => {
@@ -459,14 +486,86 @@ const OptimizedProperties = () => {
               </div>
             ) : dayPicnics.length > 0 ? (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-                {/* Day picnic cards would be rendered here */}
-                <div className="col-span-full text-center py-12">
-                  <div className="text-6xl mb-4">🌳</div>
-                  <h3 className="text-xl font-semibold mb-2">Day Picnic Implementation</h3>
-                  <p className="text-muted-foreground">
-                    Day picnic cards will be implemented here with similar optimization
-                  </p>
-                </div>
+                {dayPicnics.map((picnic: any) => {
+                  const property = picnic.properties;
+                  const primaryImage = property?.images?.[0];
+                  const optimizedImage = primaryImage ? getOptimizedImageUrl(primaryImage, { width: 400, height: 300 }) : null;
+                  
+                  return (
+                    <Card key={picnic.id} className="group hover:shadow-lg transition-all duration-300 overflow-hidden">
+                      <div className="relative aspect-[4/3] overflow-hidden">
+                        {optimizedImage ? (
+                          <img
+                            src={optimizedImage}
+                            alt={property.title}
+                            loading="lazy"
+                            decoding="async"
+                            sizes={getImageSizes('grid')}
+                            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                            onError={(e) => {
+                              const target = e.target as HTMLImageElement;
+                              target.src = '/placeholder-property.jpg';
+                            }}
+                          />
+                        ) : (
+                          <div className="w-full h-full bg-muted flex items-center justify-center">
+                            <span className="text-muted-foreground">No Image</span>
+                          </div>
+                        )}
+                        <Badge className="absolute top-2 left-2 bg-green-600 text-white">
+                          Day Picnic
+                        </Badge>
+                      </div>
+
+                      <CardHeader className="pb-2">
+                        <h3 className="font-semibold text-lg line-clamp-1 group-hover:text-primary transition-colors">
+                          {property.title}
+                        </h3>
+                        <div className="flex items-center text-sm text-muted-foreground">
+                          <MapPin className="h-4 w-4 mr-1" />
+                          <span className="line-clamp-1">{property.general_location}</span>
+                        </div>
+                      </CardHeader>
+
+                      <CardContent className="pt-0 pb-2">
+                        <div className="flex items-center justify-between mb-2">
+                          <div className="flex items-center gap-4">
+                            <div className="flex items-center">
+                              <Calendar className="h-4 w-4 mr-1 text-muted-foreground" />
+                              <span className="text-sm">{picnic.duration_hours}h</span>
+                            </div>
+                          </div>
+                          
+                          {property.rating > 0 && (
+                            <div className="flex items-center">
+                              <Star className="h-4 w-4 text-yellow-400 fill-current mr-1" />
+                              <span className="text-sm font-medium">{property.rating.toFixed(1)}</span>
+                              {property.review_count > 0 && (
+                                <span className="text-xs text-muted-foreground ml-1">
+                                  ({property.review_count})
+                                </span>
+                              )}
+                            </div>
+                          )}
+                        </div>
+                      </CardContent>
+
+                      <CardFooter className="pt-0">
+                        <div className="flex items-center justify-between w-full">
+                          <div>
+                            <span className="text-2xl font-bold text-primary">
+                              ₹{picnic.base_price?.toLocaleString() || 'N/A'}
+                            </span>
+                            <span className="text-sm text-muted-foreground">/{picnic.pricing_type === 'per_person' ? 'person' : 'package'}</span>
+                          </div>
+                          <Button onClick={() => handleViewDayPicnic(property.id)}>
+                            Book Now
+                          </Button>
+                        </div>
+                      </CardFooter>
+                    </Card>
+                  );
+                })}
               </div>
             ) : (
               <div className="text-center py-12">

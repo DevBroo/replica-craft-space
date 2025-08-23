@@ -13,6 +13,7 @@ import Index from '@/pages/Index';
 import About from '@/pages/About';
 import Contact from '@/pages/Contact';
 import Properties from '@/pages/Properties';
+import OptimizedProperties from '@/pages/OptimizedProperties';
 import PropertyDetails from '@/pages/PropertyDetails';
 import NotFound from '@/pages/NotFound';
 import TermsOfService from '@/pages/TermsOfService';
@@ -95,7 +96,8 @@ function App() {
                   <Route path="/" element={<Index />} />
                   <Route path="/about" element={<About />} />
                   <Route path="/contact" element={<Contact />} />
-                  <Route path="/properties" element={<Properties />} />
+                  <Route path="/properties" element={<OptimizedProperties />} />
+                  <Route path="/properties-legacy" element={<Properties />} />
                   <Route path="/property/:id" element={<PropertyDetails />} />
                   <Route path="/terms-of-service" element={<TermsOfService />} />
                   <Route path="/privacy-policy" element={<PrivacyPolicy />} />
