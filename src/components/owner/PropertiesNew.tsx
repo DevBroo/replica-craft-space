@@ -89,16 +89,15 @@ const Properties: React.FC<PropertiesProps> = ({
   };
 
   const handleEditProperty = (property: any) => {
-    // For Day Picnic properties, navigate to DayPicnicSetup
-    if (property.property_type === 'Day Picnic') {
-      navigate(`/host/day-picnic-setup/${property.id}`);
-      return;
-    }
-    
-    // For other property types, open PropertyWizard
+    // For all property types, open PropertyWizard for general editing
     setEditingProperty(property);
     setIsEditMode(true);
     setShowFullPropertyForm(true);
+  };
+
+  const handleEditDayPicnicPricing = (property: any) => {
+    // Navigate to Day Picnic pricing setup
+    navigate(`/owner/day-picnic-setup/${property.id}`);
   };
 
   const handlePropertyTypeSelection = (type: string) => {
@@ -298,15 +297,25 @@ const Properties: React.FC<PropertiesProps> = ({
                       )}
                     </p>
                   </div>
-                  <div className="flex items-center space-x-2">
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      onClick={() => handleEditProperty(property)}
-                      className="p-2"
-                    >
-                      <Edit className="w-4 h-4" />
-                    </Button>
+                   <div className="flex items-center space-x-2">
+                     <Button
+                       size="sm"
+                       variant="outline"
+                       onClick={() => handleEditProperty(property)}
+                       className="p-2"
+                     >
+                       <Edit className="w-4 h-4" />
+                     </Button>
+                     {property.property_type === 'Day Picnic' && (
+                       <Button
+                         size="sm"
+                         variant="outline"
+                         onClick={() => handleEditDayPicnicPricing(property)}
+                         className="px-3 py-2"
+                       >
+                         Day Picnic Pricing
+                       </Button>
+                     )}
                     <div className={`px-2 py-1 rounded-full text-xs font-medium ${
                       property.status === 'approved' ? 'bg-green-100 text-green-800' :
                       property.status === 'pending' ? 'bg-yellow-100 text-yellow-800' :

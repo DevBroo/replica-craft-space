@@ -227,6 +227,11 @@ function App() {
                       <OwnerDashboardView />
                     </Suspense>
                   } />
+                  <Route path="/owner/day-picnic-setup/:propertyId" element={
+                    <Suspense fallback={<LoadingSpinner />}>
+                      <DayPicnicSetup />
+                    </Suspense>
+                  } />
                   
                   {/* Day Picnic Routes */}
                   <Route path="/day-picnic/:propertyId" element={<DayPicnicBooking />} />
