@@ -612,13 +612,6 @@ export type Database = {
             foreignKeyName: "reviews_booking_id_fkey"
             columns: ["booking_id"]
             isOneToOne: false
-            referencedRelation: "booking_summary_for_owners"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "reviews_booking_id_fkey"
-            columns: ["booking_id"]
-            isOneToOne: false
             referencedRelation: "bookings"
             referencedColumns: ["id"]
           },
@@ -686,36 +679,6 @@ export type Database = {
       }
     }
     Views: {
-      booking_summary_for_owners: {
-        Row: {
-          check_in_date: string | null
-          check_out_date: string | null
-          created_at: string | null
-          guest_reference: string | null
-          guests: number | null
-          id: string | null
-          property_id: string | null
-          property_title: string | null
-          status: string | null
-          total_amount: number | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "bookings_property_id_fkey"
-            columns: ["property_id"]
-            isOneToOne: false
-            referencedRelation: "properties"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "bookings_property_id_fkey"
-            columns: ["property_id"]
-            isOneToOne: false
-            referencedRelation: "properties_public"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
       properties_public: {
         Row: {
           amenities: string[] | null
@@ -830,6 +793,21 @@ export type Database = {
           bookings_by_status: Json
           total_bookings: number
           total_revenue: number
+        }[]
+      }
+      get_booking_summary_for_owners: {
+        Args: Record<PropertyKey, never>
+        Returns: {
+          check_in_date: string
+          check_out_date: string
+          created_at: string
+          guest_reference: string
+          guests: number
+          id: string
+          property_id: string
+          property_title: string
+          status: string
+          total_amount: number
         }[]
       }
       get_property_contact_info: {
