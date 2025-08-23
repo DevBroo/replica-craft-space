@@ -890,17 +890,17 @@ export class PropertyService {
           base_price,
           pricing_type,
           property_id,
-          properties!inner (
+          properties_public!inner (
             id,
             title,
             images,
-            general_location,
+            location,
             rating,
             review_count,
             status
           )
         `)
-        .eq('properties.status', 'approved')
+        .eq('properties_public.status', 'approved')
         .order('created_at', { ascending: false });
 
       if (error) {
@@ -908,7 +908,22 @@ export class PropertyService {
         return [];
       }
 
-      return data || [];
+      // Transform data to include general_location derived from location
+      const transformedData = data?.map(item => {
+        const location = item.properties_public?.location as any;
+        return {
+          ...item,
+          properties: {
+            ...item.properties_public,
+            general_location: location?.city && location?.state 
+              ? `${location.city}, ${location.state}`
+              : 'Location not specified'
+          }
+        };
+      }) || [];
+
+      console.log('✅ Day picnic packages fetched and transformed:', transformedData);
+      return transformedData;
     } catch (error) {
       console.error('❌ Exception fetching day picnic packages:', error);
       return [];
