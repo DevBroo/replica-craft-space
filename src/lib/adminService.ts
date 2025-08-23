@@ -1,22 +1,30 @@
 import { supabase } from '../integrations/supabase/client';
 import { createClient } from '@supabase/supabase-js';
 
-// Create an admin-specific client that bypasses RLS
-const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL || "https://riqsgtuzccwpplbodwbd.supabase.co";
-const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY || "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJpcXNndHV6Y2N3cHBsYm9kd2JkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTQyOTY2NTUsImV4cCI6MjA2OTg3MjY1NX0.qkSVWoVi8cStB1WZdqtapc8O6jc_aAiYEm0Y5Lqp1-s";
+// Lazy-initialized admin client to avoid creating it on app startup
+let adminSupabaseInstance: ReturnType<typeof createClient> | null = null;
 
-// Create admin client with RLS bypass
-export const adminSupabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
-  auth: {
-    autoRefreshToken: false,
-    persistSession: false
-  },
-  global: {
-    headers: {
-      'X-Client-Info': 'picnify-admin'
-    }
+const getAdminSupabase = () => {
+  if (!adminSupabaseInstance) {
+    const SUPABASE_URL = "https://riqsgtuzccwpplbodwbd.supabase.co";
+    const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJpcXNndHV6Y2N3cHBsYm9kd2JkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTQyOTY2NTUsImV4cCI6MjA2OTg3MjY1NX0.qkSVWoVi8cStB1WZdqtapc8O6jc_aAiYEm0Y5Lqp1-s";
+    
+    adminSupabaseInstance = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+      auth: {
+        autoRefreshToken: false,
+        persistSession: false
+      },
+      global: {
+        headers: {
+          'X-Client-Info': 'picnify-admin'
+        }
+      }
+    });
   }
-});
+  return adminSupabaseInstance;
+};
+
+export const adminSupabase = getAdminSupabase();
 
 export interface PropertyOwner {
   id: string;
@@ -42,14 +50,15 @@ export interface AdminStats {
 }
 
 export const adminService = {
-  adminSupabase,
+  get adminSupabase() { return getAdminSupabase(); },
   // Fetch all property owners with their property counts
   async getPropertyOwners(): Promise<PropertyOwner[]> {
     try {
       console.log('🔍 Fetching property owners...');
       
       // Get all unique owner IDs from properties table
-      const { data: properties, error: propertiesError } = await adminSupabase
+      const adminClient = getAdminSupabase();
+      const { data: properties, error: propertiesError } = await adminClient
         .from('properties')
         .select('owner_id, created_at')
         .order('created_at', { ascending: false });
@@ -115,11 +124,14 @@ export const adminService = {
           if (!profile) {
             console.log('⚠️ No profile found for owner', ownerId, '- creating basic profile');
             
+            // Ensure ownerId is a string
+            const ownerIdStr = String(ownerId);
+            
             // Try to create a basic profile
             const basicProfileData = {
-              id: ownerId,
-              email: `owner-${ownerId.substring(0, 8)}@picnify.com`,
-              full_name: `Property Owner (${ownerId.substring(0, 8)})`,
+              id: ownerIdStr,
+              email: `owner-${ownerIdStr.substring(0, 8)}@picnify.com`,
+              full_name: `Property Owner (${ownerIdStr.substring(0, 8)})`,
               role: 'property_owner',
               phone: null,
               avatar_url: null,
@@ -143,10 +155,13 @@ export const adminService = {
             }
           }
           
+          // Ensure ownerId is a string
+          const ownerIdStr = String(ownerId);
+          
           const ownerData = {
-            id: ownerId,
-            email: profile?.email || `owner-${ownerId.substring(0, 8)}@picnify.com`,
-            full_name: profile?.full_name || `Property Owner (${ownerId.substring(0, 8)})`,
+            id: ownerIdStr,
+            email: profile?.email || `owner-${ownerIdStr.substring(0, 8)}@picnify.com`,
+            full_name: profile?.full_name || `Property Owner (${ownerIdStr.substring(0, 8)})`,
             role: profile?.role || 'property_owner',
             phone: profile?.phone || null,
             avatar_url: profile?.avatar_url || null,
@@ -306,10 +321,17 @@ export const adminService = {
       }
 
       const ownerDetails = {
-        ...profile,
+        id: profile.id,
+        email: profile.email,
+        full_name: profile.full_name,
+        phone: profile.phone,
+        role: profile.role,
+        avatar_url: profile.avatar_url,
+        created_at: profile.created_at,
+        updated_at: profile.updated_at,
         properties: properties || [],
         properties_count: properties?.length || 0
-      };
+      } as PropertyOwner & { properties: any[] };
 
       console.log('✅ Owner details fetched:', ownerDetails);
       return ownerDetails;

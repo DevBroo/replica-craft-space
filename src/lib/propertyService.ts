@@ -347,20 +347,32 @@ export class PropertyService {
   }
 
   /**
-   * Get all active properties for public display (using secure public view)
+   * Get all active properties for public display (using secure public view) - optimized
    */
   static async getActiveProperties(): Promise<any[]> {
     try {
-      console.log('🔍 Fetching properties for public display using secure view');
-      console.log('🔧 Environment check:', {
-        isProduction: window.location.hostname !== 'localhost',
-        hostname: window.location.hostname
-      });
+      console.log('🔍 Fetching properties for public display using secure view (optimized)');
       
-      // Use the secure public view that masks sensitive information
+      // Slim select - only fetch essential fields for listing
       const { data, error } = await supabase
         .from('properties_public')
-        .select('*')
+        .select(`
+          id,
+          title,
+          images,
+          pricing,
+          location,
+          general_location,
+          rating,
+          review_count,
+          property_type,
+          status,
+          created_at,
+          max_guests,
+          bedrooms,
+          bathrooms
+        `)
+        .eq('status', 'approved')
         .order('created_at', { ascending: false });
 
       if (error) {
@@ -409,6 +421,70 @@ export class PropertyService {
       
       // Return empty array instead of throwing to prevent app crash
       return [];
+    }
+  }
+
+  /**
+   * Get paginated properties for public display
+   */
+  static async getPaginatedProperties(page: number = 1, pageSize: number = 12): Promise<{ properties: any[], totalCount: number }> {
+    try {
+      console.log('🔍 Fetching paginated properties:', { page, pageSize });
+      
+      const offset = (page - 1) * pageSize;
+      
+      // Get total count first
+      const { count: totalCount } = await supabase
+        .from('properties_public')
+        .select('*', { count: 'exact', head: true })
+        .eq('status', 'approved');
+
+      // Get paginated data with slim select
+      const { data, error } = await supabase
+        .from('properties_public')
+        .select(`
+          id,
+          title,
+          images,
+          pricing,
+          location,
+          general_location,
+          rating,
+          review_count,
+          property_type,
+          status,
+          created_at,
+          max_guests,
+          bedrooms,
+          bathrooms
+        `)
+        .eq('status', 'approved')
+        .order('created_at', { ascending: false })
+        .range(offset, offset + pageSize - 1);
+
+      if (error) {
+        console.error('❌ Error fetching paginated properties:', error);
+        throw error;
+      }
+
+      const convertedData = (data || []).map(publicProperty => ({
+        ...publicProperty,
+        address: publicProperty.general_location || 'Location Available',
+        contact_phone: null,
+        license_number: null,
+        owner_id: null,
+        tax_information: null
+      }));
+
+      console.log('✅ Paginated properties fetched:', { count: convertedData.length, totalCount });
+      
+      return { 
+        properties: convertedData, 
+        totalCount: totalCount || 0 
+      };
+    } catch (error: any) {
+      console.error('❌ Failed to fetch paginated properties:', error);
+      return { properties: [], totalCount: 0 };
     }
   }
 
