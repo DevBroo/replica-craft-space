@@ -119,6 +119,36 @@ export type Database = {
           },
         ]
       }
+      day_picnic_meal_prices: {
+        Row: {
+          created_at: string
+          id: string
+          meal_plan: string
+          package_id: string
+          price_per_package: number
+          price_per_person: number
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          meal_plan: string
+          package_id: string
+          price_per_package?: number
+          price_per_person?: number
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          meal_plan?: string
+          package_id?: string
+          price_per_package?: number
+          price_per_person?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
       day_picnic_option_prices: {
         Row: {
           created_at: string

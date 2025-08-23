@@ -166,7 +166,7 @@ const DayPicnicSetup: React.FC = () => {
         }
 
         // Fetch meal prices
-        const { data: mealData, error: mealError } = await (supabase as any)
+        const { data: mealData, error: mealError } = await supabase
           .from('day_picnic_meal_prices')
           .select('*')
           .eq('package_id', packageData.id);
@@ -340,7 +340,7 @@ const DayPicnicSetup: React.FC = () => {
         }
 
         // Save meal prices
-        await (supabase as any)
+        await supabase
           .from('day_picnic_meal_prices')
           .delete()
           .eq('package_id', packageId);
@@ -353,7 +353,7 @@ const DayPicnicSetup: React.FC = () => {
             price_per_package: meal.price_per_package
           }));
 
-          const { error: mealError } = await (supabase as any)
+          const { error: mealError } = await supabase
             .from('day_picnic_meal_prices')
             .insert(mealData);
 
