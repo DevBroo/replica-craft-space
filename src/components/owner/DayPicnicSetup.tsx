@@ -245,6 +245,9 @@ const DayPicnicSetup: React.FC = () => {
   };
 
   const handleSave = async () => {
+    // Prevent double submission
+    if (loading) return;
+    
     if (!package_.meal_plan.length) {
       toast({
         title: "Validation Error",
@@ -641,15 +644,21 @@ const DayPicnicSetup: React.FC = () => {
                   onClick={handleSave} 
                   disabled={loading}
                   aria-busy={loading}
-                  className="w-full focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                  aria-label={loading ? "Saving package..." : "Save day picnic package"}
+                  className="w-full focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed"
                   size="lg"
                 >
                   {loading ? (
-                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                    <>
+                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2" />
+                      Saving...
+                    </>
                   ) : (
-                    <Save className="w-4 h-4 mr-2" />
+                    <>
+                      <Save className="w-4 h-4 mr-2" aria-hidden="true" />
+                      Save Package
+                    </>
                   )}
-                  Save Package
                 </Button>
               </CardContent>
             </Card>

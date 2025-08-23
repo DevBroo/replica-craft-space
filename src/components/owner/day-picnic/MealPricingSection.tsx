@@ -25,7 +25,7 @@ const MealPricingSection: React.FC<Props> = ({
   mealPrices,
   onUpdateMealPrices
 }) => {
-  const ensureMealPricesExist = () => {
+  const ensureMealPricesExist = React.useCallback(() => {
     const existingMeals = new Set(mealPrices.map(mp => mp.meal_plan));
     const newPrices = [...mealPrices];
     
@@ -44,16 +44,29 @@ const MealPricingSection: React.FC<Props> = ({
       selectedMealPlans.includes(mp.meal_plan)
     );
     
-    if (filteredPrices.length !== mealPrices.length) {
+    // Only update if there's an actual change
+    const hasChanges = filteredPrices.length !== mealPrices.length ||
+      filteredPrices.some((fp, idx) => {
+        const existing = mealPrices[idx];
+        return !existing || fp.meal_plan !== existing.meal_plan;
+      });
+    
+    if (hasChanges) {
       onUpdateMealPrices(filteredPrices);
     }
-  };
+  }, [selectedMealPlans, mealPrices, onUpdateMealPrices]);
 
   React.useEffect(() => {
     ensureMealPricesExist();
-  }, [selectedMealPlans]);
+  }, [ensureMealPricesExist]);
 
-  const updateMealPrice = (mealPlan: string, field: 'price_per_person' | 'price_per_package', value: number) => {
+  const updateMealPrice = React.useCallback((mealPlan: string, field: 'price_per_person' | 'price_per_package', value: number) => {
+    // Prevent unnecessary updates
+    const existingPrice = mealPrices.find(mp => mp.meal_plan === mealPlan);
+    if (existingPrice && existingPrice[field] === value) {
+      return;
+    }
+    
     const updatedPrices = mealPrices.map(mp => {
       if (mp.meal_plan === mealPlan) {
         return { ...mp, [field]: value };
@@ -61,7 +74,7 @@ const MealPricingSection: React.FC<Props> = ({
       return mp;
     });
     onUpdateMealPrices(updatedPrices);
-  };
+  }, [mealPrices, onUpdateMealPrices]);
 
   const getMealPriceValue = (mealPlan: string, field: 'price_per_person' | 'price_per_package') => {
     const mealPrice = mealPrices.find(mp => mp.meal_plan === mealPlan);

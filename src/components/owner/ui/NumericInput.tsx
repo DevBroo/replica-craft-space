@@ -16,27 +16,72 @@ const NumericInput = React.forwardRef<HTMLInputElement, NumericInputProps>(
   ({ value, onValueChange, min = 0, max, step = 0.01, placeholder = "0", className, disabled, ...props }, ref) => {
     const [internalValue, setInternalValue] = React.useState<string>(value.toString());
     const [isFocused, setIsFocused] = React.useState(false);
+    const [lastValidValue, setLastValidValue] = React.useState<number>(value);
+    const commitTimeoutRef = React.useRef<NodeJS.Timeout>();
 
     // Sync internal value with external value when not focused
     React.useEffect(() => {
       if (!isFocused) {
         setInternalValue(value.toString());
+        setLastValidValue(value);
       }
     }, [value, isFocused]);
+
+    // Clear timeout on unmount
+    React.useEffect(() => {
+      return () => {
+        if (commitTimeoutRef.current) {
+          clearTimeout(commitTimeoutRef.current);
+        }
+      };
+    }, []);
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
       const inputValue = e.target.value;
       setInternalValue(inputValue);
+      
+      // Clear existing timeout
+      if (commitTimeoutRef.current) {
+        clearTimeout(commitTimeoutRef.current);
+      }
+      
+      // Debounce commit while typing
+      commitTimeoutRef.current = setTimeout(() => {
+        const numericValue = parseFloat(inputValue);
+        if (!isNaN(numericValue)) {
+          const finalValue = Math.max(min, max ? Math.min(max, numericValue) : numericValue);
+          setLastValidValue(finalValue);
+          onValueChange(finalValue);
+        }
+      }, 800);
     };
 
     const commitValue = () => {
+      // Clear any pending timeout
+      if (commitTimeoutRef.current) {
+        clearTimeout(commitTimeoutRef.current);
+      }
+      
       const numericValue = parseFloat(internalValue);
-      const finalValue = isNaN(numericValue) ? 0 : Math.max(min, max ? Math.min(max, numericValue) : numericValue);
+      let finalValue: number;
+      
+      if (isNaN(numericValue) || internalValue.trim() === '') {
+        // Revert to last valid value on invalid input
+        finalValue = lastValidValue;
+      } else {
+        finalValue = Math.max(min, max ? Math.min(max, numericValue) : numericValue);
+        setLastValidValue(finalValue);
+      }
+      
       onValueChange(finalValue);
       setInternalValue(finalValue.toString());
     };
 
-    const handleBlur = () => {
+    const handleBlur = (e: React.FocusEvent<HTMLInputElement>) => {
+      // Don't commit if blur was caused by wheel event
+      if (e.relatedTarget === null) {
+        return;
+      }
       setIsFocused(false);
       commitValue();
     };
@@ -50,14 +95,15 @@ const NumericInput = React.forwardRef<HTMLInputElement, NumericInputProps>(
         commitValue();
         e.currentTarget.blur();
       }
-      // Prevent wheel changes
+      // Prevent arrow key changes
       if (e.key === 'ArrowUp' || e.key === 'ArrowDown') {
         e.preventDefault();
       }
     };
 
     const handleWheel = (e: React.WheelEvent<HTMLInputElement>) => {
-      // Prevent wheel changes
+      // Prevent wheel changes and blur
+      e.preventDefault();
       e.currentTarget.blur();
     };
 
