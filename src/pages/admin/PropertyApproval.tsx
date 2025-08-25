@@ -41,6 +41,7 @@ const PropertyApproval: React.FC = () => {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [activeTab, setActiveTab] = useState('properties');
   const [statusFilter, setStatusFilter] = useState('all');
+  const [selectedType, setSelectedType] = useState('all');
   const [searchTerm, setSearchTerm] = useState('');
   const [showAddModal, setShowAddModal] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
@@ -123,7 +124,8 @@ const PropertyApproval: React.FC = () => {
       property.address.toLowerCase().includes(searchTerm.toLowerCase()) ||
       ownerEmail.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesStatus = statusFilter === 'all' || property.status.toLowerCase() === statusFilter.toLowerCase();
-    return matchesSearch && matchesStatus;
+    const matchesType = selectedType === 'all' || property.property_type === selectedType;
+    return matchesSearch && matchesStatus && matchesType;
   });
 
   const totalPages = Math.ceil(filteredProperties.length / rowsPerPage);
@@ -236,6 +238,20 @@ const PropertyApproval: React.FC = () => {
                   <option value="pending">Pending</option>
                   <option value="approved">Approved</option>
                   <option value="rejected">Rejected</option>
+                </select>
+                <ChevronDown className="w-4 h-4 absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 pointer-events-none" />
+              </div>
+              <div className="relative">
+                <select
+                  value={selectedType}
+                  onChange={(e) => setSelectedType(e.target.value)}
+                  className="appearance-none bg-white border border-gray-300 rounded-lg px-4 py-2 pr-8 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm cursor-pointer"
+                >
+                  <option value="all">All Types</option>
+                  <option value="Day Picnic">Day Picnic</option>
+                  <option value="Villa">Villa</option>
+                  <option value="Resort">Resort</option>
+                  <option value="Farmhouse">Farmhouse</option>
                 </select>
                 <ChevronDown className="w-4 h-4 absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 pointer-events-none" />
               </div>

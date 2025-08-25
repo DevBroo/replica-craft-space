@@ -959,6 +959,73 @@ export class PropertyService {
   }
 
   /**
+   * Get owner's day picnic packages (including unapproved) for preview
+   */
+  static async getOwnerDayPicnics(ownerId?: string): Promise<any[]> {
+    try {
+      if (!ownerId) {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) return [];
+        ownerId = user.id;
+      }
+
+      const { data, error } = await supabase
+        .from('day_picnic_packages')
+        .select(`
+          id,
+          property_id,
+          start_time,
+          end_time,
+          duration_hours,
+          base_price,
+          pricing_type,
+          properties!inner (
+            id,
+            title,
+            images,
+            location,
+            status,
+            property_type,
+            owner_id
+          )
+        `)
+        .eq('properties.owner_id', ownerId)
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+
+      return data?.map(pkg => ({
+        id: pkg.id,
+        property_id: pkg.property_id,
+        start_time: pkg.start_time,
+        end_time: pkg.end_time,
+        duration_hours: pkg.duration_hours,
+        base_price: pkg.base_price,
+        pricing_type: pkg.pricing_type,
+        property: {
+          id: pkg.properties.id,
+          title: pkg.properties.title,
+          images: pkg.properties.images,
+          location: pkg.properties.location,
+          status: pkg.properties.status,
+          property_type: pkg.properties.property_type,
+          general_location: (pkg.properties.location as any)?.city || 'Unknown location',
+          pricing: { daily_rate: pkg.base_price, currency: 'INR' },
+          max_guests: 0,
+          bedrooms: 0,
+          bathrooms: 0,
+          rating: 0,
+          review_count: 0,
+          created_at: new Date().toISOString()
+        }
+      })) || [];
+    } catch (error) {
+      console.error('❌ Failed to fetch owner day picnics:', error);
+      return [];
+    }
+  }
+
+  /**
    * Clear all properties from database (DANGEROUS - use with caution)
    */
   static async clearAllProperties(): Promise<boolean> {

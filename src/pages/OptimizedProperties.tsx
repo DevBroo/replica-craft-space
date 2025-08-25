@@ -5,6 +5,7 @@ import { Search, MapPin, Users, Star, Calendar, Bed, Bath, Filter, Grid3X3, List
 import { useDebounce } from '@/hooks/useDebounce';
 import { PropertyService } from '@/lib/propertyService';
 import { getOptimizedImageUrl, getImageSizes } from '@/lib/imageOptimization';
+import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -52,6 +53,7 @@ const ITEMS_PER_PAGE = 12;
 const OptimizedProperties = () => {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
+  const { user } = useAuth();
   
   // State management
   const [searchTerm, setSearchTerm] = useState('');
@@ -88,6 +90,18 @@ const OptimizedProperties = () => {
     enabled: activeTab === 'day-picnics',
     staleTime: 5 * 60 * 1000,
     gcTime: 10 * 60 * 1000,
+  });
+
+  // Fetch owner's day picnic packages for preview (including unapproved)
+  const { 
+    data: ownerDayPicnics = [], 
+    isLoading: isLoadingOwnerDayPicnics 
+  } = useQuery({
+    queryKey: ['day_picnics', 'owner', user?.id],
+    queryFn: () => PropertyService.getOwnerDayPicnics(user?.id),
+    enabled: activeTab === 'day-picnics' && !!user && dayPicnics.length === 0,
+    staleTime: 2 * 60 * 1000,
+    gcTime: 5 * 60 * 1000,
   });
 
   const properties = propertiesData?.properties || [];
@@ -168,9 +182,91 @@ const OptimizedProperties = () => {
     navigate(`/property/${propertyId}`);
   }, [navigate]);
 
-  const handleViewDayPicnic = useCallback((propertyId: string) => {
-    navigate(`/day-picnic/${propertyId}`);
+  const handleViewDayPicnic = useCallback((propertyId: string, isPreview = false) => {
+    if (isPreview) {
+      navigate(`/owner/dashboard?tab=properties&action=edit&id=${propertyId}`);
+    } else {
+      navigate(`/day-picnic/${propertyId}`);
+    }
   }, [navigate]);
+
+  // Day Picnic card component
+  const DayPicnicCard = React.memo(({ dayPicnic, isPreview = false }: { dayPicnic: DayPicnicPackage; isPreview?: boolean }) => {
+    const primaryImage = dayPicnic.property.images?.[0];
+    const optimizedImage = primaryImage ? getOptimizedImageUrl(primaryImage, { width: 400, height: 300 }) : null;
+
+    return (
+      <Card className="group hover:shadow-lg transition-all duration-300 overflow-hidden">
+        <div className="relative aspect-[4/3] overflow-hidden">
+          {optimizedImage ? (
+            <img
+              src={optimizedImage}
+              alt={dayPicnic.property.title}
+              loading="lazy"
+              decoding="async"
+              sizes={getImageSizes('grid')}
+              className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+              onError={(e) => {
+                const target = e.target as HTMLImageElement;
+                target.src = '/placeholder-property.jpg';
+              }}
+            />
+          ) : (
+            <div className="w-full h-full bg-muted flex items-center justify-center">
+              <span className="text-muted-foreground">No Image</span>
+            </div>
+          )}
+          
+          <Badge className="absolute top-2 left-2 bg-primary text-primary-foreground">
+            Day Picnic
+          </Badge>
+          
+          {isPreview && (
+            <Badge className="absolute top-2 right-2 bg-orange-500 text-white">
+              Owner Preview
+            </Badge>
+          )}
+        </div>
+
+        <CardHeader className="pb-2">
+          <h3 className="font-semibold text-lg line-clamp-1 group-hover:text-primary transition-colors">
+            {dayPicnic.property.title}
+          </h3>
+          <div className="flex items-center text-sm text-muted-foreground">
+            <MapPin className="h-4 w-4 mr-1" />
+            <span className="line-clamp-1">{dayPicnic.property.general_location}</span>
+          </div>
+        </CardHeader>
+
+        <CardContent className="pt-0 pb-2">
+          <div className="flex items-center justify-between mb-2">
+            <div className="flex items-center gap-2">
+              <div className="flex items-center">
+                <Calendar className="h-4 w-4 mr-1 text-muted-foreground" />
+                <span className="text-sm">{dayPicnic.duration_hours}h</span>
+              </div>
+            </div>
+          </div>
+        </CardContent>
+
+        <CardFooter className="pt-0">
+          <div className="flex items-center justify-between w-full">
+            <div>
+              <span className="text-2xl font-bold text-primary">
+                ₹{dayPicnic.base_price?.toLocaleString() || 'N/A'}
+              </span>
+              <span className="text-sm text-muted-foreground">
+                /{dayPicnic.pricing_type === 'per_person' ? 'person' : 'package'}
+              </span>
+            </div>
+            <Button onClick={() => handleViewDayPicnic(dayPicnic.property_id, isPreview)}>
+              {isPreview ? 'Edit Setup' : 'View Details'}
+            </Button>
+          </div>
+        </CardFooter>
+      </Card>
+    );
+  });
 
   // Property card component with optimized images
   const PropertyCard = React.memo(({ property }: { property: Property }) => {
@@ -385,7 +481,9 @@ const OptimizedProperties = () => {
           <Tabs value={activeTab} onValueChange={setActiveTab} className="w-auto">
             <TabsList>
               <TabsTrigger value="properties">Properties ({properties.length})</TabsTrigger>
-              <TabsTrigger value="day-picnics">Day Picnics ({dayPicnics.length})</TabsTrigger>
+              <TabsTrigger value="day-picnics">
+                Day Picnics ({dayPicnics.length}{ownerDayPicnics.length > 0 && dayPicnics.length === 0 ? ` + ${ownerDayPicnics.length} preview` : ''})
+              </TabsTrigger>
             </TabsList>
           </Tabs>
 
@@ -484,96 +582,40 @@ const OptimizedProperties = () => {
                   <PropertySkeleton key={i} />
                 ))}
               </div>
-            ) : dayPicnics.length > 0 ? (
+            ) : dayPicnics.length > 0 || ownerDayPicnics.length > 0 ? (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-                {dayPicnics.map((picnic: any) => {
-                  const property = picnic.properties;
-                  const primaryImage = property?.images?.[0];
-                  const optimizedImage = primaryImage ? getOptimizedImageUrl(primaryImage, { width: 400, height: 300 }) : null;
-                  
-                  return (
-                    <Card key={picnic.id} className="group hover:shadow-lg transition-all duration-300 overflow-hidden">
-                      <div className="relative aspect-[4/3] overflow-hidden">
-                        {optimizedImage ? (
-                          <img
-                            src={optimizedImage}
-                            alt={property.title}
-                            loading="lazy"
-                            decoding="async"
-                            sizes={getImageSizes('grid')}
-                            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                            onError={(e) => {
-                              const target = e.target as HTMLImageElement;
-                              target.src = '/placeholder-property.jpg';
-                            }}
-                          />
-                        ) : (
-                          <div className="w-full h-full bg-muted flex items-center justify-center">
-                            <span className="text-muted-foreground">No Image</span>
-                          </div>
-                        )}
-                        <Badge className="absolute top-2 left-2 bg-green-600 text-white">
-                          Day Picnic
-                        </Badge>
-                      </div>
-
-                      <CardHeader className="pb-2">
-                        <h3 className="font-semibold text-lg line-clamp-1 group-hover:text-primary transition-colors">
-                          {property.title}
-                        </h3>
-                        <div className="flex items-center text-sm text-muted-foreground">
-                          <MapPin className="h-4 w-4 mr-1" />
-                          <span className="line-clamp-1">{property.general_location}</span>
-                        </div>
-                      </CardHeader>
-
-                      <CardContent className="pt-0 pb-2">
-                        <div className="flex items-center justify-between mb-2">
-                          <div className="flex items-center gap-4">
-                            <div className="flex items-center">
-                              <Calendar className="h-4 w-4 mr-1 text-muted-foreground" />
-                              <span className="text-sm">{picnic.duration_hours}h</span>
-                            </div>
-                          </div>
-                          
-                          {property.rating > 0 && (
-                            <div className="flex items-center">
-                              <Star className="h-4 w-4 text-yellow-400 fill-current mr-1" />
-                              <span className="text-sm font-medium">{property.rating.toFixed(1)}</span>
-                              {property.review_count > 0 && (
-                                <span className="text-xs text-muted-foreground ml-1">
-                                  ({property.review_count})
-                                </span>
-                              )}
-                            </div>
-                          )}
-                        </div>
-                      </CardContent>
-
-                      <CardFooter className="pt-0">
-                        <div className="flex items-center justify-between w-full">
-                          <div>
-                            <span className="text-2xl font-bold text-primary">
-                              ₹{picnic.base_price?.toLocaleString() || 'N/A'}
-                            </span>
-                            <span className="text-sm text-muted-foreground">/{picnic.pricing_type === 'per_person' ? 'person' : 'package'}</span>
-                          </div>
-                          <Button onClick={() => handleViewDayPicnic(property.id)}>
-                            Book Now
-                          </Button>
-                        </div>
-                      </CardFooter>
-                    </Card>
-                  );
-                })}
+                {/* Approved day picnics */}
+                {dayPicnics.map((picnic: any) => (
+                  <DayPicnicCard key={`approved-${picnic.id}`} dayPicnic={picnic} />
+                ))}
+                
+                {/* Owner preview day picnics (only if no approved ones) */}
+                {dayPicnics.length === 0 && ownerDayPicnics.map((picnic: any) => (
+                  <DayPicnicCard key={`preview-${picnic.id}`} dayPicnic={picnic} isPreview={true} />
+                ))}
               </div>
             ) : (
               <div className="text-center py-12">
                 <div className="text-6xl mb-4">🌳</div>
-                <h3 className="text-xl font-semibold mb-2">No day picnic spots found</h3>
+                <h3 className="text-xl font-semibold mb-2">No public day picnic spots found</h3>
                 <p className="text-muted-foreground mb-4">
-                  Try adjusting your filters or check back later
+                  {user && ownerDayPicnics.length > 0 
+                    ? `You have ${ownerDayPicnics.length} packages pending approval. Approve them to make them public.`
+                    : 'Try adjusting your filters or check back later for new day picnic spots.'
+                  }
                 </p>
+                {user && (
+                  <div className="flex gap-2 justify-center">
+                    <Button onClick={() => navigate('/owner/dashboard')}>
+                      Go to Owner Dashboard
+                    </Button>
+                    {ownerDayPicnics.length > 0 && (
+                      <Button variant="outline" onClick={() => navigate(`/owner/dashboard?tab=properties&action=edit&id=${ownerDayPicnics[0].property_id}`)}>
+                        Setup Day Picnic
+                      </Button>
+                    )}
+                  </div>
+                )}
               </div>
             )}
           </TabsContent>
