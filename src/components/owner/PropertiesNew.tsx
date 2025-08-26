@@ -6,7 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Plus, Edit, Eye, Check, X } from 'lucide-react';
+import { Plus, Edit, Eye, Check, X, Clock, MapPin } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { Home, Calendar, DollarSign, Star, MessageSquare, User, Settings as SettingsIcon, BarChart3, Bell, Menu, LogOut } from 'lucide-react';
@@ -46,6 +46,7 @@ const Properties: React.FC<PropertiesProps> = ({
   const [isEditMode, setIsEditMode] = useState(false);
   const [selectedPropertyForView, setSelectedPropertyForView] = useState<any>(null);
   const [showQuickView, setShowQuickView] = useState(false);
+  const [quickViewInitialTab, setQuickViewInitialTab] = useState<'overview' | 'itinerary' | 'location'>('overview');
 
   const propertyTypes = [
     'Hotels',
@@ -154,14 +155,16 @@ const Properties: React.FC<PropertiesProps> = ({
     navigate(`/owner/day-picnic-setup/${property.id}`);
   };
 
-  const handleViewProperty = (property: any) => {
+  const handleViewProperty = (property: any, tab: 'overview' | 'itinerary' | 'location' = 'overview') => {
     setSelectedPropertyForView(property);
+    setQuickViewInitialTab(tab);
     setShowQuickView(true);
   };
 
   const handleCloseQuickView = () => {
     setShowQuickView(false);
     setSelectedPropertyForView(null);
+    setQuickViewInitialTab('overview');
   };
 
   const handlePropertyTypeSelection = (type: string) => {
@@ -416,25 +419,45 @@ const Properties: React.FC<PropertiesProps> = ({
                        </div>
                      )}
                    </div>
-                     <div className="flex items-center space-x-2">
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        onClick={() => handleViewProperty(property)}
-                        className="p-2"
-                        title="View Property"
-                      >
-                        <Eye className="w-4 h-4" />
-                      </Button>
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        onClick={() => handleEditProperty(property)}
-                        className="p-2"
-                        title="Edit Property"
-                      >
-                        <Edit className="w-4 h-4" />
-                      </Button>
+                      <div className="flex items-center space-x-1">
+                       <Button
+                         size="sm"
+                         variant="outline"
+                         onClick={() => handleViewProperty(property)}
+                         className="p-2"
+                         title="View Property"
+                       >
+                         <Eye className="w-4 h-4" />
+                       </Button>
+                       <Button
+                         size="sm"
+                         variant="outline"
+                         onClick={() => handleViewProperty(property, 'itinerary')}
+                         className="p-2"
+                         title={property.status === 'approved' ? "View Itinerary" : "Available after approval"}
+                         disabled={property.status !== 'approved'}
+                       >
+                         <Clock className="w-4 h-4" />
+                       </Button>
+                       <Button
+                         size="sm"
+                         variant="outline"
+                         onClick={() => handleViewProperty(property, 'location')}
+                         className="p-2"
+                         title={property.status === 'approved' ? "View Location" : "Available after approval"}
+                         disabled={property.status !== 'approved'}
+                       >
+                         <MapPin className="w-4 h-4" />
+                       </Button>
+                       <Button
+                         size="sm"
+                         variant="outline"
+                         onClick={() => handleEditProperty(property)}
+                         className="p-2"
+                         title="Edit Property"
+                       >
+                         <Edit className="w-4 h-4" />
+                       </Button>
                      {property.property_type === 'Day Picnic' && (
                        <Button
                          size="sm"
@@ -557,6 +580,7 @@ const Properties: React.FC<PropertiesProps> = ({
         property={selectedPropertyForView}
         isOpen={showQuickView}
         onClose={handleCloseQuickView}
+        initialTab={quickViewInitialTab}
       />
 
       {/* Delete Confirmation Modal */}

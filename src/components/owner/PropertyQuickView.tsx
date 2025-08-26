@@ -32,21 +32,28 @@ interface PropertyQuickViewProps {
   property: Property | null;
   isOpen: boolean;
   onClose: () => void;
+  initialTab?: 'overview' | 'itinerary' | 'location';
 }
 
 export const PropertyQuickView: React.FC<PropertyQuickViewProps> = ({
   property,
   isOpen,
-  onClose
+  onClose,
+  initialTab = 'overview'
 }) => {
   const [packages, setPackages] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
+  const [activeTab, setActiveTab] = useState(initialTab);
 
   useEffect(() => {
     if (property && property.property_type === 'Day Picnic') {
       fetchPackages();
     }
   }, [property]);
+
+  useEffect(() => {
+    setActiveTab(initialTab);
+  }, [initialTab]);
 
   const fetchPackages = async () => {
     if (!property) return;
@@ -125,7 +132,7 @@ export const PropertyQuickView: React.FC<PropertyQuickViewProps> = ({
           </DialogTitle>
         </DialogHeader>
 
-        <Tabs defaultValue="overview" className="w-full">
+        <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as 'overview' | 'itinerary' | 'location')} className="w-full">
           <TabsList className="grid w-full grid-cols-3">
             <TabsTrigger value="overview">Overview</TabsTrigger>
             <TabsTrigger value="itinerary">Itinerary</TabsTrigger>
