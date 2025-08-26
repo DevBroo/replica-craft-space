@@ -22,7 +22,9 @@ import {
   Bed,
   Bath,
   ChevronLeft,
-  ChevronRight
+  ChevronRight,
+  Check,
+  X
 } from 'lucide-react';
 
 interface Property {
@@ -188,30 +190,59 @@ const Properties: React.FC = () => {
       
       console.log('✅ Day picnic packages fetched:', packagesData?.length || 0);
       
+      // Fetch option prices for all packages
+      let allOptionPrices = [];
+      if (packagesData && packagesData.length > 0) {
+        const packageIds = packagesData.map(pkg => pkg.id);
+        const { data: optionPricesData, error: optionPricesError } = await supabase
+          .from('day_picnic_option_prices')
+          .select('*')
+          .in('package_id', packageIds)
+          .in('option_type', ['inclusion', 'exclusion', 'add_on']);
+
+        if (optionPricesError) {
+          console.error('❌ Error fetching option prices:', optionPricesError);
+        } else {
+          allOptionPrices = optionPricesData || [];
+        }
+      }
+      
       // Filter out packages with null properties and format the data
-      const formattedPackages = packagesData?.filter(pkg => pkg.properties && pkg.properties.id).map(pkg => ({
-        id: pkg.id,
-        propertyId: pkg.properties.id,
-        name: `Day Picnic at ${pkg.properties.title || 'Property'}`,
-        title: `Day Picnic at ${pkg.properties.title || 'Property'}`,
-        location: pkg.properties.address || 'Location not specified',
-        price: pkg.base_price || 0,
-        pricingType: pkg.pricing_type || 'per_person',
-        rating: pkg.properties.rating || 0,
-        totalBookings: pkg.properties.review_count || 0,
-        images: pkg.properties.images || [],
-        timing: {
-          start: pkg.start_time || '10:00',
-          end: pkg.end_time || '18:00',
-          duration: pkg.duration_hours || 8
-        },
-        mealPlan: pkg.meal_plan || [],
-        inclusions: pkg.inclusions || [],
-        exclusions: pkg.exclusions || [],
-        addOns: pkg.add_ons || [],
-        type: 'Day Picnic',
-        hasPackage: true
-      })) || [];
+      const formattedPackages = packagesData?.filter(pkg => pkg.properties && pkg.properties.id).map(pkg => {
+        // Get option prices for this package
+        const packageOptionPrices = allOptionPrices.filter(option => option.package_id === pkg.id);
+        const exclusionsPriced = packageOptionPrices.filter(option => option.option_type === 'exclusion');
+        const inclusionsPriced = packageOptionPrices.filter(option => option.option_type === 'inclusion');
+        const addOnsPriced = packageOptionPrices.filter(option => option.option_type === 'add_on');
+
+        return {
+          id: pkg.id,
+          propertyId: pkg.properties.id,
+          name: `Day Picnic at ${pkg.properties.title || 'Property'}`,
+          title: `Day Picnic at ${pkg.properties.title || 'Property'}`,
+          location: pkg.properties.address || 'Location not specified',
+          price: pkg.base_price || 0,
+          pricingType: pkg.pricing_type || 'per_person',
+          rating: pkg.properties.rating || 0,
+          totalBookings: pkg.properties.review_count || 0,
+          images: pkg.properties.images || [],
+          timing: {
+            start: pkg.start_time || '10:00',
+            end: pkg.end_time || '18:00',
+            duration: pkg.duration_hours || 8
+          },
+          mealPlan: pkg.meal_plan || [],
+          inclusions: pkg.inclusions || [],
+          exclusions: pkg.exclusions || [],
+          addOns: pkg.add_ons || [],
+          // Add priced options
+          exclusionsPriced,
+          inclusionsPriced,
+          addOnsPriced,
+          type: 'Day Picnic',
+          hasPackage: true
+        };
+      }) || [];
 
       // Second, fetch all approved properties and filter for day picnic variants
       const { data: allApprovedProperties, error: propertiesError } = await supabase
@@ -889,7 +920,43 @@ const Properties: React.FC = () => {
                           )}
                         </div>
                       </div>
-                    )}
+                     )}
+
+                    <div className="text-xs text-gray-600 mb-3">
+                      {/* Show inclusions with pricing if available */}
+                      {pkg.inclusionsPriced && pkg.inclusionsPriced.length > 0 ? (
+                        <div className="flex items-center gap-1 mb-1">
+                          <Check className="h-3 w-3 text-green-600" />
+                          <span>Includes: {pkg.inclusionsPriced.slice(0, 2).map((inc: any, idx: number) => 
+                            `${inc.name} (+₹${inc.price})`
+                          ).join(', ')}</span>
+                          {pkg.inclusionsPriced.length > 2 && <span>+{pkg.inclusionsPriced.length - 2} more</span>}
+                        </div>
+                      ) : pkg.inclusions && pkg.inclusions.length > 0 && (
+                        <div className="flex items-center gap-1 mb-1">
+                          <Check className="h-3 w-3 text-green-600" />
+                          <span>Includes: {pkg.inclusions.slice(0, 2).join(', ')}</span>
+                          {pkg.inclusions.length > 2 && <span>+{pkg.inclusions.length - 2} more</span>}
+                        </div>
+                      )}
+                      
+                      {/* Show exclusions with pricing if available */}
+                      {pkg.exclusionsPriced && pkg.exclusionsPriced.length > 0 ? (
+                        <div className="flex items-center gap-1">
+                          <X className="h-3 w-3 text-red-600" />
+                          <span>Excludes: {pkg.exclusionsPriced.slice(0, 2).map((exc: any, idx: number) => 
+                            `${exc.name} (+₹${exc.price})`
+                          ).join(', ')}</span>
+                          {pkg.exclusionsPriced.length > 2 && <span>+{pkg.exclusionsPriced.length - 2} more</span>}
+                        </div>
+                      ) : pkg.exclusions && pkg.exclusions.length > 0 && (
+                        <div className="flex items-center gap-1">
+                          <X className="h-3 w-3 text-red-600" />
+                          <span>Excludes: {pkg.exclusions.slice(0, 2).join(', ')}</span>
+                          {pkg.exclusions.length > 2 && <span>+{pkg.exclusions.length - 2} more</span>}
+                        </div>
+                      )}
+                    </div>
 
                      <div className="flex items-center justify-between">
                        <div>

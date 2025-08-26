@@ -12,6 +12,9 @@ interface PackageCardProps {
     min_hours?: number;
     inclusions?: any[];
     exclusions?: any[];
+    exclusionsPriced?: any[];
+    inclusionsPriced?: any[];
+    addOnsPriced?: any[];
     base_price: number;
     pricing_type: string;
     start_time?: string;
@@ -29,6 +32,8 @@ export const PackageCard: React.FC<PackageCardProps> = ({
   const duration = pkg.duration_hours || pkg.min_hours || 8;
   const inclusions = Array.isArray(pkg.inclusions) ? pkg.inclusions : [];
   const exclusions = Array.isArray(pkg.exclusions) ? pkg.exclusions : [];
+  const exclusionsPriced = Array.isArray(pkg.exclusionsPriced) ? pkg.exclusionsPriced : [];
+  const inclusionsPriced = Array.isArray(pkg.inclusionsPriced) ? pkg.inclusionsPriced : [];
 
   return (
     <Card className={`h-full transition-all hover:shadow-lg ${isSelected ? 'ring-2 ring-primary' : ''}`}>
@@ -67,41 +72,83 @@ export const PackageCard: React.FC<PackageCardProps> = ({
       </CardHeader>
 
       <CardContent className="space-y-4">
-        {/* Inclusions */}
-        {inclusions.length > 0 && (
+        {/* Inclusions - prefer priced inclusions */}
+        {(inclusionsPriced.length > 0 || inclusions.length > 0) && (
           <div>
             <h4 className="font-medium text-sm mb-2 text-green-700">What's Included</h4>
             <ul className="space-y-1">
-              {inclusions.slice(0, 4).map((item, index) => (
-                <li key={index} className="flex items-start gap-2 text-sm">
-                  <Check className="h-3 w-3 text-green-600 mt-0.5 flex-shrink-0" />
-                  <span className="text-muted-foreground">{item}</span>
-                </li>
-              ))}
-              {inclusions.length > 4 && (
-                <li className="text-xs text-muted-foreground ml-5">
-                  +{inclusions.length - 4} more inclusions
-                </li>
+              {inclusionsPriced.length > 0 ? (
+                <>
+                  {inclusionsPriced.slice(0, 4).map((item, index) => (
+                    <li key={index} className="flex items-start justify-between gap-2 text-sm">
+                      <div className="flex items-start gap-2">
+                        <Check className="h-3 w-3 text-green-600 mt-0.5 flex-shrink-0" />
+                        <span className="text-muted-foreground">{item.name}</span>
+                      </div>
+                      <span className="text-green-600 font-medium text-xs">+₹{item.price}</span>
+                    </li>
+                  ))}
+                  {inclusionsPriced.length > 4 && (
+                    <li className="text-xs text-muted-foreground ml-5">
+                      +{inclusionsPriced.length - 4} more inclusions
+                    </li>
+                  )}
+                </>
+              ) : (
+                <>
+                  {inclusions.slice(0, 4).map((item, index) => (
+                    <li key={index} className="flex items-start gap-2 text-sm">
+                      <Check className="h-3 w-3 text-green-600 mt-0.5 flex-shrink-0" />
+                      <span className="text-muted-foreground">{item}</span>
+                    </li>
+                  ))}
+                  {inclusions.length > 4 && (
+                    <li className="text-xs text-muted-foreground ml-5">
+                      +{inclusions.length - 4} more inclusions
+                    </li>
+                  )}
+                </>
               )}
             </ul>
           </div>
         )}
 
-        {/* Exclusions */}
-        {exclusions.length > 0 && (
+        {/* Exclusions - prefer priced exclusions */}
+        {(exclusionsPriced.length > 0 || exclusions.length > 0) && (
           <div>
             <h4 className="font-medium text-sm mb-2 text-red-700">Not Included</h4>
             <ul className="space-y-1">
-              {exclusions.slice(0, 3).map((item, index) => (
-                <li key={index} className="flex items-start gap-2 text-sm">
-                  <X className="h-3 w-3 text-red-600 mt-0.5 flex-shrink-0" />
-                  <span className="text-muted-foreground">{item}</span>
-                </li>
-              ))}
-              {exclusions.length > 3 && (
-                <li className="text-xs text-muted-foreground ml-5">
-                  +{exclusions.length - 3} more exclusions
-                </li>
+              {exclusionsPriced.length > 0 ? (
+                <>
+                  {exclusionsPriced.slice(0, 3).map((item, index) => (
+                    <li key={index} className="flex items-start justify-between gap-2 text-sm">
+                      <div className="flex items-start gap-2">
+                        <X className="h-3 w-3 text-red-600 mt-0.5 flex-shrink-0" />
+                        <span className="text-muted-foreground">{item.name}</span>
+                      </div>
+                      <span className="text-red-600 font-medium text-xs">+₹{item.price}</span>
+                    </li>
+                  ))}
+                  {exclusionsPriced.length > 3 && (
+                    <li className="text-xs text-muted-foreground ml-5">
+                      +{exclusionsPriced.length - 3} more exclusions
+                    </li>
+                  )}
+                </>
+              ) : (
+                <>
+                  {exclusions.slice(0, 3).map((item, index) => (
+                    <li key={index} className="flex items-start gap-2 text-sm">
+                      <X className="h-3 w-3 text-red-600 mt-0.5 flex-shrink-0" />
+                      <span className="text-muted-foreground">{item}</span>
+                    </li>
+                  ))}
+                  {exclusions.length > 3 && (
+                    <li className="text-xs text-muted-foreground ml-5">
+                      +{exclusions.length - 3} more exclusions
+                    </li>
+                  )}
+                </>
               )}
             </ul>
           </div>

@@ -1043,8 +1043,34 @@ export class PropertyService {
         throw error;
       }
 
-      console.log('✅ Day picnic packages fetched successfully:', data?.length || 0);
-      return data || [];
+      const packages = data || [];
+      
+      // Fetch option prices for all packages
+      if (packages.length > 0) {
+        const packageIds = packages.map(pkg => pkg.id);
+        const { data: optionPricesData, error: optionPricesError } = await supabase
+          .from('day_picnic_option_prices')
+          .select('*')
+          .in('package_id', packageIds)
+          .in('option_type', ['inclusion', 'exclusion', 'add_on']);
+
+        if (optionPricesError) {
+          console.error('Error fetching option prices:', optionPricesError);
+        } else {
+          const allOptionPrices = optionPricesData || [];
+          
+          // Attach priced options to each package
+          packages.forEach((pkg: any) => {
+            const packageOptionPrices = allOptionPrices.filter(option => option.package_id === pkg.id);
+            pkg.exclusionsPriced = packageOptionPrices.filter(option => option.option_type === 'exclusion');
+            pkg.inclusionsPriced = packageOptionPrices.filter(option => option.option_type === 'inclusion');
+            pkg.addOnsPriced = packageOptionPrices.filter(option => option.option_type === 'add_on');
+          });
+        }
+      }
+
+      console.log('✅ Day picnic packages fetched successfully:', packages.length);
+      return packages;
     } catch (error) {
       console.error('❌ Failed to fetch day picnic packages:', error);
       return [];

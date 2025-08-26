@@ -78,10 +78,6 @@ const NumericInput = React.forwardRef<HTMLInputElement, NumericInputProps>(
     };
 
     const handleBlur = (e: React.FocusEvent<HTMLInputElement>) => {
-      // Don't commit if blur was caused by wheel event
-      if (e.relatedTarget === null) {
-        return;
-      }
       setIsFocused(false);
       commitValue();
     };
