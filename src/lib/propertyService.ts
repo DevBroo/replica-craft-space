@@ -1026,6 +1026,32 @@ export class PropertyService {
   }
 
   /**
+   * Get day picnic packages for a specific property
+   */
+  static async getDayPicnicPackagesForProperty(propertyId: string): Promise<any[]> {
+    try {
+      console.log('🔍 Fetching day picnic packages for property:', propertyId);
+      
+      const { data, error } = await supabase
+        .from('day_picnic_packages')
+        .select('*')
+        .eq('property_id', propertyId)
+        .order('created_at', { ascending: false });
+
+      if (error) {
+        console.error('❌ Error fetching day picnic packages:', error);
+        throw error;
+      }
+
+      console.log('✅ Day picnic packages fetched successfully:', data?.length || 0);
+      return data || [];
+    } catch (error) {
+      console.error('❌ Failed to fetch day picnic packages:', error);
+      return [];
+    }
+  }
+
+  /**
    * Clear all properties from database (DANGEROUS - use with caution)
    */
   static async clearAllProperties(): Promise<boolean> {
