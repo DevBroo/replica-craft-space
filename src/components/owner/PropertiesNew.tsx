@@ -81,28 +81,39 @@ const Properties: React.FC<PropertiesProps> = ({
           .in('property_id', propertyIds);
 
         if (!packagesError && packagesData) {
-          // Fetch option prices for inclusions
+          // Fetch option prices for inclusions and exclusions
           const packageIds = packagesData.map(pkg => pkg.id);
           const { data: optionPrices } = await supabase
             .from('day_picnic_option_prices')
-            .select('package_id, name')
+            .select('package_id, name, price, option_type')
             .in('package_id', packageIds)
-            .eq('option_type', 'inclusion');
+            .in('option_type', ['inclusion', 'exclusion']);
 
-          // Group option prices by package ID
-          const optionsByPackage = (optionPrices || []).reduce((acc, opt) => {
-            if (!acc[opt.package_id]) acc[opt.package_id] = [];
-            acc[opt.package_id].push(opt.name);
-            return acc;
-          }, {} as Record<string, string[]>);
+          // Group option prices by package ID and type
+          const inclusionsByPackage = (optionPrices || [])
+            .filter(opt => opt.option_type === 'inclusion')
+            .reduce((acc, opt) => {
+              if (!acc[opt.package_id]) acc[opt.package_id] = [];
+              acc[opt.package_id].push(opt.name);
+              return acc;
+            }, {} as Record<string, string[]>);
+
+          const exclusionsByPackage = (optionPrices || [])
+            .filter(opt => opt.option_type === 'exclusion')
+            .reduce((acc, opt) => {
+              if (!acc[opt.package_id]) acc[opt.package_id] = [];
+              acc[opt.package_id].push({ name: opt.name, price: opt.price });
+              return acc;
+            }, {} as Record<string, any[]>);
 
           const packagesMap = packagesData.reduce((acc, pkg) => {
             if (!acc[pkg.property_id]) acc[pkg.property_id] = [];
             acc[pkg.property_id].push({
               ...pkg,
-              inclusionsFromOptions: optionsByPackage[pkg.id] || [],
+              inclusionsFromOptions: inclusionsByPackage[pkg.id] || [],
+              exclusionsFromOptions: exclusionsByPackage[pkg.id] || [],
               // Use inclusions from options if available, fallback to package inclusions
-              displayInclusions: optionsByPackage[pkg.id] || pkg.inclusions || []
+              displayInclusions: inclusionsByPackage[pkg.id] || pkg.inclusions || []
             });
             return acc;
           }, {} as Record<string, any[]>);
@@ -357,7 +368,22 @@ const Properties: React.FC<PropertiesProps> = ({
                                   </div>
                                 </div>
                               )}
-                              {Array.isArray(pkg.exclusions) && pkg.exclusions.length > 0 && (
+                              {(pkg.exclusionsFromOptions?.length > 0) && (
+                                <div className="flex items-center space-x-1">
+                                  <div className="flex items-center space-x-1">
+                                    {pkg.exclusionsFromOptions.slice(0, 2).map((exclusion: any, i: number) => (
+                                      <div key={i} className="flex items-center space-x-1">
+                                        <X className="w-3 h-3 text-red-600" />
+                                        <span className="text-red-700">{exclusion.name} (₹{exclusion.price})</span>
+                                      </div>
+                                    ))}
+                                    {pkg.exclusionsFromOptions.length > 2 && (
+                                      <span className="text-red-600">+{pkg.exclusionsFromOptions.length - 2} more</span>
+                                    )}
+                                  </div>
+                                </div>
+                              )}
+                              {Array.isArray(pkg.exclusions) && pkg.exclusions.length > 0 && !pkg.exclusionsFromOptions?.length && (
                                 <div className="flex items-center space-x-1">
                                   <div className="flex items-center space-x-1">
                                     {pkg.exclusions.slice(0, 2).map((exclusion: any, i: number) => (

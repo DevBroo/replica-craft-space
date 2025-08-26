@@ -18,7 +18,7 @@ interface MealPrice {
 }
 
 interface OptionPrice {
-  option_type: 'inclusion' | 'add_on';
+  option_type: 'inclusion' | 'add_on' | 'exclusion';
   name: string;
   price: number;
   is_required: boolean;
@@ -86,6 +86,7 @@ const PricingPreview: React.FC<Props> = ({
 
   const requiredInclusions = optionPrices.filter(opt => opt.option_type === 'inclusion' && opt.is_required);
   const optionalInclusions = optionPrices.filter(opt => opt.option_type === 'inclusion' && !opt.is_required);
+  const exclusions = optionPrices.filter(opt => opt.option_type === 'exclusion');
   const addOns = optionPrices.filter(opt => opt.option_type === 'add_on');
 
   const requiredInclusionsPrice = requiredInclusions.reduce((sum, inc) => sum + inc.price, 0);
@@ -177,6 +178,23 @@ const PricingPreview: React.FC<Props> = ({
               ))}
               {optionalInclusions.length > 2 && (
                 <li className="text-gray-400">+ {optionalInclusions.length - 2} more</li>
+              )}
+            </ul>
+          </div>
+        )}
+
+        {exclusions.length > 0 && (
+          <div>
+            <p className="font-medium text-red-600">❌ Exclusions with Pricing</p>
+            <ul className="text-sm text-gray-600 space-y-1">
+              {exclusions.slice(0, 2).map(exclusion => (
+                <li key={exclusion.name} className="flex justify-between">
+                  <span>• {exclusion.name}</span>
+                  <span className="font-medium">₹{exclusion.price}</span>
+                </li>
+              ))}
+              {exclusions.length > 2 && (
+                <li className="text-gray-400">+ {exclusions.length - 2} more</li>
               )}
             </ul>
           </div>

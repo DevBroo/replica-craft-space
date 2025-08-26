@@ -54,7 +54,7 @@ interface MealPrice {
 
 interface OptionPrice {
   id?: string;
-  option_type: 'inclusion' | 'add_on';
+  option_type: 'inclusion' | 'add_on' | 'exclusion';
   name: string;
   price: number;
   is_required: boolean;
@@ -194,7 +194,7 @@ const DayPicnicSetup: React.FC = () => {
           
           setOptionPrices(options.map(opt => ({
             id: opt.id,
-            option_type: opt.option_type as 'inclusion' | 'add_on',
+            option_type: opt.option_type as 'inclusion' | 'add_on' | 'exclusion',
             name: opt.name,
             price: opt.price,
             is_required: opt.is_required
