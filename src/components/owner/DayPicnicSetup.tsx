@@ -386,6 +386,19 @@ const DayPicnicSetup: React.FC = () => {
           allPricingData.push(...optionsData);
         }
 
+        // Sync inclusions from option prices to package data
+        const inclusionsFromOptions = optionPrices
+          .filter(opt => opt.option_type === 'inclusion' && opt.name.trim() !== '')
+          .map(opt => opt.name);
+        
+        // Update package data with synced inclusions - update the package after option prices are saved
+        if (inclusionsFromOptions.length > 0) {
+          await supabase
+            .from('day_picnic_packages')
+            .update({ inclusions: inclusionsFromOptions })
+            .eq('id', packageId);
+        }
+
         // Add duration prices
         if (durationPrices.length > 0) {
           const durationData = durationPrices

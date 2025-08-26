@@ -199,6 +199,23 @@ const PricingPreview: React.FC<Props> = ({
           </div>
         )}
 
+        {property?.exclusions && property.exclusions.length > 0 && (
+          <div>
+            <p className="font-medium text-red-600">❌ Exclusions</p>
+            <ul className="text-sm text-gray-600 space-y-1">
+              {property.exclusions.slice(0, 2).map((exclusion: any, index: number) => (
+                <li key={index}>
+                  <span>• {exclusion.item || exclusion}</span>
+                  {exclusion.reason && <span className="text-gray-500"> ({exclusion.reason})</span>}
+                </li>
+              ))}
+              {property.exclusions.length > 2 && (
+                <li className="text-gray-400">+ {property.exclusions.length - 2} more</li>
+              )}
+            </ul>
+          </div>
+        )}
+
         {sampleTotalPrice > 0 && (
           <div className="pt-3 border-t">
             <p className="font-medium">Sample Total (Full Day)</p>

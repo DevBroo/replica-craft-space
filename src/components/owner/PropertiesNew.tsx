@@ -71,19 +71,39 @@ const Properties: React.FC<PropertiesProps> = ({
       if (error) throw error;
       setProperties(data || []);
 
-      // Fetch packages for Day Picnic properties
+      // Fetch packages and option prices for Day Picnic properties
       const dayPicnicProperties = (data || []).filter(p => p.property_type === 'Day Picnic');
       if (dayPicnicProperties.length > 0) {
         const propertyIds = dayPicnicProperties.map(p => p.id);
         const { data: packagesData, error: packagesError } = await supabase
           .from('day_picnic_packages')
-          .select('property_id, inclusions, exclusions')
+          .select('id, property_id, inclusions, exclusions')
           .in('property_id', propertyIds);
 
         if (!packagesError && packagesData) {
+          // Fetch option prices for inclusions
+          const packageIds = packagesData.map(pkg => pkg.id);
+          const { data: optionPrices } = await supabase
+            .from('day_picnic_option_prices')
+            .select('package_id, name')
+            .in('package_id', packageIds)
+            .eq('option_type', 'inclusion');
+
+          // Group option prices by package ID
+          const optionsByPackage = (optionPrices || []).reduce((acc, opt) => {
+            if (!acc[opt.package_id]) acc[opt.package_id] = [];
+            acc[opt.package_id].push(opt.name);
+            return acc;
+          }, {} as Record<string, string[]>);
+
           const packagesMap = packagesData.reduce((acc, pkg) => {
             if (!acc[pkg.property_id]) acc[pkg.property_id] = [];
-            acc[pkg.property_id].push(pkg);
+            acc[pkg.property_id].push({
+              ...pkg,
+              inclusionsFromOptions: optionsByPackage[pkg.id] || [],
+              // Use inclusions from options if available, fallback to package inclusions
+              displayInclusions: optionsByPackage[pkg.id] || pkg.inclusions || []
+            });
             return acc;
           }, {} as Record<string, any[]>);
           setPackagesByProperty(packagesMap);
@@ -322,32 +342,32 @@ const Properties: React.FC<PropertiesProps> = ({
                        <div className="mt-2 space-y-1">
                          {packagesByProperty[property.id].map((pkg, idx) => (
                            <div key={idx} className="text-xs">
-                             {Array.isArray(pkg.inclusions) && pkg.inclusions.length > 0 && (
-                               <div className="flex items-center space-x-1 mb-1">
-                                 <div className="flex items-center space-x-1">
-                                   {pkg.inclusions.slice(0, 3).map((inclusion: string, i: number) => (
-                                     <div key={i} className="flex items-center space-x-1">
-                                       <Check className="w-3 h-3 text-green-600" />
-                                       <span className="text-green-700">{inclusion}</span>
-                                     </div>
-                                   ))}
-                                   {pkg.inclusions.length > 3 && (
-                                     <span className="text-green-600">+{pkg.inclusions.length - 3} more</span>
-                                   )}
-                                 </div>
-                               </div>
-                             )}
-                             {Array.isArray(pkg.exclusions) && pkg.exclusions.length > 0 && (
-                               <div className="flex items-center space-x-1">
-                                 <div className="flex items-center space-x-1">
-                                   {pkg.exclusions.slice(0, 2).map((exclusion: string, i: number) => (
-                                     <div key={i} className="flex items-center space-x-1">
-                                       <X className="w-3 h-3 text-red-600" />
-                                       <span className="text-red-700">{exclusion}</span>
-                                     </div>
-                                   ))}
-                                   {pkg.exclusions.length > 2 && (
-                                     <span className="text-red-600">+{pkg.exclusions.length - 2} more</span>
+                              {Array.isArray(pkg.displayInclusions) && pkg.displayInclusions.length > 0 && (
+                                <div className="flex items-center space-x-1 mb-1">
+                                  <div className="flex items-center space-x-1">
+                                    {pkg.displayInclusions.slice(0, 3).map((inclusion: string, i: number) => (
+                                      <div key={i} className="flex items-center space-x-1">
+                                        <Check className="w-3 h-3 text-green-600" />
+                                        <span className="text-green-700">{inclusion}</span>
+                                      </div>
+                                    ))}
+                                    {pkg.displayInclusions.length > 3 && (
+                                      <span className="text-green-600">+{pkg.displayInclusions.length - 3} more</span>
+                                    )}
+                                  </div>
+                                </div>
+                              )}
+                              {Array.isArray(pkg.exclusions) && pkg.exclusions.length > 0 && (
+                                <div className="flex items-center space-x-1">
+                                  <div className="flex items-center space-x-1">
+                                    {pkg.exclusions.slice(0, 2).map((exclusion: any, i: number) => (
+                                      <div key={i} className="flex items-center space-x-1">
+                                        <X className="w-3 h-3 text-red-600" />
+                                        <span className="text-red-700">{exclusion.item || exclusion}</span>
+                                      </div>
+                                    ))}
+                                    {pkg.exclusions.length > 2 && (
+                                      <span className="text-red-600">+{pkg.exclusions.length - 2} more</span>
                                    )}
                                  </div>
                                </div>
