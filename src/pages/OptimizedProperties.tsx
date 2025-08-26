@@ -46,6 +46,7 @@ interface DayPicnicPackage {
   base_price: number;
   pricing_type: string;
   property: Property;
+  properties_public?: Property;
 }
 
 const ITEMS_PER_PAGE = 12;
@@ -192,7 +193,8 @@ const OptimizedProperties = () => {
 
   // Day Picnic card component
   const DayPicnicCard = React.memo(({ dayPicnic, isPreview = false }: { dayPicnic: DayPicnicPackage; isPreview?: boolean }) => {
-    const primaryImage = dayPicnic.property.images?.[0];
+    const property = dayPicnic.properties_public || dayPicnic.property;
+    const primaryImage = property?.images?.[0];
     const optimizedImage = primaryImage ? getOptimizedImageUrl(primaryImage, { width: 400, height: 300 }) : null;
 
     return (
@@ -201,7 +203,7 @@ const OptimizedProperties = () => {
           {optimizedImage ? (
             <img
               src={optimizedImage}
-              alt={dayPicnic.property.title}
+              alt={property?.title || 'Day Picnic Property'}
               loading="lazy"
               decoding="async"
               sizes={getImageSizes('grid')}
@@ -230,11 +232,11 @@ const OptimizedProperties = () => {
 
         <CardHeader className="pb-2">
           <h3 className="font-semibold text-lg line-clamp-1 group-hover:text-primary transition-colors">
-            {dayPicnic.property.title}
+            {property?.title}
           </h3>
           <div className="flex items-center text-sm text-muted-foreground">
             <MapPin className="h-4 w-4 mr-1" />
-            <span className="line-clamp-1">{dayPicnic.property.general_location}</span>
+            <span className="line-clamp-1">{property?.general_location}</span>
           </div>
         </CardHeader>
 
