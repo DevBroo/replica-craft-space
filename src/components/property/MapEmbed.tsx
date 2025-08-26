@@ -16,12 +16,22 @@ export const MapEmbed: React.FC<MapEmbedProps> = ({
 }) => {
   // Generate map URL
   const getMapUrl = () => {
+    const apiKey = import.meta.env.VITE_GOOGLE_MAPS_API_KEY;
+    
     if (coordinates) {
-      return `https://www.google.com/maps/embed/v1/place?key=AIzaSyBFw0Qbyq9zTFTd-tUY6dOMD0C6DfYtbFo&q=${coordinates.lat},${coordinates.lng}&zoom=15`;
+      if (apiKey) {
+        return `https://www.google.com/maps/embed/v1/place?key=${apiKey}&q=${coordinates.lat},${coordinates.lng}&zoom=15`;
+      } else {
+        return `https://www.google.com/maps?q=${coordinates.lat},${coordinates.lng}&z=15&output=embed`;
+      }
     }
     
     const location = address || `${city}, ${state}` || 'India';
-    return `https://www.google.com/maps/embed/v1/place?key=AIzaSyBFw0Qbyq9zTFTd-tUY6dOMD0C6DfYtbFo&q=${encodeURIComponent(location)}&zoom=13`;
+    if (apiKey) {
+      return `https://www.google.com/maps/embed/v1/place?key=${apiKey}&q=${encodeURIComponent(location)}&zoom=13`;
+    } else {
+      return `https://www.google.com/maps?q=${encodeURIComponent(location)}&z=13&output=embed`;
+    }
   };
 
   // Mock distance calculations (in real app, these would come from APIs)
