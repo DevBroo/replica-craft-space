@@ -34,6 +34,7 @@ const DayPicnicBooking: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const [property, setProperty] = useState<any>(null);
   const [package_, setPackage] = useState<any>(null);
+  const [optionPrices, setOptionPrices] = useState<any[]>([]);
   const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
   const [selectedDuration, setSelectedDuration] = useState('');
   const [guests, setGuests] = useState<GuestBreakdown>({ adults: 2, children: [] });
@@ -137,7 +138,7 @@ const DayPicnicBooking: React.FC = () => {
       } else {
         setPackage(packageData);
 
-        // Fetch duration prices only if real package exists
+        // Fetch duration prices and option prices only if real package exists
         const { data: durationData, error: durationError } = await supabase
           .from('day_picnic_option_prices')
           .select('*')
@@ -150,6 +151,18 @@ const DayPicnicBooking: React.FC = () => {
             duration_type: dur.name,
             price: dur.price
           })));
+        }
+
+        // Fetch all option prices (inclusions, exclusions, add_ons)
+        const { data: optionData, error: optionError } = await supabase
+          .from('day_picnic_option_prices')
+          .select('*')
+          .eq('package_id', packageData.id)
+          .in('option_type', ['inclusion', 'exclusion', 'add_on']);
+
+        if (optionError) throw optionError;
+        if (optionData) {
+          setOptionPrices(optionData);
         }
       }
     } catch (error: any) {
@@ -486,12 +499,26 @@ const DayPicnicBooking: React.FC = () => {
                 </CardHeader>
                 <CardContent>
                   <ul className="space-y-1">
-                    {package_.exclusions.map((exclusion: any, index: number) => (
-                      <li key={index} className="text-sm flex items-center">
-                        <span className="w-2 h-2 bg-red-500 rounded-full mr-2"></span>
-                        {exclusion.item} ({exclusion.reason})
-                      </li>
-                    ))}
+                    {/* Show exclusions with pricing first */}
+                    {optionPrices
+                      .filter((option: any) => option.option_type === 'exclusion')
+                      .map((exclusion: any, index: number) => (
+                        <li key={`pricing-exclusion-${index}`} className="text-sm flex items-center justify-between">
+                          <div className="flex items-center">
+                            <span className="w-2 h-2 bg-red-500 rounded-full mr-2"></span>
+                            {exclusion.name}
+                          </div>
+                          <span className="text-red-600 font-medium">+₹{exclusion.price}</span>
+                        </li>
+                      ))}
+                    {/* Fallback to legacy exclusions if no pricing exclusions */}
+                    {optionPrices.filter((option: any) => option.option_type === 'exclusion').length === 0 &&
+                      package_.exclusions.map((exclusion: any, index: number) => (
+                        <li key={`legacy-exclusion-${index}`} className="text-sm flex items-center">
+                          <span className="w-2 h-2 bg-red-500 rounded-full mr-2"></span>
+                          {exclusion.item} ({exclusion.reason})
+                        </li>
+                      ))}
                   </ul>
                 </CardContent>
               </Card>

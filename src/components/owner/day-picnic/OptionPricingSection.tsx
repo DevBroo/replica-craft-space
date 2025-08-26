@@ -42,6 +42,10 @@ const OptionPricingSection: React.FC<Props> = ({
   const updateOption = (index: number, field: keyof OptionPrice, value: any) => {
     const updated = optionPrices.map((opt, i) => {
       if (i === index) {
+        // Guard against strange price values
+        if (field === 'price') {
+          value = isNaN(value) || value < 0 ? 0 : value;
+        }
         return { ...opt, [field]: value };
       }
       return opt;

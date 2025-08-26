@@ -66,8 +66,8 @@ const NumericInput = React.forwardRef<HTMLInputElement, NumericInputProps>(
       let finalValue: number;
       
       if (isNaN(numericValue) || internalValue.trim() === '') {
-        // Revert to last valid value on invalid input
-        finalValue = lastValidValue;
+        // Treat empty input as 0
+        finalValue = 0;
       } else {
         finalValue = Math.max(min, max ? Math.min(max, numericValue) : numericValue);
         setLastValidValue(finalValue);
@@ -102,8 +102,7 @@ const NumericInput = React.forwardRef<HTMLInputElement, NumericInputProps>(
     };
 
     const handleWheel = (e: React.WheelEvent<HTMLInputElement>) => {
-      // Prevent wheel changes and blur
-      e.preventDefault();
+      // Prevent wheel changes and blur - don't preventDefault to avoid console warnings
       e.currentTarget.blur();
     };
 
