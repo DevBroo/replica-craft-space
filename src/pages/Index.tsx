@@ -58,6 +58,7 @@ const Index: React.FC = () => {
   const [searchLocation, setSearchLocation] = useState('');
   const [searchDate, setSearchDate] = useState('');
   const [groupSize, setGroupSize] = useState('');
+  const [selectedCategory, setSelectedCategory] = useState('day-picnic');
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const isMobile = useIsMobile();
   const navigate = useNavigate();
@@ -423,8 +424,9 @@ const Index: React.FC = () => {
           ].map((category, index) => (
             <button
               key={index}
+              onClick={() => setSelectedCategory(category.value)}
               className={`flex items-center gap-2 px-4 py-2 md:px-6 md:py-3 rounded-xl transition-all duration-300 ${
-                category.value === 'day-picnic'
+                selectedCategory === category.value
                   ? 'bg-gradient-to-r from-brand-red to-brand-orange text-white shadow-lg'
                   : 'bg-gray-50 text-gray-600 hover:bg-gray-100'
               }`}
@@ -481,6 +483,14 @@ const Index: React.FC = () => {
                 if (searchLocation) searchParams.set('location', searchLocation);
                 if (searchDate) searchParams.set('date', searchDate);
                 if (groupSize) searchParams.set('guests', groupSize);
+                
+                // Add category-specific parameters
+                if (selectedCategory === 'day-picnic') {
+                  searchParams.set('tab', 'day_picnics');
+                } else {
+                  searchParams.set('type', selectedCategory);
+                }
+                
                 navigate(`/properties?${searchParams.toString()}`);
               }}
               className="w-full bg-gradient-to-r from-red-600 to-orange-600 text-white px-8 py-4 rounded-xl hover:from-red-700 hover:to-orange-700 transition-all duration-300 cursor-pointer font-bold text-lg shadow-xl hover:shadow-2xl transform hover:scale-105 flex items-center justify-center gap-3"

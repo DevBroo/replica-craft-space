@@ -41,9 +41,24 @@ export function normalizeTypeKey(type: string): string {
   const normalized = type.toLowerCase().replace(/[_-]/g, ' ').trim();
   
   // Map various forms to consistent keys for comparison
-  if (normalized === 'day picnic' || normalized === 'daypicnic') {
-    return 'day_picnic';
-  }
+  const typeMap: { [key: string]: string } = {
+    'day picnic': 'day_picnic',
+    'daypicnic': 'day_picnic',
+    'villa': 'villa',
+    'villas': 'villa',
+    'resort': 'resort', 
+    'resorts': 'resort',
+    'farmhouse': 'farmhouse',
+    'farm house': 'farmhouse',
+    'homestay': 'homestay',
+    'homestays': 'homestay',
+    'heritage': 'heritage',
+    'heritage palace': 'heritage',
+    'hotel': 'hotel',
+    'hotels': 'hotel',
+    'apartment': 'apartment',
+    'apartments': 'apartment'
+  };
   
-  return normalized.replace(/\s+/g, '_');
+  return typeMap[normalized] || normalized.replace(/\s+/g, '_');
 }
