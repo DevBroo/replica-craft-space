@@ -3,7 +3,11 @@ import { Link } from "react-router-dom";
 import { bannerService, HomepageBanner } from "@/lib/bannerService";
 import { Button } from "@/components/ui/button";
 
-const HeroBanner = () => {
+interface HeroBannerProps {
+  overlay?: React.ReactNode;
+}
+
+const HeroBanner = ({ overlay }: HeroBannerProps) => {
   const [banner, setBanner] = useState<HomepageBanner | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -56,38 +60,44 @@ const HeroBanner = () => {
         </div>
 
         <div className="container mx-auto px-4 text-center relative z-10 max-w-5xl">
-          {/* Enhanced Title */}
-          <div className="mb-8 animate-fade-in">
-            <h1 className="text-5xl md:text-7xl lg:text-8xl font-black mb-4 leading-none">
-              <span className="bg-gradient-to-r from-white via-yellow-100 to-orange-200 bg-clip-text text-transparent drop-shadow-2xl animate-pulse">
-                Discover Perfect Getaways Near You
-              </span>
-            </h1>
-            <div className="w-32 h-1 bg-gradient-to-r from-brand-orange to-brand-red mx-auto rounded-full shadow-lg animate-scale-in"></div>
-          </div>
+          {overlay ? (
+            overlay
+          ) : (
+            <>
+              {/* Enhanced Title */}
+              <div className="mb-8 animate-fade-in">
+                <h1 className="text-5xl md:text-7xl lg:text-8xl font-black mb-4 leading-none">
+                  <span className="bg-gradient-to-r from-white via-yellow-100 to-orange-200 bg-clip-text text-transparent drop-shadow-2xl animate-pulse">
+                    Discover Perfect Getaways Near You
+                  </span>
+                </h1>
+                <div className="w-32 h-1 bg-gradient-to-r from-brand-orange to-brand-red mx-auto rounded-full shadow-lg animate-scale-in"></div>
+              </div>
 
-          {/* Enhanced Subtitle */}
-          <div className="mb-12 animate-fade-in animation-delay-500">
-            <p className="text-xl md:text-2xl lg:text-3xl text-white/90 max-w-4xl mx-auto leading-relaxed font-medium">
-              <span className="drop-shadow-lg">
-                From Day Picnic to weekend retreats, find unique properties and experiences across India
-              </span>
-            </p>
-          </div>
+              {/* Enhanced Subtitle */}
+              <div className="mb-12 animate-fade-in animation-delay-500">
+                <p className="text-xl md:text-2xl lg:text-3xl text-white/90 max-w-4xl mx-auto leading-relaxed font-medium">
+                  <span className="drop-shadow-lg">
+                    From Day Picnic to weekend retreats, find unique properties and experiences across India
+                  </span>
+                </p>
+              </div>
 
-          {/* Enhanced CTA Button */}
-          <div className="animate-fade-in animation-delay-1000">
-            <Button 
-              asChild 
-              size="lg" 
-              className="text-xl px-12 py-6 bg-gradient-to-r from-brand-orange to-brand-red hover:from-orange-600 hover:to-red-600 text-white font-bold rounded-2xl shadow-2xl hover:shadow-brand-orange/50 transform hover:scale-110 transition-all duration-300 border-2 border-white/20 backdrop-blur-sm"
-            >
-              <Link to="/properties" className="flex items-center gap-3">
-                Start Exploring
-                <i className="fas fa-arrow-right text-lg animate-bounce"></i>
-              </Link>
-            </Button>
-          </div>
+              {/* Enhanced CTA Button */}
+              <div className="animate-fade-in animation-delay-1000">
+                <Button 
+                  asChild 
+                  size="lg" 
+                  className="text-xl px-12 py-6 bg-gradient-to-r from-brand-orange to-brand-red hover:from-orange-600 hover:to-red-600 text-white font-bold rounded-2xl shadow-2xl hover:shadow-brand-orange/50 transform hover:scale-110 transition-all duration-300 border-2 border-white/20 backdrop-blur-sm"
+                >
+                  <Link to="/properties" className="flex items-center gap-3">
+                    Start Exploring
+                    <i className="fas fa-arrow-right text-lg animate-bounce"></i>
+                  </Link>
+                </Button>
+              </div>
+            </>
+          )}
         </div>
 
         {/* Scroll Indicator */}
@@ -121,41 +131,47 @@ const HeroBanner = () => {
       </div>
 
       <div className="container mx-auto px-4 text-center relative z-10 max-w-5xl">
-        {/* Enhanced Title with Multiple Effects */}
-        <div className="mb-8 animate-fade-in">
-          <h1 className="text-5xl md:text-7xl lg:text-8xl font-black mb-4 leading-none">
-            <span className="bg-gradient-to-r from-white via-yellow-100 to-orange-200 bg-clip-text text-transparent drop-shadow-2xl animate-pulse">
-              {banner.title}
-            </span>
-          </h1>
-          <div className="w-32 h-1 bg-gradient-to-r from-brand-orange to-brand-red mx-auto rounded-full shadow-lg animate-scale-in"></div>
-        </div>
+        {overlay ? (
+          overlay
+        ) : (
+          <>
+            {/* Enhanced Title with Multiple Effects */}
+            <div className="mb-8 animate-fade-in">
+              <h1 className="text-5xl md:text-7xl lg:text-8xl font-black mb-4 leading-none">
+                <span className="bg-gradient-to-r from-white via-yellow-100 to-orange-200 bg-clip-text text-transparent drop-shadow-2xl animate-pulse">
+                  {banner.title}
+                </span>
+              </h1>
+              <div className="w-32 h-1 bg-gradient-to-r from-brand-orange to-brand-red mx-auto rounded-full shadow-lg animate-scale-in"></div>
+            </div>
 
-        {/* Enhanced Subtitle */}
-        {banner.subtitle && (
-          <div className="mb-12 animate-fade-in animation-delay-500">
-            <p className="text-xl md:text-2xl lg:text-3xl text-white/90 max-w-4xl mx-auto leading-relaxed font-medium">
-              <span className="drop-shadow-lg">
-                {banner.subtitle}
-              </span>
-            </p>
-          </div>
-        )}
+            {/* Enhanced Subtitle */}
+            {banner.subtitle && (
+              <div className="mb-12 animate-fade-in animation-delay-500">
+                <p className="text-xl md:text-2xl lg:text-3xl text-white/90 max-w-4xl mx-auto leading-relaxed font-medium">
+                  <span className="drop-shadow-lg">
+                    {banner.subtitle}
+                  </span>
+                </p>
+              </div>
+            )}
 
-        {/* Enhanced CTA Button */}
-        {banner.cta_text && banner.cta_link && (
-          <div className="animate-fade-in animation-delay-1000">
-            <Button 
-              asChild 
-              size="lg" 
-              className="text-xl px-12 py-6 bg-gradient-to-r from-brand-orange to-brand-red hover:from-orange-600 hover:to-red-600 text-white font-bold rounded-2xl shadow-2xl hover:shadow-brand-orange/50 transform hover:scale-110 transition-all duration-300 border-2 border-white/20 backdrop-blur-sm"
-            >
-              <Link to={banner.cta_link} className="flex items-center gap-3">
-                {banner.cta_text}
-                <i className="fas fa-arrow-right text-lg animate-bounce"></i>
-              </Link>
-            </Button>
-          </div>
+            {/* Enhanced CTA Button */}
+            {banner.cta_text && banner.cta_link && (
+              <div className="animate-fade-in animation-delay-1000">
+                <Button 
+                  asChild 
+                  size="lg" 
+                  className="text-xl px-12 py-6 bg-gradient-to-r from-brand-orange to-brand-red hover:from-orange-600 hover:to-red-600 text-white font-bold rounded-2xl shadow-2xl hover:shadow-brand-orange/50 transform hover:scale-110 transition-all duration-300 border-2 border-white/20 backdrop-blur-sm"
+                >
+                  <Link to={banner.cta_link} className="flex items-center gap-3">
+                    {banner.cta_text}
+                    <i className="fas fa-arrow-right text-lg animate-bounce"></i>
+                  </Link>
+                </Button>
+              </div>
+            )}
+          </>
         )}
       </div>
 

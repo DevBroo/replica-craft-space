@@ -399,94 +399,101 @@ const Index: React.FC = () => {
       </div>
     )}
 
-{/* Dynamic Hero Banner from CMS */}
-<HeroBanner />
-
-{/* Search Bar Section */}
-<section className="py-16 bg-gradient-to-br from-primary/5 to-secondary/5">
-  <div className="container mx-auto px-4">
-    <div className="bg-white/95 backdrop-blur-md rounded-3xl p-6 shadow-xl max-w-7xl mx-auto border transform hover:scale-[1.02] transition-all duration-500">
-      <div className="flex flex-wrap gap-4 mb-6 border-b border-gray-200 pb-4">
-        {[
-          { icon: 'fas fa-sun', label: 'Day Picnic', value: 'day-picnic' },
-          { icon: 'fas fa-hotel', label: 'Resorts', value: 'resort' },
-          { icon: 'fas fa-home', label: 'Villas', value: 'villa' },
-          { icon: 'fas fa-warehouse', label: 'Farmhouse', value: 'farmhouse' },
-          { icon: 'fas fa-house-user', label: 'Homestay', value: 'homestay' },
-          { icon: 'fas fa-landmark', label: 'Heritage Palace', value: 'heritage' },
-        ].map((category, index) => (
-          <button
-            key={index}
-            className={`flex items-center gap-2 px-6 py-3 rounded-xl transition-all duration-300 ${
-              category.value === 'day-picnic'
-                ? 'bg-gradient-to-r from-brand-red to-brand-orange text-white shadow-lg'
-                : 'bg-gray-50 text-gray-600 hover:bg-gray-100'
-            }`}
-          >
-            <i className={`${category.icon} text-lg`}></i>
-            <span className="font-medium whitespace-nowrap">{category.label}</span>
-          </button>
-        ))}
+{/* Dynamic Hero Banner with Search Overlay */}
+<HeroBanner 
+  overlay={
+    <div className="animate-fade-in">
+      {/* Sub-heading */}
+      <div className="mb-8">
+        <h2 className="text-2xl md:text-3xl lg:text-4xl font-bold text-white drop-shadow-lg">
+          Discover your perfect getaway
+        </h2>
       </div>
-      <div className="grid grid-cols-1 lg:grid-cols-7 gap-6 items-center">
-        <div className="lg:col-span-2">
-          <LocationAutocomplete
-            value={searchLocation}
-            onChange={setSearchLocation}
-            placeholder="Where would you like to go?"
-          />
+      
+      {/* Search Bar */}
+      <div className="bg-white/95 backdrop-blur-md rounded-3xl p-6 shadow-2xl max-w-6xl mx-auto border transform hover:scale-[1.02] transition-all duration-500">
+        <div className="flex flex-wrap gap-4 mb-6 border-b border-gray-200 pb-4">
+          {[
+            { icon: 'fas fa-sun', label: 'Day Picnic', value: 'day-picnic' },
+            { icon: 'fas fa-hotel', label: 'Resorts', value: 'resort' },
+            { icon: 'fas fa-home', label: 'Villas', value: 'villa' },
+            { icon: 'fas fa-warehouse', label: 'Farmhouse', value: 'farmhouse' },
+            { icon: 'fas fa-house-user', label: 'Homestay', value: 'homestay' },
+            { icon: 'fas fa-landmark', label: 'Heritage Palace', value: 'heritage' },
+          ].map((category, index) => (
+            <button
+              key={index}
+              className={`flex items-center gap-2 px-4 py-2 md:px-6 md:py-3 rounded-xl transition-all duration-300 ${
+                category.value === 'day-picnic'
+                  ? 'bg-gradient-to-r from-brand-red to-brand-orange text-white shadow-lg'
+                  : 'bg-gray-50 text-gray-600 hover:bg-gray-100'
+              }`}
+            >
+              <i className={`${category.icon} text-sm md:text-lg`}></i>
+              <span className="font-medium whitespace-nowrap text-sm md:text-base">{category.label}</span>
+            </button>
+          ))}
         </div>
-        <div className="lg:col-span-1">
-          <div className="relative">
-            <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-              <i className="fas fa-calendar-alt text-brand-orange text-lg"></i>
-            </div>
-            <input
-              type="date"
-              value={searchDate}
-              onChange={(e) => setSearchDate(e.target.value)}
-              className="w-full pl-12 pr-4 py-4 text-gray-800 border-2 border-gray-200 rounded-xl outline-none focus:border-brand-orange focus:ring-4 focus:ring-brand-orange/20 transition-all duration-300 text-base"
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-7 gap-4 md:gap-6 items-center">
+          <div className="lg:col-span-2">
+            <LocationAutocomplete
+              value={searchLocation}
+              onChange={setSearchLocation}
+              placeholder="Where would you like to go?"
             />
           </div>
-        </div>
-        <div className="lg:col-span-2">
-          <div className="relative">
-            <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-              <i className="fas fa-users text-blue-500 text-lg"></i>
-            </div>
-            <select
-              className="w-full pl-12 pr-12 py-4 text-gray-800 border-2 border-gray-200 rounded-xl outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-500/20 transition-all duration-300 text-base appearance-none cursor-pointer"
-              onChange={(e) => setGroupSize(e.target.value)}
-            >
-              <option value="">Select group size</option>
-              {[...Array(15)].map((_, i) => (
-                <option key={i + 1} value={i + 1}>{i + 1} Guest{i !== 0 ? 's' : ''}</option>
-              ))}
-            </select>
-            <div className="absolute inset-y-0 right-0 pr-4 flex items-center pointer-events-none">
-              <i className="fas fa-chevron-down text-gray-400"></i>
+          <div className="lg:col-span-1">
+            <div className="relative">
+              <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                <i className="fas fa-calendar-alt text-brand-orange text-lg"></i>
+              </div>
+              <input
+                type="date"
+                value={searchDate}
+                onChange={(e) => setSearchDate(e.target.value)}
+                className="w-full pl-12 pr-4 py-4 text-gray-800 border-2 border-gray-200 rounded-xl outline-none focus:border-brand-orange focus:ring-4 focus:ring-brand-orange/20 transition-all duration-300 text-base"
+              />
             </div>
           </div>
-        </div>
-        <div className="lg:col-span-2">
-          <button 
-            onClick={() => {
-              const searchParams = new URLSearchParams();
-              if (searchLocation) searchParams.set('location', searchLocation);
-              if (searchDate) searchParams.set('date', searchDate);
-              if (groupSize) searchParams.set('guests', groupSize);
-              navigate(`/properties?${searchParams.toString()}`);
-            }}
-            className="w-full bg-gradient-to-r from-red-600 to-orange-600 text-white px-8 py-4 rounded-xl hover:from-red-700 hover:to-orange-700 transition-all duration-300 cursor-pointer font-bold text-lg shadow-xl hover:shadow-2xl transform hover:scale-105 flex items-center justify-center gap-3"
-          >
-            <i className="fas fa-search text-xl"></i>
-            <span>Search</span>
-          </button>
+          <div className="lg:col-span-2">
+            <div className="relative">
+              <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                <i className="fas fa-users text-blue-500 text-lg"></i>
+              </div>
+              <select
+                className="w-full pl-12 pr-12 py-4 text-gray-800 border-2 border-gray-200 rounded-xl outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-500/20 transition-all duration-300 text-base appearance-none cursor-pointer"
+                onChange={(e) => setGroupSize(e.target.value)}
+              >
+                <option value="">Select group size</option>
+                {[...Array(15)].map((_, i) => (
+                  <option key={i + 1} value={i + 1}>{i + 1} Guest{i !== 0 ? 's' : ''}</option>
+                ))}
+              </select>
+              <div className="absolute inset-y-0 right-0 pr-4 flex items-center pointer-events-none">
+                <i className="fas fa-chevron-down text-gray-400"></i>
+              </div>
+            </div>
+          </div>
+          <div className="lg:col-span-2">
+            <button 
+              onClick={() => {
+                const searchParams = new URLSearchParams();
+                if (searchLocation) searchParams.set('location', searchLocation);
+                if (searchDate) searchParams.set('date', searchDate);
+                if (groupSize) searchParams.set('guests', groupSize);
+                navigate(`/properties?${searchParams.toString()}`);
+              }}
+              className="w-full bg-gradient-to-r from-red-600 to-orange-600 text-white px-8 py-4 rounded-xl hover:from-red-700 hover:to-orange-700 transition-all duration-300 cursor-pointer font-bold text-lg shadow-xl hover:shadow-2xl transform hover:scale-105 flex items-center justify-center gap-3"
+            >
+              <i className="fas fa-search text-xl"></i>
+              <span>Search</span>
+            </button>
+          </div>
         </div>
       </div>
     </div>
-  </div>
-</section>
+  }
+/>
 
 {/* Secondary Banner */}
 <SecondaryBanner />
