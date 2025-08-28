@@ -3,7 +3,6 @@ import React, { useState, useEffect } from 'react';
 import { X, Save, History, Calendar, ToggleLeft, ToggleRight, Video, Users } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
-import ImageCarousel from './ImageCarousel';
 import PropertyAvailabilityCalendar from './PropertyAvailabilityCalendar';
 
 interface PropertyWithDetails {
@@ -22,9 +21,9 @@ interface PropertyWithDetails {
   created_at: string;
   updated_at: string;
   owner_id: string;
-  menu_available: boolean;
-  admin_blocked: boolean;
-  host_details: any;
+  menu_available?: boolean;
+  admin_blocked?: boolean;
+  host_details?: any;
   video_url?: string;
   banquet_hall_capacity?: number;
   ground_lawn_capacity?: number;
@@ -77,9 +76,7 @@ const EnhancedPropertyDetailsDrawer: React.FC<EnhancedPropertyDetailsDrawerProps
     try {
       const { data, error } = await supabase
         .from('properties')
-        .select(`
-          *
-        `)
+        .select(`*`)
         .eq('id', propertyId)
         .single();
 
@@ -88,9 +85,12 @@ const EnhancedPropertyDetailsDrawer: React.FC<EnhancedPropertyDetailsDrawerProps
       if (data) {
         setProperty({
           ...data,
-          menu_available: data.menu_available || false,
-          admin_blocked: data.admin_blocked || false,
-          host_details: data.host_details || {}
+          menu_available: (data as any).menu_available || false,
+          admin_blocked: (data as any).admin_blocked || false,
+          host_details: (data as any).host_details || {},
+          video_url: (data as any).video_url || undefined,
+          banquet_hall_capacity: (data as any).banquet_hall_capacity || undefined,
+          ground_lawn_capacity: (data as any).ground_lawn_capacity || undefined,
         });
 
         // Fetch owner details
@@ -116,8 +116,9 @@ const EnhancedPropertyDetailsDrawer: React.FC<EnhancedPropertyDetailsDrawerProps
     if (!propertyId) return;
 
     try {
+      // Try to fetch status history, gracefully handle if table doesn't exist
       const { data, error } = await supabase
-        .from('property_status_history')
+        .from('property_status_history' as any)
         .select('*')
         .eq('property_id', propertyId)
         .order('created_at', { ascending: false });
@@ -126,7 +127,15 @@ const EnhancedPropertyDetailsDrawer: React.FC<EnhancedPropertyDetailsDrawerProps
         console.log('Status history table not available:', error);
         setStatusHistory([]);
       } else {
-        setStatusHistory(data || []);
+        setStatusHistory((data || []).map(item => ({
+          id: item.id,
+          from_status: item.from_status || '',
+          to_status: item.to_status || '',
+          reason: item.reason || '',
+          comment: item.comment || '',
+          actor_role: item.actor_role || '',
+          created_at: item.created_at || '',
+        })));
       }
     } catch (error) {
       console.log('Status history table not available:', error);
@@ -140,7 +149,7 @@ const EnhancedPropertyDetailsDrawer: React.FC<EnhancedPropertyDetailsDrawerProps
     try {
       const { error } = await supabase
         .from('properties')
-        .update({ menu_available: !property.menu_available })
+        .update({ menu_available: !property.menu_available } as any)
         .eq('id', property.id);
 
       if (error) throw error;
@@ -160,7 +169,7 @@ const EnhancedPropertyDetailsDrawer: React.FC<EnhancedPropertyDetailsDrawerProps
     try {
       const { error } = await supabase
         .from('properties')
-        .update({ admin_blocked: !property.admin_blocked })
+        .update({ admin_blocked: !property.admin_blocked } as any)
         .eq('id', property.id);
 
       if (error) throw error;
@@ -370,7 +379,16 @@ const EnhancedPropertyDetailsDrawer: React.FC<EnhancedPropertyDetailsDrawerProps
                   {property.images && property.images.length > 0 && (
                     <div>
                       <h3 className="text-lg font-semibold mb-4">Property Images</h3>
-                      <ImageCarousel images={property.images} />
+                      <div className="grid grid-cols-3 gap-4">
+                        {property.images.map((image, index) => (
+                          <img
+                            key={index}
+                            src={image}
+                            alt={`Property ${index + 1}`}
+                            className="w-full h-32 object-cover rounded-lg"
+                          />
+                        ))}
+                      </div>
                     </div>
                   )}
 

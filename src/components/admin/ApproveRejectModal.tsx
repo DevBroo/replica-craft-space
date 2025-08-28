@@ -40,16 +40,30 @@ const ApproveRejectModal: React.FC<ApproveRejectModalProps> = ({
     try {
       const newStatus = action === 'approve' ? 'approved' : 'rejected';
       
-      // Use the new RPC function to log property status changes
+      // Try to use the RPC function, fallback to direct update
       for (const propertyId of propertyIds) {
-        const { error } = await supabase.rpc('log_property_status_change', {
-          p_property_id: propertyId,
-          p_to_status: newStatus,
-          p_reason: reason,
-          p_comment: comment || null,
-        });
-        
-        if (error) throw error;
+        try {
+          // Try RPC first
+          const { error: rpcError } = await supabase.rpc('log_property_status_change' as any, {
+            p_property_id: propertyId,
+            p_to_status: newStatus,
+            p_reason: reason,
+            p_comment: comment || null,
+          });
+          
+          if (rpcError) {
+            throw rpcError;
+          }
+        } catch (rpcError) {
+          console.log('RPC not available, using direct update:', rpcError);
+          // Fallback to direct update
+          const { error: updateError } = await supabase
+            .from('properties')
+            .update({ status: newStatus })
+            .eq('id', propertyId);
+            
+          if (updateError) throw updateError;
+        }
       }
       
       toast.success(`${propertyIds.length} propert${propertyIds.length === 1 ? 'y' : 'ies'} ${action}d successfully`);

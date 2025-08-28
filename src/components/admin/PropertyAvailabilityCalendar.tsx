@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect } from 'react';
-import { Calendar, ChevronLeft, ChevronRight, Save, Plus } from 'lucide-react';
+import { Calendar, ChevronLeft, ChevronRight } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 
@@ -47,8 +47,9 @@ const PropertyAvailabilityCalendar: React.FC<PropertyAvailabilityCalendarProps> 
       const startDate = new Date(currentDate.getFullYear(), currentDate.getMonth(), 1);
       const endDate = new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 0);
 
+      // Try to fetch from property_availability table, gracefully handle if it doesn't exist
       const { data, error } = await supabase
-        .from('property_availability')
+        .from('property_availability' as any)
         .select('*')
         .eq('property_id', propertyId)
         .eq('category', selectedCategory)
@@ -63,10 +64,10 @@ const PropertyAvailabilityCalendar: React.FC<PropertyAvailabilityCalendarProps> 
         const mappedData: AvailabilityEntry[] = (data || []).map(item => ({
           id: item.id,
           day: item.day,
-          category: item.category as AvailabilityEntry['category'],
+          category: item.category,
           total_capacity: item.total_capacity,
           booked_units: item.booked_units,
-          status: item.status as AvailabilityEntry['status'],
+          status: item.status,
           booking_name: item.booking_name
         }));
         setAvailability(mappedData);
@@ -117,7 +118,7 @@ const PropertyAvailabilityCalendar: React.FC<PropertyAvailabilityCalendarProps> 
       if (existingEntry?.id) {
         // Update existing entry
         const { error } = await supabase
-          .from('property_availability')
+          .from('property_availability' as any)
           .update(updates)
           .eq('id', existingEntry.id);
 
@@ -125,7 +126,7 @@ const PropertyAvailabilityCalendar: React.FC<PropertyAvailabilityCalendarProps> 
       } else {
         // Create new entry
         const { error } = await supabase
-          .from('property_availability')
+          .from('property_availability' as any)
           .insert({
             property_id: propertyId,
             day: dateStr,
@@ -143,7 +144,7 @@ const PropertyAvailabilityCalendar: React.FC<PropertyAvailabilityCalendarProps> 
       toast.success('Availability updated successfully');
     } catch (error) {
       console.error('Error updating availability:', error);
-      toast.error('Failed to update availability');
+      toast.error('Failed to update availability. Table may not be available yet.');
     }
   };
 
@@ -161,7 +162,7 @@ const PropertyAvailabilityCalendar: React.FC<PropertyAvailabilityCalendarProps> 
       status: 'available',
       total_capacity: 1,
       booked_units: 0,
-      booking_name: null
+      booking_name: undefined
     });
   };
 

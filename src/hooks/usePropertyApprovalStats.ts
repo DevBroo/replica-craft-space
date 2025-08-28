@@ -25,30 +25,38 @@ export function usePropertyApprovalStats() {
         setLoading(true);
         setError(null);
         
-        // Use the new RPC function for property approval stats
-        const { data, error } = await supabase.rpc('get_property_approval_stats');
-        
-        if (error) {
-          console.error('Stats function not available:', error);
-          // Fallback to manual calculation
-          const { data: properties } = await supabase
-            .from('properties')
-            .select('status, created_at');
+        // Try to use the RPC function for property approval stats
+        try {
+          const { data, error } = await supabase.rpc('get_property_approval_stats' as any);
           
-          if (properties) {
-            const pending = properties.filter(p => p.status === 'pending').length;
-            const approved = properties.filter(p => p.status === 'approved').length;
-            const rejected = properties.filter(p => p.status === 'rejected').length;
-            
-            setStats({
-              total_pending: pending,
-              total_approved: approved,
-              total_rejected: rejected,
-              avg_pending_hours: 0, // Can't calculate without status history
-            });
+          if (error) {
+            throw error;
           }
-        } else if (data && data.length > 0) {
-          setStats(data[0]);
+          
+          if (data && data.length > 0) {
+            setStats(data[0]);
+            return;
+          }
+        } catch (rpcError) {
+          console.log('Stats function not available, using fallback:', rpcError);
+        }
+        
+        // Fallback to manual calculation
+        const { data: properties } = await supabase
+          .from('properties')
+          .select('status, created_at');
+        
+        if (properties) {
+          const pending = properties.filter(p => p.status === 'pending').length;
+          const approved = properties.filter(p => p.status === 'approved').length;
+          const rejected = properties.filter(p => p.status === 'rejected').length;
+          
+          setStats({
+            total_pending: pending,
+            total_approved: approved,
+            total_rejected: rejected,
+            avg_pending_hours: 0, // Can't calculate without status history
+          });
         }
       } catch (err) {
         console.error('Error fetching approval stats:', err);
