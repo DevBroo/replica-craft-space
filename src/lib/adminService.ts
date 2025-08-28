@@ -36,8 +36,7 @@ export interface PropertyOwner {
   created_at: string;
   updated_at: string;
   properties_count?: number;
-  status?: 'active' | 'inactive' | 'pending';
-  is_active?: boolean;
+  is_active: boolean;
 }
 
 export interface AdminStats {
@@ -168,8 +167,7 @@ export const adminService = {
             created_at: profile?.created_at || firstProperty?.[0]?.created_at || new Date().toISOString(),
             updated_at: profile?.updated_at || new Date().toISOString(),
             properties_count: propertiesCount || 0,
-            status: 'active' as const,
-            is_active: true
+            is_active: profile?.is_active ?? true
           } as PropertyOwner;
 
           console.log('✅ Created owner data:', ownerData);
@@ -230,15 +228,14 @@ export const adminService = {
   },
 
   // Update owner status
-  async updateOwnerStatus(ownerId: string, status: 'active' | 'inactive' | 'pending'): Promise<void> {
+  async updateOwnerStatus(ownerId: string, isActive: boolean): Promise<void> {
     try {
-      console.log('🔄 Updating owner status:', { ownerId, status });
+      console.log('🔄 Updating owner status:', { ownerId, isActive });
       
       const { error } = await adminSupabase
         .from('profiles')
         .update({ 
-          // You might want to add a status field to the profiles table
-          // For now, we'll just update the updated_at timestamp
+          is_active: isActive,
           updated_at: new Date().toISOString()
         })
         .eq('id', ownerId)

@@ -67,7 +67,10 @@ const OwnerManagement: React.FC = () => {
     const matchesSearch = (owner.full_name || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
       (owner.email || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
       owner.id.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesStatus = statusFilter === 'all' || (owner.status || 'active').toLowerCase() === statusFilter.toLowerCase();
+    const matchesStatus = statusFilter === 'all' || 
+      (statusFilter === 'active' && owner.is_active) || 
+      (statusFilter === 'inactive' && !owner.is_active) ||
+      (statusFilter === 'pending' && false); // No pending status with is_active
     return matchesSearch && matchesStatus;
   });
 
@@ -256,8 +259,8 @@ const OwnerManagement: React.FC = () => {
                             })}
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap">
-                            <span className={`px-2 py-1 text-xs font-medium rounded-full ${getStatusColor(owner.status || 'active')}`}>
-                              {owner.status || 'Active'}
+                            <span className={`px-2 py-1 text-xs font-medium rounded-full ${getStatusColor(owner.is_active ? 'active' : 'inactive')}`}>
+                              {owner.is_active ? 'Active' : 'Inactive'}
                             </span>
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
@@ -275,41 +278,23 @@ const OwnerManagement: React.FC = () => {
                               <button className="text-green-600 hover:text-green-800 cursor-pointer p-1" title="Edit">
                                 <Edit className="w-4 h-4" />
                               </button>
-                              {(owner.status || 'active') === 'pending' ? (
-                                <button
-                                  className="text-green-600 hover:text-green-800 cursor-pointer p-1"
-                                  title="Approve"
-                                  onClick={async () => {
+                              <button 
+                                className={`cursor-pointer p-1 ${owner.is_active ? 'text-red-600 hover:text-red-800' : 'text-green-600 hover:text-green-800'}`}
+                                title={owner.is_active ? 'Deactivate' : 'Activate'}
+                                onClick={async () => {
+                                  if (confirm(`Are you sure you want to ${owner.is_active ? 'deactivate' : 'activate'} this owner?`)) {
                                     try {
-                                      await adminService.updateOwnerStatus(owner.id, 'active');
-                                      alert('Owner approved successfully!');
+                                      await adminService.updateOwnerStatus(owner.id, !owner.is_active);
+                                      alert(`Owner ${owner.is_active ? 'deactivated' : 'activated'} successfully!`);
                                       fetchPropertyOwners();
                                     } catch (err) {
-                                      alert('Failed to approve owner: ' + (err instanceof Error ? err.message : 'Unknown error'));
+                                      alert(`Failed to ${owner.is_active ? 'deactivate' : 'activate'} owner: ` + (err instanceof Error ? err.message : 'Unknown error'));
                                     }
-                                  }}
-                                >
-                                  <CheckCircle className="w-4 h-4" />
-                                </button>
-                              ) : (
-                                <button 
-                                  className="text-red-600 hover:text-red-800 cursor-pointer p-1" 
-                                  title="Block"
-                                  onClick={async () => {
-                                    if (confirm('Are you sure you want to block this owner?')) {
-                                      try {
-                                        await adminService.updateOwnerStatus(owner.id, 'inactive');
-                                        alert('Owner blocked successfully!');
-                                        fetchPropertyOwners();
-                                      } catch (err) {
-                                        alert('Failed to block owner: ' + (err instanceof Error ? err.message : 'Unknown error'));
-                                      }
-                                    }
-                                  }}
-                                >
-                                  <Ban className="w-4 h-4" />
-                                </button>
-                              )}
+                                  }
+                                }}
+                              >
+                                {owner.is_active ? <Ban className="w-4 h-4" /> : <CheckCircle className="w-4 h-4" />}
+                              </button>
                             </div>
                           </td>
                         </tr>
@@ -438,7 +423,7 @@ const OwnerManagement: React.FC = () => {
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Status</label>
-                  <p className="text-sm text-gray-900">{selectedOwner.status || 'active'}</p>
+                  <p className="text-sm text-gray-900">{selectedOwner.is_active ? 'Active' : 'Inactive'}</p>
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Registration Date</label>
