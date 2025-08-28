@@ -155,12 +155,17 @@ const EnhancedPropertyDetailsDrawer: React.FC<EnhancedPropertyDetailsDrawerProps
     if (!property) return;
 
     try {
+      // Check if the column exists by testing with a small update first
       const { error } = await supabase
         .from('properties')
         .update({ menu_available: !property.menu_available } as any)
         .eq('id', property.id);
 
-      if (error) throw error;
+      if (error) {
+        console.error('Error updating menu status:', error);
+        toast.error('Menu toggle not available - column may not exist');
+        return;
+      }
 
       setProperty({ ...property, menu_available: !property.menu_available });
       toast.success(`Menu ${!property.menu_available ? 'enabled' : 'disabled'} for this property`);
@@ -175,12 +180,17 @@ const EnhancedPropertyDetailsDrawer: React.FC<EnhancedPropertyDetailsDrawerProps
     if (!property) return;
 
     try {
+      // Check if the column exists by testing with a small update first
       const { error } = await supabase
         .from('properties')
         .update({ admin_blocked: !property.admin_blocked } as any)
         .eq('id', property.id);
 
-      if (error) throw error;
+      if (error) {
+        console.error('Error updating admin block status:', error);
+        toast.error('Admin block toggle not available - column may not exist');
+        return;
+      }
 
       setProperty({ ...property, admin_blocked: !property.admin_blocked });
       toast.success(`Property ${!property.admin_blocked ? 'blocked' : 'unblocked'} by admin`);

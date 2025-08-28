@@ -68,9 +68,9 @@ const PropertyApproval: React.FC = () => {
   const fetchProperties = async () => {
     setLoading(true);
     try {
-      console.log('📊 Fetching properties with new enhanced data...');
+      console.log('📊 Fetching properties with resilient approach...');
       
-      // Fetch properties with enhanced fields
+      // First, fetch properties with only safe/core fields
       const { data: propertiesData, error: propertiesError } = await supabase
         .from('properties')
         .select(`
@@ -81,13 +81,7 @@ const PropertyApproval: React.FC = () => {
           property_type,
           status,
           created_at,
-          owner_id,
-          menu_available,
-          admin_blocked,
-          host_details,
-          video_url,
-          banquet_hall_capacity,
-          ground_lawn_capacity
+          owner_id
         `)
         .order('created_at', { ascending: false });
 
@@ -106,9 +100,40 @@ const PropertyApproval: React.FC = () => {
 
       console.log(`✅ Successfully fetched ${propertiesData.length} properties`);
 
+      // Now try to enhance with additional fields - if this fails, we'll continue with defaults
+      let enhancedProperties = propertiesData;
+      try {
+        const { data: enhancedData, error: enhancedError } = await supabase
+          .from('properties')
+          .select(`
+            id,
+            menu_available,
+            admin_blocked,
+            host_details,
+            video_url,
+            banquet_hall_capacity,
+            ground_lawn_capacity
+          `)
+          .in('id', propertiesData.map(p => p.id));
+
+        if (!enhancedError && enhancedData) {
+          // Merge enhanced data with base properties
+          const enhancedMap = new Map(enhancedData.map(item => [item.id, item]));
+          enhancedProperties = propertiesData.map(prop => ({
+            ...prop,
+            ...enhancedMap.get(prop.id),
+          }));
+          console.log('✅ Enhanced properties with additional fields');
+        } else {
+          console.log('⚠️ Enhanced fields not available, using defaults');
+        }
+      } catch (enhanceError) {
+        console.log('⚠️ Enhanced fields not available, continuing with defaults:', enhanceError);
+      }
+
       // Fetch owner details for each property
       const propertiesWithOwners = await Promise.all(
-        propertiesData.map(async (property: any) => {
+        enhancedProperties.map(async (property: any) => {
           try {
             const { data: owner, error: ownerError } = await supabase
               .from('profiles')
