@@ -52,6 +52,7 @@ serve(async (req) => {
 
     const url = new URL(req.url);
     const endpoint = url.pathname.split('/').pop();
+    const searchParams = url.searchParams;
 
     let result;
 
@@ -61,6 +62,24 @@ serve(async (req) => {
         break;
       case 'revenue':
         result = await getRevenueData();
+        break;
+      case 'time-series':
+        result = await getTimeSeriesAnalytics(searchParams);
+        break;
+      case 'revenue-by-property':
+        result = await getRevenueByProperty(searchParams);
+        break;
+      case 'revenue-by-owner':
+        result = await getRevenueByOwner(searchParams);
+        break;
+      case 'revenue-by-agent':
+        result = await getRevenueByAgent(searchParams);
+        break;
+      case 'top-properties':
+        result = await getTopProperties(searchParams);
+        break;
+      case 'highest-rated':
+        result = await getHighestRatedProperties(searchParams);
         break;
       case 'bookings':
         result = await getBookingAnalytics();
@@ -180,6 +199,134 @@ async function getPropertyAnalytics() {
     approvalRate: data?.length ? 
       (data.filter(p => p.status === 'approved').length / data.length) * 100 : 0
   };
+}
+
+// New analytics functions using the SQL functions
+
+async function getTimeSeriesAnalytics(searchParams: URLSearchParams) {
+  const startDate = searchParams.get('start_date') || new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
+  const endDate = searchParams.get('end_date') || new Date().toISOString().split('T')[0];
+  const granularity = searchParams.get('granularity') || 'day';
+  const ownerId = searchParams.get('owner_id') || null;
+  const agentId = searchParams.get('agent_id') || null;
+  const propertyType = searchParams.get('property_type') || null;
+
+  const { data, error } = await supabase.rpc('get_time_series_analytics', {
+    start_date: startDate,
+    end_date: endDate,
+    granularity,
+    owner_id: ownerId,
+    agent_id: agentId,
+    property_type: propertyType
+  });
+
+  if (error) throw error;
+  return { data };
+}
+
+async function getRevenueByProperty(searchParams: URLSearchParams) {
+  const startDate = searchParams.get('start_date') || new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
+  const endDate = searchParams.get('end_date') || new Date().toISOString().split('T')[0];
+  const ownerFilter = searchParams.get('owner_filter') || null;
+  const agentFilter = searchParams.get('agent_filter') || null;
+  const propertyTypeFilter = searchParams.get('property_type_filter') || null;
+  const limitCount = parseInt(searchParams.get('limit') || '50');
+  const offsetCount = parseInt(searchParams.get('offset') || '0');
+  const sortBy = searchParams.get('sort_by') || 'revenue';
+  const sortDir = searchParams.get('sort_dir') || 'desc';
+
+  const { data, error } = await supabase.rpc('get_revenue_by_property', {
+    start_date: startDate,
+    end_date: endDate,
+    owner_filter: ownerFilter,
+    agent_filter: agentFilter,
+    property_type_filter: propertyTypeFilter,
+    limit_count: limitCount,
+    offset_count: offsetCount,
+    sort_by: sortBy,
+    sort_dir: sortDir
+  });
+
+  if (error) throw error;
+  return { data };
+}
+
+async function getRevenueByOwner(searchParams: URLSearchParams) {
+  const startDate = searchParams.get('start_date') || new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
+  const endDate = searchParams.get('end_date') || new Date().toISOString().split('T')[0];
+  const agentFilter = searchParams.get('agent_filter') || null;
+  const propertyTypeFilter = searchParams.get('property_type_filter') || null;
+  const limitCount = parseInt(searchParams.get('limit') || '50');
+  const offsetCount = parseInt(searchParams.get('offset') || '0');
+  const sortBy = searchParams.get('sort_by') || 'revenue';
+  const sortDir = searchParams.get('sort_dir') || 'desc';
+
+  const { data, error } = await supabase.rpc('get_revenue_by_owner', {
+    start_date: startDate,
+    end_date: endDate,
+    agent_filter: agentFilter,
+    property_type_filter: propertyTypeFilter,
+    limit_count: limitCount,
+    offset_count: offsetCount,
+    sort_by: sortBy,
+    sort_dir: sortDir
+  });
+
+  if (error) throw error;
+  return { data };
+}
+
+async function getRevenueByAgent(searchParams: URLSearchParams) {
+  const startDate = searchParams.get('start_date') || new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
+  const endDate = searchParams.get('end_date') || new Date().toISOString().split('T')[0];
+  const ownerFilter = searchParams.get('owner_filter') || null;
+  const propertyTypeFilter = searchParams.get('property_type_filter') || null;
+  const limitCount = parseInt(searchParams.get('limit') || '50');
+  const offsetCount = parseInt(searchParams.get('offset') || '0');
+  const sortBy = searchParams.get('sort_by') || 'revenue';
+  const sortDir = searchParams.get('sort_dir') || 'desc';
+
+  const { data, error } = await supabase.rpc('get_revenue_by_agent', {
+    start_date: startDate,
+    end_date: endDate,
+    owner_filter: ownerFilter,
+    property_type_filter: propertyTypeFilter,
+    limit_count: limitCount,
+    offset_count: offsetCount,
+    sort_by: sortBy,
+    sort_dir: sortDir
+  });
+
+  if (error) throw error;
+  return { data };
+}
+
+async function getTopProperties(searchParams: URLSearchParams) {
+  const startDate = searchParams.get('start_date') || new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
+  const endDate = searchParams.get('end_date') || new Date().toISOString().split('T')[0];
+  const limitCount = parseInt(searchParams.get('limit') || '10');
+
+  const { data, error } = await supabase.rpc('get_top_properties', {
+    start_date: startDate,
+    end_date: endDate,
+    limit_count: limitCount
+  });
+
+  if (error) throw error;
+  return { data };
+}
+
+async function getHighestRatedProperties(searchParams: URLSearchParams) {
+  const limitCount = parseInt(searchParams.get('limit') || '10');
+  const minReviews = parseInt(searchParams.get('min_reviews') || '5');
+
+  const { data, error } = await supabase.rpc('get_highest_rated_properties', {
+    limit_count: limitCount,
+    min_reviews: minReviews
+  });
+
+  if (error) throw error;
+  return { data };
 }
 
 async function getUserAnalytics() {

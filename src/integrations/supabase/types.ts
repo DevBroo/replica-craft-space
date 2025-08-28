@@ -1082,12 +1082,113 @@ export type Database = {
           total_revenue: number
         }[]
       }
+      get_highest_rated_properties: {
+        Args: { limit_count?: number; min_reviews?: number }
+        Returns: {
+          property_id: string
+          property_title: string
+          rating: number
+          review_count: number
+        }[]
+      }
       get_property_contact_info: {
         Args: { property_id: string }
         Returns: {
           contact_phone: string
           owner_email: string
           property_title: string
+        }[]
+      }
+      get_revenue_by_agent: {
+        Args: {
+          end_date?: string
+          limit_count?: number
+          offset_count?: number
+          owner_filter?: string
+          property_type_filter?: string
+          sort_by?: string
+          sort_dir?: string
+          start_date?: string
+        }
+        Returns: {
+          agent_id: string
+          agent_name: string
+          bookings_count: number
+          cancellations: number
+          refunds_total: number
+          revenue: number
+        }[]
+      }
+      get_revenue_by_owner: {
+        Args: {
+          agent_filter?: string
+          end_date?: string
+          limit_count?: number
+          offset_count?: number
+          property_type_filter?: string
+          sort_by?: string
+          sort_dir?: string
+          start_date?: string
+        }
+        Returns: {
+          bookings_count: number
+          cancellations: number
+          owner_id: string
+          owner_name: string
+          refunds_total: number
+          revenue: number
+        }[]
+      }
+      get_revenue_by_property: {
+        Args: {
+          agent_filter?: string
+          end_date?: string
+          limit_count?: number
+          offset_count?: number
+          owner_filter?: string
+          property_type_filter?: string
+          sort_by?: string
+          sort_dir?: string
+          start_date?: string
+        }
+        Returns: {
+          bookings_count: number
+          cancellations: number
+          owner_id: string
+          owner_name: string
+          property_id: string
+          property_title: string
+          refunds_total: number
+          revenue: number
+        }[]
+      }
+      get_time_series_analytics: {
+        Args: {
+          agent_id?: string
+          end_date?: string
+          granularity?: string
+          owner_id?: string
+          property_type?: string
+          start_date?: string
+        }
+        Returns: {
+          average_booking_value: number
+          bookings_by_status: Json
+          cancellations: number
+          payments_by_status: Json
+          period: string
+          refunds_total: number
+          total_bookings: number
+          total_revenue: number
+        }[]
+      }
+      get_top_properties: {
+        Args: { end_date?: string; limit_count?: number; start_date?: string }
+        Returns: {
+          bookings_count: number
+          property_id: string
+          property_title: string
+          revenue: number
         }[]
       }
       is_admin: {
