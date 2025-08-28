@@ -3,7 +3,8 @@ import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/admin/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/admin/ui/tabs';
 import { Badge } from '@/components/admin/ui/badge';
-import { TrendingUp, TrendingDown, Users, Home, CreditCard, Calendar, BarChart3, TrendingUpIcon } from 'lucide-react';
+import { TrendingUp, TrendingDown, Users, Home, CreditCard, Calendar, BarChart3, Star } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 import AnalyticsFilters from '@/components/admin/AnalyticsFilters';
 import EnhancedAnalyticsChart from '@/components/admin/EnhancedAnalyticsChart';
 import RevenueTable from '@/components/admin/RevenueTable';
@@ -38,6 +39,7 @@ interface AnalyticsData {
 const COLORS = ['hsl(var(--primary))', 'hsl(var(--secondary))', 'hsl(var(--accent))', 'hsl(var(--muted))'];
 
 export default function Analytics() {
+  const navigate = useNavigate();
   const [data, setData] = useState<AnalyticsData | null>(null);
   const [revenueData, setRevenueData] = useState<any>(null);
   const [timeSeriesData, setTimeSeriesData] = useState<any[]>([]);
@@ -187,28 +189,32 @@ export default function Analytics() {
       value: data.properties.total,
       change: data.properties.thisMonth,
       icon: Home,
-      color: 'text-blue-600'
+      color: 'text-blue-600',
+      link: '/admin/property-approval'
     },
     {
       title: 'Total Bookings',
       value: data.bookings.total,
       change: data.bookings.thisMonth,
       icon: Calendar,
-      color: 'text-green-600'
+      color: 'text-green-600',
+      link: '/admin/booking-management'
     },
     {
       title: 'Active Users',
       value: data.users.active,
       change: Math.round((data.users.active / data.users.total) * 100),
       icon: Users,
-      color: 'text-purple-600'
+      color: 'text-purple-600',
+      link: '/admin/owner-management'
     },
     {
       title: 'Total Revenue',
       value: `₹${data.revenue.total.toLocaleString()}`,
       change: data.revenue.thisMonth,
       icon: CreditCard,
-      color: 'text-orange-600'
+      color: 'text-orange-600',
+      link: '/admin/commission-disbursement'
     }
   ];
 
@@ -251,7 +257,11 @@ export default function Analytics() {
       {/* Overview Cards */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
         {overviewCards.map((card, index) => (
-          <Card key={index}>
+          <Card 
+            key={index} 
+            className="cursor-pointer hover:shadow-md transition-shadow"
+            onClick={() => navigate(card.link)}
+          >
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">{card.title}</CardTitle>
               <card.icon className={`h-4 w-4 ${card.color}`} />
@@ -411,7 +421,11 @@ export default function Analytics() {
               <CardContent>
                 <div className="space-y-4">
                   {topProperties.slice(0, 5).map((property, index) => (
-                    <div key={property.property_id} className="flex items-center justify-between">
+                    <div 
+                      key={property.property_id} 
+                      className="flex items-center justify-between cursor-pointer hover:bg-muted/50 p-2 rounded-lg transition-colors"
+                      onClick={() => navigate(`/property/${property.property_id}`)}
+                    >
                       <div className="flex items-center gap-3">
                         <Badge variant="outline" className="w-8 h-8 rounded-full p-0 flex items-center justify-center">
                           {index + 1}
@@ -433,7 +447,7 @@ export default function Analytics() {
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
-                  <TrendingUpIcon className="h-5 w-5" />
+                  <Star className="h-5 w-5" />
                   Highest Rated Properties
                 </CardTitle>
                 <CardDescription>Properties with best customer ratings</CardDescription>
@@ -441,7 +455,11 @@ export default function Analytics() {
               <CardContent>
                 <div className="space-y-4">
                   {highestRated.slice(0, 5).map((property, index) => (
-                    <div key={property.property_id} className="flex items-center justify-between">
+                    <div 
+                      key={property.property_id} 
+                      className="flex items-center justify-between cursor-pointer hover:bg-muted/50 p-2 rounded-lg transition-colors"
+                      onClick={() => navigate(`/property/${property.property_id}`)}
+                    >
                       <div className="flex items-center gap-3">
                         <Badge variant="outline" className="w-8 h-8 rounded-full p-0 flex items-center justify-center">
                           {index + 1}
