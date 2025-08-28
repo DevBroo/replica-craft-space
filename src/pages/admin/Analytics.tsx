@@ -1,10 +1,12 @@
+
 import React, { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/admin/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/admin/ui/tabs';
 import { Badge } from '@/components/admin/ui/badge';
-import { TrendingUp, TrendingDown, Users, Home, CreditCard, Calendar, BarChart3, Star } from 'lucide-react';
+import { TrendingUp, TrendingDown, Users, Home, CreditCard, Calendar, BarChart3, Star, AlertCircle } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import { toast } from 'sonner';
 import AnalyticsFilters from '@/components/admin/AnalyticsFilters';
 import EnhancedAnalyticsChart from '@/components/admin/EnhancedAnalyticsChart';
 import RevenueTable from '@/components/admin/RevenueTable';
@@ -36,6 +38,8 @@ interface AnalyticsData {
   };
 }
 
+type ConnectionStatus = 'live' | 'reconnecting' | 'stale' | 'error';
+
 const COLORS = ['hsl(var(--primary))', 'hsl(var(--secondary))', 'hsl(var(--accent))', 'hsl(var(--muted))'];
 
 export default function Analytics() {
@@ -49,6 +53,8 @@ export default function Analytics() {
   const [topProperties, setTopProperties] = useState<any[]>([]);
   const [highestRated, setHighestRated] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [connectionStatus, setConnectionStatus] = useState<ConnectionStatus>('stale');
+  const [lastUpdated, setLastUpdated] = useState<Date>(new Date());
   
   // Filter states
   const [startDate, setStartDate] = useState(subDays(new Date(), 30));
@@ -62,6 +68,90 @@ export default function Analytics() {
   
   const { exportToCsv, exportToPdf } = useAnalyticsExport();
 
+  // Real-time subscription setup
+  useEffect(() => {
+    let bookingsSubscription: any;
+    let propertiesSubscription: any;
+    let pollingInterval: NodeJS.Timeout;
+
+    const setupRealTimeSubscriptions = () => {
+      console.log('Setting up real-time subscriptions...');
+      setConnectionStatus('reconnecting');
+
+      // Subscribe to bookings changes
+      bookingsSubscription = supabase
+        .channel('analytics-bookings')
+        .on('postgres_changes', 
+           { event: '*', schema: 'public', table: 'bookings' },
+           (payload) => {
+             console.log('Bookings change detected:', payload);
+             debouncedRefresh();
+           })
+        .subscribe((status) => {
+          console.log('Bookings subscription status:', status);
+          if (status === 'SUBSCRIBED') {
+            setConnectionStatus('live');
+            setLastUpdated(new Date());
+          } else if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') {
+            setConnectionStatus('error');
+            toast.error('Lost real-time connection. Falling back to polling.');
+          }
+        });
+
+      // Subscribe to properties changes
+      propertiesSubscription = supabase
+        .channel('analytics-properties')
+        .on('postgres_changes',
+           { event: '*', schema: 'public', table: 'properties' },
+           (payload) => {
+             console.log('Properties change detected:', payload);
+             debouncedRefresh();
+           })
+        .subscribe();
+    };
+
+    // Debounced refresh to avoid too many calls
+    let refreshTimeout: NodeJS.Timeout;
+    const debouncedRefresh = () => {
+      if (refreshTimeout) clearTimeout(refreshTimeout);
+      refreshTimeout = setTimeout(() => {
+        console.log('Refreshing analytics due to real-time event...');
+        loadAdvancedAnalytics();
+        setLastUpdated(new Date());
+      }, 2000);
+    };
+
+    // Polling fallback (every 60 seconds)
+    const setupPolling = () => {
+      pollingInterval = setInterval(() => {
+        console.log('Polling refresh...');
+        loadAdvancedAnalytics();
+        setLastUpdated(new Date());
+        if (connectionStatus === 'stale') {
+          setConnectionStatus('live');
+        }
+      }, 60000);
+    };
+
+    setupRealTimeSubscriptions();
+    setupPolling();
+
+    return () => {
+      if (bookingsSubscription) {
+        supabase.removeChannel(bookingsSubscription);
+      }
+      if (propertiesSubscription) {
+        supabase.removeChannel(propertiesSubscription);
+      }
+      if (pollingInterval) {
+        clearInterval(pollingInterval);
+      }
+      if (refreshTimeout) {
+        clearTimeout(refreshTimeout);
+      }
+    };
+  }, []);
+
   useEffect(() => {
     loadAnalytics();
   }, []);
@@ -72,15 +162,33 @@ export default function Analytics() {
 
   const loadAnalytics = async () => {
     try {
+      setConnectionStatus('reconnecting');
       const [overviewRes, revenueRes] = await Promise.all([
         supabase.functions.invoke('admin-analytics/overview'),
         supabase.functions.invoke('admin-analytics/revenue')
       ]);
 
-      if (overviewRes.data) setData(overviewRes.data);
-      if (revenueRes.data) setRevenueData(revenueRes.data);
+      if (overviewRes.error) {
+        console.error('Overview error:', overviewRes.error);
+        toast.error('Failed to load overview data');
+        setConnectionStatus('error');
+      } else if (overviewRes.data) {
+        setData(overviewRes.data);
+      }
+
+      if (revenueRes.error) {
+        console.error('Revenue error:', revenueRes.error);
+        toast.error('Failed to load revenue data');
+      } else if (revenueRes.data) {
+        setRevenueData(revenueRes.data);
+      }
+
+      setConnectionStatus('live');
+      setLastUpdated(new Date());
     } catch (error) {
       console.error('Error loading analytics:', error);
+      toast.error('Failed to load analytics data');
+      setConnectionStatus('error');
     } finally {
       setLoading(false);
     }
@@ -115,19 +223,44 @@ export default function Analytics() {
         supabase.functions.invoke(`admin-analytics/highest-rated?${params}`)
       ]);
 
-      if (timeSeriesRes.data?.data) setTimeSeriesData(timeSeriesRes.data.data);
-      if (revenueByPropertyRes.data?.data) setRevenueByProperty(revenueByPropertyRes.data.data);
-      if (revenueByOwnerRes.data?.data) setRevenueByOwner(revenueByOwnerRes.data.data);
-      if (revenueByAgentRes.data?.data) setRevenueByAgent(revenueByAgentRes.data.data);
-      if (topPropertiesRes.data?.data) setTopProperties(topPropertiesRes.data.data);
-      if (highestRatedRes.data?.data) setHighestRated(highestRatedRes.data.data);
-      
+      // Handle errors gracefully
+      const handleResponse = (res: any, dataKey: string, setter: any) => {
+        if (res.error) {
+          console.error(`${dataKey} error:`, res.error);
+          toast.error(`Failed to load ${dataKey.toLowerCase()} data`);
+          return false;
+        } else if (res.data?.data) {
+          setter(res.data.data);
+          return true;
+        }
+        return false;
+      };
+
+      let successCount = 0;
+      if (handleResponse(timeSeriesRes, 'Time Series', setTimeSeriesData)) successCount++;
+      if (handleResponse(revenueByPropertyRes, 'Revenue by Property', setRevenueByProperty)) successCount++;
+      if (handleResponse(revenueByOwnerRes, 'Revenue by Owner', setRevenueByOwner)) successCount++;
+      if (handleResponse(revenueByAgentRes, 'Revenue by Agent', setRevenueByAgent)) successCount++;
+      if (handleResponse(topPropertiesRes, 'Top Properties', setTopProperties)) successCount++;
+      if (handleResponse(highestRatedRes, 'Highest Rated', setHighestRated)) successCount++;
+
       // Calculate total pages (assuming 50 items per page)
       const totalItems = revenueByPropertyRes.data?.data?.length || 0;
       setTotalPages(Math.max(1, Math.ceil(totalItems / 50)));
+
+      // Update connection status based on success rate
+      if (successCount === 6) {
+        setConnectionStatus('live');
+      } else if (successCount > 0) {
+        setConnectionStatus('stale');
+      } else {
+        setConnectionStatus('error');
+      }
       
     } catch (error) {
       console.error('Error loading advanced analytics:', error);
+      toast.error('Failed to load analytics data');
+      setConnectionStatus('error');
     }
   }, [startDate, endDate, granularity, propertyType, sortBy, sortDir, currentPage]);
 
@@ -161,6 +294,24 @@ export default function Analytics() {
     } else {
       setSortBy(key);
       setSortDir('desc');
+    }
+  };
+
+  const getStatusBadge = () => {
+    switch (connectionStatus) {
+      case 'live':
+        return <Badge variant="outline" className="text-green-600 border-green-600">Live</Badge>;
+      case 'reconnecting':
+        return <Badge variant="outline" className="text-yellow-600 border-yellow-600">Reconnecting...</Badge>;
+      case 'stale':
+        return <Badge variant="outline" className="text-orange-600 border-orange-600">Stale</Badge>;
+      case 'error':
+        return <Badge variant="outline" className="text-red-600 border-red-600 flex items-center gap-1">
+          <AlertCircle className="h-3 w-3" />
+          Error
+        </Badge>;
+      default:
+        return <Badge variant="outline">Unknown</Badge>;
     }
   };
 
@@ -233,7 +384,12 @@ export default function Analytics() {
     <div className="container mx-auto p-6 space-y-8">
       <div className="flex items-center justify-between">
         <h1 className="text-3xl font-bold">Analytics Dashboard</h1>
-        <Badge variant="outline">Real-time Data</Badge>
+        <div className="flex items-center gap-4">
+          {getStatusBadge()}
+          <div className="text-sm text-muted-foreground">
+            Last updated: {format(lastUpdated, 'HH:mm:ss')}
+          </div>
+        </div>
       </div>
 
       {/* Filters */}
