@@ -229,12 +229,15 @@ async function getTimeSeriesAnalytics(supabase: any, searchParams: URLSearchPara
     start_date: startDate,
     end_date: endDate,
     granularity,
-    owner_id: ownerId,
-    agent_id: agentId,
-    property_type: propertyType
+    v_owner_id: ownerId,
+    v_agent_id: agentId,
+    v_property_type: propertyType
   });
 
-  if (error) throw error;
+  if (error) {
+    console.error('Error in getTimeSeriesAnalytics:', error);
+    throw error;
+  }
   return { data };
 }
 
@@ -252,16 +255,19 @@ async function getRevenueByProperty(supabase: any, searchParams: URLSearchParams
   const { data, error } = await supabase.rpc('get_revenue_by_property', {
     start_date: startDate,
     end_date: endDate,
-    owner_filter: ownerFilter,
-    agent_filter: agentFilter,
-    property_type_filter: propertyTypeFilter,
+    v_owner_filter: ownerFilter,
+    v_agent_filter: agentFilter,
+    v_property_type_filter: propertyTypeFilter,
     limit_count: limitCount,
     offset_count: offsetCount,
     sort_by: sortBy,
     sort_dir: sortDir
   });
 
-  if (error) throw error;
+  if (error) {
+    console.error('Error in getRevenueByProperty:', error);
+    throw error;
+  }
   return { data };
 }
 
@@ -278,15 +284,18 @@ async function getRevenueByOwner(supabase: any, searchParams: URLSearchParams) {
   const { data, error } = await supabase.rpc('get_revenue_by_owner', {
     start_date: startDate,
     end_date: endDate,
-    agent_filter: agentFilter,
-    property_type_filter: propertyTypeFilter,
+    v_agent_filter: agentFilter,
+    v_property_type_filter: propertyTypeFilter,
     limit_count: limitCount,
     offset_count: offsetCount,
     sort_by: sortBy,
     sort_dir: sortDir
   });
 
-  if (error) throw error;
+  if (error) {
+    console.error('Error in getRevenueByOwner:', error);
+    throw error;
+  }
   return { data };
 }
 
@@ -303,15 +312,18 @@ async function getRevenueByAgent(supabase: any, searchParams: URLSearchParams) {
   const { data, error } = await supabase.rpc('get_revenue_by_agent', {
     start_date: startDate,
     end_date: endDate,
-    owner_filter: ownerFilter,
-    property_type_filter: propertyTypeFilter,
+    v_owner_filter: ownerFilter,
+    v_property_type_filter: propertyTypeFilter,
     limit_count: limitCount,
     offset_count: offsetCount,
     sort_by: sortBy,
     sort_dir: sortDir
   });
 
-  if (error) throw error;
+  if (error) {
+    console.error('Error in getRevenueByAgent:', error);
+    throw error;
+  }
   return { data };
 }
 
