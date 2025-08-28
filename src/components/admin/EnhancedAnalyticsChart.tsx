@@ -181,11 +181,11 @@ export default function EnhancedAnalyticsChart({
         {description && <CardDescription>{description}</CardDescription>}
       </CardHeader>
       <CardContent>
-        <div style={{ width: '100%', height: `${height}px` }}>
+        <ChartContainer config={config} style={{ width: '100%', height: `${height}px` }}>
           <ResponsiveContainer width="100%" height="100%">
             {renderChart()}
           </ResponsiveContainer>
-        </div>
+        </ChartContainer>
       </CardContent>
     </Card>
   );
