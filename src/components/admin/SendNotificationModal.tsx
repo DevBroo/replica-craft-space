@@ -252,7 +252,7 @@ const SendNotificationModal: React.FC<SendNotificationModalProps> = ({
 You can use {{ownerName}} to personalize the message with the owner's name."
               />
               <p className="text-xs text-gray-500 mt-1">
-                Use <code>{{ownerName}}</code> to automatically insert the owner's name
+                Use <code>{`{{ownerName}}`}</code> to automatically insert the owner's name
               </p>
             </div>
 

@@ -410,13 +410,20 @@ export const adminService = {
       }
 
       // Update bank details if provided
-      if (profileData.bank) {
+      if (profileData.bank && profileData.bank.account_holder_name && profileData.bank.bank_name && profileData.bank.account_number && profileData.bank.ifsc_code) {
         const { error: bankError } = await supabase
           .from('owner_bank_details')
           .upsert({
             owner_id: ownerId,
-            ...profileData.bank,
-            updated_at: new Date().toISOString()
+            account_holder_name: profileData.bank.account_holder_name,
+            bank_name: profileData.bank.bank_name,
+            branch_name: profileData.bank.branch_name || '',
+            account_number: profileData.bank.account_number,
+            ifsc_code: profileData.bank.ifsc_code,
+            account_type: profileData.bank.account_type || 'Savings',
+            pan_number: profileData.bank.pan_number || '',
+            upi_id: profileData.bank.upi_id || '',
+            micr_code: profileData.bank.micr_code || ''
           });
 
         if (bankError) throw bankError;

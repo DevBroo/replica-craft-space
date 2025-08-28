@@ -171,16 +171,26 @@ const OwnerFormModal: React.FC<OwnerFormModalProps> = ({
           gst_number: profile.gst_number || '',
           pan_number: profile.pan_number || '',
           aadhar_number: profile.aadhar_number || '',
-          office_address: profile.office_address || {
-            line1: '',
-            line2: '',
-            city: '',
-            state: '',
-            postal_code: ''
-          },
+          office_address: typeof profile.office_address === 'object' && profile.office_address !== null
+            ? profile.office_address as {
+                line1?: string;
+                line2?: string;
+                city?: string;
+                state?: string;
+                postal_code?: string;
+              }
+            : {
+                line1: '',
+                line2: '',
+                city: '',
+                state: '',
+                postal_code: ''
+              },
           is_office_same_as_property: profile.is_office_same_as_property || false,
           property_types_offered: profile.property_types_offered || [],
-          documents: profile.documents || {}
+          documents: typeof profile.documents === 'object' && profile.documents !== null
+            ? profile.documents as Record<string, string>
+            : {}
         });
       }
 
@@ -289,13 +299,20 @@ const OwnerFormModal: React.FC<OwnerFormModalProps> = ({
       if (ownerProfileError) throw ownerProfileError;
 
       // Upsert bank details
-      if (Object.values(bankDetails).some(val => val && val.trim())) {
+      if (bankDetails.account_holder_name && bankDetails.bank_name && bankDetails.account_number && bankDetails.ifsc_code) {
         const { error: bankError } = await supabase
           .from('owner_bank_details')
           .upsert({
             owner_id: owner.id,
-            ...bankDetails,
-            updated_at: new Date().toISOString()
+            account_holder_name: bankDetails.account_holder_name,
+            bank_name: bankDetails.bank_name,
+            branch_name: bankDetails.branch_name || '',
+            account_number: bankDetails.account_number,
+            ifsc_code: bankDetails.ifsc_code,
+            account_type: bankDetails.account_type || 'Savings',
+            pan_number: bankDetails.pan_number || '',
+            upi_id: bankDetails.upi_id || '',
+            micr_code: bankDetails.micr_code || ''
           });
 
         if (bankError) throw bankError;
