@@ -14,7 +14,8 @@ import {
   Bell,
   Trash2,
   ArrowUpDown,
-  Plus
+  Plus,
+  Edit
 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
@@ -440,6 +441,10 @@ const PropertyApproval: React.FC = () => {
                 <div className="w-2 h-2 bg-red-500 rounded-full"></div>
                 <span>Rejected: {stats.total_rejected}</span>
               </div>
+              <div className="flex items-center space-x-2">
+                <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
+                <span>Avg Pending: {stats.avg_pending_hours.toFixed(1)}h</span>
+              </div>
             </div>
           </div>
         </div>
@@ -630,6 +635,20 @@ const PropertyApproval: React.FC = () => {
                                     propertyTitles: [property.title],
                                   })}
                                   className="text-green-600 hover:text-green-800 hover:bg-green-50"
+                                />
+                                <IconButton
+                                  icon={Edit}
+                                  variant="ghost"
+                                  size="sm"
+                                  tooltip="Request Changes"
+                                  aria-label="Request changes to property"
+                                  onClick={() => setModalState({
+                                    isOpen: true,
+                                    action: 'reject',
+                                    propertyIds: [property.id],
+                                    propertyTitles: [property.title],
+                                  })}
+                                  className="text-orange-600 hover:text-orange-800 hover:bg-orange-50"
                                 />
                                 <IconButton
                                   icon={XCircle}

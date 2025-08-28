@@ -1,8 +1,9 @@
 
 import React, { useState, useEffect } from 'react';
-import { Calendar, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Calendar, ChevronLeft, ChevronRight, Plus } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+import BookingPopupModal from './BookingPopupModal';
 
 interface AvailabilityEntry {
   id?: string;
@@ -25,6 +26,8 @@ const PropertyAvailabilityCalendar: React.FC<PropertyAvailabilityCalendarProps> 
   const [availability, setAvailability] = useState<AvailabilityEntry[]>([]);
   const [loading, setLoading] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState<'rooms' | 'day_picnic' | 'banquet_hall' | 'ground_lawn'>('rooms');
+  const [showBookingModal, setShowBookingModal] = useState(false);
+  const [selectedDate, setSelectedDate] = useState<Date | null>(null);
 
   const categories = [
     { value: 'rooms' as const, label: 'Rooms' },
@@ -149,6 +152,16 @@ const PropertyAvailabilityCalendar: React.FC<PropertyAvailabilityCalendarProps> 
       console.error('Error updating availability:', error);
       toast.error('Failed to update availability. Table may not be available yet.');
     }
+  };
+
+  const openBookingModal = (date: Date) => {
+    setSelectedDate(date);
+    setShowBookingModal(true);
+  };
+
+  const closeBookingModal = () => {
+    setShowBookingModal(false);
+    setSelectedDate(null);
   };
 
   const blockDate = async (date: Date) => {
@@ -287,7 +300,14 @@ const PropertyAvailabilityCalendar: React.FC<PropertyAvailabilityCalendarProps> 
                       )}
                     </div>
                   )}
-                  <div className="flex justify-end mt-1">
+                  <div className="flex justify-between mt-1">
+                    <button
+                      onClick={() => openBookingModal(date)}
+                      className="text-blue-600 hover:text-blue-800 text-xs"
+                      title="Add booking"
+                    >
+                      <Plus className="w-3 h-3" />
+                    </button>
                     {entry?.status === 'blocked' ? (
                       <button
                         onClick={() => unblockDate(date)}
@@ -339,6 +359,21 @@ const PropertyAvailabilityCalendar: React.FC<PropertyAvailabilityCalendarProps> 
         <div className="text-center py-4">
           <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600 mx-auto"></div>
         </div>
+      )}
+
+      {/* Booking Modal */}
+      {showBookingModal && selectedDate && propertyId && (
+        <BookingPopupModal
+          isOpen={showBookingModal}
+          onClose={closeBookingModal}
+          propertyId={propertyId}
+          selectedDate={selectedDate}
+          selectedCategory={selectedCategory}
+          onBookingComplete={() => {
+            fetchAvailability();
+            closeBookingModal();
+          }}
+        />
       )}
     </div>
   );

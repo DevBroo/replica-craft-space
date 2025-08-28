@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect } from 'react';
-import { X, Save, History, Calendar, ToggleLeft, ToggleRight, Video, Users } from 'lucide-react';
+import { X, Save, History, Calendar, ToggleLeft, ToggleRight, Video, Users, MapPin, DollarSign, Clock, Star, User, Shield, Activity, FileText, CreditCard } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import PropertyAvailabilityCalendar from './PropertyAvailabilityCalendar';
@@ -59,6 +59,9 @@ const EnhancedPropertyDetailsDrawer: React.FC<EnhancedPropertyDetailsDrawerProps
 }) => {
   const [property, setProperty] = useState<PropertyWithDetails | null>(null);
   const [statusHistory, setStatusHistory] = useState<StatusHistoryEntry[]>([]);
+  const [ownerProfile, setOwnerProfile] = useState<any>(null);
+  const [bookingSummary, setBookingSummary] = useState<any[]>([]);
+  const [reviews, setReviews] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
   const [activeTab, setActiveTab] = useState<'details' | 'history' | 'availability'>('details');
 
@@ -66,6 +69,9 @@ const EnhancedPropertyDetailsDrawer: React.FC<EnhancedPropertyDetailsDrawerProps
     if (isOpen && propertyId) {
       fetchPropertyDetails();
       fetchStatusHistory();
+      fetchOwnerProfile();
+      fetchBookingSummary();
+      fetchReviews();
     }
   }, [isOpen, propertyId]);
 
@@ -112,6 +118,78 @@ const EnhancedPropertyDetailsDrawer: React.FC<EnhancedPropertyDetailsDrawerProps
       toast.error('Failed to fetch property details');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const fetchOwnerProfile = async () => {
+    if (!propertyId) return;
+
+    try {
+      const { data: property } = await supabase
+        .from('properties')
+        .select('owner_id')
+        .eq('id', propertyId)
+        .single();
+
+      if (property?.owner_id) {
+        const { data: ownerProfile } = await supabase
+          .from('owner_profiles')
+          .select('*')
+          .eq('user_id', property.owner_id)
+          .single();
+
+        setOwnerProfile(ownerProfile);
+      }
+    } catch (error) {
+      console.log('Owner profile not available:', error);
+      setOwnerProfile(null);
+    }
+  };
+
+  const fetchBookingSummary = async () => {
+    if (!propertyId) return;
+
+    try {
+      const { data, error } = await supabase
+        .from('booking_summary_for_owners')
+        .select('*')
+        .eq('property_id', propertyId)
+        .order('created_at', { ascending: false })
+        .limit(5);
+
+      if (!error && data) {
+        setBookingSummary(data);
+      } else {
+        setBookingSummary([]);
+      }
+    } catch (error) {
+      console.log('Booking summary not available:', error);
+      setBookingSummary([]);
+    }
+  };
+
+  const fetchReviews = async () => {
+    if (!propertyId) return;
+
+    try {
+      const { data, error } = await supabase
+        .from('reviews')
+        .select(`
+          *,
+          profiles!reviews_user_id_fkey(full_name)
+        `)
+        .eq('property_id', propertyId)
+        .order('created_at', { ascending: false })
+        .limit(5);
+
+      if (!error && data) {
+        setReviews(data);
+      } else {
+        setReviews([]);
+      }
+    } catch (error) {
+      console.log('Reviews not available:', error);
+      setReviews([]);
     }
   };
 
@@ -264,7 +342,10 @@ const EnhancedPropertyDetailsDrawer: React.FC<EnhancedPropertyDetailsDrawerProps
                   {/* Basic Info */}
                   <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                     <div>
-                      <h3 className="text-lg font-semibold mb-4">Basic Information</h3>
+                      <h3 className="text-lg font-semibold mb-4 flex items-center">
+                        <FileText className="w-5 h-5 mr-2" />
+                        Basic Information
+                      </h3>
                       <div className="space-y-3">
                         <div>
                           <label className="block text-sm font-medium text-gray-700">Title</label>
@@ -285,14 +366,20 @@ const EnhancedPropertyDetailsDrawer: React.FC<EnhancedPropertyDetailsDrawerProps
                           </span>
                         </div>
                         <div>
-                          <label className="block text-sm font-medium text-gray-700">Address</label>
+                          <label className="block text-sm font-medium text-gray-700 flex items-center">
+                            <MapPin className="w-4 h-4 mr-1" />
+                            Address
+                          </label>
                           <p className="text-gray-900">{property.address}</p>
                         </div>
                       </div>
                     </div>
 
                     <div>
-                      <h3 className="text-lg font-semibold mb-4">Capacity & Features</h3>
+                      <h3 className="text-lg font-semibold mb-4 flex items-center">
+                        <Users className="w-5 h-5 mr-2" />
+                        Capacity & Features
+                      </h3>
                       <div className="space-y-3">
                         <div>
                           <label className="block text-sm font-medium text-gray-700">Max Guests</label>
@@ -330,10 +417,191 @@ const EnhancedPropertyDetailsDrawer: React.FC<EnhancedPropertyDetailsDrawerProps
                     </div>
                   </div>
 
+                  {/* Pricing & Check-in Details */}
+                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    <div>
+                      <h3 className="text-lg font-semibold mb-4 flex items-center">
+                        <DollarSign className="w-5 h-5 mr-2" />
+                        Pricing Details
+                      </h3>
+                      <div className="bg-gray-50 p-4 rounded-lg">
+                        {property.pricing && typeof property.pricing === 'object' ? (
+                          <div className="space-y-2">
+                            <div>
+                              <span className="text-sm font-medium text-gray-700">Daily Rate: </span>
+                              <span className="text-gray-900">
+                                {property.pricing.currency || 'INR'} {property.pricing.daily_rate || 0}
+                              </span>
+                            </div>
+                            {property.pricing.weekend_rate && (
+                              <div>
+                                <span className="text-sm font-medium text-gray-700">Weekend Rate: </span>
+                                <span className="text-gray-900">
+                                  {property.pricing.currency || 'INR'} {property.pricing.weekend_rate}
+                                </span>
+                              </div>
+                            )}
+                            {property.pricing.cleaning_fee && (
+                              <div>
+                                <span className="text-sm font-medium text-gray-700">Cleaning Fee: </span>
+                                <span className="text-gray-900">
+                                  {property.pricing.currency || 'INR'} {property.pricing.cleaning_fee}
+                                </span>
+                              </div>
+                            )}
+                          </div>
+                        ) : (
+                          <p className="text-gray-500 text-sm">Pricing information not available</p>
+                        )}
+                      </div>
+                    </div>
+
+                    <div>
+                      <h3 className="text-lg font-semibold mb-4 flex items-center">
+                        <Clock className="w-5 h-5 mr-2" />
+                        Check-in/Check-out
+                      </h3>
+                      <div className="bg-gray-50 p-4 rounded-lg">
+                        <div className="space-y-2">
+                          <div>
+                            <span className="text-sm font-medium text-gray-700">Check-in Time: </span>
+                            <span className="text-gray-900">{(property as any).check_in_time || '15:00'}</span>
+                          </div>
+                          <div>
+                            <span className="text-sm font-medium text-gray-700">Check-out Time: </span>
+                            <span className="text-gray-900">{(property as any).check_out_time || '11:00'}</span>
+                          </div>
+                          <div>
+                            <span className="text-sm font-medium text-gray-700">Minimum Stay: </span>
+                            <span className="text-gray-900">{(property as any).minimum_stay || 1} night(s)</span>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Host/Caretaker Details */}
+                  {property.host_details && Object.keys(property.host_details).length > 0 && (
+                    <div>
+                      <h3 className="text-lg font-semibold mb-4 flex items-center">
+                        <User className="w-5 h-5 mr-2" />
+                        Host/Caretaker Details
+                      </h3>
+                      <div className="bg-gray-50 p-4 rounded-lg">
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                          {property.host_details.name && (
+                            <div>
+                              <label className="block text-sm font-medium text-gray-700">Host Name</label>
+                              <p className="text-gray-900">{property.host_details.name}</p>
+                            </div>
+                          )}
+                          {property.host_details.phone && (
+                            <div>
+                              <label className="block text-sm font-medium text-gray-700">Contact Phone</label>
+                              <p className="text-gray-900">{property.host_details.phone}</p>
+                            </div>
+                          )}
+                          {property.host_details.languages && (
+                            <div>
+                              <label className="block text-sm font-medium text-gray-700">Languages</label>
+                              <p className="text-gray-900">{property.host_details.languages}</p>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Activities & Facilities */}
+                  {((property as any).extra_services || (property as any).nearby_attractions) && (
+                    <div>
+                      <h3 className="text-lg font-semibold mb-4 flex items-center">
+                        <Activity className="w-5 h-5 mr-2" />
+                        Activities & Attractions
+                      </h3>
+                      <div className="bg-gray-50 p-4 rounded-lg">
+                        {(property as any).extra_services && (property as any).extra_services.activities && (
+                          <div className="mb-4">
+                            <h4 className="text-sm font-medium text-gray-700 mb-2">Available Activities:</h4>
+                            <div className="flex flex-wrap gap-2">
+                              {(property as any).extra_services.activities.map((activity: string, index: number) => (
+                                <span key={index} className="bg-green-100 text-green-800 px-2 py-1 rounded-md text-xs">
+                                  {activity}
+                                </span>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+                        
+                        {(property as any).nearby_attractions && (
+                          <div>
+                            <h4 className="text-sm font-medium text-gray-700 mb-2">Nearby Attractions:</h4>
+                            <div className="space-y-1">
+                              {(property as any).nearby_attractions.landmarks && (property as any).nearby_attractions.landmarks.map((landmark: string, index: number) => (
+                                <div key={index} className="flex items-center text-sm text-gray-600">
+                                  <MapPin className="w-3 h-3 mr-1" />
+                                  {landmark}
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Property & Cancellation Policies */}
+                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    <div>
+                      <h3 className="text-lg font-semibold mb-4 flex items-center">
+                        <Shield className="w-5 h-5 mr-2" />
+                        Property Policies
+                      </h3>
+                      <div className="bg-gray-50 p-4 rounded-lg">
+                        {(property as any).house_rules && Object.keys((property as any).house_rules).length > 0 ? (
+                          <div className="space-y-2">
+                            {Object.entries((property as any).house_rules).map(([key, value]) => (
+                              <div key={key}>
+                                <span className="text-sm font-medium text-gray-700 capitalize">{key.replace('_', ' ')}: </span>
+                                <span className="text-gray-900 text-sm">{String(value)}</span>
+                              </div>
+                            ))}
+                          </div>
+                        ) : (
+                          <p className="text-gray-500 text-sm">No specific policies defined</p>
+                        )}
+                      </div>
+                    </div>
+
+                    <div>
+                      <h3 className="text-lg font-semibold mb-4 flex items-center">
+                        <CreditCard className="w-5 h-5 mr-2" />
+                        Cancellation Policy
+                      </h3>
+                      <div className="bg-gray-50 p-4 rounded-lg">
+                        <div className="space-y-2">
+                          <div>
+                            <span className="text-sm font-medium text-gray-700">Policy Type: </span>
+                            <span className="text-gray-900 capitalize">{(property as any).cancellation_policy || 'Moderate'}</span>
+                          </div>
+                          <p className="text-xs text-gray-600">
+                            {(property as any).cancellation_policy === 'flexible' && 'Full refund 1 day prior to arrival'}
+                            {(property as any).cancellation_policy === 'moderate' && 'Full refund 5 days prior to arrival'}
+                            {(property as any).cancellation_policy === 'strict' && 'Full refund 14 days prior to arrival'}
+                            {!(property as any).cancellation_policy && 'Full refund 5 days prior to arrival (default)'}
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
                   {/* Owner Information */}
                   {property.owner && (
                     <div>
-                      <h3 className="text-lg font-semibold mb-4">Owner Information</h3>
+                      <h3 className="text-lg font-semibold mb-4 flex items-center">
+                        <User className="w-5 h-5 mr-2" />
+                        Owner Information
+                      </h3>
                       <div className="bg-gray-50 p-4 rounded-lg">
                         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                           <div>
@@ -348,6 +616,108 @@ const EnhancedPropertyDetailsDrawer: React.FC<EnhancedPropertyDetailsDrawerProps
                             <label className="block text-sm font-medium text-gray-700">Phone</label>
                             <p className="text-gray-900">{property.owner.phone || 'Not provided'}</p>
                           </div>
+                        </div>
+                        
+                        {/* Owner Profile Details (GST/PAN) */}
+                        {ownerProfile && (
+                          <div className="mt-4 pt-4 border-t border-gray-200">
+                            <h4 className="text-sm font-medium text-gray-700 mb-3">Business Details</h4>
+                            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                              {ownerProfile.company_name && (
+                                <div>
+                                  <label className="block text-xs text-gray-500">Company Name</label>
+                                  <p className="text-sm text-gray-900">{ownerProfile.company_name}</p>
+                                </div>
+                              )}
+                              {ownerProfile.gst_number && (
+                                <div>
+                                  <label className="block text-xs text-gray-500">GST Number</label>
+                                  <p className="text-sm text-gray-900">{ownerProfile.gst_number}</p>
+                                </div>
+                              )}
+                              {ownerProfile.pan_number && (
+                                <div>
+                                  <label className="block text-xs text-gray-500">PAN Number</label>
+                                  <p className="text-sm text-gray-900">{ownerProfile.pan_number}</p>
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Guest Reviews */}
+                  {reviews.length > 0 && (
+                    <div>
+                      <h3 className="text-lg font-semibold mb-4 flex items-center">
+                        <Star className="w-5 h-5 mr-2" />
+                        Guest Reviews ({reviews.length})
+                      </h3>
+                      <div className="space-y-4">
+                        {reviews.slice(0, 3).map((review) => (
+                          <div key={review.id} className="bg-gray-50 p-4 rounded-lg">
+                            <div className="flex items-start justify-between mb-2">
+                              <div className="flex items-center space-x-2">
+                                <div className="flex items-center">
+                                  {Array.from({ length: 5 }, (_, i) => (
+                                    <Star
+                                      key={i}
+                                      className={`w-4 h-4 ${
+                                        i < review.rating ? 'text-yellow-400 fill-current' : 'text-gray-300'
+                                      }`}
+                                    />
+                                  ))}
+                                </div>
+                                <span className="text-sm font-medium text-gray-900">
+                                  {review.profiles?.full_name || 'Guest'}
+                                </span>
+                              </div>
+                              <span className="text-xs text-gray-500">
+                                {new Date(review.created_at).toLocaleDateString()}
+                              </span>
+                            </div>
+                            {review.comment && (
+                              <p className="text-sm text-gray-700 mt-2">{review.comment}</p>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Recent Bookings Summary */}
+                  {bookingSummary.length > 0 && (
+                    <div>
+                      <h3 className="text-lg font-semibold mb-4 flex items-center">
+                        <Calendar className="w-5 h-5 mr-2" />
+                        Recent Bookings ({bookingSummary.length})
+                      </h3>
+                      <div className="bg-gray-50 p-4 rounded-lg">
+                        <div className="space-y-3">
+                          {bookingSummary.slice(0, 5).map((booking) => (
+                            <div key={booking.id} className="flex items-center justify-between py-2 border-b border-gray-200 last:border-0">
+                              <div>
+                                <p className="text-sm font-medium text-gray-900">
+                                  {booking.guest_reference || `Booking ${booking.id?.slice(0, 8)}`}
+                                </p>
+                                <p className="text-xs text-gray-500">
+                                  {booking.check_in_date} - {booking.check_out_date} • {booking.guests} guests
+                                </p>
+                              </div>
+                              <div className="text-right">
+                                <p className="text-sm font-medium text-gray-900">₹{booking.total_amount}</p>
+                                <span className={`text-xs px-2 py-1 rounded ${
+                                  booking.status === 'confirmed' ? 'bg-green-100 text-green-800' :
+                                  booking.status === 'cancelled' ? 'bg-red-100 text-red-800' :
+                                  'bg-yellow-100 text-yellow-800'
+                                }`}>
+                                  {booking.status}
+                                </span>
+                              </div>
+                            </div>
+                          ))}
                         </div>
                       </div>
                     </div>
