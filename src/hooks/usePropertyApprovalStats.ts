@@ -1,0 +1,47 @@
+
+import { useState, useEffect } from 'react';
+import { supabase } from '@/integrations/supabase/client';
+
+export interface PropertyApprovalStats {
+  total_pending: number;
+  total_approved: number;
+  total_rejected: number;
+  avg_pending_hours: number;
+}
+
+export function usePropertyApprovalStats() {
+  const [stats, setStats] = useState<PropertyApprovalStats>({
+    total_pending: 0,
+    total_approved: 0,
+    total_rejected: 0,
+    avg_pending_hours: 0,
+  });
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    const fetchStats = async () => {
+      try {
+        setLoading(true);
+        setError(null);
+        
+        const { data, error } = await supabase.rpc('get_property_approval_stats');
+        
+        if (error) throw error;
+        
+        if (data && data.length > 0) {
+          setStats(data[0]);
+        }
+      } catch (err) {
+        console.error('Error fetching approval stats:', err);
+        setError(err instanceof Error ? err.message : 'Failed to fetch stats');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchStats();
+  }, []);
+
+  return { stats, loading, error };
+}

@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { 
   Plus,
@@ -17,15 +18,20 @@ import {
   Loader2,
   Lock,
   Unlock,
-  BarChart3
+  BarChart3,
+  Clock,
+  TrendingUp,
+  AlertCircle
 } from 'lucide-react';
 import SharedSidebar from '../../components/admin/SharedSidebar';
 import SharedHeader from '../../components/admin/SharedHeader';
 import IconButton from '../../components/admin/ui/IconButton';
-import PropertyDetailsDrawer from '../../components/admin/PropertyDetailsDrawer';
+import EnhancedPropertyDetailsDrawer from '../../components/admin/EnhancedPropertyDetailsDrawer';
 import PropertyFilters from '../../components/admin/PropertyFilters';
+import ApproveRejectModal from '../../components/admin/ApproveRejectModal';
 import { PropertyService } from '../../lib/propertyService';
 import { supabase } from '../../integrations/supabase/client';
+import { usePropertyApprovalStats } from '../../hooks/usePropertyApprovalStats';
 import { toast } from 'sonner';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '../../components/admin/ui/alert-dialog';
 
@@ -37,6 +43,8 @@ interface PropertyWithOwner {
   status: string;
   created_at: string;
   owner_id: string;
+  admin_blocked?: boolean;
+  menu_available?: boolean;
   owner?: {
     full_name: string;
     email: string;
@@ -46,7 +54,6 @@ interface PropertyWithOwner {
 
 const PropertyApproval: React.FC = () => {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
-  const [activeTab, setActiveTab] = useState('properties');
   const [statusFilter, setStatusFilter] = useState('all');
   const [selectedType, setSelectedType] = useState('all');
   const [searchTerm, setSearchTerm] = useState('');
@@ -55,7 +62,6 @@ const PropertyApproval: React.FC = () => {
   const [endDate, setEndDate] = useState('');
   const [sortBy, setSortBy] = useState('created_at');
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
-  const [showAddModal, setShowAddModal] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
   const [rowsPerPage, setRowsPerPage] = useState(10);
   const [selectedProperties, setSelectedProperties] = useState<string[]>([]);
@@ -65,6 +71,14 @@ const PropertyApproval: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [selectedPropertyId, setSelectedPropertyId] = useState<string | null>(null);
   const [showPropertyDetails, setShowPropertyDetails] = useState(false);
+  
+  // New modals
+  const [showApproveModal, setShowApproveModal] = useState(false);
+  const [showRejectModal, setShowRejectModal] = useState(false);
+  const [modalPropertyIds, setModalPropertyIds] = useState<string[]>([]);
+  const [modalPropertyTitles, setModalPropertyTitles] = useState<string[]>([]);
+
+  const { stats, loading: statsLoading } = usePropertyApprovalStats();
 
   useEffect(() => {
     fetchProperties();
@@ -84,7 +98,9 @@ const PropertyApproval: React.FC = () => {
           property_type,
           status,
           created_at,
-          owner_id
+          owner_id,
+          admin_blocked,
+          menu_available
         `)
         .order('created_at', { ascending: false });
 
@@ -174,10 +190,6 @@ const PropertyApproval: React.FC = () => {
         aValue = a.property_type;
         bValue = b.property_type;
         break;
-      case 'pricing':
-        aValue = 0; // We'll need to extract pricing data
-        bValue = 0;
-        break;
       default: // created_at
         aValue = new Date(a.created_at).getTime();
         bValue = new Date(b.created_at).getTime();
@@ -210,20 +222,46 @@ const PropertyApproval: React.FC = () => {
     }
   };
 
-  const handleStatusUpdate = async (propertyId: string, newStatus: 'approved' | 'rejected' | 'inactive') => {
-    try {
-      await PropertyService.updatePropertyStatus(propertyId, newStatus);
-      toast.success(`Property ${newStatus} successfully`);
-      fetchProperties(); // Refresh the list
-    } catch (error) {
-      console.error(`Error ${newStatus} property:`, error);
-      toast.error(`Failed to ${newStatus} property`);
-    }
+  const handleSingleApprove = (propertyId: string, propertyTitle: string) => {
+    setModalPropertyIds([propertyId]);
+    setModalPropertyTitles([propertyTitle]);
+    setShowApproveModal(true);
+  };
+
+  const handleSingleReject = (propertyId: string, propertyTitle: string) => {
+    setModalPropertyIds([propertyId]);
+    setModalPropertyTitles([propertyTitle]);
+    setShowRejectModal(true);
+  };
+
+  const handleBulkApprove = () => {
+    const selectedTitles = selectedProperties.map(id => 
+      properties.find(p => p.id === id)?.title || 'Unknown'
+    );
+    setModalPropertyIds(selectedProperties);
+    setModalPropertyTitles(selectedTitles);
+    setShowApproveModal(true);
+  };
+
+  const handleBulkReject = () => {
+    const selectedTitles = selectedProperties.map(id => 
+      properties.find(p => p.id === id)?.title || 'Unknown'
+    );
+    setModalPropertyIds(selectedProperties);
+    setModalPropertyTitles(selectedTitles);
+    setShowRejectModal(true);
   };
 
   const handleToggleStatus = async (propertyId: string, currentStatus: string) => {
     const newStatus = currentStatus === 'inactive' ? 'approved' : 'inactive';
-    await handleStatusUpdate(propertyId, newStatus);
+    try {
+      await PropertyService.updatePropertyStatus(propertyId, newStatus);
+      toast.success(`Property ${newStatus} successfully`);
+      fetchProperties();
+    } catch (error) {
+      console.error(`Error ${newStatus} property:`, error);
+      toast.error(`Failed to ${newStatus} property`);
+    }
   };
 
   const handleViewProperty = (propertyId: string) => {
@@ -232,7 +270,6 @@ const PropertyApproval: React.FC = () => {
   };
 
   const handleEditProperty = (propertyId: string) => {
-    // Navigate to edit page or open edit modal
     window.open(`/admin/properties/${propertyId}/edit`, '_blank');
   };
 
@@ -251,42 +288,34 @@ const PropertyApproval: React.FC = () => {
     try {
       await PropertyService.deleteProperty(propertyId);
       toast.success('Property deleted successfully');
-      fetchProperties(); // Refresh the list
+      fetchProperties();
     } catch (error) {
       console.error('Error deleting property:', error);
       toast.error('Failed to delete property');
     }
   };
 
-  const handleBulkAction = async (action: string) => {
-    if (selectedProperties.length === 0) return;
+  const handleBulkDelete = async () => {
+    if (!confirm(`Are you sure you want to delete ${selectedProperties.length} properties?`)) return;
     
     try {
-      if (action === 'approve') {
-        await Promise.all(
-          selectedProperties.map(id => PropertyService.updatePropertyStatus(id, 'approved'))
-        );
-        toast.success(`${selectedProperties.length} properties approved`);
-      } else if (action === 'reject') {
-        await Promise.all(
-          selectedProperties.map(id => PropertyService.updatePropertyStatus(id, 'rejected'))
-        );
-        toast.success(`${selectedProperties.length} properties rejected`);
-      } else if (action === 'delete') {
-        if (!confirm(`Are you sure you want to delete ${selectedProperties.length} properties?`)) return;
-        await Promise.all(
-          selectedProperties.map(id => PropertyService.deleteProperty(id))
-        );
-        toast.success(`${selectedProperties.length} properties deleted`);
-      }
-      
+      await Promise.all(
+        selectedProperties.map(id => PropertyService.deleteProperty(id))
+      );
+      toast.success(`${selectedProperties.length} properties deleted`);
       setSelectedProperties([]);
       setShowBulkActions(false);
-      fetchProperties(); // Refresh the list
+      fetchProperties();
     } catch (error) {
-      console.error(`Error performing bulk ${action}:`, error);
-      toast.error(`Failed to ${action} properties`);
+      console.error('Error performing bulk delete:', error);
+      toast.error('Failed to delete properties');
     }
+  };
+
+  const onModalComplete = () => {
+    setSelectedProperties([]);
+    setShowBulkActions(false);
+    fetchProperties();
   };
 
   return (
@@ -302,6 +331,64 @@ const PropertyApproval: React.FC = () => {
           breadcrumb="Property Approval"
           searchPlaceholder="Search properties..."
         />
+
+        {/* Stats Cards */}
+        <div className="px-6 py-4">
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+            <div className="bg-white rounded-lg shadow-sm border p-4">
+              <div className="flex items-center">
+                <div className="flex-shrink-0">
+                  <Clock className="h-6 w-6 text-yellow-600" />
+                </div>
+                <div className="ml-3">
+                  <p className="text-sm font-medium text-gray-500">Pending Approval</p>
+                  <p className="text-lg font-semibold text-gray-900">
+                    {statsLoading ? '...' : stats.total_pending}
+                  </p>
+                </div>
+              </div>
+            </div>
+            <div className="bg-white rounded-lg shadow-sm border p-4">
+              <div className="flex items-center">
+                <div className="flex-shrink-0">
+                  <CheckCircle className="h-6 w-6 text-green-600" />
+                </div>
+                <div className="ml-3">
+                  <p className="text-sm font-medium text-gray-500">Approved</p>
+                  <p className="text-lg font-semibold text-gray-900">
+                    {statsLoading ? '...' : stats.total_approved}
+                  </p>
+                </div>
+              </div>
+            </div>
+            <div className="bg-white rounded-lg shadow-sm border p-4">
+              <div className="flex items-center">
+                <div className="flex-shrink-0">
+                  <XCircle className="h-6 w-6 text-red-600" />
+                </div>
+                <div className="ml-3">
+                  <p className="text-sm font-medium text-gray-500">Rejected</p>
+                  <p className="text-lg font-semibold text-gray-900">
+                    {statsLoading ? '...' : stats.total_rejected}
+                  </p>
+                </div>
+              </div>
+            </div>
+            <div className="bg-white rounded-lg shadow-sm border p-4">
+              <div className="flex items-center">
+                <div className="flex-shrink-0">
+                  <TrendingUp className="h-6 w-6 text-blue-600" />
+                </div>
+                <div className="ml-3">
+                  <p className="text-sm font-medium text-gray-500">Avg. Pending Time</p>
+                  <p className="text-lg font-semibold text-gray-900">
+                    {statsLoading ? '...' : `${Math.round(stats.avg_pending_hours)}h`}
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
 
         {/* Filters */}
         <PropertyFilters
@@ -329,7 +416,7 @@ const PropertyApproval: React.FC = () => {
           <div className="flex flex-wrap items-center justify-between gap-4">
             <div className="flex items-center space-x-4">
               <button
-                onClick={() => setShowAddModal(true)}
+                onClick={() => window.open('/owner/add-property', '_blank')}
                 className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors cursor-pointer flex items-center"
               >
                 <Plus className="w-4 h-4 mr-2" />
@@ -349,21 +436,21 @@ const PropertyApproval: React.FC = () => {
                   {showBulkActions && (
                     <div className="absolute top-full left-0 mt-1 bg-white border border-gray-200 rounded-lg shadow-lg z-10 min-w-48">
                       <button
-                        onClick={() => handleBulkAction('approve')}
+                        onClick={handleBulkApprove}
                         className="w-full text-left px-4 py-2 hover:bg-gray-50 cursor-pointer text-green-600 flex items-center"
                       >
                         <Check className="w-4 h-4 mr-2" />
                         Approve Selected
                       </button>
                       <button
-                        onClick={() => handleBulkAction('reject')}
+                        onClick={handleBulkReject}
                         className="w-full text-left px-4 py-2 hover:bg-gray-50 cursor-pointer text-red-600 flex items-center"
                       >
                         <X className="w-4 h-4 mr-2" />
                         Reject Selected
                       </button>
                       <button
-                        onClick={() => handleBulkAction('delete')}
+                        onClick={handleBulkDelete}
                         className="w-full text-left px-4 py-2 hover:bg-gray-50 cursor-pointer text-red-600 flex items-center"
                       >
                         <Trash2 className="w-4 h-4 mr-2" />
@@ -469,6 +556,19 @@ const PropertyApproval: React.FC = () => {
                             <div>
                               <div className="text-sm font-medium text-gray-900">{property.title}</div>
                               <div className="text-sm text-gray-500">{property.property_type}</div>
+                              <div className="flex items-center space-x-2 mt-1">
+                                {property.admin_blocked && (
+                                  <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-red-100 text-red-800">
+                                    <Lock className="w-3 h-3 mr-1" />
+                                    Blocked
+                                  </span>
+                                )}
+                                {property.menu_available && (
+                                  <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-green-100 text-green-800">
+                                    Menu Available
+                                  </span>
+                                )}
+                              </div>
                             </div>
                           </div>
                         </td>
@@ -530,7 +630,7 @@ const PropertyApproval: React.FC = () => {
                               <>
                                 <IconButton
                                   icon={Check}
-                                  onClick={() => handleStatusUpdate(property.id, 'approved')}
+                                  onClick={() => handleSingleApprove(property.id, property.title)}
                                   variant="ghost"
                                   size="sm"
                                   tooltip="Approve"
@@ -539,7 +639,7 @@ const PropertyApproval: React.FC = () => {
                                 />
                                 <IconButton
                                   icon={X}
-                                  onClick={() => handleStatusUpdate(property.id, 'rejected')}
+                                  onClick={() => handleSingleReject(property.id, property.title)}
                                   variant="ghost"
                                   size="sm"
                                   tooltip="Reject"
@@ -658,11 +758,31 @@ const PropertyApproval: React.FC = () => {
           )}
         </main>
         
-        {/* Property Details Drawer */}
-        <PropertyDetailsDrawer
+        {/* Enhanced Property Details Drawer */}
+        <EnhancedPropertyDetailsDrawer
           isOpen={showPropertyDetails}
           onClose={() => setShowPropertyDetails(false)}
           propertyId={selectedPropertyId}
+        />
+
+        {/* Approve Modal */}
+        <ApproveRejectModal
+          isOpen={showApproveModal}
+          onClose={() => setShowApproveModal(false)}
+          propertyIds={modalPropertyIds}
+          propertyTitles={modalPropertyTitles}
+          action="approve"
+          onComplete={onModalComplete}
+        />
+
+        {/* Reject Modal */}
+        <ApproveRejectModal
+          isOpen={showRejectModal}
+          onClose={() => setShowRejectModal(false)}
+          propertyIds={modalPropertyIds}
+          propertyTitles={modalPropertyTitles}
+          action="reject"
+          onComplete={onModalComplete}
         />
       </div>
     </div>
