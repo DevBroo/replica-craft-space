@@ -269,7 +269,7 @@ const PropertyWizard: React.FC<PropertyWizardProps> = ({ onBack, propertyId, ini
     
     try {
       setIsLoading(true);
-      const property = await PropertyService.getPropertyById(propertyId);
+      const property = await PropertyService.getPropertyById(propertyId, true);
       if (property) {
         // Convert database format to wizard form data
         const wizardData = PropertyService.convertToWizardFormat(property);

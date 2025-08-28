@@ -552,9 +552,31 @@ export class PropertyService {
   /**
    * Get a single property by ID
    */
-  static async getPropertyById(propertyId: string): Promise<Property | null> {
+  static async getPropertyById(propertyId: string, forceFullData: boolean = false): Promise<Property | null> {
     try {
-      console.log('🔍 Fetching property by ID:', propertyId);
+      console.log('🔍 Fetching property by ID:', propertyId, forceFullData ? '(full data)' : '');
+      
+      // If forceFullData is true, get directly from properties table to include all fields
+      if (forceFullData) {
+        const { data, error } = await supabase
+          .from('properties')
+          .select('*')
+          .eq('id', propertyId)
+          .maybeSingle();
+
+        if (error) {
+          console.error('❌ Error fetching property by ID from full table:', error);
+          return null;
+        }
+
+        if (!data) {
+          console.log('ℹ️ Property not found in full table:', propertyId);
+          return null;
+        }
+
+        console.log('✅ Property fetched successfully from full table:', data);
+        return data;
+      }
       
       // First try to get from the public view (for approved properties)
       const { data: publicData, error: publicError } = await supabase
@@ -853,8 +875,8 @@ export class PropertyService {
       property_subtype: frontendProperty.property_subtype,
       description: frontendProperty.description,
       address: frontendProperty.address || frontendProperty.location,
-      city: frontendProperty.city,
-      state: frontendProperty.state,
+      city: frontendProperty.location?.city || frontendProperty.city,
+      state: frontendProperty.location?.state || frontendProperty.state,
       postal_code: frontendProperty.postal_code,
       country: frontendProperty.country,
       contact_phone: frontendProperty.contact_phone,
