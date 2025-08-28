@@ -157,6 +157,23 @@ export default function EnhancedAnalyticsChart({
     }
   };
 
+  // Show "No data" message if data is empty
+  if (!data || data.length === 0) {
+    return (
+      <Card>
+        <CardHeader>
+          <CardTitle>{title}</CardTitle>
+          {description && <CardDescription>{description}</CardDescription>}
+        </CardHeader>
+        <CardContent className="flex items-center justify-center" style={{ height: `${height}px` }}>
+          <div className="text-center text-muted-foreground">
+            <p>No data available</p>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
+
   return (
     <Card>
       <CardHeader>
@@ -164,11 +181,11 @@ export default function EnhancedAnalyticsChart({
         {description && <CardDescription>{description}</CardDescription>}
       </CardHeader>
       <CardContent>
-        <ChartContainer config={config} className={`h-[${height}px]`}>
+        <div style={{ width: '100%', height: `${height}px` }}>
           <ResponsiveContainer width="100%" height="100%">
             {renderChart()}
           </ResponsiveContainer>
-        </ChartContainer>
+        </div>
       </CardContent>
     </Card>
   );

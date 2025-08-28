@@ -9,9 +9,10 @@ const corsHeaders = {
 
 const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
 const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
+const supabaseAnonKey = Deno.env.get('SUPABASE_ANON_KEY')!;
 
-// Create admin client with service role
-const supabase = createClient(supabaseUrl, supabaseServiceKey, {
+// Create service role client for admin checks
+const supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey, {
   auth: {
     autoRefreshToken: false,
     persistSession: false
@@ -25,9 +26,22 @@ serve(async (req) => {
   }
 
   try {
-    const { data: authData } = await supabase.auth.getUser(
-      req.headers.get('Authorization')?.replace('Bearer ', '') || ''
-    );
+    const authToken = req.headers.get('Authorization')?.replace('Bearer ', '') || '';
+    
+    // Create user-scoped client for RPC calls
+    const supabase = createClient(supabaseUrl, supabaseAnonKey, {
+      auth: {
+        autoRefreshToken: false,
+        persistSession: false
+      },
+      global: {
+        headers: {
+          Authorization: `Bearer ${authToken}`
+        }
+      }
+    });
+
+    const { data: authData } = await supabaseAdmin.auth.getUser(authToken);
 
     if (!authData.user) {
       return new Response(
@@ -36,8 +50,8 @@ serve(async (req) => {
       );
     }
 
-    // Check if user is admin
-    const { data: profile } = await supabase
+    // Check if user is admin using service role client
+    const { data: profile } = await supabaseAdmin
       .from('profiles')
       .select('role')
       .eq('id', authData.user.id)
@@ -108,10 +122,10 @@ serve(async (req) => {
 
 async function getOverviewStats() {
   const [propertiesResult, bookingsResult, usersResult, revenueResult] = await Promise.all([
-    supabase.from('properties').select('id, status, created_at'),
-    supabase.from('bookings').select('id, status, total_amount, created_at'),
-    supabase.from('profiles').select('id, role, is_active, created_at'),
-    supabase.from('bookings').select('total_amount, created_at').eq('status', 'confirmed')
+    supabaseAdmin.from('properties').select('id, status, created_at'),
+    supabaseAdmin.from('bookings').select('id, status, total_amount, created_at'),
+    supabaseAdmin.from('profiles').select('id, role, is_active, created_at'),
+    supabaseAdmin.from('bookings').select('total_amount, created_at').eq('status', 'confirmed')
   ]);
 
   const today = new Date();
@@ -145,7 +159,7 @@ async function getOverviewStats() {
 }
 
 async function getRevenueData() {
-  const { data } = await supabase
+  const { data } = await supabaseAdmin
     .from('bookings')
     .select('total_amount, created_at, status')
     .eq('status', 'confirmed')
@@ -165,7 +179,7 @@ async function getRevenueData() {
 }
 
 async function getBookingAnalytics() {
-  const { data } = await supabase
+  const { data } = await supabaseAdmin
     .from('bookings')
     .select('status, created_at, total_amount')
     .gte('created_at', new Date(new Date().setDate(new Date().getDate() - 30)).toISOString());
@@ -184,7 +198,7 @@ async function getBookingAnalytics() {
 }
 
 async function getPropertyAnalytics() {
-  const { data } = await supabase
+  const { data } = await supabaseAdmin
     .from('properties')
     .select('property_type, status, created_at');
 
@@ -330,7 +344,7 @@ async function getHighestRatedProperties(searchParams: URLSearchParams) {
 }
 
 async function getUserAnalytics() {
-  const { data } = await supabase
+  const { data } = await supabaseAdmin
     .from('profiles')
     .select('role, is_active, created_at');
 
