@@ -1,164 +1,192 @@
-import React, { useState } from 'react';
+
+import React, { useState, useEffect } from 'react';
 import { 
   Plus,
-  Check,
   Eye,
+  Edit,
   Trash2,
   Ban,
   CheckCircle,
-  ArrowUpDown,
-  X,
-  ClipboardCheck,
-  CalendarCheck,
-  Shield,
-  GraduationCap,
   Search,
   ChevronDown,
-  Edit
+  ArrowUpDown,
+  Key,
+  Bell,
+  TrendingUp,
+  Users,
+  DollarSign,
+  Activity
 } from 'lucide-react';
 import SharedSidebar from '../../components/admin/SharedSidebar';
 import SharedHeader from '../../components/admin/SharedHeader';
+import AgentFormModal from '../../components/admin/AgentFormModal';
+import AgentInsightsModal from '../../components/admin/AgentInsightsModal';
+import SendNotificationModal from '../../components/admin/SendNotificationModal';
+import { agentService, Agent, AgentFilters } from '../../lib/agentService';
+import { toast } from 'sonner';
 
 const AgentManagement: React.FC = () => {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
-  const [statusFilter, setStatusFilter] = useState('all');
+  const [agents, setAgents] = useState<Agent[]>([]);
+  const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
-  const [showAddModal, setShowAddModal] = useState(false);
+  const [statusFilter, setStatusFilter] = useState<'all' | 'active' | 'inactive' | 'blocked'>('all');
+  const [startDate, setStartDate] = useState('');
+  const [endDate, setEndDate] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
   const [rowsPerPage, setRowsPerPage] = useState(10);
 
-  const agentsData = [
-    {
-      id: 'AGT001',
-      name: 'Michael Johnson',
-      email: 'michael.johnson@email.com',
-      phone: '+91 9876543220',
-      properties: 12,
-      registrationDate: '2023-01-10',
-      status: 'Active',
-      detailsCompleted: true,
-      meetingScheduled: '2025-08-05',
-      backgroundCheck: 'Approved',
-      trainingCompleted: true,
-      lastActivity: '2025-07-25'
-    },
-    {
-      id: 'AGT002',
-      name: 'Emily Davis',
-      email: 'emily.davis@email.com',
-      phone: '+91 9876543221',
-      properties: 8,
-      registrationDate: '2023-02-15',
-      status: 'Active',
-      detailsCompleted: false,
-      meetingScheduled: null,
-      backgroundCheck: 'Pending',
-      trainingCompleted: false,
-      lastActivity: '2025-07-20'
-    },
-    {
-      id: 'AGT003',
-      name: 'James Wilson',
-      email: 'james.wilson@email.com',
-      phone: '+91 9876543222',
-      properties: 15,
-      registrationDate: '2023-03-20',
-      status: 'Suspended',
-      detailsCompleted: true,
-      meetingScheduled: '2025-08-10',
-      backgroundCheck: 'Approved',
-      trainingCompleted: true,
-      lastActivity: '2025-07-18'
-    },
-    {
-      id: 'AGT004',
-      name: 'Jessica Brown',
-      email: 'jessica.brown@email.com',
-      phone: '+91 9876543223',
-      properties: 6,
-      registrationDate: '2023-04-12',
-      status: 'Active',
-      detailsCompleted: true,
-      meetingScheduled: null,
-      backgroundCheck: 'Approved',
-      trainingCompleted: false,
-      lastActivity: '2025-07-22'
-    },
-    {
-      id: 'AGT005',
-      name: 'Robert Garcia',
-      email: 'robert.garcia@email.com',
-      phone: '+91 9876543224',
-      properties: 10,
-      registrationDate: '2023-05-08',
-      status: 'Active',
-      detailsCompleted: false,
-      meetingScheduled: '2025-08-15',
-      backgroundCheck: 'Pending',
-      trainingCompleted: true,
-      lastActivity: '2025-07-24'
-    },
-    {
-      id: 'AGT006',
-      name: 'Amanda Martinez',
-      email: 'amanda.martinez@email.com',
-      phone: '+91 9876543225',
-      properties: 4,
-      registrationDate: '2023-06-25',
-      status: 'Inactive',
-      detailsCompleted: true,
-      meetingScheduled: null,
-      backgroundCheck: 'Approved',
-      trainingCompleted: false,
-      lastActivity: '2025-07-10'
-    },
-    {
-      id: 'AGT007',
-      name: 'Christopher Lee',
-      email: 'christopher.lee@email.com',
-      phone: '+91 9876543226',
-      properties: 9,
-      registrationDate: '2023-07-14',
-      status: 'Active',
-      detailsCompleted: true,
-      meetingScheduled: '2025-08-20',
-      backgroundCheck: 'Approved',
-      trainingCompleted: true,
-      lastActivity: '2025-07-26'
-    },
-    {
-      id: 'AGT008',
-      name: 'Michelle Taylor',
-      email: 'michelle.taylor@email.com',
-      phone: '+91 9876543227',
-      properties: 7,
-      registrationDate: '2023-08-19',
-      status: 'Active',
-      detailsCompleted: false,
-      meetingScheduled: null,
-      backgroundCheck: 'Pending',
-      trainingCompleted: true,
-      lastActivity: '2025-07-23'
-    }
-  ];
+  // Modal states
+  const [showFormModal, setShowFormModal] = useState(false);
+  const [showInsightsModal, setShowInsightsModal] = useState(false);
+  const [showNotificationModal, setShowNotificationModal] = useState(false);
+  const [selectedAgent, setSelectedAgent] = useState<Agent | null>(null);
+  const [modalMode, setModalMode] = useState<'add' | 'edit' | 'view'>('add');
 
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'Active': return 'bg-green-100 text-green-800';
-      case 'Inactive': return 'bg-gray-100 text-gray-800';
-      case 'Suspended': return 'bg-red-100 text-red-800';
-      default: return 'bg-gray-100 text-gray-800';
+  // Stats
+  const [stats, setStats] = useState({
+    total_agents: 0,
+    active_agents: 0,
+    inactive_agents: 0,
+    total_assignments: 0
+  });
+
+  useEffect(() => {
+    fetchAgents();
+    fetchStats();
+  }, []);
+
+  useEffect(() => {
+    const delayedFetch = setTimeout(() => {
+      fetchAgents();
+    }, 300);
+
+    return () => clearTimeout(delayedFetch);
+  }, [searchTerm, statusFilter, startDate, endDate]);
+
+  const fetchAgents = async () => {
+    try {
+      setLoading(true);
+      const filters: AgentFilters = {
+        search: searchTerm,
+        status: statusFilter,
+        startDate,
+        endDate
+      };
+      const agentsData = await agentService.getAgents(filters);
+      setAgents(agentsData);
+    } catch (error: any) {
+      console.error('Error fetching agents:', error);
+      toast.error('Failed to load agents');
+    } finally {
+      setLoading(false);
     }
   };
 
-  const filteredAgents = agentsData.filter(agent => {
-    const matchesSearch = agent.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      agent.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      agent.id.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesStatus = statusFilter === 'all' || agent.status.toLowerCase() === statusFilter.toLowerCase();
-    return matchesSearch && matchesStatus;
-  });
+  const fetchStats = async () => {
+    try {
+      const statsData = await agentService.getAgentStats();
+      setStats(statsData);
+    } catch (error: any) {
+      console.error('Error fetching stats:', error);
+    }
+  };
 
+  const handleAddAgent = () => {
+    setSelectedAgent(null);
+    setModalMode('add');
+    setShowFormModal(true);
+  };
+
+  const handleEditAgent = async (agent: Agent) => {
+    try {
+      const agentDetails = await agentService.getAgentDetailsExtended(agent.id);
+      setSelectedAgent(agentDetails);
+      setModalMode('edit');
+      setShowFormModal(true);
+    } catch (error: any) {
+      console.error('Error fetching agent details:', error);
+      toast.error('Failed to load agent details');
+    }
+  };
+
+  const handleViewAgent = async (agent: Agent) => {
+    try {
+      const agentDetails = await agentService.getAgentDetailsExtended(agent.id);
+      setSelectedAgent(agentDetails);
+      setModalMode('view');
+      setShowFormModal(true);
+    } catch (error: any) {
+      console.error('Error fetching agent details:', error);
+      toast.error('Failed to load agent details');
+    }
+  };
+
+  const handleAgentInsights = (agent: Agent) => {
+    setSelectedAgent(agent);
+    setShowInsightsModal(true);
+  };
+
+  const handleSendNotification = (agent: Agent) => {
+    setSelectedAgent(agent);
+    setShowNotificationModal(true);
+  };
+
+  const handleToggleStatus = async (agent: Agent) => {
+    try {
+      const newStatus = agent.is_active ? 'inactive' : 'active';
+      await agentService.updateAgentStatus(agent.id, newStatus);
+      toast.success(`Agent ${newStatus === 'active' ? 'activated' : 'deactivated'} successfully`);
+      fetchAgents();
+    } catch (error: any) {
+      console.error('Error updating agent status:', error);
+      toast.error('Failed to update agent status');
+    }
+  };
+
+  const handleResetPassword = async (agent: Agent) => {
+    if (!window.confirm(`Are you sure you want to reset password for ${agent.full_name}?`)) {
+      return;
+    }
+
+    try {
+      await agentService.resetAgentPassword(agent.id);
+      toast.success('Password reset successfully. New password will be sent to the agent.');
+    } catch (error: any) {
+      console.error('Error resetting password:', error);
+      toast.error('Failed to reset password');
+    }
+  };
+
+  const handleDeleteAgent = async (agent: Agent) => {
+    if (!window.confirm(`Are you sure you want to delete ${agent.full_name}? This action cannot be undone.`)) {
+      return;
+    }
+
+    try {
+      await agentService.deleteAgent(agent.id);
+      toast.success('Agent deleted successfully');
+      fetchAgents();
+      fetchStats();
+    } catch (error: any) {
+      console.error('Error deleting agent:', error);
+      toast.error(error.message || 'Failed to delete agent');
+    }
+  };
+
+  const getStatusColor = (agent: Agent) => {
+    if (!agent.is_active) return 'bg-red-100 text-red-800';
+    if (agent.agent_profile?.status === 'blocked') return 'bg-red-100 text-red-800';
+    return 'bg-green-100 text-green-800';
+  };
+
+  const getStatusText = (agent: Agent) => {
+    if (!agent.is_active) return 'Inactive';
+    if (agent.agent_profile?.status === 'blocked') return 'Blocked';
+    return 'Active';
+  };
+
+  const filteredAgents = agents;
   const totalPages = Math.ceil(filteredAgents.length / rowsPerPage);
   const startIndex = (currentPage - 1) * rowsPerPage;
   const paginatedAgents = filteredAgents.slice(startIndex, startIndex + rowsPerPage);
@@ -176,57 +204,117 @@ const AgentManagement: React.FC = () => {
           breadcrumb="Agent Management"
         />
 
-        {/* Action Bar */}
-        <div className="bg-white border-b px-6 py-4">
-          <div className="flex flex-wrap items-center justify-between gap-4">
-            <div className="flex items-center space-x-4">
-              <button
-                onClick={() => setShowAddModal(true)}
-                className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors cursor-pointer flex items-center"
-              >
-                <Plus className="w-4 h-4 mr-2" />
-                Add New Agent
-              </button>
-              <div className="relative">
-                <select
-                  value={statusFilter}
-                  onChange={(e) => setStatusFilter(e.target.value)}
-                  className="appearance-none bg-white border border-gray-300 rounded-lg px-4 py-2 pr-8 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm cursor-pointer"
-                >
-                  <option value="all">All Status</option>
-                  <option value="active">Active</option>
-                  <option value="inactive">Inactive</option>
-                  <option value="suspended">Suspended</option>
-                </select>
-                <ChevronDown className="w-4 h-4 absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 pointer-events-none" />
-              </div>
-              <div className="flex items-center space-x-2">
-                <input
-                  type="date"
-                  className="border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
-                />
-                <span className="text-gray-500">to</span>
-                <input
-                  type="date"
-                  className="border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
-                />
+        {/* Stats Cards */}
+        <div className="p-6">
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+            <div className="bg-white p-4 rounded-lg shadow-sm border">
+              <div className="flex items-center">
+                <div className="p-2 bg-blue-100 rounded-lg">
+                  <Users className="w-5 h-5 text-blue-600" />
+                </div>
+                <div className="ml-3">
+                  <p className="text-sm font-medium text-gray-600">Total Agents</p>
+                  <p className="text-2xl font-semibold text-gray-900">{stats.total_agents}</p>
+                </div>
               </div>
             </div>
-            <div className="relative">
-              <input
-                type="text"
-                placeholder="Search agents..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm w-64"
-              />
-              <Search className="w-4 h-4 absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
+
+            <div className="bg-white p-4 rounded-lg shadow-sm border">
+              <div className="flex items-center">
+                <div className="p-2 bg-green-100 rounded-lg">
+                  <CheckCircle className="w-5 h-5 text-green-600" />
+                </div>
+                <div className="ml-3">
+                  <p className="text-sm font-medium text-gray-600">Active Agents</p>
+                  <p className="text-2xl font-semibold text-gray-900">{stats.active_agents}</p>
+                </div>
+              </div>
+            </div>
+
+            <div className="bg-white p-4 rounded-lg shadow-sm border">
+              <div className="flex items-center">
+                <div className="p-2 bg-red-100 rounded-lg">
+                  <Ban className="w-5 h-5 text-red-600" />
+                </div>
+                <div className="ml-3">
+                  <p className="text-sm font-medium text-gray-600">Inactive Agents</p>
+                  <p className="text-2xl font-semibold text-gray-900">{stats.inactive_agents}</p>
+                </div>
+              </div>
+            </div>
+
+            <div className="bg-white p-4 rounded-lg shadow-sm border">
+              <div className="flex items-center">
+                <div className="p-2 bg-purple-100 rounded-lg">
+                  <Activity className="w-5 h-5 text-purple-600" />
+                </div>
+                <div className="ml-3">
+                  <p className="text-sm font-medium text-gray-600">Total Assignments</p>
+                  <p className="text-2xl font-semibold text-gray-900">{stats.total_assignments}</p>
+                </div>
+              </div>
             </div>
           </div>
-        </div>
 
-        {/* Agent Table */}
-        <main className="p-6">
+          {/* Action Bar */}
+          <div className="bg-white border rounded-lg mb-6">
+            <div className="p-4">
+              <div className="flex flex-wrap items-center justify-between gap-4">
+                <div className="flex items-center space-x-4">
+                  <button
+                    onClick={handleAddAgent}
+                    className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors cursor-pointer flex items-center"
+                  >
+                    <Plus className="w-4 h-4 mr-2" />
+                    Add New Agent
+                  </button>
+                  
+                  <div className="relative">
+                    <select
+                      value={statusFilter}
+                      onChange={(e) => setStatusFilter(e.target.value as any)}
+                      className="appearance-none bg-white border border-gray-300 rounded-lg px-4 py-2 pr-8 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm cursor-pointer"
+                    >
+                      <option value="all">All Status</option>
+                      <option value="active">Active</option>
+                      <option value="inactive">Inactive</option>
+                      <option value="blocked">Blocked</option>
+                    </select>
+                    <ChevronDown className="w-4 h-4 absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 pointer-events-none" />
+                  </div>
+
+                  <div className="flex items-center space-x-2">
+                    <input
+                      type="date"
+                      value={startDate}
+                      onChange={(e) => setStartDate(e.target.value)}
+                      className="border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
+                    />
+                    <span className="text-gray-500">to</span>
+                    <input
+                      type="date"
+                      value={endDate}
+                      onChange={(e) => setEndDate(e.target.value)}
+                      className="border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
+                    />
+                  </div>
+                </div>
+
+                <div className="relative">
+                  <input
+                    type="text"
+                    placeholder="Search agents..."
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    className="pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm w-64"
+                  />
+                  <Search className="w-4 h-4 absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Agent Table */}
           <div className="bg-white rounded-lg shadow-sm border">
             <div className="overflow-x-auto">
               <table className="w-full">
@@ -234,13 +322,7 @@ const AgentManagement: React.FC = () => {
                   <tr>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100">
                       <div className="flex items-center space-x-1">
-                        <span>Agent ID</span>
-                        <ArrowUpDown className="w-3 h-3 text-gray-400" />
-                      </div>
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100">
-                      <div className="flex items-center space-x-1">
-                        <span>Name</span>
+                        <span>Agent Info</span>
                         <ArrowUpDown className="w-3 h-3 text-gray-400" />
                       </div>
                     </th>
@@ -248,11 +330,14 @@ const AgentManagement: React.FC = () => {
                       Contact Information
                     </th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Coverage Area
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                       Properties Assigned
                     </th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100">
                       <div className="flex items-center space-x-1">
-                        <span>Registration Date</span>
+                        <span>Joining Date</span>
                         <ArrowUpDown className="w-3 h-3 text-gray-400" />
                       </div>
                     </th>
@@ -260,91 +345,147 @@ const AgentManagement: React.FC = () => {
                       Status
                     </th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Details Status
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                       Actions
                     </th>
                   </tr>
                 </thead>
                 <tbody className="bg-white divide-y divide-gray-200">
-                  {paginatedAgents.map((agent) => (
-                    <tr key={agent.id} className="hover:bg-gray-50">
-                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                        {agent.id}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="flex items-center">
-                          <div className="w-8 h-8 bg-purple-500 rounded-full flex items-center justify-center mr-3">
-                            <span className="text-white text-xs font-medium">{agent.name.charAt(0)}</span>
-                          </div>
-                          <span className="text-sm font-medium text-gray-900">{agent.name}</span>
-                        </div>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                        <div>
-                          <div className="font-medium">{agent.email}</div>
-                          <div className="text-gray-500">{agent.phone}</div>
-                        </div>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                        <span className="bg-purple-100 text-purple-800 px-2 py-1 rounded-full text-xs font-medium">
-                          {agent.properties} Properties
-                        </span>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                        {new Date(agent.registrationDate).toLocaleDateString('en-US', {
-                          year: 'numeric',
-                          month: 'short',
-                          day: 'numeric'
-                        })}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <span className={`px-2 py-1 text-xs font-medium rounded-full ${getStatusColor(agent.status)}`}>
-                          {agent.status}
-                        </span>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="flex flex-col space-y-1">
-                          <div className="flex items-center space-x-2">
-                            <ClipboardCheck className={`w-3 h-3 ${agent.detailsCompleted ? 'text-green-500' : 'text-gray-400'}`} />
-                            <span className="text-xs">Details {agent.detailsCompleted ? 'Completed' : 'Pending'}</span>
-                          </div>
-                          <div className="flex items-center space-x-2">
-                            <CalendarCheck className={`w-3 h-3 ${agent.meetingScheduled ? 'text-blue-500' : 'text-gray-400'}`} />
-                            <span className="text-xs">Meeting {agent.meetingScheduled ? new Date(agent.meetingScheduled).toLocaleDateString() : 'Not Scheduled'}</span>
-                          </div>
-                          <div className="flex items-center space-x-2">
-                            <Shield className={`w-3 h-3 ${agent.backgroundCheck === 'Approved' ? 'text-green-500' : 'text-gray-400'}`} />
-                            <span className="text-xs">Background {agent.backgroundCheck}</span>
-                          </div>
-                          <div className="flex items-center space-x-2">
-                            <GraduationCap className={`w-3 h-3 ${agent.trainingCompleted ? 'text-green-500' : 'text-gray-400'}`} />
-                            <span className="text-xs">Training {agent.trainingCompleted ? 'Completed' : 'Pending'}</span>
-                          </div>
-                        </div>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                        <div className="flex space-x-2">
-                          <button className="text-blue-600 hover:text-blue-800 cursor-pointer p-1" title="View Details">
-                            <Eye className="w-4 h-4" />
-                          </button>
-                          <button className="text-green-600 hover:text-green-800 cursor-pointer p-1" title="Edit">
-                            <Edit className="w-4 h-4" />
-                          </button>
-                          {agent.status === 'Active' ? (
-                            <button className="text-red-600 hover:text-red-800 cursor-pointer p-1" title="Suspend">
-                              <Ban className="w-4 h-4" />
-                            </button>
-                          ) : (
-                            <button className="text-green-600 hover:text-green-800 cursor-pointer p-1" title="Activate">
-                              <CheckCircle className="w-4 h-4" />
-                            </button>
-                          )}
+                  {loading ? (
+                    <tr>
+                      <td colSpan={7} className="px-6 py-4 text-center">
+                        <div className="flex items-center justify-center">
+                          <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600"></div>
+                          <span className="ml-2">Loading agents...</span>
                         </div>
                       </td>
                     </tr>
-                  ))}
+                  ) : paginatedAgents.length === 0 ? (
+                    <tr>
+                      <td colSpan={7} className="px-6 py-4 text-center text-gray-500">
+                        No agents found
+                      </td>
+                    </tr>
+                  ) : (
+                    paginatedAgents.map((agent) => (
+                      <tr key={agent.id} className="hover:bg-gray-50">
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <div className="flex items-center">
+                            <div className="w-10 h-10 bg-purple-500 rounded-full flex items-center justify-center mr-3">
+                              <span className="text-white text-sm font-medium">
+                                {agent.full_name?.charAt(0) || 'A'}
+                              </span>
+                            </div>
+                            <div>
+                              <div className="text-sm font-medium text-gray-900">
+                                {agent.full_name || 'Unnamed Agent'}
+                              </div>
+                              <div className="text-sm text-gray-500">
+                                ID: AGT{agent.id.slice(-6).toUpperCase()}
+                              </div>
+                            </div>
+                          </div>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                          <div>
+                            <div className="font-medium">{agent.email || 'No email'}</div>
+                            <div className="text-gray-500">{agent.phone || 'No phone'}</div>
+                          </div>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                          {agent.agent_profile?.coverage_area || 'Not specified'}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                          <span className="bg-blue-100 text-blue-800 px-2 py-1 rounded-full text-xs font-medium">
+                            {agent.properties_count || 0} Properties
+                          </span>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                          {agent.agent_profile?.joining_date 
+                            ? new Date(agent.agent_profile.joining_date).toLocaleDateString('en-US', {
+                                year: 'numeric',
+                                month: 'short',
+                                day: 'numeric'
+                              })
+                            : new Date(agent.created_at).toLocaleDateString('en-US', {
+                                year: 'numeric',
+                                month: 'short',
+                                day: 'numeric'
+                              })
+                          }
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <span className={`px-2 py-1 text-xs font-medium rounded-full ${getStatusColor(agent)}`}>
+                            {getStatusText(agent)}
+                          </span>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                          <div className="flex space-x-2">
+                            <button 
+                              onClick={() => handleViewAgent(agent)}
+                              className="text-blue-600 hover:text-blue-800 cursor-pointer p-1" 
+                              title="View Details"
+                            >
+                              <Eye className="w-4 h-4" />
+                            </button>
+                            <button 
+                              onClick={() => handleEditAgent(agent)}
+                              className="text-green-600 hover:text-green-800 cursor-pointer p-1" 
+                              title="Edit"
+                            >
+                              <Edit className="w-4 h-4" />
+                            </button>
+                            <button 
+                              onClick={() => handleAgentInsights(agent)}
+                              className="text-purple-600 hover:text-purple-800 cursor-pointer p-1" 
+                              title="View Insights"
+                            >
+                              <TrendingUp className="w-4 h-4" />
+                            </button>
+                            <button 
+                              onClick={() => handleSendNotification(agent)}
+                              className="text-yellow-600 hover:text-yellow-800 cursor-pointer p-1" 
+                              title="Send Notification"
+                            >
+                              <Bell className="w-4 h-4" />
+                            </button>
+                            <button 
+                              onClick={() => handleResetPassword(agent)}
+                              className="text-orange-600 hover:text-orange-800 cursor-pointer p-1" 
+                              title="Reset Password"
+                            >
+                              <Key className="w-4 h-4" />
+                            </button>
+                            <button 
+                              onClick={() => handleToggleStatus(agent)}
+                              className={`cursor-pointer p-1 ${
+                                agent.is_active && agent.agent_profile?.status !== 'blocked'
+                                  ? 'text-red-600 hover:text-red-800' 
+                                  : 'text-green-600 hover:text-green-800'
+                              }`}
+                              title={
+                                agent.is_active && agent.agent_profile?.status !== 'blocked'
+                                  ? 'Deactivate' 
+                                  : 'Activate'
+                              }
+                            >
+                              {agent.is_active && agent.agent_profile?.status !== 'blocked' ? (
+                                <Ban className="w-4 h-4" />
+                              ) : (
+                                <CheckCircle className="w-4 h-4" />
+                              )}
+                            </button>
+                            <button 
+                              onClick={() => handleDeleteAgent(agent)}
+                              className="text-red-600 hover:text-red-800 cursor-pointer p-1" 
+                              title="Delete"
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    ))
+                  )}
                 </tbody>
               </table>
             </div>
@@ -403,83 +544,51 @@ const AgentManagement: React.FC = () => {
               </div>
             </div>
           </div>
-        </main>
+        </div>
       </div>
 
-      {/* Add New Agent Modal */}
-      {showAddModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-6 w-full max-w-md mx-4">
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="text-lg font-semibold text-gray-800">Add New Agent</h3>
-              <button
-                onClick={() => setShowAddModal(false)}
-                className="text-gray-400 hover:text-gray-600 cursor-pointer"
-              >
-                <X className="w-5 h-5" />
-              </button>
-            </div>
-            <form className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Full Name</label>
-                <input
-                  type="text"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
-                  placeholder="Enter agent's full name"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Email Address</label>
-                <input
-                  type="email"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
-                  placeholder="Enter email address"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Phone Number</label>
-                <input
-                  type="tel"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
-                  placeholder="Enter phone number"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Properties Assignment</label>
-                <input
-                  type="number"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
-                  placeholder="Number of properties to assign"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Status</label>
-                <div className="relative">
-                  <select className="w-full appearance-none bg-white border border-gray-300 rounded-lg px-3 py-2 pr-8 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm cursor-pointer">
-                    <option value="active">Active</option>
-                    <option value="inactive">Inactive</option>
-                  </select>
-                  <ChevronDown className="w-4 h-4 absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 pointer-events-none" />
-                </div>
-              </div>
-              <div className="flex space-x-3 pt-4">
-                <button
-                  type="button"
-                  onClick={() => setShowAddModal(false)}
-                  className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 cursor-pointer"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 cursor-pointer"
-                >
-                  Add Agent
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
+      {/* Modals */}
+      {showFormModal && (
+        <AgentFormModal
+          agent={selectedAgent}
+          isOpen={showFormModal}
+          onClose={() => {
+            setShowFormModal(false);
+            setSelectedAgent(null);
+          }}
+          onSave={() => {
+            fetchAgents();
+            fetchStats();
+          }}
+          mode={modalMode}
+        />
+      )}
+
+      {showInsightsModal && selectedAgent && (
+        <AgentInsightsModal
+          agent={selectedAgent}
+          isOpen={showInsightsModal}
+          onClose={() => {
+            setShowInsightsModal(false);
+            setSelectedAgent(null);
+          }}
+        />
+      )}
+
+      {showNotificationModal && selectedAgent && (
+        <SendNotificationModal
+          isOpen={showNotificationModal}
+          onClose={() => {
+            setShowNotificationModal(false);
+            setSelectedAgent(null);
+          }}
+          recipientType="agent"
+          recipientId={selectedAgent.id}
+          recipientName={selectedAgent.full_name || ''}
+          onSent={() => {
+            toast.success('Notification sent successfully!');
+          }}
+        />
       )}
     </div>
   );
