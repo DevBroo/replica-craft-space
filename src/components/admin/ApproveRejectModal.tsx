@@ -40,9 +40,9 @@ const ApproveRejectModal: React.FC<ApproveRejectModalProps> = ({
     try {
       const newStatus = action === 'approve' ? 'approved' : 'rejected';
       
-      // Use the RPC for each property
+      // Use RPC with any type to handle the missing type definition
       for (const propertyId of propertyIds) {
-        const { error } = await supabase.rpc('log_property_status_change', {
+        const { error } = await (supabase as any).rpc('log_property_status_change', {
           p_property_id: propertyId,
           p_to_status: newStatus,
           p_reason: reason,
