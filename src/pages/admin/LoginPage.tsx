@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Eye, EyeOff, Lock, Mail } from 'lucide-react';
-import { useAdminAuth } from '@/contexts/AdminAuthContext';
+import { supabase } from '@/integrations/supabase/client';
 
 const LoginPage: React.FC = () => {
   console.log('🔑 AdminLoginPage component rendering');
@@ -9,19 +9,46 @@ const LoginPage: React.FC = () => {
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
-  console.log('🔑 About to call useAdminAuth');
-  const { adminLogin } = useAdminAuth();
 
-  const handleLogin = (e: React.FormEvent) => {
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
+    setIsLoading(true);
+    setError('');
     
-    // Use admin authentication context
-    const success = adminLogin(email, password);
-    if (success) {
+    try {
+      // Sign in with Supabase
+      const { data, error: signInError } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+      });
+
+      if (signInError) {
+        setError(signInError.message);
+        return;
+      }
+
+      // Check if user has admin role
+      const { data: profile, error: profileError } = await supabase
+        .from('profiles')
+        .select('role')
+        .eq('id', data.user.id)
+        .single();
+
+      if (profileError || !profile || profile.role !== 'admin') {
+        await supabase.auth.signOut();
+        setError('Admin access required. Please contact support if you believe this is an error.');
+        return;
+      }
+
+      console.log('✅ Admin login successful');
       navigate('/admin/dashboard');
-    } else {
-      setError('Invalid email or password. Please try again.');
+    } catch (error) {
+      console.error('❌ Login error:', error);
+      setError('An unexpected error occurred. Please try again.');
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -105,15 +132,16 @@ const LoginPage: React.FC = () => {
 
           <button
             type="submit"
-            className="w-full bg-blue-600 text-white py-3 px-4 rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-colors font-medium"
+            disabled={isLoading}
+            className="w-full bg-blue-600 text-white py-3 px-4 rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-colors font-medium disabled:opacity-50"
           >
-            Sign In
+            {isLoading ? 'Signing In...' : 'Sign In'}
           </button>
         </form>
 
         <div className="mt-6 text-center">
           <p className="text-xs text-gray-500">
-            Demo: Enter any email and password to login
+            Use your admin credentials to access the dashboard
           </p>
         </div>
       </div>

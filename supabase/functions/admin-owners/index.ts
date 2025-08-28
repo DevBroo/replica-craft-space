@@ -18,6 +18,14 @@ serve(async (req) => {
     return new Response(null, { headers: corsHeaders });
   }
 
+  // Only accept POST requests
+  if (req.method !== 'POST') {
+    return new Response(JSON.stringify({ error: 'Method not allowed' }), {
+      status: 405,
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+    });
+  }
+
   try {
     // Get Supabase admin client with service role
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
@@ -67,8 +75,12 @@ serve(async (req) => {
       });
     }
 
-    if (req.method === 'POST') {
-      const { email, full_name, phone }: InviteOwnerRequest = await req.json();
+    // Parse request body
+    const requestBody = await req.json();
+    const { action } = requestBody;
+
+    if (action === 'invite') {
+      const { email, full_name, phone }: InviteOwnerRequest = requestBody;
 
       // Validate input
       if (!email || !full_name) {
@@ -133,8 +145,7 @@ serve(async (req) => {
       });
     }
 
-    // Handle GET request - fetch all property owners
-    if (req.method === 'GET') {
+    if (action === 'list') {
       console.log('📋 Fetching all property owners...');
 
       // Get all property owners using admin client
@@ -175,8 +186,8 @@ serve(async (req) => {
       });
     }
 
-    return new Response(JSON.stringify({ error: 'Method not allowed' }), {
-      status: 405,
+    return new Response(JSON.stringify({ error: 'Invalid action' }), {
+      status: 400,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' }
     });
 
