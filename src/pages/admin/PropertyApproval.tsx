@@ -45,6 +45,10 @@ interface PropertyWithOwner {
   owner_id: string;
   admin_blocked?: boolean;
   menu_available?: boolean;
+  host_details?: any;
+  video_url?: string;
+  banquet_hall_capacity?: number;
+  ground_lawn_capacity?: number;
   owner?: {
     full_name: string;
     email: string;
@@ -98,17 +102,20 @@ const PropertyApproval: React.FC = () => {
           property_type,
           status,
           created_at,
-          owner_id,
-          admin_blocked,
-          menu_available
+          owner_id
         `)
         .order('created_at', { ascending: false });
 
       if (propertiesError) throw propertiesError;
 
+      if (!propertiesData) {
+        setProperties([]);
+        return;
+      }
+
       // Fetch owner details for each property
       const propertiesWithOwners = await Promise.all(
-        (propertiesData || []).map(async (property) => {
+        propertiesData.map(async (property) => {
           const { data: owner, error: ownerError } = await supabase
             .from('profiles')
             .select('full_name, email, phone')
@@ -117,8 +124,10 @@ const PropertyApproval: React.FC = () => {
 
           return {
             ...property,
+            admin_blocked: false, // Default value until column exists
+            menu_available: false, // Default value until column exists
             owner: ownerError ? null : owner
-          };
+          } as PropertyWithOwner;
         })
       );
 
