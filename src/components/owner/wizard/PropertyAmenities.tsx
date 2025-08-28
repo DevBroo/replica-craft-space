@@ -283,6 +283,40 @@ const PropertyAmenities: React.FC<PropertyAmenitiesProps> = ({
         </CardContent>
       </Card>
 
+      {/* All Selected Amenities Preview */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-lg">All Selected Amenities Preview</CardTitle>
+          <p className="text-sm text-muted-foreground">
+            These amenities will appear on your public property listing
+          </p>
+        </CardHeader>
+        <CardContent>
+          {(() => {
+            const allAmenities = [
+              ...formData.amenities,
+              ...formData.amenities_details.property_facilities,
+              ...formData.amenities_details.room_features,
+              ...formData.amenities_details.recreation,
+              ...formData.amenities_details.accessibility
+            ];
+            const uniqueAmenities = [...new Set(allAmenities)];
+            
+            return uniqueAmenities.length > 0 ? (
+              <div className="flex flex-wrap gap-2">
+                {uniqueAmenities.map(amenity => (
+                  <Badge key={amenity} variant="secondary">
+                    {amenity}
+                  </Badge>
+                ))}
+              </div>
+            ) : (
+              <p className="text-muted-foreground">No amenities selected yet</p>
+            );
+          })()}
+        </CardContent>
+      </Card>
+
       {/* Navigation */}
       <div className="flex justify-between">
         <Button variant="outline" onClick={onPrevious}>

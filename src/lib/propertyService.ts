@@ -893,7 +893,7 @@ export class PropertyService {
       day_picnic_duration_category: frontendProperty.day_picnic_duration_category,
       rooms_details: frontendProperty.rooms_details,
       
-      amenities: frontendProperty.amenities,
+      amenities: PropertyService.mergeAllAmenities(frontendProperty),
       amenities_details: frontendProperty.amenities_details,
       facilities: frontendProperty.facilities,
       
@@ -923,6 +923,46 @@ export class PropertyService {
       price: frontendProperty.price || frontendProperty.pricing?.daily_rate || 0,
       capacity: frontendProperty.capacity || frontendProperty.max_guests
     };
+  }
+
+  /**
+   * Merge all amenities from detailed selections and legacy amenities
+   */
+  static mergeAllAmenities(property: any): string[] {
+    const mergedAmenities: string[] = [];
+    
+    // Add legacy amenities
+    if (property.amenities && Array.isArray(property.amenities)) {
+      mergedAmenities.push(...property.amenities);
+    }
+    
+    // Add amenities from detailed selections
+    if (property.amenities_details) {
+      const details = property.amenities_details;
+      
+      // Add property facilities
+      if (details.property_facilities && Array.isArray(details.property_facilities)) {
+        mergedAmenities.push(...details.property_facilities);
+      }
+      
+      // Add room features
+      if (details.room_features && Array.isArray(details.room_features)) {
+        mergedAmenities.push(...details.room_features);
+      }
+      
+      // Add recreation facilities
+      if (details.recreation && Array.isArray(details.recreation)) {
+        mergedAmenities.push(...details.recreation);
+      }
+      
+      // Add accessibility features
+      if (details.accessibility && Array.isArray(details.accessibility)) {
+        mergedAmenities.push(...details.accessibility);
+      }
+    }
+    
+    // Remove duplicates and return
+    return [...new Set(mergedAmenities)];
   }
 
   /**
