@@ -1,20 +1,15 @@
 
 import React, { useState } from 'react';
 import { Search, Filter, Calendar, User, X } from 'lucide-react';
+import { OwnerFilters as FilterType } from '../../lib/adminService';
 
 interface OwnerFiltersProps {
-  onFiltersChange: (filters: {
-    search: string;
-    status: string;
-    startDate: string;
-    endDate: string;
-    createdBy: string;
-  }) => void;
+  onFiltersChange: (filters: FilterType) => void;
   adminUsers: Array<{ id: string; full_name: string }>;
 }
 
 const OwnerFilters: React.FC<OwnerFiltersProps> = ({ onFiltersChange, adminUsers }) => {
-  const [filters, setFilters] = useState({
+  const [filters, setFilters] = useState<FilterType>({
     search: '',
     status: 'all',
     startDate: '',
@@ -24,14 +19,14 @@ const OwnerFilters: React.FC<OwnerFiltersProps> = ({ onFiltersChange, adminUsers
 
   const [showAdvanced, setShowAdvanced] = useState(false);
 
-  const handleFilterChange = (key: string, value: string) => {
+  const handleFilterChange = (key: keyof FilterType, value: string) => {
     const newFilters = { ...filters, [key]: value };
     setFilters(newFilters);
     onFiltersChange(newFilters);
   };
 
   const clearFilters = () => {
-    const clearedFilters = {
+    const clearedFilters: FilterType = {
       search: '',
       status: 'all',
       startDate: '',
@@ -53,7 +48,7 @@ const OwnerFilters: React.FC<OwnerFiltersProps> = ({ onFiltersChange, adminUsers
           <input
             type="text"
             placeholder="Search by name or email..."
-            value={filters.search}
+            value={filters.search || ''}
             onChange={(e) => handleFilterChange('search', e.target.value)}
             className="pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm w-full"
           />
@@ -61,8 +56,8 @@ const OwnerFilters: React.FC<OwnerFiltersProps> = ({ onFiltersChange, adminUsers
 
         {/* Status Filter */}
         <select
-          value={filters.status}
-          onChange={(e) => handleFilterChange('status', e.target.value)}
+          value={filters.status || 'all'}
+          onChange={(e) => handleFilterChange('status', e.target.value as 'all' | 'active' | 'inactive')}
           className="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm cursor-pointer"
         >
           <option value="all">All Status</option>
@@ -111,14 +106,14 @@ const OwnerFilters: React.FC<OwnerFiltersProps> = ({ onFiltersChange, adminUsers
               <div className="flex space-x-2">
                 <input
                   type="date"
-                  value={filters.startDate}
+                  value={filters.startDate || ''}
                   onChange={(e) => handleFilterChange('startDate', e.target.value)}
                   className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
                   placeholder="Start Date"
                 />
                 <input
                   type="date"
-                  value={filters.endDate}
+                  value={filters.endDate || ''}
                   onChange={(e) => handleFilterChange('endDate', e.target.value)}
                   className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
                   placeholder="End Date"
@@ -133,7 +128,7 @@ const OwnerFilters: React.FC<OwnerFiltersProps> = ({ onFiltersChange, adminUsers
                 Created By
               </label>
               <select
-                value={filters.createdBy}
+                value={filters.createdBy || ''}
                 onChange={(e) => handleFilterChange('createdBy', e.target.value)}
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm cursor-pointer"
               >
