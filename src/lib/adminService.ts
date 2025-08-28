@@ -1,4 +1,3 @@
-
 import { supabase } from '../integrations/supabase/client';
 
 export interface PropertyOwner {
@@ -219,6 +218,225 @@ export const adminService = {
       return data.insights;
     } catch (error) {
       console.error('💥 Error in getOwnerInsights:', error);
+      throw error;
+    }
+  },
+
+  // Get owner details with extended profile and bank details
+  async getOwnerDetailsExtended(ownerId: string): Promise<any> {
+    try {
+      console.log('🔍 Fetching extended owner details:', ownerId);
+      
+      // Get basic owner profile
+      const { data: profile, error: profileError } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('id', ownerId)
+        .eq('role', 'property_owner')
+        .single();
+
+      if (profileError) {
+        console.error('❌ Error fetching owner profile:', profileError);
+        throw profileError;
+      }
+
+      // Get extended owner profile
+      const { data: ownerProfile, error: ownerProfileError } = await supabase
+        .from('owner_profiles')
+        .select('*')
+        .eq('user_id', ownerId)
+        .single();
+
+      // Get bank details
+      const { data: bankDetails, error: bankError } = await supabase
+        .from('owner_bank_details')
+        .select('*')
+        .eq('owner_id', ownerId)
+        .single();
+
+      // Get owner's properties
+      const { data: properties, error: propertiesError } = await supabase
+        .from('properties')
+        .select('*')
+        .eq('owner_id', ownerId)
+        .order('created_at', { ascending: false });
+
+      if (propertiesError) {
+        console.error('❌ Error fetching owner properties:', propertiesError);
+        throw propertiesError;
+      }
+
+      // Get activity logs
+      const { data: activityLogs, error: activityError } = await supabase
+        .from('owner_activity_logs')
+        .select('*')
+        .eq('owner_id', ownerId)
+        .order('created_at', { ascending: false })
+        .limit(50);
+
+      const ownerDetails = {
+        ...profile,
+        owner_profile: ownerProfile,
+        bank_details: bankDetails,
+        properties: properties || [],
+        properties_count: properties?.length || 0,
+        activity_logs: activityLogs || []
+      };
+
+      console.log('✅ Extended owner details fetched:', ownerDetails);
+      return ownerDetails;
+    } catch (error) {
+      console.error('💥 Error in getOwnerDetailsExtended:', error);
+      throw error;
+    }
+  },
+
+  // Send notification to owner
+  async sendNotificationToOwner(
+    ownerId: string, 
+    notification: {
+      title: string;
+      message: string;
+      type: 'email' | 'sms' | 'in-app';
+      priority: 'low' | 'normal' | 'high';
+    }
+  ): Promise<void> {
+    try {
+      console.log('📧 Sending notification to owner:', ownerId, notification.type);
+      
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session?.access_token) {
+        throw new Error('Authentication required. Please log in as an admin.');
+      }
+
+      // Create notification record
+      const { error: notificationError } = await supabase
+        .from('notifications')
+        .insert({
+          target_user_id: ownerId,
+          title: notification.title,
+          content: notification.message,
+          type: notification.type === 'in-app' ? 'info' : notification.type,
+          priority: notification.priority,
+          status: 'unread',
+          target_audience: null,
+          related_entity_type: 'owner',
+          related_entity_id: ownerId
+        });
+
+      if (notificationError) throw notificationError;
+
+      // Log activity
+      await supabase.rpc('log_owner_activity_fn', {
+        p_owner_id: ownerId,
+        p_action: 'notification_sent',
+        p_actor_id: session.user?.id,
+        p_actor_type: 'admin',
+        p_metadata: {
+          notification_type: notification.type,
+          title: notification.title,
+          priority: notification.priority
+        }
+      });
+
+      console.log('✅ Notification sent successfully');
+    } catch (error) {
+      console.error('💥 Error in sendNotificationToOwner:', error);
+      throw error;
+    }
+  },
+
+  // Update owner profile and bank details
+  async updateOwnerProfile(
+    ownerId: string,
+    profileData: {
+      basic?: {
+        full_name?: string;
+        phone?: string;
+        commission_rate?: number;
+        is_active?: boolean;
+      };
+      business?: {
+        company_name?: string;
+        gst_number?: string;
+        pan_number?: string;
+        aadhar_number?: string;
+        office_address?: any;
+        is_office_same_as_property?: boolean;
+        property_types_offered?: string[];
+        logo_url?: string;
+        documents?: any;
+      };
+      bank?: {
+        account_holder_name?: string;
+        bank_name?: string;
+        branch_name?: string;
+        account_number?: string;
+        ifsc_code?: string;
+        account_type?: string;
+        pan_number?: string;
+        upi_id?: string;
+        micr_code?: string;
+      };
+    }
+  ): Promise<void> {
+    try {
+      console.log('📝 Updating owner profile:', ownerId);
+      
+      // Update basic profile if provided
+      if (profileData.basic) {
+        const { error: profileError } = await supabase
+          .from('profiles')
+          .update({
+            ...profileData.basic,
+            updated_at: new Date().toISOString()
+          })
+          .eq('id', ownerId);
+
+        if (profileError) throw profileError;
+      }
+
+      // Update business profile if provided
+      if (profileData.business) {
+        const { error: businessError } = await supabase
+          .from('owner_profiles')
+          .upsert({
+            user_id: ownerId,
+            ...profileData.business,
+            updated_at: new Date().toISOString()
+          });
+
+        if (businessError) throw businessError;
+      }
+
+      // Update bank details if provided
+      if (profileData.bank) {
+        const { error: bankError } = await supabase
+          .from('owner_bank_details')
+          .upsert({
+            owner_id: ownerId,
+            ...profileData.bank,
+            updated_at: new Date().toISOString()
+          });
+
+        if (bankError) throw bankError;
+      }
+
+      // Log activity
+      const { data: { session } } = await supabase.auth.getSession();
+      await supabase.rpc('log_owner_activity_fn', {
+        p_owner_id: ownerId,
+        p_action: 'profile_updated',
+        p_actor_id: session?.user?.id,
+        p_actor_type: 'admin',
+        p_metadata: {
+          updated_sections: Object.keys(profileData)
+        }
+      });
+
+      console.log('✅ Owner profile updated successfully');
+    } catch (error) {
+      console.error('💥 Error in updateOwnerProfile:', error);
       throw error;
     }
   },

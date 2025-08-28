@@ -449,6 +449,44 @@ export type Database = {
         }
         Relationships: []
       }
+      owner_activity_logs: {
+        Row: {
+          action: string
+          actor_id: string | null
+          actor_type: string | null
+          created_at: string
+          id: string
+          metadata: Json
+          owner_id: string
+        }
+        Insert: {
+          action: string
+          actor_id?: string | null
+          actor_type?: string | null
+          created_at?: string
+          id?: string
+          metadata?: Json
+          owner_id: string
+        }
+        Update: {
+          action?: string
+          actor_id?: string | null
+          actor_type?: string | null
+          created_at?: string
+          id?: string
+          metadata?: Json
+          owner_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "owner_activity_logs_owner_id_fkey"
+            columns: ["owner_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       owner_admin_actions: {
         Row: {
           action: string
@@ -486,6 +524,168 @@ export type Database = {
             foreignKeyName: "owner_admin_actions_owner_id_fkey"
             columns: ["owner_id"]
             isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      owner_bank_details: {
+        Row: {
+          account_holder_name: string
+          account_number: string
+          account_type: string | null
+          bank_name: string
+          branch_name: string | null
+          created_at: string
+          id: string
+          ifsc_code: string
+          micr_code: string | null
+          owner_id: string
+          pan_number: string | null
+          updated_at: string
+          upi_id: string | null
+        }
+        Insert: {
+          account_holder_name: string
+          account_number: string
+          account_type?: string | null
+          bank_name: string
+          branch_name?: string | null
+          created_at?: string
+          id?: string
+          ifsc_code: string
+          micr_code?: string | null
+          owner_id: string
+          pan_number?: string | null
+          updated_at?: string
+          upi_id?: string | null
+        }
+        Update: {
+          account_holder_name?: string
+          account_number?: string
+          account_type?: string | null
+          bank_name?: string
+          branch_name?: string | null
+          created_at?: string
+          id?: string
+          ifsc_code?: string
+          micr_code?: string | null
+          owner_id?: string
+          pan_number?: string | null
+          updated_at?: string
+          upi_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "owner_bank_details_owner_id_fkey"
+            columns: ["owner_id"]
+            isOneToOne: true
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      owner_payouts: {
+        Row: {
+          commission_amount: number
+          created_at: string
+          gross_revenue: number
+          id: string
+          metadata: Json
+          owner_id: string
+          payout_amount: number
+          period_end: string | null
+          period_start: string | null
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          commission_amount?: number
+          created_at?: string
+          gross_revenue?: number
+          id?: string
+          metadata?: Json
+          owner_id: string
+          payout_amount?: number
+          period_end?: string | null
+          period_start?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          commission_amount?: number
+          created_at?: string
+          gross_revenue?: number
+          id?: string
+          metadata?: Json
+          owner_id?: string
+          payout_amount?: number
+          period_end?: string | null
+          period_start?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "owner_payouts_owner_id_fkey"
+            columns: ["owner_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      owner_profiles: {
+        Row: {
+          aadhar_number: string | null
+          company_name: string | null
+          created_at: string
+          documents: Json | null
+          gst_number: string | null
+          is_office_same_as_property: boolean
+          logo_url: string | null
+          office_address: Json | null
+          pan_number: string | null
+          property_count: number
+          property_types_offered: string[] | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          aadhar_number?: string | null
+          company_name?: string | null
+          created_at?: string
+          documents?: Json | null
+          gst_number?: string | null
+          is_office_same_as_property?: boolean
+          logo_url?: string | null
+          office_address?: Json | null
+          pan_number?: string | null
+          property_count?: number
+          property_types_offered?: string[] | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          aadhar_number?: string | null
+          company_name?: string | null
+          created_at?: string
+          documents?: Json | null
+          gst_number?: string | null
+          is_office_same_as_property?: boolean
+          logo_url?: string | null
+          office_address?: Json | null
+          pan_number?: string | null
+          property_count?: number
+          property_types_offered?: string[] | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "owner_profiles_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: true
             referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
@@ -1198,6 +1398,20 @@ export type Database = {
       log_contact_access: {
         Args: { property_id: string; user_id?: string }
         Returns: boolean
+      }
+      log_owner_activity_fn: {
+        Args: {
+          p_action: string
+          p_actor_id: string
+          p_actor_type: string
+          p_metadata: Json
+          p_owner_id: string
+        }
+        Returns: undefined
+      }
+      update_owner_property_count_fn: {
+        Args: { p_owner_id: string }
+        Returns: undefined
       }
     }
     Enums: {

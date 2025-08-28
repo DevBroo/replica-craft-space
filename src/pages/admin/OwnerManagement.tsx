@@ -14,13 +14,18 @@ import {
   Loader2,
   RefreshCw,
   TrendingUp,
-  User
+  User,
+  Bell,
+  MoreVertical
 } from 'lucide-react';
 import IconButton from '../../components/admin/ui/IconButton';
 import SharedSidebar from '../../components/admin/SharedSidebar';
 import SharedHeader from '../../components/admin/SharedHeader';
 import OwnerDetailsModal from '../../components/admin/OwnerDetailsModal';
 import OwnerFilters from '../../components/admin/OwnerFilters';
+import OwnerFormModal from '../../components/admin/OwnerFormModal';
+import OwnerInsightsModal from '../../components/admin/OwnerInsightsModal';
+import SendNotificationModal from '../../components/admin/SendNotificationModal';
 import { adminService, PropertyOwner, OwnerFilters as FilterType } from '../../lib/adminService';
 
 const OwnerManagement: React.FC = () => {
@@ -31,12 +36,20 @@ const OwnerManagement: React.FC = () => {
   const [filteredOwners, setFilteredOwners] = useState<PropertyOwner[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  
+  // Modal states
   const [showAddModal, setShowAddModal] = useState(false);
   const [showOwnerDetails, setShowOwnerDetails] = useState<PropertyOwner | null>(null);
+  const [showOwnerForm, setShowOwnerForm] = useState<{ owner: PropertyOwner | null; mode: 'add' | 'edit' | 'view' } | null>(null);
+  const [showOwnerInsights, setShowOwnerInsights] = useState<PropertyOwner | null>(null);
+  const [showSendNotification, setShowSendNotification] = useState<PropertyOwner | null>(null);
+  
+  // Form and filter states
   const [formData, setFormData] = useState({ full_name: '', email: '', phone: '' });
   const [submitting, setSubmitting] = useState(false);
   const [adminUsers, setAdminUsers] = useState<Array<{ id: string; full_name: string }>>([]);
   const [currentFilters, setCurrentFilters] = useState<FilterType>({});
+  const [activeDropdown, setActiveDropdown] = useState<string | null>(null);
 
   // Fetch property owners on component mount
   useEffect(() => {
@@ -114,6 +127,20 @@ const OwnerManagement: React.FC = () => {
     }
   };
 
+  const handleDeleteOwner = async (owner: PropertyOwner) => {
+    if (!confirm(`Are you sure you want to delete owner "${owner.full_name || owner.email}"? This action cannot be undone.`)) {
+      return;
+    }
+
+    try {
+      await adminService.deleteOwner(owner.id);
+      alert('Owner deleted successfully!');
+      await fetchPropertyOwners(currentFilters);
+    } catch (err) {
+      alert('Failed to delete owner: ' + (err instanceof Error ? err.message : 'Unknown error'));
+    }
+  };
+
   const getStatusColor = (status: string) => {
     switch (status) {
       case 'active': return 'bg-green-100 text-green-800';
@@ -149,7 +176,7 @@ const OwnerManagement: React.FC = () => {
               <IconButton
                 icon={Plus}
                 variant="primary"
-                onClick={() => setShowAddModal(true)}
+                onClick={() => setShowOwnerForm({ owner: null, mode: 'add' })}
                 tooltip="Add new property owner"
                 aria-label="Add new property owner"
                 className="px-4 py-2"
@@ -336,14 +363,14 @@ const OwnerManagement: React.FC = () => {
                             </span>
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                            <div className="flex space-x-1">
+                            <div className="flex items-center space-x-1">
                               <IconButton
                                 icon={Eye}
                                 variant="ghost"
                                 size="sm"
                                 tooltip="View Details"
                                 aria-label="View owner details"
-                                onClick={() => setShowOwnerDetails(owner)}
+                                onClick={() => setShowOwnerForm({ owner, mode: 'view' })}
                                 className="text-blue-600 hover:text-blue-800 hover:bg-blue-50"
                               />
                               <IconButton
@@ -352,7 +379,7 @@ const OwnerManagement: React.FC = () => {
                                 size="sm"
                                 tooltip="View Insights"
                                 aria-label="View owner insights"
-                                onClick={() => setShowOwnerDetails(owner)}
+                                onClick={() => setShowOwnerInsights(owner)}
                                 className="text-purple-600 hover:text-purple-800 hover:bg-purple-50"
                               />
                               <IconButton
@@ -361,35 +388,74 @@ const OwnerManagement: React.FC = () => {
                                 size="sm"
                                 tooltip="Edit Owner"
                                 aria-label="Edit owner information"
-                                onClick={() => {
-                                  // TODO: Implement edit functionality
-                                  console.log('Edit owner:', owner.id);
-                                }}
+                                onClick={() => setShowOwnerForm({ owner, mode: 'edit' })}
                                 className="text-green-600 hover:text-green-800 hover:bg-green-50"
                               />
                               <IconButton
-                                icon={owner.is_active ? Ban : CheckCircle}
+                                icon={Bell}
                                 variant="ghost"
                                 size="sm"
-                                tooltip={owner.is_active ? 'Deactivate Owner' : 'Activate Owner'}
-                                aria-label={owner.is_active ? 'Deactivate owner' : 'Activate owner'}
-                                onClick={async () => {
-                                  if (confirm(`Are you sure you want to ${owner.is_active ? 'deactivate' : 'activate'} this owner?`)) {
-                                    try {
-                                      await handleStatusUpdate(owner.id, !owner.is_active);
-                                      // TODO: Replace alert with toast notification
-                                      alert(`Owner ${owner.is_active ? 'deactivated' : 'activated'} successfully!`);
-                                    } catch (err) {
-                                      // TODO: Replace alert with toast notification
-                                      alert(`Failed to ${owner.is_active ? 'deactivate' : 'activate'} owner: ` + (err instanceof Error ? err.message : 'Unknown error'));
-                                    }
-                                  }
-                                }}
-                                className={owner.is_active 
-                                  ? "text-red-600 hover:text-red-800 hover:bg-red-50" 
-                                  : "text-green-600 hover:text-green-800 hover:bg-green-50"
-                                }
+                                tooltip="Send Notification"
+                                aria-label="Send notification to owner"
+                                onClick={() => setShowSendNotification(owner)}
+                                className="text-orange-600 hover:text-orange-800 hover:bg-orange-50"
                               />
+                              
+                              {/* Dropdown Menu for More Actions */}
+                              <div className="relative">
+                                <IconButton
+                                  icon={MoreVertical}
+                                  variant="ghost"
+                                  size="sm"
+                                  tooltip="More Actions"
+                                  aria-label="More actions"
+                                  onClick={() => setActiveDropdown(activeDropdown === owner.id ? null : owner.id)}
+                                  className="text-gray-600 hover:text-gray-800 hover:bg-gray-50"
+                                />
+                                
+                                {activeDropdown === owner.id && (
+                                  <div className="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg border border-gray-200 z-10">
+                                    <div className="py-1">
+                                      <button
+                                        onClick={async () => {
+                                          setActiveDropdown(null);
+                                          if (confirm(`Are you sure you want to ${owner.is_active ? 'deactivate' : 'activate'} this owner?`)) {
+                                            try {
+                                              await handleStatusUpdate(owner.id, !owner.is_active);
+                                              alert(`Owner ${owner.is_active ? 'deactivated' : 'activated'} successfully!`);
+                                            } catch (err) {
+                                              alert(`Failed to ${owner.is_active ? 'deactivate' : 'activate'} owner: ` + (err instanceof Error ? err.message : 'Unknown error'));
+                                            }
+                                          }
+                                        }}
+                                        className="flex items-center w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                                      >
+                                        {owner.is_active ? (
+                                          <>
+                                            <Ban className="w-4 h-4 mr-2 text-red-500" />
+                                            Deactivate Owner
+                                          </>
+                                        ) : (
+                                          <>
+                                            <CheckCircle className="w-4 h-4 mr-2 text-green-500" />
+                                            Activate Owner
+                                          </>
+                                        )}
+                                      </button>
+                                      <button
+                                        onClick={() => {
+                                          setActiveDropdown(null);
+                                          handleDeleteOwner(owner);
+                                        }}
+                                        className="flex items-center w-full px-4 py-2 text-sm text-red-700 hover:bg-red-50"
+                                      >
+                                        <Trash2 className="w-4 h-4 mr-2" />
+                                        Delete Owner
+                                      </button>
+                                    </div>
+                                  </div>
+                                )}
+                              </div>
                             </div>
                           </td>
                         </tr>
@@ -482,7 +548,46 @@ const OwnerManagement: React.FC = () => {
         </main>
       </div>
 
-      {/* Enhanced Owner Details Modal */}
+      {/* Click outside to close dropdown */}
+      {activeDropdown && (
+        <div 
+          className="fixed inset-0 z-0" 
+          onClick={() => setActiveDropdown(null)}
+        />
+      )}
+
+      {/* Modals */}
+      {showOwnerForm && (
+        <OwnerFormModal
+          isOpen={!!showOwnerForm}
+          onClose={() => setShowOwnerForm(null)}
+          owner={showOwnerForm.owner}
+          mode={showOwnerForm.mode}
+          onSave={() => fetchPropertyOwners(currentFilters)}
+        />
+      )}
+
+      {showOwnerInsights && (
+        <OwnerInsightsModal
+          isOpen={!!showOwnerInsights}
+          onClose={() => setShowOwnerInsights(null)}
+          owner={showOwnerInsights}
+        />
+      )}
+
+      {showSendNotification && (
+        <SendNotificationModal
+          isOpen={!!showSendNotification}
+          onClose={() => setShowSendNotification(null)}
+          owner={showSendNotification}
+          onSent={() => {
+            // Optionally refresh data or show success message
+            console.log('Notification sent successfully');
+          }}
+        />
+      )}
+
+      {/* Keep the existing OwnerDetailsModal for backward compatibility */}
       {showOwnerDetails && (
         <OwnerDetailsModal
           owner={showOwnerDetails}
@@ -493,7 +598,7 @@ const OwnerManagement: React.FC = () => {
         />
       )}
 
-      {/* Add New Owner Modal */}
+      {/* Legacy Add New Owner Modal - now replaced by OwnerFormModal */}
       {showAddModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
           <div className="bg-white rounded-lg p-6 w-full max-w-md mx-4">
