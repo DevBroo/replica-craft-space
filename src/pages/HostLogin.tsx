@@ -43,6 +43,8 @@ const HostLogin: React.FC = () => {
       const timer = setTimeout(() => {
         if (user.role === 'owner' || user.role === 'agent') {
           navigate('/host/dashboard', { replace: true });
+        } else if (user.role === 'admin') {
+          navigate('/admin', { replace: true });
         } else if (user.role === 'customer') {
           navigate('/', { replace: true });
         }
