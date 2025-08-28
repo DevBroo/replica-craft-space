@@ -49,6 +49,7 @@ const BookingManagement = React.lazy(() => import('@/pages/admin/BookingManageme
 const CommissionDisbursement = React.lazy(() => import('@/pages/admin/CommissionDisbursement'));
 const CMSManagement = React.lazy(() => import('@/pages/admin/CMSManagement'));
 const NotificationsManagement = React.lazy(() => import('@/pages/admin/NotificationsManagement'));
+const Analytics = React.lazy(() => import('@/pages/admin/Analytics'));
 const SupportTickets = React.lazy(() => import('@/pages/admin/SupportTickets'));
 const ProtectedRoute = React.lazy(() => import('@/components/admin/ProtectedRoute'));
 
@@ -171,6 +172,11 @@ function App() {
                   <Route path="/admin/notifications-management" element={
                     <Suspense fallback={<LoadingSpinner />}>
                       <ProtectedRoute><NotificationsManagement /></ProtectedRoute>
+                    </Suspense>
+                  } />
+                  <Route path="/admin/analytics" element={
+                    <Suspense fallback={<LoadingSpinner />}>
+                      <ProtectedRoute><Analytics /></ProtectedRoute>
                     </Suspense>
                   } />
                   <Route path="/admin/support-tickets" element={

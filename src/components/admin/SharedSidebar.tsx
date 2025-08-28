@@ -10,6 +10,7 @@ import {
   DollarSign, 
   Edit, 
   Bell, 
+  BarChart3,
   Headphones, 
   Settings
 } from 'lucide-react';
@@ -29,6 +30,7 @@ const SharedSidebar: React.FC<SharedSidebarProps> = ({ sidebarCollapsed, setSide
 
   const menuItems = [
     { id: 'dashboard', label: 'Dashboard', icon: Gauge, path: '/admin/dashboard' },
+    { id: 'analytics', label: 'Analytics', icon: BarChart3, path: '/admin/analytics' },
     { id: 'owners', label: 'Owner Management', icon: Users, path: '/admin/owner-management' },
     { id: 'agents', label: 'Agent Management', icon: User, path: '/admin/agent-management' },
     { id: 'properties', label: 'Property Approval', icon: Home, path: '/admin/property-approval' },
