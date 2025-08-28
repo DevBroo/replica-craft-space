@@ -579,7 +579,9 @@ const OwnerManagement: React.FC = () => {
         <SendNotificationModal
           isOpen={!!showSendNotification}
           onClose={() => setShowSendNotification(null)}
-          owner={showSendNotification}
+          recipientType="owner"
+          recipientId={showSendNotification.id}
+          recipientName={showSendNotification.full_name || showSendNotification.email || 'Owner'}
           onSent={() => {
             // Optionally refresh data or show success message
             console.log('Notification sent successfully');
