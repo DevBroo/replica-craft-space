@@ -1102,13 +1102,13 @@ export type Database = {
       get_revenue_by_agent: {
         Args: {
           end_date?: string
-          filter_owner_id?: string
-          filter_property_type?: string
           limit_count?: number
           offset_count?: number
           sort_by?: string
           sort_dir?: string
           start_date?: string
+          v_owner_filter?: string
+          v_property_type_filter?: string
         }
         Returns: {
           agent_id: string
@@ -1122,13 +1122,13 @@ export type Database = {
       get_revenue_by_owner: {
         Args: {
           end_date?: string
-          filter_agent_id?: string
-          filter_property_type?: string
           limit_count?: number
           offset_count?: number
           sort_by?: string
           sort_dir?: string
           start_date?: string
+          v_agent_filter?: string
+          v_property_type_filter?: string
         }
         Returns: {
           bookings_count: number
@@ -1142,14 +1142,14 @@ export type Database = {
       get_revenue_by_property: {
         Args: {
           end_date?: string
-          filter_agent_id?: string
-          filter_owner_id?: string
-          filter_property_type?: string
           limit_count?: number
           offset_count?: number
           sort_by?: string
           sort_dir?: string
           start_date?: string
+          v_agent_filter?: string
+          v_owner_filter?: string
+          v_property_type_filter?: string
         }
         Returns: {
           bookings_count: number
@@ -1165,11 +1165,11 @@ export type Database = {
       get_time_series_analytics: {
         Args: {
           end_date?: string
-          filter_agent_id?: string
-          filter_owner_id?: string
-          filter_property_type?: string
           granularity?: string
           start_date?: string
+          v_agent_id?: string
+          v_owner_id?: string
+          v_property_type?: string
         }
         Returns: {
           average_booking_value: number
