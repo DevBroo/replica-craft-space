@@ -44,7 +44,7 @@ export interface AgentFilters {
 }
 
 export const agentService = {
-  // Get all agents with filters
+  // Get all agents with filters using edge function
   async getAgents(filters?: AgentFilters): Promise<Agent[]> {
     try {
       console.log('🔍 Fetching agents using edge function...', filters);
@@ -189,74 +189,41 @@ export const agentService = {
     }
   },
 
-  // Get agent details with extended profile and bank details
+  // Get agent details with extended profile and bank details using edge function
   async getAgentDetailsExtended(agentId: string): Promise<any> {
     try {
       console.log('🔍 Fetching extended agent details:', agentId);
       
-      // Get basic agent profile
-      const { data: profile, error: profileError } = await supabase
-        .from('profiles')
-        .select('*')
-        .eq('id', agentId)
-        .eq('role', 'agent')
-        .single();
-
-      if (profileError) {
-        console.error('❌ Error fetching agent profile:', profileError);
-        throw profileError;
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session?.access_token) {
+        throw new Error('Authentication required. Please log in as an admin.');
       }
 
-      // Get extended agent profile
-      const { data: agentProfile, error: agentProfileError } = await supabase
-        .from('agent_profiles')
-        .select('*')
-        .eq('user_id', agentId)
-        .single();
+      const { data, error } = await supabase.functions.invoke('admin-agents', {
+        body: { 
+          action: 'get_details',
+          agent_id: agentId
+        },
+        headers: {
+          'Authorization': `Bearer ${session.access_token}`,
+          'Content-Type': 'application/json'
+        }
+      });
 
-      // Get bank details
-      const { data: bankDetails, error: bankError } = await supabase
-        .from('agent_bank_details')
-        .select('*')
-        .eq('agent_id', agentId)
-        .single();
+      if (error) {
+        console.error('❌ Error fetching agent details:', error);
+        throw error;
+      }
 
-      // Get agent's property assignments
-      const { data: assignments, error: assignmentsError } = await supabase
-        .from('agent_property_assignments')
-        .select(`
-          *,
-          properties!inner(id, title, status)
-        `)
-        .eq('agent_id', agentId)
-        .order('created_at', { ascending: false });
-
-      // Get activity logs
-      const { data: activityLogs, error: activityError } = await supabase
-        .from('agent_activity_logs')
-        .select('*')
-        .eq('agent_id', agentId)
-        .order('created_at', { ascending: false })
-        .limit(50);
-
-      const agentDetails = {
-        ...profile,
-        agent_profile: agentProfile,
-        bank_details: bankDetails,
-        assignments: assignments || [],
-        properties_count: assignments?.length || 0,
-        activity_logs: activityLogs || []
-      };
-
-      console.log('✅ Extended agent details fetched:', agentDetails);
-      return agentDetails;
+      console.log('✅ Extended agent details fetched:', data);
+      return data.agent;
     } catch (error) {
       console.error('💥 Error in getAgentDetailsExtended:', error);
       throw error;
     }
   },
 
-  // Update agent profile and bank details
+  // Update agent profile and bank details using edge function
   async updateAgentProfile(
     agentId: string,
     profileData: {
@@ -292,63 +259,27 @@ export const agentService = {
     try {
       console.log('📝 Updating agent profile:', agentId);
       
-      // Update basic profile if provided
-      if (profileData.basic) {
-        const { error: profileError } = await supabase
-          .from('profiles')
-          .update({
-            ...profileData.basic,
-            updated_at: new Date().toISOString()
-          })
-          .eq('id', agentId);
-
-        if (profileError) throw profileError;
-      }
-
-      // Update extended profile if provided
-      if (profileData.extended) {
-        const { error: extendedError } = await supabase
-          .from('agent_profiles')
-          .upsert({
-            user_id: agentId,
-            ...profileData.extended,
-            updated_at: new Date().toISOString()
-          });
-
-        if (extendedError) throw extendedError;
-      }
-
-      // Update bank details if provided
-      if (profileData.bank && profileData.bank.account_holder_name && profileData.bank.bank_name && profileData.bank.account_number && profileData.bank.ifsc_code) {
-        const { error: bankError } = await supabase
-          .from('agent_bank_details')
-          .upsert({
-            agent_id: agentId,
-            account_holder_name: profileData.bank.account_holder_name,
-            bank_name: profileData.bank.bank_name,
-            branch_name: profileData.bank.branch_name || '',
-            account_number: profileData.bank.account_number,
-            ifsc_code: profileData.bank.ifsc_code,
-            account_type: profileData.bank.account_type || 'Savings',
-            pan_number: profileData.bank.pan_number || '',
-            upi_id: profileData.bank.upi_id || '',
-            micr_code: profileData.bank.micr_code || ''
-          });
-
-        if (bankError) throw bankError;
-      }
-
-      // Log activity
       const { data: { session } } = await supabase.auth.getSession();
-      await supabase.rpc('log_agent_activity_fn', {
-        p_agent_id: agentId,
-        p_action: 'profile_updated',
-        p_actor_id: session?.user?.id,
-        p_actor_type: 'admin',
-        p_metadata: {
-          updated_sections: Object.keys(profileData)
+      if (!session?.access_token) {
+        throw new Error('Authentication required. Please log in as an admin.');
+      }
+
+      const { data, error } = await supabase.functions.invoke('admin-agents', {
+        body: { 
+          action: 'update_profile',
+          agent_id: agentId,
+          profile_data: profileData
+        },
+        headers: {
+          'Authorization': `Bearer ${session.access_token}`,
+          'Content-Type': 'application/json'
         }
       });
+
+      if (error) {
+        console.error('❌ Error updating agent profile:', error);
+        throw error;
+      }
 
       console.log('✅ Agent profile updated successfully');
     } catch (error) {
@@ -391,19 +322,6 @@ export const agentService = {
         });
 
       if (notificationError) throw notificationError;
-
-      // Log activity
-      await supabase.rpc('log_agent_activity_fn', {
-        p_agent_id: agentId,
-        p_action: 'notification_sent',
-        p_actor_id: session.user?.id,
-        p_actor_type: 'admin',
-        p_metadata: {
-          notification_type: notification.type,
-          title: notification.title,
-          priority: notification.priority
-        }
-      });
 
       console.log('✅ Notification sent successfully');
     } catch (error) {
@@ -450,7 +368,7 @@ export const agentService = {
     try {
       console.log('📊 Fetching agent statistics...');
       
-      // Get agent counts
+      // Get agent counts from profiles table
       const { count: totalAgents } = await supabase
         .from('profiles')
         .select('*', { count: 'exact', head: true })
@@ -462,16 +380,11 @@ export const agentService = {
         .eq('role', 'agent')
         .eq('is_active', true);
 
-      // Get assignment counts
-      const { count: totalAssignments } = await supabase
-        .from('agent_property_assignments')
-        .select('*', { count: 'exact', head: true });
-
       const stats: AgentStats = {
         total_agents: totalAgents || 0,
         active_agents: activeAgents || 0,
         inactive_agents: (totalAgents || 0) - (activeAgents || 0),
-        total_assignments: totalAssignments || 0,
+        total_assignments: 0, // Will be calculated via edge function when assignments table is available
         revenue_this_month: 0, // Can be calculated from bookings
         commission_paid: 0, // Can be calculated from payouts
       };
@@ -489,23 +402,21 @@ export const agentService = {
     try {
       console.log('🗑️ Deleting agent:', agentId);
       
-      // First, check if agent has active assignments
-      const { count: assignmentsCount } = await supabase
-        .from('agent_property_assignments')
-        .select('*', { count: 'exact', head: true })
-        .eq('agent_id', agentId)
-        .eq('status', 'active');
-
-      if (assignmentsCount && assignmentsCount > 0) {
-        throw new Error(`Cannot delete agent with ${assignmentsCount} active property assignments. Please reassign properties first.`);
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session?.access_token) {
+        throw new Error('Authentication required. Please log in as an admin.');
       }
 
-      // Delete the agent profile
-      const { error } = await supabase
-        .from('profiles')
-        .delete()
-        .eq('id', agentId)
-        .eq('role', 'agent');
+      const { data, error } = await supabase.functions.invoke('admin-agents', {
+        body: { 
+          action: 'delete',
+          agent_id: agentId
+        },
+        headers: {
+          'Authorization': `Bearer ${session.access_token}`,
+          'Content-Type': 'application/json'
+        }
+      });
 
       if (error) {
         console.error('❌ Error deleting agent:', error);

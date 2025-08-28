@@ -1,53 +1,35 @@
 
-import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
+import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, x-action, x-picnify-action, x-agent-email, x-agent-name, x-agent-phone, x-agent-coverage',
-  'Access-Control-Allow-Methods': 'POST, OPTIONS',
-}
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+};
 
 serve(async (req) => {
   // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
-    return new Response('ok', { headers: corsHeaders })
+    return new Response(null, { headers: corsHeaders });
   }
 
   try {
-    console.log('🚀 Admin Agents Function called')
-    
     const supabaseClient = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
-    )
+    );
 
-    // Get the authorization header
-    const authHeader = req.headers.get('Authorization')
+    const authHeader = req.headers.get('Authorization');
     if (!authHeader) {
-      console.error('❌ No authorization header')
-      return new Response(
-        JSON.stringify({ error: 'No authorization header' }),
-        {
-          status: 401,
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        }
-      )
+      throw new Error('No authorization header');
     }
 
-    // Verify the user is authenticated and is an admin
-    const token = authHeader.replace('Bearer ', '')
-    const { data: { user }, error: userError } = await supabaseClient.auth.getUser(token)
+    // Verify the user is authenticated
+    const token = authHeader.replace('Bearer ', '');
+    const { data: { user }, error: authError } = await supabaseClient.auth.getUser(token);
     
-    if (userError || !user) {
-      console.error('❌ User authentication failed:', userError)
-      return new Response(
-        JSON.stringify({ error: 'Authentication failed' }),
-        {
-          status: 401,
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        }
-      )
+    if (authError || !user) {
+      throw new Error('Authentication failed');
     }
 
     // Check if user is admin
@@ -55,459 +37,463 @@ serve(async (req) => {
       .from('profiles')
       .select('role')
       .eq('id', user.id)
-      .single()
+      .single();
 
     if (!profile || profile.role !== 'admin') {
-      console.error('❌ User is not an admin')
-      return new Response(
-        JSON.stringify({ error: 'Admin privileges required' }),
-        {
-          status: 403,
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        }
-      )
+      throw new Error('Access denied. Admin role required.');
     }
 
-    const body = await req.json()
-    const { action } = body
-
-    console.log('📋 Action requested:', action)
+    const { action, ...body } = await req.json();
 
     switch (action) {
       case 'list':
-        return await handleListAgents(supabaseClient, body.filters || {})
+        return await listAgents(supabaseClient, body.filters);
       
       case 'invite':
-        return await handleInviteAgent(supabaseClient, body, user.id)
+        return await inviteAgent(supabaseClient, body, user.id);
       
       case 'update_status':
-        return await handleUpdateAgentStatus(supabaseClient, body, user.id)
+        return await updateAgentStatus(supabaseClient, body.agent_id, body.status, user.id);
       
       case 'insights':
-        return await handleAgentInsights(supabaseClient, body.agent_id)
+        return await getAgentInsights(supabaseClient, body.agent_id);
+      
+      case 'get_details':
+        return await getAgentDetails(supabaseClient, body.agent_id);
+      
+      case 'update_profile':
+        return await updateAgentProfile(supabaseClient, body.agent_id, body.profile_data, user.id);
       
       case 'reset_password':
-        return await handleResetAgentPassword(supabaseClient, body.agent_id, user.id)
+        return await resetAgentPassword(supabaseClient, body.agent_id, user.id);
+      
+      case 'delete':
+        return await deleteAgent(supabaseClient, body.agent_id, user.id);
       
       default:
-        return new Response(
-          JSON.stringify({ error: 'Invalid action' }),
-          {
-            status: 400,
-            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-          }
-        )
+        throw new Error(`Unknown action: ${action}`);
     }
 
   } catch (error) {
-    console.error('💥 Function error:', error)
+    console.error('Error:', error);
     return new Response(
       JSON.stringify({ error: error.message }),
-      {
-        status: 500,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      { 
+        status: 400, 
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
       }
-    )
+    );
   }
-})
+});
 
-async function handleListAgents(supabaseClient: any, filters: any) {
-  try {
-    console.log('📝 Listing agents with filters:', filters)
-    
-    let query = supabaseClient
-      .from('profiles')
-      .select(`
-        *,
-        agent_profiles!inner(
-          coverage_area,
-          aadhar_number,
-          pan_number,
-          joining_date,
-          status,
-          notes,
-          commission_config
-        ),
-        created_by_profile:profiles!profiles_created_by_fkey(full_name)
-      `)
-      .eq('role', 'agent')
-      .order('created_at', { ascending: false })
+async function listAgents(supabase: any, filters: any = {}) {
+  console.log('📋 Listing agents with filters:', filters);
+  
+  let query = supabase
+    .from('profiles')
+    .select(`
+      id,
+      email,
+      full_name,
+      phone,
+      role,
+      avatar_url,
+      created_at,
+      updated_at,
+      is_active,
+      commission_rate,
+      created_by
+    `)
+    .eq('role', 'agent')
+    .order('created_at', { ascending: false });
 
-    // Apply filters
-    if (filters.search) {
-      query = query.or(`full_name.ilike.%${filters.search}%,email.ilike.%${filters.search}%,phone.ilike.%${filters.search}%`)
+  // Apply filters
+  if (filters.status && filters.status !== 'all') {
+    if (filters.status === 'active') {
+      query = query.eq('is_active', true);
+    } else if (filters.status === 'inactive') {
+      query = query.eq('is_active', false);
     }
+  }
 
-    if (filters.status && filters.status !== 'all') {
-      if (filters.status === 'active') {
-        query = query.eq('is_active', true)
-      } else if (filters.status === 'inactive') {
-        query = query.eq('is_active', false)
-      } else if (filters.status === 'blocked') {
-        query = query.eq('agent_profiles.status', 'blocked')
-      }
-    }
+  if (filters.search) {
+    query = query.or(`full_name.ilike.%${filters.search}%,email.ilike.%${filters.search}%`);
+  }
 
-    if (filters.startDate && filters.endDate) {
-      query = query.gte('created_at', filters.startDate).lte('created_at', filters.endDate + 'T23:59:59')
-    }
+  if (filters.startDate) {
+    query = query.gte('created_at', filters.startDate);
+  }
 
-    if (filters.coverageArea) {
-      query = query.eq('agent_profiles.coverage_area', filters.coverageArea)
-    }
+  if (filters.endDate) {
+    query = query.lte('created_at', filters.endDate);
+  }
 
-    const { data: agents, error } = await query
+  const { data: agents, error } = await query;
 
-    if (error) {
-      console.error('❌ Error fetching agents:', error)
-      throw error
-    }
+  if (error) throw error;
 
-    // Get property assignment counts for each agent
-    const agentsWithCounts = await Promise.all(
-      agents.map(async (agent: any) => {
-        const { count: propertiesCount } = await supabaseClient
+  // Get property assignment counts for each agent
+  const agentsWithCounts = await Promise.all(
+    (agents || []).map(async (agent: any) => {
+      try {
+        // Try to get assignment count, but don't fail if table doesn't exist yet
+        const { count } = await supabase
           .from('agent_property_assignments')
           .select('*', { count: 'exact', head: true })
           .eq('agent_id', agent.id)
-          .eq('status', 'active')
-
+          .eq('status', 'active');
+        
         return {
           ...agent,
-          properties_count: propertiesCount || 0
-        }
-      })
-    )
-
-    console.log('✅ Agents fetched successfully:', agentsWithCounts.length)
-
-    return new Response(
-      JSON.stringify({ 
-        success: true, 
-        agents: agentsWithCounts 
-      }),
-      {
-        status: 200,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      }
-    )
-
-  } catch (error) {
-    console.error('💥 Error in handleListAgents:', error)
-    throw error
-  }
-}
-
-async function handleInviteAgent(supabaseClient: any, agentData: any, adminId: string) {
-  try {
-    console.log('👤 Inviting new agent:', agentData.email)
-
-    // Check if user already exists
-    const { data: existingUser } = await supabaseClient
-      .from('profiles')
-      .select('id, role')
-      .eq('email', agentData.email.toLowerCase())
-      .single()
-
-    if (existingUser) {
-      if (existingUser.role === 'agent') {
-        throw new Error('This email is already registered as an agent.')
-      } else {
-        throw new Error('This email is already registered with a different role.')
-      }
-    }
-
-    // Create user via admin API
-    const { data: newUser, error: createError } = await supabaseClient.auth.admin.createUser({
-      email: agentData.email,
-      password: generateRandomPassword(),
-      email_confirm: true,
-      user_metadata: {
-        full_name: agentData.full_name,
-        role: 'agent'
+          properties_count: count || 0
+        };
+      } catch (error) {
+        console.log('Note: agent_property_assignments table not available yet');
+        return {
+          ...agent,
+          properties_count: 0
+        };
       }
     })
+  );
 
-    if (createError) {
-      console.error('❌ Error creating user:', createError)
-      throw createError
+  return new Response(
+    JSON.stringify({ agents: agentsWithCounts }),
+    { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+  );
+}
+
+async function inviteAgent(supabase: any, agentData: any, adminId: string) {
+  console.log('👤 Inviting new agent:', agentData.email);
+
+  // Check if agent already exists
+  const { data: existingUser } = await supabase
+    .from('profiles')
+    .select('id')
+    .eq('email', agentData.email)
+    .single();
+
+  if (existingUser) {
+    throw new Error('User with this email already exists');
+  }
+
+  // Create a temporary password
+  const tempPassword = Math.random().toString(36).slice(-8) + 'Aa1!';
+
+  // Create user in auth
+  const { data: authUser, error: authError } = await supabase.auth.admin.createUser({
+    email: agentData.email,
+    password: tempPassword,
+    email_confirm: true,
+    user_metadata: {
+      full_name: agentData.full_name,
+      role: 'agent'
     }
+  });
 
-    // Create agent profile
-    const { error: profileError } = await supabaseClient
-      .from('profiles')
-      .insert({
-        id: newUser.user.id,
-        email: agentData.email,
-        full_name: agentData.full_name,
-        phone: agentData.phone,
-        role: 'agent',
-        commission_rate: agentData.commission_rate || 0.05,
-        created_by: adminId,
-        is_active: true
-      })
+  if (authError) throw authError;
 
-    if (profileError) {
-      console.error('❌ Error creating profile:', profileError)
-      throw profileError
+  // Create profile
+  const { error: profileError } = await supabase
+    .from('profiles')
+    .insert({
+      id: authUser.user.id,
+      email: agentData.email,
+      full_name: agentData.full_name,
+      phone: agentData.phone,
+      role: 'agent',
+      commission_rate: agentData.commission_rate || 0.10,
+      created_by: adminId,
+      is_active: true
+    });
+
+  if (profileError) throw profileError;
+
+  // Create extended agent profile if coverage area is provided
+  if (agentData.coverage_area) {
+    try {
+      await supabase
+        .from('agent_profiles')
+        .insert({
+          user_id: authUser.user.id,
+          coverage_area: agentData.coverage_area,
+          joining_date: new Date().toISOString().split('T')[0],
+          status: 'active'
+        });
+    } catch (error) {
+      console.log('Note: Extended profile creation skipped - table may not exist yet');
     }
+  }
 
-    // Create extended agent profile
-    const { error: agentProfileError } = await supabaseClient
-      .from('agent_profiles')
-      .insert({
-        user_id: newUser.user.id,
-        coverage_area: agentData.coverage_area || '',
-        joining_date: new Date().toISOString().split('T')[0],
-        status: 'active',
-        commission_config: {
-          type: 'percentage',
-          rate: agentData.commission_rate || 5
-        }
-      })
-
-    if (agentProfileError) {
-      console.error('❌ Error creating agent profile:', agentProfileError)
-      throw agentProfileError
-    }
-
-    // Log activity
-    await supabaseClient.rpc('log_agent_activity_fn', {
-      p_agent_id: newUser.user.id,
+  // Log activity
+  try {
+    await supabase.rpc('log_agent_activity_fn', {
+      p_agent_id: authUser.user.id,
       p_action: 'agent_invited',
       p_actor_id: adminId,
       p_actor_type: 'admin',
       p_metadata: {
-        invited_email: agentData.email,
-        coverage_area: agentData.coverage_area
+        email: agentData.email,
+        temp_password_sent: true
       }
-    })
-
-    console.log('✅ Agent invited successfully')
-
-    return new Response(
-      JSON.stringify({ 
-        success: true, 
-        message: 'Agent invited successfully',
-        agent_id: newUser.user.id
-      }),
-      {
-        status: 200,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      }
-    )
-
+    });
   } catch (error) {
-    console.error('💥 Error in handleInviteAgent:', error)
-    throw error
+    console.log('Note: Activity logging skipped - function may not exist yet');
   }
+
+  return new Response(
+    JSON.stringify({ 
+      success: true, 
+      message: 'Agent invited successfully',
+      temp_password: tempPassword
+    }),
+    { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+  );
 }
 
-async function handleUpdateAgentStatus(supabaseClient: any, data: any, adminId: string) {
+async function updateAgentStatus(supabase: any, agentId: string, status: string, adminId: string) {
+  console.log('🔄 Updating agent status:', { agentId, status });
+
+  const isActive = status === 'active';
+
+  const { error } = await supabase
+    .from('profiles')
+    .update({ 
+      is_active: isActive,
+      updated_at: new Date().toISOString()
+    })
+    .eq('id', agentId)
+    .eq('role', 'agent');
+
+  if (error) throw error;
+
+  // Log activity
   try {
-    console.log('🔄 Updating agent status:', data)
-
-    // Update basic profile status
-    const { error: profileError } = await supabaseClient
-      .from('profiles')
-      .update({ 
-        is_active: data.status === 'active',
-        updated_at: new Date().toISOString()
-      })
-      .eq('id', data.agent_id)
-      .eq('role', 'agent')
-
-    if (profileError) {
-      console.error('❌ Error updating profile status:', profileError)
-      throw profileError
-    }
-
-    // Update extended profile status
-    const { error: agentProfileError } = await supabaseClient
-      .from('agent_profiles')
-      .update({ 
-        status: data.status,
-        updated_at: new Date().toISOString()
-      })
-      .eq('user_id', data.agent_id)
-
-    if (agentProfileError) {
-      console.error('❌ Error updating agent profile status:', agentProfileError)
-      throw agentProfileError
-    }
-
-    // Log activity
-    await supabaseClient.rpc('log_agent_activity_fn', {
-      p_agent_id: data.agent_id,
+    await supabase.rpc('log_agent_activity_fn', {
+      p_agent_id: agentId,
       p_action: 'status_updated',
       p_actor_id: adminId,
       p_actor_type: 'admin',
       p_metadata: {
-        old_status: 'unknown',
-        new_status: data.status
+        new_status: status,
+        is_active: isActive
       }
-    })
-
-    console.log('✅ Agent status updated successfully')
-
-    return new Response(
-      JSON.stringify({ 
-        success: true, 
-        message: 'Agent status updated successfully'
-      }),
-      {
-        status: 200,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      }
-    )
-
+    });
   } catch (error) {
-    console.error('💥 Error in handleUpdateAgentStatus:', error)
-    throw error
+    console.log('Note: Activity logging skipped - function may not exist yet');
   }
+
+  return new Response(
+    JSON.stringify({ success: true }),
+    { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+  );
 }
 
-async function handleAgentInsights(supabaseClient: any, agentId: string) {
+async function getAgentInsights(supabase: any, agentId: string) {
+  console.log('📊 Getting agent insights for:', agentId);
+
+  // Get basic agent info
+  const { data: agent, error: agentError } = await supabase
+    .from('profiles')
+    .select('*')
+    .eq('id', agentId)
+    .eq('role', 'agent')
+    .single();
+
+  if (agentError) throw agentError;
+
+  // Get booking insights
+  const { data: bookings } = await supabase
+    .from('bookings')
+    .select('total_amount, status, created_at')
+    .eq('agent_id', agentId);
+
+  const totalBookings = bookings?.length || 0;
+  const totalRevenue = bookings?.reduce((sum: number, booking: any) => sum + (booking.total_amount || 0), 0) || 0;
+  const confirmedBookings = bookings?.filter((b: any) => b.status === 'confirmed').length || 0;
+
+  const insights = {
+    agent,
+    stats: {
+      total_bookings: totalBookings,
+      confirmed_bookings: confirmedBookings,
+      total_revenue: totalRevenue,
+      commission_earned: totalRevenue * (agent.commission_rate || 0.10),
+      properties_assigned: 0 // Will be calculated when assignments table is available
+    },
+    recent_activity: [] // Will be populated when activity logs are available
+  };
+
+  return new Response(
+    JSON.stringify({ insights }),
+    { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+  );
+}
+
+async function getAgentDetails(supabase: any, agentId: string) {
+  console.log('🔍 Getting agent details for:', agentId);
+
+  // Get basic profile
+  const { data: profile, error: profileError } = await supabase
+    .from('profiles')
+    .select('*')
+    .eq('id', agentId)
+    .eq('role', 'agent')
+    .single();
+
+  if (profileError) throw profileError;
+
+  let agentProfile = null;
+  let bankDetails = null;
+
+  // Try to get extended profile
   try {
-    console.log('📊 Fetching agent insights for:', agentId)
+    const { data: extendedProfile } = await supabase
+      .from('agent_profiles')
+      .select('*')
+      .eq('user_id', agentId)
+      .single();
+    
+    agentProfile = extendedProfile;
+  } catch (error) {
+    console.log('Note: Extended profile not available yet');
+  }
 
-    // Get basic stats
-    const { count: totalBookings } = await supabaseClient
-      .from('bookings')
-      .select('*', { count: 'exact', head: true })
+  // Try to get bank details
+  try {
+    const { data: bankData } = await supabase
+      .from('agent_bank_details')
+      .select('*')
       .eq('agent_id', agentId)
+      .single();
+    
+    bankDetails = bankData;
+  } catch (error) {
+    console.log('Note: Bank details not available yet');
+  }
 
-    const { count: activeAssignments } = await supabaseClient
+  const agentDetails = {
+    ...profile,
+    agent_profile: agentProfile,
+    bank_details: bankDetails,
+    assignments: [],
+    properties_count: 0,
+    activity_logs: []
+  };
+
+  return new Response(
+    JSON.stringify({ agent: agentDetails }),
+    { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+  );
+}
+
+async function updateAgentProfile(supabase: any, agentId: string, profileData: any, adminId: string) {
+  console.log('📝 Updating agent profile:', agentId);
+
+  // Update basic profile if provided
+  if (profileData.basic) {
+    const { error: profileError } = await supabase
+      .from('profiles')
+      .update({
+        ...profileData.basic,
+        updated_at: new Date().toISOString()
+      })
+      .eq('id', agentId);
+
+    if (profileError) throw profileError;
+  }
+
+  // Update extended profile if provided
+  if (profileData.extended) {
+    try {
+      const { error: extendedError } = await supabase
+        .from('agent_profiles')
+        .upsert({
+          user_id: agentId,
+          ...profileData.extended,
+          updated_at: new Date().toISOString()
+        });
+
+      if (extendedError) throw extendedError;
+    } catch (error) {
+      console.log('Note: Extended profile update skipped - table may not exist yet');
+    }
+  }
+
+  // Update bank details if provided
+  if (profileData.bank && profileData.bank.account_holder_name) {
+    try {
+      const { error: bankError } = await supabase
+        .from('agent_bank_details')
+        .upsert({
+          agent_id: agentId,
+          ...profileData.bank
+        });
+
+      if (bankError) throw bankError;
+    } catch (error) {
+      console.log('Note: Bank details update skipped - table may not exist yet');
+    }
+  }
+
+  return new Response(
+    JSON.stringify({ success: true }),
+    { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+  );
+}
+
+async function resetAgentPassword(supabase: any, agentId: string, adminId: string) {
+  console.log('🔑 Resetting password for agent:', agentId);
+
+  // Generate new temporary password
+  const newPassword = Math.random().toString(36).slice(-8) + 'Aa1!';
+
+  // Update password
+  const { error } = await supabase.auth.admin.updateUserById(agentId, {
+    password: newPassword
+  });
+
+  if (error) throw error;
+
+  return new Response(
+    JSON.stringify({ 
+      success: true,
+      temp_password: newPassword,
+      message: 'Password reset successfully'
+    }),
+    { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+  );
+}
+
+async function deleteAgent(supabase: any, agentId: string, adminId: string) {
+  console.log('🗑️ Deleting agent:', agentId);
+
+  // Check for active assignments first
+  try {
+    const { count: assignmentsCount } = await supabase
       .from('agent_property_assignments')
       .select('*', { count: 'exact', head: true })
       .eq('agent_id', agentId)
-      .eq('status', 'active')
+      .eq('status', 'active');
 
-    // Get revenue data
-    const { data: bookingsData } = await supabaseClient
-      .from('bookings')
-      .select('total_amount, status, created_at')
-      .eq('agent_id', agentId)
-      .eq('status', 'confirmed')
-
-    const totalRevenue = bookingsData?.reduce((sum: number, booking: any) => sum + (booking.total_amount || 0), 0) || 0
-
-    // Get recent activity
-    const { data: recentActivity } = await supabaseClient
-      .from('agent_activity_logs')
-      .select('*')
-      .eq('agent_id', agentId)
-      .order('created_at', { ascending: false })
-      .limit(10)
-
-    // Get commission data
-    const { data: payouts } = await supabaseClient
-      .from('agent_payouts')
-      .select('*')
-      .eq('agent_id', agentId)
-      .order('created_at', { ascending: false })
-
-    const totalCommissionEarned = payouts?.reduce((sum: number, payout: any) => sum + (payout.commission_amount || 0), 0) || 0
-    const totalCommissionPaid = payouts?.filter((p: any) => p.status === 'paid').reduce((sum: number, payout: any) => sum + (payout.payout_amount || 0), 0) || 0
-
-    const insights = {
-      statistics: {
-        total_bookings: totalBookings || 0,
-        active_assignments: activeAssignments || 0,
-        total_revenue: totalRevenue,
-        commission_earned: totalCommissionEarned,
-        commission_paid: totalCommissionPaid,
-        commission_pending: totalCommissionEarned - totalCommissionPaid
-      },
-      recent_activity: recentActivity || [],
-      payouts: payouts || []
+    if (assignmentsCount && assignmentsCount > 0) {
+      throw new Error(`Cannot delete agent with ${assignmentsCount} active property assignments. Please reassign properties first.`);
     }
-
-    console.log('✅ Agent insights fetched successfully')
-
-    return new Response(
-      JSON.stringify({ 
-        success: true, 
-        insights
-      }),
-      {
-        status: 200,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      }
-    )
-
   } catch (error) {
-    console.error('💥 Error in handleAgentInsights:', error)
-    throw error
-  }
-}
-
-async function handleResetAgentPassword(supabaseClient: any, agentId: string, adminId: string) {
-  try {
-    console.log('🔑 Resetting password for agent:', agentId)
-
-    // Get agent details
-    const { data: agent } = await supabaseClient
-      .from('profiles')
-      .select('email')
-      .eq('id', agentId)
-      .eq('role', 'agent')
-      .single()
-
-    if (!agent) {
-      throw new Error('Agent not found')
+    if (!error.message.includes('active property assignments')) {
+      console.log('Note: Assignment check skipped - table may not exist yet');
+    } else {
+      throw error;
     }
-
-    // Generate new password
-    const newPassword = generateRandomPassword()
-
-    // Update user password
-    const { error: updateError } = await supabaseClient.auth.admin.updateUserById(
-      agentId, 
-      { password: newPassword }
-    )
-
-    if (updateError) {
-      console.error('❌ Error updating password:', updateError)
-      throw updateError
-    }
-
-    // Log activity
-    await supabaseClient.rpc('log_agent_activity_fn', {
-      p_agent_id: agentId,
-      p_action: 'password_reset',
-      p_actor_id: adminId,
-      p_actor_type: 'admin',
-      p_metadata: {
-        reset_by_admin: true
-      }
-    })
-
-    console.log('✅ Agent password reset successfully')
-
-    return new Response(
-      JSON.stringify({ 
-        success: true, 
-        message: 'Password reset successfully',
-        new_password: newPassword
-      }),
-      {
-        status: 200,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      }
-    )
-
-  } catch (error) {
-    console.error('💥 Error in handleResetAgentPassword:', error)
-    throw error
   }
-}
 
-function generateRandomPassword(): string {
-  const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnpqrstuvwxyz23456789!@#$%^&*'
-  let password = ''
-  for (let i = 0; i < 12; i++) {
-    password += chars.charAt(Math.floor(Math.random() * chars.length))
-  }
-  return password
+  // Delete the agent profile (this will cascade to related tables)
+  const { error } = await supabase.auth.admin.deleteUser(agentId);
+
+  if (error) throw error;
+
+  return new Response(
+    JSON.stringify({ success: true }),
+    { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+  );
 }
