@@ -40,9 +40,9 @@ const ApproveRejectModal: React.FC<ApproveRejectModalProps> = ({
     try {
       const newStatus = action === 'approve' ? 'approved' : 'rejected';
       
-      // Use RPC with any type to handle the missing type definition
+      // Use the new RPC function to log property status changes
       for (const propertyId of propertyIds) {
-        const { error } = await (supabase as any).rpc('log_property_status_change', {
+        const { error } = await supabase.rpc('log_property_status_change', {
           p_property_id: propertyId,
           p_to_status: newStatus,
           p_reason: reason,
@@ -50,25 +50,6 @@ const ApproveRejectModal: React.FC<ApproveRejectModalProps> = ({
         });
         
         if (error) throw error;
-
-        // Send notification to owner
-        const { data: property } = await supabase
-          .from('properties')
-          .select('owner_id, title')
-          .eq('id', propertyId)
-          .single();
-
-        if (property) {
-          await supabase.from('notifications').insert({
-            target_user_id: property.owner_id,
-            title: `Property ${action === 'approve' ? 'Approved' : 'Rejected'}`,
-            content: `Your property "${property.title}" has been ${action}d. Reason: ${reason}${comment ? `. Additional comments: ${comment}` : ''}`,
-            type: action === 'approve' ? 'success' : 'warning',
-            priority: 'high',
-            related_entity_type: 'property',
-            related_entity_id: propertyId,
-          });
-        }
       }
       
       toast.success(`${propertyIds.length} propert${propertyIds.length === 1 ? 'y' : 'ies'} ${action}d successfully`);

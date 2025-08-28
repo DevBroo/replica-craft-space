@@ -25,8 +25,8 @@ export function usePropertyApprovalStats() {
         setLoading(true);
         setError(null);
         
-        // Use any type to handle missing function in types
-        const { data, error } = await (supabase as any).rpc('get_property_approval_stats');
+        // Use the new RPC function for property approval stats
+        const { data, error } = await supabase.rpc('get_property_approval_stats');
         
         if (error) {
           console.error('Stats function not available:', error);
