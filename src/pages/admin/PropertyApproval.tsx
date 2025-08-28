@@ -623,7 +623,7 @@ const PropertyApproval: React.FC = () => {
                             />
                             
                             {property.status === 'pending' && (
-                              <>
+                              <div className="contents">
                                 <IconButton
                                   icon={CheckCircle}
                                   variant="ghost"
@@ -666,7 +666,7 @@ const PropertyApproval: React.FC = () => {
                                   })}
                                   className="text-red-600 hover:text-red-800 hover:bg-red-50"
                                 />
-                              </>
+                              </div>
                             )}
 
                             {/* More Actions Dropdown */}
@@ -777,7 +777,7 @@ const PropertyApproval: React.FC = () => {
                         Math.abs(page - currentPage) <= 1
                       )
                       .map((page, index, array) => (
-                        <React.Fragment key={page}>
+                        <div key={page} className="contents">
                           {index > 0 && array[index - 1] !== page - 1 && (
                             <span className="px-2 text-gray-400">...</span>
                           )}
@@ -791,7 +791,7 @@ const PropertyApproval: React.FC = () => {
                           >
                             {page}
                           </button>
-                        </React.Fragment>
+                        </div>
                       ))
                     }
                     
