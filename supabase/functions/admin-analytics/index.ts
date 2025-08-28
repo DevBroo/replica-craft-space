@@ -78,22 +78,22 @@ serve(async (req) => {
         result = await getRevenueData();
         break;
       case 'time-series':
-        result = await getTimeSeriesAnalytics(searchParams);
+        result = await getTimeSeriesAnalytics(supabase, searchParams);
         break;
       case 'revenue-by-property':
-        result = await getRevenueByProperty(searchParams);
+        result = await getRevenueByProperty(supabase, searchParams);
         break;
       case 'revenue-by-owner':
-        result = await getRevenueByOwner(searchParams);
+        result = await getRevenueByOwner(supabase, searchParams);
         break;
       case 'revenue-by-agent':
-        result = await getRevenueByAgent(searchParams);
+        result = await getRevenueByAgent(supabase, searchParams);
         break;
       case 'top-properties':
-        result = await getTopProperties(searchParams);
+        result = await getTopProperties(supabase, searchParams);
         break;
       case 'highest-rated':
-        result = await getHighestRatedProperties(searchParams);
+        result = await getHighestRatedProperties(supabase, searchParams);
         break;
       case 'bookings':
         result = await getBookingAnalytics();
@@ -217,7 +217,7 @@ async function getPropertyAnalytics() {
 
 // New analytics functions using the SQL functions
 
-async function getTimeSeriesAnalytics(searchParams: URLSearchParams) {
+async function getTimeSeriesAnalytics(supabase: any, searchParams: URLSearchParams) {
   const startDate = searchParams.get('start_date') || new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
   const endDate = searchParams.get('end_date') || new Date().toISOString().split('T')[0];
   const granularity = searchParams.get('granularity') || 'day';
@@ -238,7 +238,7 @@ async function getTimeSeriesAnalytics(searchParams: URLSearchParams) {
   return { data };
 }
 
-async function getRevenueByProperty(searchParams: URLSearchParams) {
+async function getRevenueByProperty(supabase: any, searchParams: URLSearchParams) {
   const startDate = searchParams.get('start_date') || new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
   const endDate = searchParams.get('end_date') || new Date().toISOString().split('T')[0];
   const ownerFilter = searchParams.get('owner_filter') || null;
@@ -265,7 +265,7 @@ async function getRevenueByProperty(searchParams: URLSearchParams) {
   return { data };
 }
 
-async function getRevenueByOwner(searchParams: URLSearchParams) {
+async function getRevenueByOwner(supabase: any, searchParams: URLSearchParams) {
   const startDate = searchParams.get('start_date') || new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
   const endDate = searchParams.get('end_date') || new Date().toISOString().split('T')[0];
   const agentFilter = searchParams.get('agent_filter') || null;
@@ -290,7 +290,7 @@ async function getRevenueByOwner(searchParams: URLSearchParams) {
   return { data };
 }
 
-async function getRevenueByAgent(searchParams: URLSearchParams) {
+async function getRevenueByAgent(supabase: any, searchParams: URLSearchParams) {
   const startDate = searchParams.get('start_date') || new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
   const endDate = searchParams.get('end_date') || new Date().toISOString().split('T')[0];
   const ownerFilter = searchParams.get('owner_filter') || null;
@@ -315,7 +315,7 @@ async function getRevenueByAgent(searchParams: URLSearchParams) {
   return { data };
 }
 
-async function getTopProperties(searchParams: URLSearchParams) {
+async function getTopProperties(supabase: any, searchParams: URLSearchParams) {
   const startDate = searchParams.get('start_date') || new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
   const endDate = searchParams.get('end_date') || new Date().toISOString().split('T')[0];
   const limitCount = parseInt(searchParams.get('limit') || '10');
@@ -330,7 +330,7 @@ async function getTopProperties(searchParams: URLSearchParams) {
   return { data };
 }
 
-async function getHighestRatedProperties(searchParams: URLSearchParams) {
+async function getHighestRatedProperties(supabase: any, searchParams: URLSearchParams) {
   const limitCount = parseInt(searchParams.get('limit') || '10');
   const minReviews = parseInt(searchParams.get('min_reviews') || '5');
 
