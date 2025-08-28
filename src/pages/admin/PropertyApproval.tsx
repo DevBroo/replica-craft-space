@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Eye, CheckCircle, XCircle, Search, Filter, MoreVertical, Calendar, History } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
@@ -67,6 +68,9 @@ const PropertyApproval: React.FC = () => {
   const fetchProperties = async () => {
     setLoading(true);
     try {
+      console.log('📊 Fetching properties with new enhanced data...');
+      
+      // Fetch properties with enhanced fields
       const { data: propertiesData, error: propertiesError } = await supabase
         .from('properties')
         .select(`
@@ -77,64 +81,63 @@ const PropertyApproval: React.FC = () => {
           property_type,
           status,
           created_at,
-          owner_id
+          owner_id,
+          menu_available,
+          admin_blocked,
+          host_details,
+          video_url,
+          banquet_hall_capacity,
+          ground_lawn_capacity
         `)
         .order('created_at', { ascending: false });
 
       if (propertiesError) {
-        console.error('Error fetching properties:', propertiesError);
+        console.error('❌ Error fetching properties:', propertiesError);
         toast.error('Failed to fetch properties');
         setProperties([]);
         return;
       }
 
       if (!propertiesData) {
+        console.log('ℹ️ No properties found');
         setProperties([]);
         return;
       }
 
-      // Fetch owner details and extended property info for each property
+      console.log(`✅ Successfully fetched ${propertiesData.length} properties`);
+
+      // Fetch owner details for each property
       const propertiesWithOwners = await Promise.all(
         propertiesData.map(async (property: any) => {
-          const { data: owner, error: ownerError } = await supabase
-            .from('profiles')
-            .select('full_name, email, phone')
-            .eq('id', property.owner_id)
-            .single();
-
-          // Try to fetch extended property details (new columns)
-          let extendedData: any = {};
           try {
-            const { data: extended } = await supabase
-              .from('properties' as any)
-              .select('menu_available, admin_blocked, host_details, video_url, banquet_hall_capacity, ground_lawn_capacity')
-              .eq('id', property.id)
+            const { data: owner, error: ownerError } = await supabase
+              .from('profiles')
+              .select('full_name, email, phone')
+              .eq('id', property.owner_id)
               .single();
-            
-            if (extended) {
-              extendedData = extended;
-            }
-          } catch (error) {
-            // Gracefully handle if columns don't exist yet
-            console.log('Extended property data not available:', error);
-          }
 
-          return {
-            ...property,
-            menu_available: extendedData.menu_available || false,
-            admin_blocked: extendedData.admin_blocked || false,
-            host_details: extendedData.host_details || {},
-            video_url: extendedData.video_url || undefined,
-            banquet_hall_capacity: extendedData.banquet_hall_capacity || undefined,
-            ground_lawn_capacity: extendedData.ground_lawn_capacity || undefined,
-            owner: ownerError ? null : owner
-          } as PropertyWithOwner;
+            if (ownerError) {
+              console.warn(`⚠️ Could not fetch owner for property ${property.id}:`, ownerError);
+            }
+
+            return {
+              ...property,
+              owner: ownerError ? null : owner
+            } as PropertyWithOwner;
+          } catch (error) {
+            console.warn(`⚠️ Error processing property ${property.id}:`, error);
+            return {
+              ...property,
+              owner: null
+            } as PropertyWithOwner;
+          }
         })
       );
 
       setProperties(propertiesWithOwners);
+      console.log('✅ Properties with owners loaded successfully');
     } catch (error) {
-      console.error('Error fetching properties:', error);
+      console.error('❌ Critical error fetching properties:', error);
       toast.error('Failed to fetch properties');
       setProperties([]);
     } finally {
@@ -230,7 +233,7 @@ const PropertyApproval: React.FC = () => {
     <div className="space-y-6">
       {/* Header with Stats */}
       <div className="bg-white rounded-lg shadow p-6">
-        <h1 className="text-2xl font-bold text-gray-900 mb-4">Property Approval</h1>
+        <h1 className="text-2xl font-bold text-gray-900 mb-4">Property Approval Dashboard</h1>
         
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
           <div className="bg-yellow-50 p-4 rounded-lg">
@@ -268,7 +271,7 @@ const PropertyApproval: React.FC = () => {
               <History className="w-8 h-8 text-blue-600" />
               <div className="ml-3">
                 <p className="text-sm font-medium text-blue-800">Avg. Pending</p>
-                <p className="text-2xl font-bold text-blue-900">{stats.avg_pending_hours}h</p>
+                <p className="text-2xl font-bold text-blue-900">{Math.round(stats.avg_pending_hours)}h</p>
               </div>
             </div>
           </div>
@@ -385,16 +388,28 @@ const PropertyApproval: React.FC = () => {
                       <div>
                         <div className="text-sm font-medium text-gray-900">{property.title}</div>
                         <div className="text-sm text-gray-500 truncate max-w-xs">{property.address}</div>
-                        {property.admin_blocked && (
-                          <span className="inline-block mt-1 px-2 py-1 text-xs bg-gray-200 text-gray-600 rounded">
-                            Admin Blocked
-                          </span>
-                        )}
-                        {property.menu_available && (
-                          <span className="inline-block mt-1 ml-2 px-2 py-1 text-xs bg-blue-200 text-blue-600 rounded">
-                            Menu Available
-                          </span>
-                        )}
+                        <div className="flex gap-1 mt-1">
+                          {property.admin_blocked && (
+                            <span className="inline-block px-2 py-1 text-xs bg-red-100 text-red-600 rounded">
+                              Admin Blocked
+                            </span>
+                          )}
+                          {property.menu_available && (
+                            <span className="inline-block px-2 py-1 text-xs bg-blue-100 text-blue-600 rounded">
+                              Menu Available
+                            </span>
+                          )}
+                          {property.video_url && (
+                            <span className="inline-block px-2 py-1 text-xs bg-purple-100 text-purple-600 rounded">
+                              Video
+                            </span>
+                          )}
+                          {(property.banquet_hall_capacity || property.ground_lawn_capacity) && (
+                            <span className="inline-block px-2 py-1 text-xs bg-green-100 text-green-600 rounded">
+                              Events
+                            </span>
+                          )}
+                        </div>
                       </div>
                     </td>
                     <td className="px-6 py-4">

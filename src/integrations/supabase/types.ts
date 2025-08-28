@@ -783,9 +783,11 @@ export type Database = {
       properties: {
         Row: {
           address: string
+          admin_blocked: boolean
           amenities: string[] | null
           amenities_details: Json | null
           arrival_instructions: string | null
+          banquet_hall_capacity: number | null
           bathrooms: number | null
           bed_configuration: Json | null
           bedrooms: number | null
@@ -803,6 +805,8 @@ export type Database = {
           description: string | null
           extra_services: Json | null
           facilities: Json | null
+          ground_lawn_capacity: number | null
+          host_details: Json
           house_rules: Json | null
           id: string
           images: string[] | null
@@ -812,6 +816,7 @@ export type Database = {
           location: Json | null
           max_guests: number
           meal_plans: string[] | null
+          menu_available: boolean
           minimum_stay: number | null
           nearby_attractions: Json | null
           owner_id: string
@@ -832,12 +837,15 @@ export type Database = {
           tax_information: Json | null
           title: string
           updated_at: string
+          video_url: string | null
         }
         Insert: {
           address: string
+          admin_blocked?: boolean
           amenities?: string[] | null
           amenities_details?: Json | null
           arrival_instructions?: string | null
+          banquet_hall_capacity?: number | null
           bathrooms?: number | null
           bed_configuration?: Json | null
           bedrooms?: number | null
@@ -855,6 +863,8 @@ export type Database = {
           description?: string | null
           extra_services?: Json | null
           facilities?: Json | null
+          ground_lawn_capacity?: number | null
+          host_details?: Json
           house_rules?: Json | null
           id?: string
           images?: string[] | null
@@ -864,6 +874,7 @@ export type Database = {
           location?: Json | null
           max_guests?: number
           meal_plans?: string[] | null
+          menu_available?: boolean
           minimum_stay?: number | null
           nearby_attractions?: Json | null
           owner_id: string
@@ -884,12 +895,15 @@ export type Database = {
           tax_information?: Json | null
           title: string
           updated_at?: string
+          video_url?: string | null
         }
         Update: {
           address?: string
+          admin_blocked?: boolean
           amenities?: string[] | null
           amenities_details?: Json | null
           arrival_instructions?: string | null
+          banquet_hall_capacity?: number | null
           bathrooms?: number | null
           bed_configuration?: Json | null
           bedrooms?: number | null
@@ -907,6 +921,8 @@ export type Database = {
           description?: string | null
           extra_services?: Json | null
           facilities?: Json | null
+          ground_lawn_capacity?: number | null
+          host_details?: Json
           house_rules?: Json | null
           id?: string
           images?: string[] | null
@@ -916,6 +932,7 @@ export type Database = {
           location?: Json | null
           max_guests?: number
           meal_plans?: string[] | null
+          menu_available?: boolean
           minimum_stay?: number | null
           nearby_attractions?: Json | null
           owner_id?: string
@@ -936,6 +953,7 @@ export type Database = {
           tax_information?: Json | null
           title?: string
           updated_at?: string
+          video_url?: string | null
         }
         Relationships: [
           {
@@ -943,6 +961,111 @@ export type Database = {
             columns: ["owner_id"]
             isOneToOne: false
             referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      property_availability: {
+        Row: {
+          booked_units: number
+          booking_name: string | null
+          category: string
+          created_at: string
+          day: string
+          id: string
+          property_id: string
+          status: string
+          total_capacity: number
+          updated_at: string
+        }
+        Insert: {
+          booked_units?: number
+          booking_name?: string | null
+          category: string
+          created_at?: string
+          day: string
+          id?: string
+          property_id: string
+          status?: string
+          total_capacity?: number
+          updated_at?: string
+        }
+        Update: {
+          booked_units?: number
+          booking_name?: string | null
+          category?: string
+          created_at?: string
+          day?: string
+          id?: string
+          property_id?: string
+          status?: string
+          total_capacity?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "property_availability_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: false
+            referencedRelation: "properties"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "property_availability_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: false
+            referencedRelation: "properties_public"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      property_status_history: {
+        Row: {
+          actor_id: string | null
+          actor_role: string | null
+          comment: string | null
+          created_at: string
+          from_status: string | null
+          id: string
+          property_id: string
+          reason: string | null
+          to_status: string
+        }
+        Insert: {
+          actor_id?: string | null
+          actor_role?: string | null
+          comment?: string | null
+          created_at?: string
+          from_status?: string | null
+          id?: string
+          property_id: string
+          reason?: string | null
+          to_status: string
+        }
+        Update: {
+          actor_id?: string | null
+          actor_role?: string | null
+          comment?: string | null
+          created_at?: string
+          from_status?: string | null
+          id?: string
+          property_id?: string
+          reason?: string | null
+          to_status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "property_status_history_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: false
+            referencedRelation: "properties"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "property_status_history_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: false
+            referencedRelation: "properties_public"
             referencedColumns: ["id"]
           },
         ]
@@ -1291,6 +1414,15 @@ export type Database = {
           review_count: number
         }[]
       }
+      get_property_approval_stats: {
+        Args: Record<PropertyKey, never>
+        Returns: {
+          avg_pending_hours: number
+          total_approved: number
+          total_pending: number
+          total_rejected: number
+        }[]
+      }
       get_property_contact_info: {
         Args: { property_id: string }
         Returns: {
@@ -1408,6 +1540,15 @@ export type Database = {
           p_owner_id: string
         }
         Returns: undefined
+      }
+      log_property_status_change: {
+        Args: {
+          p_comment?: string
+          p_property_id: string
+          p_reason?: string
+          p_to_status: string
+        }
+        Returns: boolean
       }
       update_owner_property_count_fn: {
         Args: { p_owner_id: string }
