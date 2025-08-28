@@ -62,8 +62,11 @@ serve(async (req) => {
       global: { headers: { Authorization: authHeader } }
     });
 
-    // Verify the user is an admin
-    const { data: { user }, error: userError } = await supabase.auth.getUser();
+    // Extract JWT token from Authorization header
+    const token = authHeader.replace('Bearer ', '');
+    
+    // Verify the user is an admin using the JWT token
+    const { data: { user }, error: userError } = await supabase.auth.getUser(token);
     if (userError || !user) {
       console.error('❌ User authentication failed:', userError);
       return new Response(JSON.stringify({ 
@@ -77,8 +80,8 @@ serve(async (req) => {
 
     console.log('✅ User authenticated:', user.id);
 
-    // Check if user is admin
-    const { data: profile, error: profileError } = await supabase
+    // Check if user is admin using admin client (bypasses RLS)
+    const { data: profile, error: profileError } = await supabaseAdmin
       .from('profiles')
       .select('role')
       .eq('id', user.id)
