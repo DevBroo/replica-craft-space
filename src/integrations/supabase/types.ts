@@ -16,45 +16,64 @@ export type Database = {
     Tables: {
       bookings: {
         Row: {
+          agent_id: string | null
           booking_details: Json | null
           check_in_date: string
           check_out_date: string
           created_at: string
           guests: number
           id: string
+          payment_status: string
           property_id: string
+          refund_amount: number
+          refund_status: string
           status: string | null
           total_amount: number
           updated_at: string
           user_id: string
         }
         Insert: {
+          agent_id?: string | null
           booking_details?: Json | null
           check_in_date: string
           check_out_date: string
           created_at?: string
           guests?: number
           id?: string
+          payment_status?: string
           property_id: string
+          refund_amount?: number
+          refund_status?: string
           status?: string | null
           total_amount: number
           updated_at?: string
           user_id: string
         }
         Update: {
+          agent_id?: string | null
           booking_details?: Json | null
           check_in_date?: string
           check_out_date?: string
           created_at?: string
           guests?: number
           id?: string
+          payment_status?: string
           property_id?: string
+          refund_amount?: number
+          refund_status?: string
           status?: string | null
           total_amount?: number
           updated_at?: string
           user_id?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "bookings_agent_id_fkey"
+            columns: ["agent_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "bookings_property_id_fkey"
             columns: ["property_id"]
@@ -764,6 +783,13 @@ export type Database = {
             foreignKeyName: "reviews_booking_id_fkey"
             columns: ["booking_id"]
             isOneToOne: false
+            referencedRelation: "booking_admin_list"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "reviews_booking_id_fkey"
+            columns: ["booking_id"]
+            isOneToOne: false
             referencedRelation: "booking_summary_for_owners"
             referencedColumns: ["id"]
           },
@@ -838,6 +864,66 @@ export type Database = {
       }
     }
     Views: {
+      booking_admin_list: {
+        Row: {
+          agent_id: string | null
+          agent_name: string | null
+          check_in_date: string | null
+          check_out_date: string | null
+          created_at: string | null
+          guests: number | null
+          id: string | null
+          owner_id: string | null
+          owner_name: string | null
+          payment_status: string | null
+          property_id: string | null
+          property_title: string | null
+          refund_amount: number | null
+          refund_status: string | null
+          status: string | null
+          total_amount: number | null
+          updated_at: string | null
+          user_id: string | null
+          user_name: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "bookings_agent_id_fkey"
+            columns: ["agent_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "bookings_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: false
+            referencedRelation: "properties"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "bookings_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: false
+            referencedRelation: "properties_public"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "bookings_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "properties_owner_id_fkey"
+            columns: ["owner_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       booking_summary_for_owners: {
         Row: {
           check_in_date: string | null
@@ -980,6 +1066,18 @@ export type Database = {
         Returns: {
           average_booking_value: number
           bookings_by_status: Json
+          total_bookings: number
+          total_revenue: number
+        }[]
+      }
+      get_booking_analytics_detailed: {
+        Args: { end_date?: string; start_date?: string }
+        Returns: {
+          average_booking_value: number
+          bookings_by_status: Json
+          cancellations: number
+          payments_by_status: Json
+          refunds: Json
           total_bookings: number
           total_revenue: number
         }[]
