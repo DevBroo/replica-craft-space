@@ -147,33 +147,84 @@ serve(async (req) => {
 
       // Validate input
       if (!email || !full_name) {
-        return new Response(JSON.stringify({ error: 'Email and full name are required' }), {
-          status: 400,
+        return new Response(JSON.stringify({ 
+          success: false, 
+          code: 'validation_error',
+          message: 'Email and full name are required' 
+        }), {
+          status: 200,
           headers: { ...corsHeaders, 'Content-Type': 'application/json' }
         });
       }
 
       console.log(`📧 Inviting new property owner: ${email}`);
 
-      // Use admin client to invite user and create profile
-      const { data: authData, error: inviteError } = await supabaseAdmin.auth.admin.inviteUserByEmail(email, {
-        data: {
-          full_name,
-          phone,
-          role: 'property_owner'
-        },
-        redirectTo: `${req.headers.get('origin') || 'http://localhost:5173'}/owner/login`
-      });
+      // Check if email already exists in profiles
+      const { data: existingProfile, error: profileCheckError } = await supabaseAdmin
+        .from('profiles')
+        .select('role, email')
+        .eq('email', email.toLowerCase())
+        .single();
 
-      if (inviteError) {
-        console.error('❌ Error inviting user:', inviteError);
-        return new Response(JSON.stringify({ error: inviteError.message }), {
-          status: 400,
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-        });
+      if (!profileCheckError && existingProfile) {
+        if (existingProfile.role === 'property_owner') {
+          return new Response(JSON.stringify({
+            success: false,
+            code: 'email_exists',
+            message: 'This email is already a property owner.'
+          }), {
+            status: 200,
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+          });
+        } else {
+          return new Response(JSON.stringify({
+            success: false,
+            code: 'email_exists',
+            message: `This email already has an account (role: ${existingProfile.role}). Please use a different email.`
+          }), {
+            status: 200,
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+          });
+        }
       }
 
-      console.log(`✅ User invited successfully: ${authData.user?.id}`);
+      // Use admin client to invite user and create profile
+      try {
+        const { data: authData, error: inviteError } = await supabaseAdmin.auth.admin.inviteUserByEmail(email, {
+          data: {
+            full_name,
+            phone,
+            role: 'property_owner'
+          },
+          redirectTo: `${req.headers.get('origin') || 'http://localhost:5173'}/owner/login`
+        });
+
+        if (inviteError) {
+          console.error('❌ Error inviting user:', inviteError);
+          
+          // Handle GoTrue email_exists error gracefully
+          if (inviteError.message?.includes('already been registered') || inviteError.code === 'email_exists') {
+            return new Response(JSON.stringify({
+              success: false,
+              code: 'email_exists',
+              message: 'This email is already registered. Please use a different email.'
+            }), {
+              status: 200,
+              headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+            });
+          }
+          
+          return new Response(JSON.stringify({
+            success: false,
+            code: 'invite_error',
+            message: inviteError.message
+          }), {
+            status: 200,
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+          });
+        }
+
+        console.log(`✅ User invited successfully: ${authData.user?.id}`);
 
       // Create profile using admin client (bypasses RLS)
       if (authData.user) {
@@ -206,6 +257,17 @@ serve(async (req) => {
         status: 200,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' }
       });
+      } catch (inviteErr) {
+        console.error('❌ Unexpected error during invite:', inviteErr);
+        return new Response(JSON.stringify({
+          success: false,
+          code: 'unexpected_error',
+          message: 'An unexpected error occurred while inviting the property owner.'
+        }), {
+          status: 200,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        });
+      }
     }
 
     if (action === 'list') {

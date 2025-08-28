@@ -88,6 +88,11 @@ export const adminService = {
       if (!session?.access_token) {
         throw new Error('Authentication required. Please log in as an admin.');
       }
+
+      // Simple client-side check to prevent admin from inviting themselves
+      if (session.user?.email === ownerData.email.toLowerCase()) {
+        throw new Error('You cannot invite yourself as a property owner.');
+      }
       
       const { data, error } = await supabase.functions.invoke('admin-owners', {
         body: { 
@@ -116,12 +121,12 @@ export const adminService = {
           throw new Error('Access denied. Admin privileges required.');
         }
         
-        // Parse detailed error from function response if available
-        if (data && data.error) {
-          throw new Error(data.message || data.error);
-        }
-        
         throw error;
+      }
+
+      // Check for success/failure in the response data
+      if (data && data.success === false) {
+        throw new Error(data.message || 'Failed to add property owner');
       }
 
       console.log('✅ Property owner added successfully:', data);
