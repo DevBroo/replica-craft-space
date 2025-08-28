@@ -1,4 +1,3 @@
-
 import { supabase } from '../integrations/supabase/client';
 
 export interface Agent {
@@ -14,7 +13,19 @@ export interface Agent {
   commission_rate?: number;
   created_by?: string;
   created_by_profile?: { full_name: string };
-  // Extended agent fields
+  properties_count?: number;
+  // Agent profile fields nested for compatibility
+  agent_profile?: {
+    coverage_area?: string;
+    aadhar_number?: string;
+    pan_number?: string;
+    joining_date?: string;
+    status?: string;
+    notes?: string;
+    documents?: any;
+    commission_config?: any;
+  };
+  // Also flat properties for direct access
   coverage_area?: string;
   aadhar_number?: string;
   pan_number?: string;
@@ -23,7 +34,6 @@ export interface Agent {
   notes?: string;
   documents?: any;
   commission_config?: any;
-  properties_count?: number;
 }
 
 export interface AgentStats {

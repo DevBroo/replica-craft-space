@@ -2,13 +2,16 @@
 import React, { useState } from 'react';
 import { X, Send, Mail, MessageSquare, Bell, Loader2 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
-import { PropertyOwner } from '@/lib/adminService';
 
 interface SendNotificationModalProps {
   isOpen: boolean;
   onClose: () => void;
-  owner: PropertyOwner;
+  recipientType?: 'owner' | 'agent';
+  recipientId: string;
+  recipientName: string;
   onSent: () => void;
+  // Legacy props for backward compatibility
+  owner?: any;
 }
 
 type NotificationType = 'email' | 'sms' | 'in-app';
@@ -16,8 +19,11 @@ type NotificationType = 'email' | 'sms' | 'in-app';
 const SendNotificationModal: React.FC<SendNotificationModalProps> = ({
   isOpen,
   onClose,
-  owner,
-  onSent
+  recipientType = 'owner',
+  recipientId,
+  recipientName,
+  onSent,
+  owner // Legacy prop
 }) => {
   const [notificationType, setNotificationType] = useState<NotificationType>('in-app');
   const [title, setTitle] = useState('');
@@ -25,26 +31,41 @@ const SendNotificationModal: React.FC<SendNotificationModalProps> = ({
   const [priority, setPriority] = useState<'low' | 'normal' | 'high'>('normal');
   const [sending, setSending] = useState(false);
 
+  // Use legacy owner prop if provided for backward compatibility
+  const actualRecipientId = owner ? owner.id : recipientId;
+  const actualRecipientName = owner ? (owner.full_name || owner.email) : recipientName;
+  const actualRecipientType = owner ? 'owner' : recipientType;
+
   const predefinedMessages = [
     {
-      title: 'GST Number Required',
-      message: 'Dear {{ownerName}}, please update your GST number to complete your profile verification. This is required for processing payments.'
+      title: recipientType === 'agent' ? 'Password Reset Required' : 'GST Number Required',
+      message: recipientType === 'agent' 
+        ? 'Dear {{recipientName}}, your account password needs to be updated for security purposes. Please check your email for reset instructions.'
+        : 'Dear {{recipientName}}, please update your GST number to complete your profile verification. This is required for processing payments.'
     },
     {
-      title: 'Property Approval Reminder',
-      message: 'Hi {{ownerName}}, your property submission is under review. Please ensure all required documents are uploaded for faster approval.'
+      title: recipientType === 'agent' ? 'Training Session Reminder' : 'Property Approval Reminder',
+      message: recipientType === 'agent'
+        ? 'Hi {{recipientName}}, you have a mandatory training session scheduled. Please ensure you attend to maintain your active status.'
+        : 'Hi {{recipientName}}, your property submission is under review. Please ensure all required documents are uploaded for faster approval.'
     },
     {
-      title: 'Document Upload Required',
-      message: 'Hello {{ownerName}}, we need you to upload the following documents: PAN Card, Aadhar Card. Please complete your profile to avoid delays.'
+      title: recipientType === 'agent' ? 'Commission Statement Ready' : 'Document Upload Required',
+      message: recipientType === 'agent'
+        ? 'Hello {{recipientName}}, your monthly commission statement is ready for review. Please check your agent portal.'
+        : 'Hello {{recipientName}}, we need you to upload the following documents: PAN Card, Aadhar Card. Please complete your profile to avoid delays.'
     },
     {
-      title: 'Commission Payment Update',
-      message: 'Dear {{ownerName}}, your commission payment for this month has been processed. Please check your bank account for the deposit.'
+      title: recipientType === 'agent' ? 'New Property Assignment' : 'Commission Payment Update',
+      message: recipientType === 'agent'
+        ? 'Dear {{recipientName}}, you have been assigned new properties in your coverage area. Please review and confirm availability.'
+        : 'Dear {{recipientName}}, your commission payment for this month has been processed. Please check your bank account for the deposit.'
     },
     {
-      title: 'Profile Incomplete',
-      message: 'Hi {{ownerName}}, your profile is incomplete. Please add your bank details and business information to start receiving bookings.'
+      title: recipientType === 'agent' ? 'Profile Update Required' : 'Profile Incomplete',
+      message: recipientType === 'agent'
+        ? 'Hi {{recipientName}}, please update your profile information and bank details to ensure seamless commission payments.'
+        : 'Hi {{recipientName}}, your profile is incomplete. Please add your bank details and business information to start receiving bookings.'
     }
   ];
 
@@ -57,44 +78,46 @@ const SendNotificationModal: React.FC<SendNotificationModalProps> = ({
     setSending(true);
     try {
       // Replace placeholders in message
-      const personalizedMessage = message.replace(/{{ownerName}}/g, owner.full_name || owner.email || 'Owner');
+      const personalizedMessage = message.replace(/{{recipientName}}/g, actualRecipientName || 'User');
 
       // Create notification record
       const { error: notificationError } = await supabase
         .from('notifications')
         .insert({
-          target_user_id: owner.id,
+          target_user_id: actualRecipientId,
           title,
           content: personalizedMessage,
           type: notificationType === 'in-app' ? 'info' : notificationType,
           priority,
           status: 'unread',
           target_audience: null,
-          related_entity_type: 'owner',
-          related_entity_id: owner.id
+          related_entity_type: actualRecipientType,
+          related_entity_id: actualRecipientId
         });
 
       if (notificationError) throw notificationError;
 
-      // Log activity
-      await supabase.rpc('log_owner_activity_fn', {
-        p_owner_id: owner.id,
-        p_action: 'notification_sent',
-        p_actor_id: (await supabase.auth.getUser()).data.user?.id,
-        p_actor_type: 'admin',
-        p_metadata: {
-          notification_type: notificationType,
-          title,
-          priority
-        }
-      });
+      // Log activity based on recipient type
+      if (actualRecipientType === 'owner') {
+        await supabase.rpc('log_owner_activity_fn', {
+          p_owner_id: actualRecipientId,
+          p_action: 'notification_sent',
+          p_actor_id: (await supabase.auth.getUser()).data.user?.id,
+          p_actor_type: 'admin',
+          p_metadata: {
+            notification_type: notificationType,
+            title,
+            priority
+          }
+        });
+      }
 
       // TODO: For email and SMS, integrate with actual email/SMS service
       if (notificationType === 'email') {
-        console.log('Email would be sent to:', owner.email);
+        console.log('Email would be sent to:', actualRecipientId);
         // Integrate with email service (SendGrid, AWS SES, etc.)
       } else if (notificationType === 'sms') {
-        console.log('SMS would be sent to:', owner.phone);
+        console.log('SMS would be sent to:', actualRecipientId);
         // Integrate with SMS service (Twilio, AWS SNS, etc.)
       }
 
@@ -132,7 +155,7 @@ const SendNotificationModal: React.FC<SendNotificationModalProps> = ({
           <div>
             <h3 className="text-xl font-semibold text-gray-800">Send Notification</h3>
             <p className="text-sm text-gray-500 mt-1">
-              To: {owner.full_name || owner.email} • {owner.email}
+              To: {actualRecipientName} • {actualRecipientType === 'agent' ? 'Agent' : 'Owner'}
             </p>
           </div>
           <button
@@ -249,10 +272,10 @@ const SendNotificationModal: React.FC<SendNotificationModalProps> = ({
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                 placeholder="Enter your message here...
 
-You can use {{ownerName}} to personalize the message with the owner's name."
+You can use {{recipientName}} to personalize the message with the recipient's name."
               />
               <p className="text-xs text-gray-500 mt-1">
-                Use <code>{`{{ownerName}}`}</code> to automatically insert the owner's name
+                Use <code>{`{{recipientName}}`}</code> to automatically insert the recipient's name
               </p>
             </div>
 
@@ -263,7 +286,7 @@ You can use {{ownerName}} to personalize the message with the owner's name."
                 <div className="bg-white border rounded-lg p-3">
                   <p className="font-medium text-gray-800">{title}</p>
                   <p className="text-sm text-gray-600 mt-1">
-                    {message.replace(/{{ownerName}}/g, owner.full_name || owner.email || 'Owner')}
+                    {message.replace(/{{recipientName}}/g, actualRecipientName || 'Recipient')}
                   </p>
                 </div>
               </div>

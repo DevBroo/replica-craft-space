@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { 
   Plus,
@@ -176,13 +175,13 @@ const AgentManagement: React.FC = () => {
 
   const getStatusColor = (agent: Agent) => {
     if (!agent.is_active) return 'bg-red-100 text-red-800';
-    if (agent.agent_profile?.status === 'blocked') return 'bg-red-100 text-red-800';
+    if (agent.status === 'blocked') return 'bg-red-100 text-red-800';
     return 'bg-green-100 text-green-800';
   };
 
   const getStatusText = (agent: Agent) => {
     if (!agent.is_active) return 'Inactive';
-    if (agent.agent_profile?.status === 'blocked') return 'Blocked';
+    if (agent.status === 'blocked') return 'Blocked';
     return 'Active';
   };
 
@@ -392,7 +391,7 @@ const AgentManagement: React.FC = () => {
                           </div>
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                          {agent.agent_profile?.coverage_area || 'Not specified'}
+                          {agent.coverage_area || 'Not specified'}
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                           <span className="bg-blue-100 text-blue-800 px-2 py-1 rounded-full text-xs font-medium">
@@ -400,8 +399,8 @@ const AgentManagement: React.FC = () => {
                           </span>
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                          {agent.agent_profile?.joining_date 
-                            ? new Date(agent.agent_profile.joining_date).toLocaleDateString('en-US', {
+                          {agent.joining_date 
+                            ? new Date(agent.joining_date).toLocaleDateString('en-US', {
                                 year: 'numeric',
                                 month: 'short',
                                 day: 'numeric'
@@ -458,17 +457,17 @@ const AgentManagement: React.FC = () => {
                             <button 
                               onClick={() => handleToggleStatus(agent)}
                               className={`cursor-pointer p-1 ${
-                                agent.is_active && agent.agent_profile?.status !== 'blocked'
+                                agent.is_active && agent.status !== 'blocked'
                                   ? 'text-red-600 hover:text-red-800' 
                                   : 'text-green-600 hover:text-green-800'
                               }`}
                               title={
-                                agent.is_active && agent.agent_profile?.status !== 'blocked'
+                                agent.is_active && agent.status !== 'blocked'
                                   ? 'Deactivate' 
                                   : 'Activate'
                               }
                             >
-                              {agent.is_active && agent.agent_profile?.status !== 'blocked' ? (
+                              {agent.is_active && agent.status !== 'blocked' ? (
                                 <Ban className="w-4 h-4" />
                               ) : (
                                 <CheckCircle className="w-4 h-4" />
