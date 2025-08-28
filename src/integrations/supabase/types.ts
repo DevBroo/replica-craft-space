@@ -1102,10 +1102,10 @@ export type Database = {
       get_revenue_by_agent: {
         Args: {
           end_date?: string
+          filter_owner_id?: string
+          filter_property_type?: string
           limit_count?: number
           offset_count?: number
-          owner_filter?: string
-          property_type_filter?: string
           sort_by?: string
           sort_dir?: string
           start_date?: string
@@ -1121,11 +1121,11 @@ export type Database = {
       }
       get_revenue_by_owner: {
         Args: {
-          agent_filter?: string
           end_date?: string
+          filter_agent_id?: string
+          filter_property_type?: string
           limit_count?: number
           offset_count?: number
-          property_type_filter?: string
           sort_by?: string
           sort_dir?: string
           start_date?: string
@@ -1141,12 +1141,12 @@ export type Database = {
       }
       get_revenue_by_property: {
         Args: {
-          agent_filter?: string
           end_date?: string
+          filter_agent_id?: string
+          filter_owner_id?: string
+          filter_property_type?: string
           limit_count?: number
           offset_count?: number
-          owner_filter?: string
-          property_type_filter?: string
           sort_by?: string
           sort_dir?: string
           start_date?: string
@@ -1164,11 +1164,11 @@ export type Database = {
       }
       get_time_series_analytics: {
         Args: {
-          agent_id?: string
           end_date?: string
+          filter_agent_id?: string
+          filter_owner_id?: string
+          filter_property_type?: string
           granularity?: string
-          owner_id?: string
-          property_type?: string
           start_date?: string
         }
         Returns: {
