@@ -28,8 +28,18 @@ export const adminService = {
     try {
       console.log('🔍 Fetching property owners using edge function...');
       
+      // Get current session to include JWT
+      const { data: { session } } = await supabase.auth.getSession();
+      
+      if (!session) {
+        throw new Error('No active session. Please sign in as an admin.');
+      }
+      
       const { data, error } = await supabase.functions.invoke('admin-owners', {
-        method: 'GET'
+        method: 'GET',
+        headers: {
+          Authorization: `Bearer ${session.access_token}`,
+        },
       });
 
       if (error) {
@@ -50,8 +60,18 @@ export const adminService = {
     try {
       console.log('👤 Adding new property owner:', ownerData.email);
       
+      // Get current session to include JWT
+      const { data: { session } } = await supabase.auth.getSession();
+      
+      if (!session) {
+        throw new Error('No active session. Please sign in as an admin.');
+      }
+      
       const { data, error } = await supabase.functions.invoke('admin-owners', {
         method: 'POST',
+        headers: {
+          Authorization: `Bearer ${session.access_token}`,
+        },
         body: ownerData
       });
 

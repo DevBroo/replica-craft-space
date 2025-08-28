@@ -9,6 +9,9 @@ max_rows = 1000
 [functions.admin-analytics]
 verify_jwt = true
 
+[functions.admin-owners]
+verify_jwt = true
+
 [db]
 port = 54322
 shadow_port = 54320
