@@ -1,6 +1,7 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Search, Bell, ChevronDown, LogOut } from 'lucide-react';
+import IconButton from './ui/IconButton';
 
 interface SharedHeaderProps {
   title: string;
@@ -58,10 +59,15 @@ const SharedHeader: React.FC<SharedHeaderProps> = ({
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
           </div>
           <div className="relative">
-            <button className="p-2 rounded-lg hover:bg-gray-100 cursor-pointer">
-              <Bell className="w-5 h-5 text-gray-600" />
+            <IconButton
+              icon={Bell}
+              variant="ghost"
+              tooltip="Notifications"
+              aria-label="View notifications"
+              className="relative"
+            >
               <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">3</span>
-            </button>
+            </IconButton>
           </div>
           <div className="flex items-center space-x-2">
             <img
@@ -75,13 +81,15 @@ const SharedHeader: React.FC<SharedHeaderProps> = ({
                 <ChevronDown className="w-4 h-4 text-gray-400" />
               </button>
               <div className="absolute right-0 top-full mt-1 w-48 bg-white border border-gray-200 rounded-lg shadow-lg z-10 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200">
-                <button
+                <IconButton
+                  icon={LogOut}
+                  variant="ghost"
                   onClick={handleLogout}
-                  className="w-full flex items-center px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-50 cursor-pointer"
+                  aria-label="Logout from admin panel"
+                  className="w-full justify-start px-4 py-2 text-sm rounded-none hover:bg-gray-50"
                 >
-                  <LogOut className="w-4 h-4 mr-2" />
                   Logout
-                </button>
+                </IconButton>
               </div>
             </div>
           </div>

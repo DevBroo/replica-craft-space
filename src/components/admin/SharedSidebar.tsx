@@ -14,6 +14,7 @@ import {
   Headphones, 
   Settings
 } from 'lucide-react';
+import IconButton from './ui/IconButton';
 
 interface SharedSidebarProps {
   sidebarCollapsed: boolean;
@@ -55,12 +56,14 @@ const SharedSidebar: React.FC<SharedSidebarProps> = ({ sidebarCollapsed, setSide
             <span className="font-bold text-sidebar-foreground">Picnify Admin</span>
           </div>
         )}
-        <button
+        <IconButton
+          icon={Menu}
+          variant="ghost"
           onClick={toggleSidebar}
-          className="p-2 rounded-lg hover:bg-sidebar-accent transition-colors cursor-pointer"
-        >
-          <Menu className="w-5 h-5 text-sidebar-foreground" />
-        </button>
+          tooltip={sidebarCollapsed ? "Expand sidebar" : "Collapse sidebar"}
+          aria-label={sidebarCollapsed ? "Expand sidebar" : "Collapse sidebar"}
+          className="hover:bg-sidebar-accent text-sidebar-foreground"
+        />
       </div>
       <nav className="mt-4 space-y-1 px-2">
         {menuItems.map((item) => {

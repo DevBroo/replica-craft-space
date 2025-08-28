@@ -19,6 +19,7 @@ import {
   CheckCircle,
   Loader2
 } from 'lucide-react';
+import IconButton from './ui/IconButton';
 import { PropertyOwner } from '../../lib/adminService';
 
 interface OwnerDetailsModalProps {
@@ -135,30 +136,26 @@ const OwnerDetailsModal: React.FC<OwnerDetailsModalProps> = ({
             </div>
           </div>
           <div className="flex items-center space-x-2">
-            <button
+            <IconButton
+              icon={owner.is_active ? Ban : CheckCircle}
+              variant={owner.is_active ? 'danger' : 'success'}
               onClick={handleStatusToggle}
               disabled={updatingStatus}
-              className={`px-4 py-2 rounded-lg font-medium flex items-center space-x-2 ${
-                owner.is_active 
-                  ? 'bg-red-500 hover:bg-red-600 text-white' 
-                  : 'bg-green-500 hover:bg-green-600 text-white'
-              } disabled:opacity-50`}
+              loading={updatingStatus}
+              tooltip={owner.is_active ? 'Deactivate owner' : 'Activate owner'}
+              aria-label={owner.is_active ? 'Deactivate owner' : 'Activate owner'}
+              className="px-4 py-2"
             >
-              {updatingStatus ? (
-                <Loader2 className="w-4 h-4 animate-spin" />
-              ) : owner.is_active ? (
-                <Ban className="w-4 h-4" />
-              ) : (
-                <CheckCircle className="w-4 h-4" />
-              )}
-              <span>{owner.is_active ? 'Deactivate' : 'Activate'}</span>
-            </button>
-            <button
+              {owner.is_active ? 'Deactivate' : 'Activate'}
+            </IconButton>
+            <IconButton
+              icon={X}
+              variant="ghost"
               onClick={onClose}
-              className="p-2 hover:bg-white/20 rounded-lg transition-colors"
-            >
-              <X className="w-5 h-5" />
-            </button>
+              tooltip="Close modal"
+              aria-label="Close owner details modal"
+              className="text-white hover:bg-white/20"
+            />
           </div>
         </div>
 

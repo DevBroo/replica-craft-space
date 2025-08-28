@@ -16,6 +16,7 @@ import {
   TrendingUp,
   User
 } from 'lucide-react';
+import IconButton from '../../components/admin/ui/IconButton';
 import SharedSidebar from '../../components/admin/SharedSidebar';
 import SharedHeader from '../../components/admin/SharedHeader';
 import OwnerDetailsModal from '../../components/admin/OwnerDetailsModal';
@@ -145,25 +146,28 @@ const OwnerManagement: React.FC = () => {
         <div className="bg-white border-b px-6 py-4">
           <div className="flex flex-wrap items-center justify-between gap-4">
             <div className="flex items-center space-x-4">
-              <button
+              <IconButton
+                icon={Plus}
+                variant="primary"
                 onClick={() => setShowAddModal(true)}
-                className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors cursor-pointer flex items-center"
+                tooltip="Add new property owner"
+                aria-label="Add new property owner"
+                className="px-4 py-2"
               >
-                <Plus className="w-4 h-4 mr-2" />
                 Add New Owner
-              </button>
-              <button
+              </IconButton>
+              <IconButton
+                icon={RefreshCw}
+                variant="secondary"
                 onClick={() => fetchPropertyOwners(currentFilters)}
                 disabled={loading}
-                className="bg-gray-600 text-white px-4 py-2 rounded-lg hover:bg-gray-700 transition-colors cursor-pointer flex items-center disabled:opacity-50"
+                loading={loading}
+                tooltip="Refresh owner list"
+                aria-label="Refresh owner list"
+                className="px-4 py-2"
               >
-                {loading ? (
-                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                ) : (
-                  <RefreshCw className="w-4 h-4 mr-2" />
-                )}
                 Refresh
-              </button>
+              </IconButton>
             </div>
             
             {/* Summary Stats */}
@@ -332,40 +336,60 @@ const OwnerManagement: React.FC = () => {
                             </span>
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                            <div className="flex space-x-2">
-                              <button 
-                                className="text-blue-600 hover:text-blue-800 cursor-pointer p-1" 
-                                title="View Details"
+                            <div className="flex space-x-1">
+                              <IconButton
+                                icon={Eye}
+                                variant="ghost"
+                                size="sm"
+                                tooltip="View Details"
+                                aria-label="View owner details"
                                 onClick={() => setShowOwnerDetails(owner)}
-                              >
-                                <Eye className="w-4 h-4" />
-                              </button>
-                              <button 
-                                className="text-purple-600 hover:text-purple-800 cursor-pointer p-1" 
-                                title="View Insights"
+                                className="text-blue-600 hover:text-blue-800 hover:bg-blue-50"
+                              />
+                              <IconButton
+                                icon={TrendingUp}
+                                variant="ghost"
+                                size="sm"
+                                tooltip="View Insights"
+                                aria-label="View owner insights"
                                 onClick={() => setShowOwnerDetails(owner)}
-                              >
-                                <TrendingUp className="w-4 h-4" />
-                              </button>
-                              <button className="text-green-600 hover:text-green-800 cursor-pointer p-1" title="Edit">
-                                <Edit className="w-4 h-4" />
-                              </button>
-                              <button 
-                                className={`cursor-pointer p-1 ${owner.is_active ? 'text-red-600 hover:text-red-800' : 'text-green-600 hover:text-green-800'}`}
-                                title={owner.is_active ? 'Deactivate' : 'Activate'}
+                                className="text-purple-600 hover:text-purple-800 hover:bg-purple-50"
+                              />
+                              <IconButton
+                                icon={Edit}
+                                variant="ghost"
+                                size="sm"
+                                tooltip="Edit Owner"
+                                aria-label="Edit owner information"
+                                onClick={() => {
+                                  // TODO: Implement edit functionality
+                                  console.log('Edit owner:', owner.id);
+                                }}
+                                className="text-green-600 hover:text-green-800 hover:bg-green-50"
+                              />
+                              <IconButton
+                                icon={owner.is_active ? Ban : CheckCircle}
+                                variant="ghost"
+                                size="sm"
+                                tooltip={owner.is_active ? 'Deactivate Owner' : 'Activate Owner'}
+                                aria-label={owner.is_active ? 'Deactivate owner' : 'Activate owner'}
                                 onClick={async () => {
                                   if (confirm(`Are you sure you want to ${owner.is_active ? 'deactivate' : 'activate'} this owner?`)) {
                                     try {
                                       await handleStatusUpdate(owner.id, !owner.is_active);
+                                      // TODO: Replace alert with toast notification
                                       alert(`Owner ${owner.is_active ? 'deactivated' : 'activated'} successfully!`);
                                     } catch (err) {
+                                      // TODO: Replace alert with toast notification
                                       alert(`Failed to ${owner.is_active ? 'deactivate' : 'activate'} owner: ` + (err instanceof Error ? err.message : 'Unknown error'));
                                     }
                                   }
                                 }}
-                              >
-                                {owner.is_active ? <Ban className="w-4 h-4" /> : <CheckCircle className="w-4 h-4" />}
-                              </button>
+                                className={owner.is_active 
+                                  ? "text-red-600 hover:text-red-800 hover:bg-red-50" 
+                                  : "text-green-600 hover:text-green-800 hover:bg-green-50"
+                                }
+                              />
                             </div>
                           </td>
                         </tr>
