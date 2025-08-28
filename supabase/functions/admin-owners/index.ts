@@ -39,9 +39,19 @@ serve(async (req) => {
     });
 
     // Get the authenticated user from the regular client
-    const authHeader = req.headers.get('Authorization');
+    const authHeader = req.headers.get('Authorization') || 
+                      req.headers.get('authorization') || 
+                      req.headers.get('x-supabase-authorization') || 
+                      req.headers.get('X-Supabase-Authorization');
+                      
+    console.log('🔐 Auth header check:', authHeader ? 'Present' : 'Missing');
+    
     if (!authHeader) {
-      return new Response(JSON.stringify({ error: 'Authorization header required' }), {
+      console.error('❌ No authorization header found');
+      return new Response(JSON.stringify({ 
+        error: 'Authentication required',
+        message: 'Authorization header is missing. Please log in as an admin.'
+      }), {
         status: 401,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' }
       });
@@ -55,11 +65,17 @@ serve(async (req) => {
     // Verify the user is an admin
     const { data: { user }, error: userError } = await supabase.auth.getUser();
     if (userError || !user) {
-      return new Response(JSON.stringify({ error: 'Authentication required' }), {
+      console.error('❌ User authentication failed:', userError);
+      return new Response(JSON.stringify({ 
+        error: 'Authentication failed',
+        message: 'Invalid or expired token. Please log in again.'
+      }), {
         status: 401,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' }
       });
     }
+
+    console.log('✅ User authenticated:', user.id);
 
     // Check if user is admin
     const { data: profile, error: profileError } = await supabase
@@ -69,11 +85,17 @@ serve(async (req) => {
       .single();
 
     if (profileError || profile?.role !== 'admin') {
-      return new Response(JSON.stringify({ error: 'Admin access required' }), {
+      console.error('❌ Admin access denied:', profileError, 'user role:', profile?.role);
+      return new Response(JSON.stringify({ 
+        error: 'Access denied',
+        message: 'Admin privileges required to perform this action.'
+      }), {
         status: 403,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' }
       });
     }
+
+    console.log('✅ Admin access verified for user:', user.id);
 
     // Parse request body
     const requestBody = await req.json();

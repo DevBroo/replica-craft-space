@@ -155,17 +155,29 @@ const OwnerManagement: React.FC = () => {
                   <X className="h-5 w-5 text-red-400" />
                 </div>
                 <div className="ml-3">
-                  <h3 className="text-sm font-medium text-red-800">Error loading property owners</h3>
+                  <h3 className="text-sm font-medium text-red-800">
+                    {error.includes('Authentication') || error.includes('401') ? 'Authentication Error' : 
+                     error.includes('Access denied') || error.includes('403') ? 'Access Denied' : 
+                     'Error loading property owners'}
+                  </h3>
                   <div className="mt-2 text-sm text-red-700">
                     <p>{error}</p>
                   </div>
-                  <div className="mt-4">
+                  <div className="mt-4 flex space-x-2">
                     <button
                       onClick={fetchPropertyOwners}
                       className="bg-red-100 text-red-800 px-3 py-2 rounded-md text-sm font-medium hover:bg-red-200"
                     >
                       Try Again
                     </button>
+                    {(error.includes('Authentication') || error.includes('Access denied')) && (
+                      <button
+                        onClick={() => window.location.href = '/admin/login'}
+                        className="bg-blue-100 text-blue-800 px-3 py-2 rounded-md text-sm font-medium hover:bg-blue-200"
+                      >
+                        Go to Admin Login
+                      </button>
+                    )}
                   </div>
                 </div>
               </div>

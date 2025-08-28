@@ -23,17 +23,48 @@ export interface AdminStats {
 }
 
 export const adminService = {
+  // Helper function to get authorization headers
+  async getAuthHeaders() {
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session?.access_token) {
+      throw new Error('No valid session found. Please log in again.');
+    }
+    return {
+      'Authorization': `Bearer ${session.access_token}`,
+      'Content-Type': 'application/json'
+    };
+  },
+
   // Fetch all property owners with their property counts
   async getPropertyOwners(): Promise<PropertyOwner[]> {
     try {
       console.log('🔍 Fetching property owners using edge function...');
       
+      // Get current session and verify authorization
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session?.access_token) {
+        throw new Error('Authentication required. Please log in as an admin.');
+      }
+
       const { data, error } = await supabase.functions.invoke('admin-owners', {
-        body: { action: 'list' }
+        body: { action: 'list' },
+        headers: {
+          'Authorization': `Bearer ${session.access_token}`,
+          'Content-Type': 'application/json'
+        }
       });
 
       if (error) {
         console.error('❌ Error fetching property owners:', error);
+        
+        // Handle specific error types
+        if (error.message?.includes('401') || error.message?.includes('Unauthorized')) {
+          throw new Error('Authentication failed. Please log in again as an admin.');
+        }
+        if (error.message?.includes('403') || error.message?.includes('Forbidden')) {
+          throw new Error('Access denied. Admin privileges required.');
+        }
+        
         throw error;
       }
 
@@ -50,15 +81,34 @@ export const adminService = {
     try {
       console.log('👤 Adding new property owner:', ownerData.email);
       
+      // Get current session and verify authorization
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session?.access_token) {
+        throw new Error('Authentication required. Please log in as an admin.');
+      }
+      
       const { data, error } = await supabase.functions.invoke('admin-owners', {
         body: { 
           action: 'invite',
           ...ownerData
+        },
+        headers: {
+          'Authorization': `Bearer ${session.access_token}`,
+          'Content-Type': 'application/json'
         }
       });
 
       if (error) {
         console.error('❌ Error adding property owner:', error);
+        
+        // Handle specific error types
+        if (error.message?.includes('401') || error.message?.includes('Unauthorized')) {
+          throw new Error('Authentication failed. Please log in again as an admin.');
+        }
+        if (error.message?.includes('403') || error.message?.includes('Forbidden')) {
+          throw new Error('Access denied. Admin privileges required.');
+        }
+        
         throw error;
       }
 
