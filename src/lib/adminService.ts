@@ -1,3 +1,4 @@
+
 import { supabase } from '../integrations/supabase/client';
 
 export interface PropertyOwner {
@@ -11,6 +12,9 @@ export interface PropertyOwner {
   updated_at: string;
   properties_count?: number;
   is_active: boolean;
+  commission_rate?: number;
+  created_by?: string;
+  created_by_profile?: { full_name: string };
 }
 
 export interface AdminStats {
@@ -20,6 +24,14 @@ export interface AdminStats {
   total_properties: number;
   approved_properties: number;
   pending_properties: number;
+}
+
+export interface OwnerFilters {
+  search?: string;
+  status?: 'all' | 'active' | 'inactive';
+  startDate?: string;
+  endDate?: string;
+  createdBy?: string;
 }
 
 export const adminService = {
@@ -35,10 +47,10 @@ export const adminService = {
     };
   },
 
-  // Fetch all property owners with their property counts
-  async getPropertyOwners(): Promise<PropertyOwner[]> {
+  // Fetch all property owners with their property counts and optional filters
+  async getPropertyOwners(filters?: OwnerFilters): Promise<PropertyOwner[]> {
     try {
-      console.log('🔍 Fetching property owners using edge function...');
+      console.log('🔍 Fetching property owners using edge function...', filters);
       
       // Get current session and verify authorization
       const { data: { session } } = await supabase.auth.getSession();
@@ -47,7 +59,10 @@ export const adminService = {
       }
 
       const { data, error } = await supabase.functions.invoke('admin-owners', {
-        body: { action: 'list' },
+        body: { 
+          action: 'list',
+          filters: filters || {}
+        },
         headers: {
           'Authorization': `Bearer ${session.access_token}`,
           'Content-Type': 'application/json',
@@ -136,6 +151,78 @@ export const adminService = {
     }
   },
 
+  // Update owner status using Edge Function
+  async updateOwnerStatus(ownerId: string, isActive: boolean): Promise<void> {
+    try {
+      console.log('🔄 Updating owner status:', { ownerId, isActive });
+      
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session?.access_token) {
+        throw new Error('Authentication required. Please log in as an admin.');
+      }
+
+      const { data, error } = await supabase.functions.invoke('admin-owners', {
+        body: { 
+          action: 'update_status',
+          owner_id: ownerId,
+          is_active: isActive
+        },
+        headers: {
+          'Authorization': `Bearer ${session.access_token}`,
+          'Content-Type': 'application/json'
+        }
+      });
+
+      if (error) {
+        console.error('❌ Error updating owner status:', error);
+        throw error;
+      }
+
+      if (data && data.success === false) {
+        throw new Error(data.message || 'Failed to update owner status');
+      }
+
+      console.log('✅ Owner status updated successfully');
+    } catch (error) {
+      console.error('💥 Error in updateOwnerStatus:', error);
+      throw error;
+    }
+  },
+
+  // Get owner insights
+  async getOwnerInsights(ownerId: string): Promise<any> {
+    try {
+      console.log('📊 Fetching owner insights:', ownerId);
+      
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session?.access_token) {
+        throw new Error('Authentication required. Please log in as an admin.');
+      }
+
+      const { data, error } = await supabase.functions.invoke('admin-owners', {
+        body: { 
+          action: 'insights',
+          owner_id: ownerId
+        },
+        headers: {
+          'Authorization': `Bearer ${session.access_token}`,
+          'Content-Type': 'application/json'
+        }
+      });
+
+      if (error) {
+        console.error('❌ Error fetching owner insights:', error);
+        throw error;
+      }
+
+      console.log('✅ Owner insights fetched successfully');
+      return data.insights;
+    } catch (error) {
+      console.error('💥 Error in getOwnerInsights:', error);
+      throw error;
+    }
+  },
+
   // Get admin dashboard statistics
   async getAdminStats(): Promise<AdminStats> {
     try {
@@ -175,32 +262,6 @@ export const adminService = {
       return stats;
     } catch (error) {
       console.error('💥 Error in getAdminStats:', error);
-      throw error;
-    }
-  },
-
-  // Update owner status
-  async updateOwnerStatus(ownerId: string, isActive: boolean): Promise<void> {
-    try {
-      console.log('🔄 Updating owner status:', { ownerId, isActive });
-      
-      const { error } = await supabase
-        .from('profiles')
-        .update({ 
-          is_active: isActive,
-          updated_at: new Date().toISOString()
-        })
-        .eq('id', ownerId)
-        .eq('role', 'property_owner');
-
-      if (error) {
-        console.error('❌ Error updating owner status:', error);
-        throw error;
-      }
-
-      console.log('✅ Owner status updated successfully');
-    } catch (error) {
-      console.error('💥 Error in updateOwnerStatus:', error);
       throw error;
     }
   },
@@ -279,6 +340,8 @@ export const adminService = {
         created_at: profile.created_at,
         updated_at: profile.updated_at,
         is_active: profile.is_active,
+        commission_rate: profile.commission_rate,
+        created_by: profile.created_by,
         properties: properties || [],
         properties_count: properties?.length || 0
       } as PropertyOwner & { properties: any[] };
@@ -288,6 +351,27 @@ export const adminService = {
     } catch (error) {
       console.error('💥 Error in getOwnerDetails:', error);
       throw error;
+    }
+  },
+
+  // Get list of admin users for filters
+  async getAdminUsers(): Promise<Array<{ id: string; full_name: string }>> {
+    try {
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('id, full_name')
+        .eq('role', 'admin')
+        .order('full_name');
+
+      if (error) {
+        console.error('❌ Error fetching admin users:', error);
+        return [];
+      }
+
+      return data || [];
+    } catch (error) {
+      console.error('💥 Error in getAdminUsers:', error);
+      return [];
     }
   }
 };

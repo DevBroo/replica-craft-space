@@ -1,3 +1,4 @@
+
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.39.3';
 
@@ -11,6 +12,14 @@ interface InviteOwnerRequest {
   email: string;
   full_name: string;
   phone?: string;
+}
+
+interface FilterOwnerRequest {
+  search?: string;
+  status?: 'all' | 'active' | 'inactive';
+  startDate?: string;
+  endDate?: string;
+  createdBy?: string;
 }
 
 serve(async (req) => {
@@ -226,37 +235,39 @@ serve(async (req) => {
 
         console.log(`✅ User invited successfully: ${authData.user?.id}`);
 
-      // Create profile using admin client (bypasses RLS)
-      if (authData.user) {
-        const { error: profileError } = await supabaseAdmin
-          .from('profiles')
-          .upsert({
-            id: authData.user.id,
-            email,
-            full_name,
-            phone: phone || null,
-            role: 'property_owner',
-            is_active: true,
-            created_at: new Date().toISOString(),
-            updated_at: new Date().toISOString()
-          });
+        // Create profile using admin client (bypasses RLS)
+        if (authData.user) {
+          const { error: profileError } = await supabaseAdmin
+            .from('profiles')
+            .upsert({
+              id: authData.user.id,
+              email,
+              full_name,
+              phone: phone || null,
+              role: 'property_owner',
+              is_active: true,
+              created_by: user.id, // Track who created this owner
+              commission_rate: 0.10, // Default 10%
+              created_at: new Date().toISOString(),
+              updated_at: new Date().toISOString()
+            });
 
-        if (profileError) {
-          console.error('❌ Error creating profile:', profileError);
-          // Don't fail the request if profile creation fails, the trigger should handle it
-        } else {
-          console.log('✅ Profile created successfully');
+          if (profileError) {
+            console.error('❌ Error creating profile:', profileError);
+            // Don't fail the request if profile creation fails, the trigger should handle it
+          } else {
+            console.log('✅ Profile created successfully');
+          }
         }
-      }
 
-      return new Response(JSON.stringify({ 
-        success: true, 
-        message: 'Property owner invited successfully',
-        user_id: authData.user?.id 
-      }), {
-        status: 200,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-      });
+        return new Response(JSON.stringify({ 
+          success: true, 
+          message: 'Property owner invited successfully',
+          user_id: authData.user?.id 
+        }), {
+          status: 200,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        });
       } catch (inviteErr) {
         console.error('❌ Unexpected error during invite:', inviteErr);
         return new Response(JSON.stringify({
@@ -272,13 +283,43 @@ serve(async (req) => {
 
     if (action === 'list') {
       console.log('📋 Fetching all property owners...');
-
-      // Get all property owners using admin client
-      const { data: owners, error: ownersError } = await supabaseAdmin
+      
+      const filters: FilterOwnerRequest = requestBody.filters || {};
+      
+      // Build query with filters
+      let query = supabaseAdmin
         .from('profiles')
-        .select('*')
-        .eq('role', 'property_owner')
-        .order('created_at', { ascending: false });
+        .select(`
+          *,
+          created_by_profile:created_by(full_name)
+        `)
+        .eq('role', 'property_owner');
+
+      // Apply search filter
+      if (filters.search) {
+        query = query.or(`full_name.ilike.%${filters.search}%,email.ilike.%${filters.search}%`);
+      }
+
+      // Apply status filter
+      if (filters.status && filters.status !== 'all') {
+        const isActive = filters.status === 'active';
+        query = query.eq('is_active', isActive);
+      }
+
+      // Apply date range filter
+      if (filters.startDate) {
+        query = query.gte('created_at', filters.startDate);
+      }
+      if (filters.endDate) {
+        query = query.lte('created_at', filters.endDate + 'T23:59:59.999Z');
+      }
+
+      // Apply created_by filter
+      if (filters.createdBy) {
+        query = query.eq('created_by', filters.createdBy);
+      }
+
+      const { data: owners, error: ownersError } = await query.order('created_at', { ascending: false });
 
       if (ownersError) {
         console.error('❌ Error fetching owners:', ownersError);
@@ -306,6 +347,138 @@ serve(async (req) => {
       console.log(`✅ Found ${ownersWithCounts.length} property owners`);
 
       return new Response(JSON.stringify({ owners: ownersWithCounts }), {
+        status: 200,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      });
+    }
+
+    if (action === 'insights') {
+      const { owner_id } = requestBody;
+      
+      if (!owner_id) {
+        return new Response(JSON.stringify({ error: 'Owner ID is required for insights' }), {
+          status: 400,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        });
+      }
+
+      console.log(`📊 Fetching insights for owner: ${owner_id}`);
+
+      // Get owner's properties
+      const { data: properties, error: propertiesError } = await supabaseAdmin
+        .from('properties')
+        .select('id, title, status, created_at')
+        .eq('owner_id', owner_id);
+
+      if (propertiesError) {
+        return new Response(JSON.stringify({ error: propertiesError.message }), {
+          status: 500,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        });
+      }
+
+      const propertyIds = properties?.map(p => p.id) || [];
+
+      // Get bookings for owner's properties
+      const { data: bookings, error: bookingsError } = await supabaseAdmin
+        .from('bookings')
+        .select('id, total_amount, status, created_at, check_in_date, check_out_date, property_id')
+        .in('property_id', propertyIds);
+
+      if (bookingsError) {
+        return new Response(JSON.stringify({ error: bookingsError.message }), {
+          status: 500,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        });
+      }
+
+      // Calculate insights
+      const totalRevenue = bookings?.reduce((sum, b) => sum + (Number(b.total_amount) || 0), 0) || 0;
+      const totalBookings = bookings?.length || 0;
+      const activeBookings = bookings?.filter(b => b.status === 'confirmed').length || 0;
+      const pendingProperties = properties?.filter(p => p.status === 'pending').length || 0;
+      const approvedProperties = properties?.filter(p => p.status === 'approved').length || 0;
+
+      // Get commission rate for this owner
+      const { data: ownerProfile } = await supabaseAdmin
+        .from('profiles')
+        .select('commission_rate')
+        .eq('id', owner_id)
+        .single();
+
+      const commissionRate = ownerProfile?.commission_rate || 0.10;
+      const totalCommission = totalRevenue * commissionRate;
+
+      const insights = {
+        properties: {
+          total: properties?.length || 0,
+          approved: approvedProperties,
+          pending: pendingProperties,
+          rejected: properties?.filter(p => p.status === 'rejected').length || 0
+        },
+        bookings: {
+          total: totalBookings,
+          active: activeBookings,
+          completed: bookings?.filter(b => b.status === 'completed').length || 0,
+          cancelled: bookings?.filter(b => b.status === 'cancelled').length || 0
+        },
+        revenue: {
+          total: totalRevenue,
+          commission: totalCommission,
+          commission_rate: commissionRate
+        },
+        recent_properties: properties?.slice(0, 5) || [],
+        recent_bookings: bookings?.slice(0, 10) || []
+      };
+
+      return new Response(JSON.stringify({ insights }), {
+        status: 200,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      });
+    }
+
+    if (action === 'update_status') {
+      const { owner_id, is_active } = requestBody;
+      
+      if (!owner_id || typeof is_active !== 'boolean') {
+        return new Response(JSON.stringify({ error: 'Owner ID and status are required' }), {
+          status: 400,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        });
+      }
+
+      console.log(`🔄 Updating owner status: ${owner_id} -> ${is_active ? 'active' : 'inactive'}`);
+
+      const { error: updateError } = await supabaseAdmin
+        .from('profiles')
+        .update({ 
+          is_active,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', owner_id)
+        .eq('role', 'property_owner');
+
+      if (updateError) {
+        return new Response(JSON.stringify({ error: updateError.message }), {
+          status: 500,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        });
+      }
+
+      // Log the action
+      await supabaseAdmin
+        .from('owner_admin_actions')
+        .insert({
+          owner_id,
+          admin_id: user.id,
+          action: is_active ? 'activate' : 'deactivate',
+          metadata: { previous_status: !is_active, new_status: is_active }
+        });
+
+      return new Response(JSON.stringify({ 
+        success: true, 
+        message: `Owner ${is_active ? 'activated' : 'deactivated'} successfully` 
+      }), {
         status: 200,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' }
       });

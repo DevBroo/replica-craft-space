@@ -12,40 +12,50 @@ import {
   ChevronDown,
   Edit,
   Loader2,
-  RefreshCw
+  RefreshCw,
+  TrendingUp,
+  User
 } from 'lucide-react';
 import SharedSidebar from '../../components/admin/SharedSidebar';
 import SharedHeader from '../../components/admin/SharedHeader';
-import { adminService, PropertyOwner } from '../../lib/adminService';
+import OwnerDetailsModal from '../../components/admin/OwnerDetailsModal';
+import OwnerFilters from '../../components/admin/OwnerFilters';
+import { adminService, PropertyOwner, OwnerFilters as FilterType } from '../../lib/adminService';
 
 const OwnerManagement: React.FC = () => {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
-  const [statusFilter, setStatusFilter] = useState('all');
-  const [searchTerm, setSearchTerm] = useState('');
-  const [showAddModal, setShowAddModal] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
   const [rowsPerPage, setRowsPerPage] = useState(10);
   const [owners, setOwners] = useState<PropertyOwner[]>([]);
+  const [filteredOwners, setFilteredOwners] = useState<PropertyOwner[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [showOwnerDetails, setShowOwnerDetails] = useState<string | null>(null);
-  const [selectedOwner, setSelectedOwner] = useState<PropertyOwner | null>(null);
+  const [showAddModal, setShowAddModal] = useState(false);
+  const [showOwnerDetails, setShowOwnerDetails] = useState<PropertyOwner | null>(null);
   const [formData, setFormData] = useState({ full_name: '', email: '', phone: '' });
   const [submitting, setSubmitting] = useState(false);
+  const [adminUsers, setAdminUsers] = useState<Array<{ id: string; full_name: string }>>([]);
+  const [currentFilters, setCurrentFilters] = useState<FilterType>({});
 
   // Fetch property owners on component mount
   useEffect(() => {
     console.log('🏠 OwnerManagement component mounted');
     fetchPropertyOwners();
+    fetchAdminUsers();
   }, []);
 
-  const fetchPropertyOwners = async () => {
+  // Apply filters to owners list
+  useEffect(() => {
+    applyFilters();
+  }, [owners, currentFilters]);
+
+  const fetchPropertyOwners = async (filters?: FilterType) => {
     try {
       setLoading(true);
       setError(null);
-      console.log('🔄 Fetching property owners...');
+      console.log('🔄 Fetching property owners...', filters);
       
-      const ownersData = await adminService.getPropertyOwners();
+      const ownersData = await adminService.getPropertyOwners(filters);
       setOwners(ownersData);
       console.log('✅ Property owners loaded:', ownersData.length);
     } catch (err) {
@@ -53,6 +63,53 @@ const OwnerManagement: React.FC = () => {
       setError(err instanceof Error ? err.message : 'Failed to fetch property owners');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const fetchAdminUsers = async () => {
+    try {
+      const users = await adminService.getAdminUsers();
+      setAdminUsers(users);
+    } catch (err) {
+      console.error('❌ Error fetching admin users:', err);
+    }
+  };
+
+  const applyFilters = () => {
+    let filtered = [...owners];
+
+    // Apply client-side filters for better UX (server-side filtering is also applied)
+    if (currentFilters.search) {
+      const searchTerm = currentFilters.search.toLowerCase();
+      filtered = filtered.filter(owner => 
+        (owner.full_name || '').toLowerCase().includes(searchTerm) ||
+        (owner.email || '').toLowerCase().includes(searchTerm) ||
+        owner.id.toLowerCase().includes(searchTerm)
+      );
+    }
+
+    if (currentFilters.status && currentFilters.status !== 'all') {
+      const isActive = currentFilters.status === 'active';
+      filtered = filtered.filter(owner => owner.is_active === isActive);
+    }
+
+    setFilteredOwners(filtered);
+    setCurrentPage(1); // Reset to first page when filters change
+  };
+
+  const handleFiltersChange = async (filters: FilterType) => {
+    setCurrentFilters(filters);
+    // For better performance, we could debounce this call
+    await fetchPropertyOwners(filters);
+  };
+
+  const handleStatusUpdate = async (ownerId: string, isActive: boolean) => {
+    try {
+      await adminService.updateOwnerStatus(ownerId, isActive);
+      // Refresh the owners list
+      await fetchPropertyOwners(currentFilters);
+    } catch (err) {
+      throw err; // Let the modal handle the error display
     }
   };
 
@@ -64,17 +121,6 @@ const OwnerManagement: React.FC = () => {
       default: return 'bg-gray-100 text-gray-800';
     }
   };
-
-  const filteredOwners = owners.filter(owner => {
-    const matchesSearch = (owner.full_name || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
-      (owner.email || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
-      owner.id.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesStatus = statusFilter === 'all' || 
-      (statusFilter === 'active' && owner.is_active) || 
-      (statusFilter === 'inactive' && !owner.is_active) ||
-      (statusFilter === 'pending' && false); // No pending status with is_active
-    return matchesSearch && matchesStatus;
-  });
 
   const totalPages = Math.ceil(filteredOwners.length / rowsPerPage);
   const startIndex = (currentPage - 1) * rowsPerPage;
@@ -107,7 +153,7 @@ const OwnerManagement: React.FC = () => {
                 Add New Owner
               </button>
               <button
-                onClick={fetchPropertyOwners}
+                onClick={() => fetchPropertyOwners(currentFilters)}
                 disabled={loading}
                 className="bg-gray-600 text-white px-4 py-2 rounded-lg hover:bg-gray-700 transition-colors cursor-pointer flex items-center disabled:opacity-50"
               >
@@ -118,35 +164,34 @@ const OwnerManagement: React.FC = () => {
                 )}
                 Refresh
               </button>
-              <div className="relative">
-                <select
-                  value={statusFilter}
-                  onChange={(e) => setStatusFilter(e.target.value)}
-                  className="appearance-none bg-white border border-gray-300 rounded-lg px-4 py-2 pr-8 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm cursor-pointer"
-                >
-                  <option value="all">All Status</option>
-                  <option value="pending">Pending</option>
-                  <option value="active">Active</option>
-                  <option value="inactive">Inactive</option>
-                </select>
-                <ChevronDown className="w-4 h-4 absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 pointer-events-none" />
-              </div>
             </div>
-            <div className="relative">
-              <input
-                type="text"
-                placeholder="Search owners..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm w-64"
-              />
-              <Search className="w-4 h-4 absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
+            
+            {/* Summary Stats */}
+            <div className="flex items-center space-x-6 text-sm text-gray-600">
+              <div className="flex items-center space-x-2">
+                <User className="w-4 h-4" />
+                <span>Total: {filteredOwners.length}</span>
+              </div>
+              <div className="flex items-center space-x-2">
+                <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                <span>Active: {filteredOwners.filter(o => o.is_active).length}</span>
+              </div>
+              <div className="flex items-center space-x-2">
+                <div className="w-2 h-2 bg-red-500 rounded-full"></div>
+                <span>Inactive: {filteredOwners.filter(o => !o.is_active).length}</span>
+              </div>
             </div>
           </div>
         </div>
 
         {/* Main Content */}
         <main className="p-6">
+          {/* Enhanced Filters */}
+          <OwnerFilters 
+            onFiltersChange={handleFiltersChange}
+            adminUsers={adminUsers}
+          />
+
           {/* Error Display */}
           {error && (
             <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-6">
@@ -165,7 +210,7 @@ const OwnerManagement: React.FC = () => {
                   </div>
                   <div className="mt-4 flex space-x-2">
                     <button
-                      onClick={fetchPropertyOwners}
+                      onClick={() => fetchPropertyOwners(currentFilters)}
                       className="bg-red-100 text-red-800 px-3 py-2 rounded-md text-sm font-medium hover:bg-red-200"
                     >
                       Try Again
@@ -203,13 +248,7 @@ const OwnerManagement: React.FC = () => {
                     <tr>
                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100">
                         <div className="flex items-center space-x-1">
-                          <span>Owner ID</span>
-                          <ArrowUpDown className="w-3 h-3 text-gray-400" />
-                        </div>
-                      </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100">
-                        <div className="flex items-center space-x-1">
-                          <span>Name</span>
+                          <span>Owner</span>
                           <ArrowUpDown className="w-3 h-3 text-gray-400" />
                         </div>
                       </th>
@@ -219,9 +258,12 @@ const OwnerManagement: React.FC = () => {
                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                         Properties
                       </th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Commission
+                      </th>
                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100">
                         <div className="flex items-center space-x-1">
-                          <span>Registration Date</span>
+                          <span>Joined Date</span>
                           <ArrowUpDown className="w-3 h-3 text-gray-400" />
                         </div>
                       </th>
@@ -237,19 +279,26 @@ const OwnerManagement: React.FC = () => {
                     {paginatedOwners.length > 0 ? (
                       paginatedOwners.map((owner) => (
                         <tr key={owner.id} className="hover:bg-gray-50">
-                          <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                            {owner.id.substring(0, 8)}...
-                          </td>
                           <td className="px-6 py-4 whitespace-nowrap">
                             <div className="flex items-center">
-                              <div className="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center mr-3">
-                                <span className="text-white text-xs font-medium">
+                              <div className="w-10 h-10 bg-gradient-to-r from-blue-500 to-blue-600 rounded-full flex items-center justify-center mr-4">
+                                <span className="text-white text-sm font-medium">
                                   {(owner.full_name || owner.email || 'U').charAt(0).toUpperCase()}
                                 </span>
                               </div>
-                              <span className="text-sm font-medium text-gray-900">
-                                {owner.full_name || 'Unnamed Owner'}
-                              </span>
+                              <div>
+                                <div className="text-sm font-medium text-gray-900">
+                                  {owner.full_name || 'Unnamed Owner'}
+                                </div>
+                                <div className="text-sm text-gray-500">
+                                  ID: {owner.id.substring(0, 8)}...
+                                </div>
+                                {owner.created_by_profile && (
+                                  <div className="text-xs text-gray-400">
+                                    Created by: {owner.created_by_profile.full_name}
+                                  </div>
+                                )}
+                              </div>
                             </div>
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
@@ -264,6 +313,11 @@ const OwnerManagement: React.FC = () => {
                             <span className="bg-blue-100 text-blue-800 px-2 py-1 rounded-full text-xs font-medium">
                               {owner.properties_count || 0} Properties
                             </span>
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                            <div className="font-medium">
+                              {((owner.commission_rate || 0.10) * 100).toFixed(1)}%
+                            </div>
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                             {new Date(owner.created_at).toLocaleDateString('en-US', {
@@ -282,12 +336,16 @@ const OwnerManagement: React.FC = () => {
                               <button 
                                 className="text-blue-600 hover:text-blue-800 cursor-pointer p-1" 
                                 title="View Details"
-                                onClick={() => {
-                                  setSelectedOwner(owner);
-                                  setShowOwnerDetails(owner.id);
-                                }}
+                                onClick={() => setShowOwnerDetails(owner)}
                               >
                                 <Eye className="w-4 h-4" />
+                              </button>
+                              <button 
+                                className="text-purple-600 hover:text-purple-800 cursor-pointer p-1" 
+                                title="View Insights"
+                                onClick={() => setShowOwnerDetails(owner)}
+                              >
+                                <TrendingUp className="w-4 h-4" />
                               </button>
                               <button className="text-green-600 hover:text-green-800 cursor-pointer p-1" title="Edit">
                                 <Edit className="w-4 h-4" />
@@ -298,9 +356,8 @@ const OwnerManagement: React.FC = () => {
                                 onClick={async () => {
                                   if (confirm(`Are you sure you want to ${owner.is_active ? 'deactivate' : 'activate'} this owner?`)) {
                                     try {
-                                      await adminService.updateOwnerStatus(owner.id, !owner.is_active);
+                                      await handleStatusUpdate(owner.id, !owner.is_active);
                                       alert(`Owner ${owner.is_active ? 'deactivated' : 'activated'} successfully!`);
-                                      fetchPropertyOwners();
                                     } catch (err) {
                                       alert(`Failed to ${owner.is_active ? 'deactivate' : 'activate'} owner: ` + (err instanceof Error ? err.message : 'Unknown error'));
                                     }
@@ -323,9 +380,14 @@ const OwnerManagement: React.FC = () => {
                               </svg>
                             </div>
                             <h3 className="text-lg font-medium text-gray-900 mb-2">No owners found</h3>
-                            <p className="text-gray-500 mb-4">No property owners available yet.</p>
+                            <p className="text-gray-500 mb-4">
+                              {Object.keys(currentFilters).length > 0 
+                                ? 'No property owners match your current filters.' 
+                                : 'No property owners available yet.'
+                              }
+                            </p>
                             <button
-                              onClick={fetchPropertyOwners}
+                              onClick={() => fetchPropertyOwners(currentFilters)}
                               className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors"
                             >
                               Refresh
@@ -396,97 +458,15 @@ const OwnerManagement: React.FC = () => {
         </main>
       </div>
 
-      {/* Owner Details Modal */}
-      {showOwnerDetails && selectedOwner && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-6 w-full max-w-2xl mx-4 max-h-[80vh] overflow-y-auto">
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="text-lg font-semibold text-gray-800">Owner Details</h3>
-              <button
-                onClick={() => {
-                  setShowOwnerDetails(null);
-                  setSelectedOwner(null);
-                }}
-                className="text-gray-400 hover:text-gray-600 cursor-pointer"
-              >
-                <X className="w-5 h-5" />
-              </button>
-            </div>
-            
-            <div className="space-y-4">
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Full Name</label>
-                  <p className="text-sm text-gray-900">{selectedOwner.full_name || 'Not provided'}</p>
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
-                  <p className="text-sm text-gray-900">{selectedOwner.email || 'Not provided'}</p>
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Phone</label>
-                  <p className="text-sm text-gray-900">{selectedOwner.phone || 'Not provided'}</p>
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Role</label>
-                  <p className="text-sm text-gray-900">{selectedOwner.role || 'property_owner'}</p>
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Properties Count</label>
-                  <p className="text-sm text-gray-900">{selectedOwner.properties_count || 0} properties</p>
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Status</label>
-                  <p className="text-sm text-gray-900">{selectedOwner.is_active ? 'Active' : 'Inactive'}</p>
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Registration Date</label>
-                  <p className="text-sm text-gray-900">
-                    {new Date(selectedOwner.created_at).toLocaleDateString('en-US', {
-                      year: 'numeric',
-                      month: 'long',
-                      day: 'numeric',
-                      hour: '2-digit',
-                      minute: '2-digit'
-                    })}
-                  </p>
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Last Updated</label>
-                  <p className="text-sm text-gray-900">
-                    {new Date(selectedOwner.updated_at).toLocaleDateString('en-US', {
-                      year: 'numeric',
-                      month: 'long',
-                      day: 'numeric',
-                      hour: '2-digit',
-                      minute: '2-digit'
-                    })}
-                  </p>
-                </div>
-              </div>
-              
-              <div className="border-t pt-4">
-                <h4 className="text-md font-medium text-gray-800 mb-2">Owner ID</h4>
-                <p className="text-sm text-gray-600 font-mono bg-gray-100 p-2 rounded">
-                  {selectedOwner.id}
-                </p>
-              </div>
-            </div>
-            
-            <div className="flex space-x-3 pt-4">
-              <button
-                type="button"
-                onClick={() => {
-                  setShowOwnerDetails(null);
-                  setSelectedOwner(null);
-                }}
-                className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 cursor-pointer"
-              >
-                Close
-              </button>
-            </div>
-          </div>
-        </div>
+      {/* Enhanced Owner Details Modal */}
+      {showOwnerDetails && (
+        <OwnerDetailsModal
+          owner={showOwnerDetails}
+          isOpen={!!showOwnerDetails}
+          onClose={() => setShowOwnerDetails(null)}
+          onStatusUpdate={handleStatusUpdate}
+          onRefresh={() => fetchPropertyOwners(currentFilters)}
+        />
       )}
 
       {/* Add New Owner Modal */}
@@ -517,7 +497,7 @@ const OwnerManagement: React.FC = () => {
                   alert('Property owner invited successfully! They will receive an email invitation.');
                   setShowAddModal(false);
                   setFormData({ full_name: '', email: '', phone: '' });
-                  fetchPropertyOwners(); // Refresh the list
+                  fetchPropertyOwners(currentFilters); // Refresh the list
                 } catch (err) {
                   alert('Failed to add property owner: ' + (err instanceof Error ? err.message : 'Unknown error'));
                 } finally {

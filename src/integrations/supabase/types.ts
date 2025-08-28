@@ -430,6 +430,48 @@ export type Database = {
         }
         Relationships: []
       }
+      owner_admin_actions: {
+        Row: {
+          action: string
+          admin_id: string
+          created_at: string
+          id: string
+          metadata: Json
+          owner_id: string
+        }
+        Insert: {
+          action: string
+          admin_id: string
+          created_at?: string
+          id?: string
+          metadata?: Json
+          owner_id: string
+        }
+        Update: {
+          action?: string
+          admin_id?: string
+          created_at?: string
+          id?: string
+          metadata?: Json
+          owner_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "owner_admin_actions_admin_id_fkey"
+            columns: ["admin_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "owner_admin_actions_owner_id_fkey"
+            columns: ["owner_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       photos_with_captions: {
         Row: {
           alt_text: string | null
@@ -472,7 +514,9 @@ export type Database = {
       profiles: {
         Row: {
           avatar_url: string | null
+          commission_rate: number
           created_at: string
+          created_by: string | null
           email: string | null
           full_name: string | null
           id: string
@@ -483,7 +527,9 @@ export type Database = {
         }
         Insert: {
           avatar_url?: string | null
+          commission_rate?: number
           created_at?: string
+          created_by?: string | null
           email?: string | null
           full_name?: string | null
           id: string
@@ -494,7 +540,9 @@ export type Database = {
         }
         Update: {
           avatar_url?: string | null
+          commission_rate?: number
           created_at?: string
+          created_by?: string | null
           email?: string | null
           full_name?: string | null
           id?: string
@@ -503,7 +551,15 @@ export type Database = {
           role?: string | null
           updated_at?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "profiles_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       properties: {
         Row: {
