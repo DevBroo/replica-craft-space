@@ -100,9 +100,46 @@ serve(async (req) => {
 
     console.log('✅ Admin access verified for user:', user.id);
 
-    // Parse request body
-    const requestBody = await req.json();
-    const { action } = requestBody;
+    // Safely parse request body with fallbacks
+    let requestBody: any = {};
+    let action = 'list'; // Default action
+    
+    try {
+      const bodyText = await req.text();
+      console.log('📦 Request body length:', bodyText.length);
+      
+      if (bodyText && bodyText.trim()) {
+        requestBody = JSON.parse(bodyText);
+        action = requestBody.action || 'list';
+        console.log('✅ Parsed JSON body:', { action, hasEmail: !!requestBody.email });
+      } else {
+        console.log('⚠️ Empty request body, checking headers...');
+      }
+    } catch (jsonError) {
+      console.log('⚠️ Failed to parse JSON body, checking headers...', jsonError.message);
+    }
+
+    // Fallback to headers if JSON parsing failed
+    if (!requestBody.action) {
+      action = req.headers.get('x-action') || 
+              req.headers.get('x-picnify-action') ||
+              req.headers.get('X-Action') || 
+              req.headers.get('X-Picnify-Action') || 
+              'list';
+      
+      // Get owner data from headers if invite action
+      if (action === 'invite') {
+        requestBody = {
+          action: 'invite',
+          email: req.headers.get('x-owner-email') || req.headers.get('X-Owner-Email'),
+          full_name: req.headers.get('x-owner-name') || req.headers.get('X-Owner-Name'),
+          phone: req.headers.get('x-owner-phone') || req.headers.get('X-Owner-Phone')
+        };
+        console.log('📋 Using headers for invite:', { email: requestBody.email, name: requestBody.full_name });
+      }
+    }
+
+    console.log(`🎯 Processing action: ${action}`);
 
     if (action === 'invite') {
       const { email, full_name, phone }: InviteOwnerRequest = requestBody;

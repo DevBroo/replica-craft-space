@@ -50,7 +50,9 @@ export const adminService = {
         body: { action: 'list' },
         headers: {
           'Authorization': `Bearer ${session.access_token}`,
-          'Content-Type': 'application/json'
+          'Content-Type': 'application/json',
+          'X-Action': 'list',
+          'X-Picnify-Action': 'list'
         }
       });
 
@@ -94,7 +96,12 @@ export const adminService = {
         },
         headers: {
           'Authorization': `Bearer ${session.access_token}`,
-          'Content-Type': 'application/json'
+          'Content-Type': 'application/json',
+          'X-Action': 'invite',
+          'X-Picnify-Action': 'invite',
+          'X-Owner-Email': ownerData.email,
+          'X-Owner-Name': ownerData.full_name,
+          'X-Owner-Phone': ownerData.phone || ''
         }
       });
 
@@ -107,6 +114,11 @@ export const adminService = {
         }
         if (error.message?.includes('403') || error.message?.includes('Forbidden')) {
           throw new Error('Access denied. Admin privileges required.');
+        }
+        
+        // Parse detailed error from function response if available
+        if (data && data.error) {
+          throw new Error(data.message || data.error);
         }
         
         throw error;
