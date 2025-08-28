@@ -1,30 +1,4 @@
 import { supabase } from '../integrations/supabase/client';
-import { createClient } from '@supabase/supabase-js';
-
-// Lazy-initialized admin client to avoid creating it on app startup
-let adminSupabaseInstance: ReturnType<typeof createClient> | null = null;
-
-const getAdminSupabase = () => {
-  if (!adminSupabaseInstance) {
-    const SUPABASE_URL = "https://riqsgtuzccwpplbodwbd.supabase.co";
-    const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJpcXNndHV6Y2N3cHBsYm9kd2JkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTQyOTY2NTUsImV4cCI6MjA2OTg3MjY1NX0.qkSVWoVi8cStB1WZdqtapc8O6jc_aAiYEm0Y5Lqp1-s";
-    
-    adminSupabaseInstance = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
-      auth: {
-        autoRefreshToken: false,
-        persistSession: false
-      },
-      global: {
-        headers: {
-          'X-Client-Info': 'picnify-admin'
-        }
-      }
-    });
-  }
-  return adminSupabaseInstance;
-};
-
-export const adminSupabase = getAdminSupabase();
 
 export interface PropertyOwner {
   id: string;
@@ -49,137 +23,46 @@ export interface AdminStats {
 }
 
 export const adminService = {
-  get adminSupabase() { return getAdminSupabase(); },
   // Fetch all property owners with their property counts
   async getPropertyOwners(): Promise<PropertyOwner[]> {
     try {
-      console.log('🔍 Fetching property owners...');
+      console.log('🔍 Fetching property owners using edge function...');
       
-      // Get all unique owner IDs from properties table
-      const adminClient = getAdminSupabase();
-      const { data: properties, error: propertiesError } = await adminClient
-        .from('properties')
-        .select('owner_id, created_at')
-        .order('created_at', { ascending: false });
+      const { data, error } = await supabase.functions.invoke('admin-owners', {
+        method: 'GET'
+      });
 
-      if (propertiesError) {
-        console.error('❌ Error fetching properties:', propertiesError);
-        throw propertiesError;
+      if (error) {
+        console.error('❌ Error fetching property owners:', error);
+        throw error;
       }
 
-      console.log('✅ Found properties:', properties?.length || 0);
-      console.log('✅ Properties data:', properties);
-
-      // Get unique owner IDs
-      const uniqueOwnerIds = [...new Set(properties?.map(p => p.owner_id) || [])];
-      console.log('✅ Found unique owner IDs:', uniqueOwnerIds);
-
-      if (uniqueOwnerIds.length === 0) {
-        console.log('⚠️ No unique owner IDs found');
-        return [];
-      }
-
-      // Fetch actual user profiles for these owner IDs
-      const { data: profiles, error: profilesError } = await adminSupabase
-        .from('profiles')
-        .select('*')
-        .in('id', uniqueOwnerIds);
-
-      if (profilesError) {
-        console.error('❌ Error fetching profiles:', profilesError);
-        throw profilesError;
-      }
-
-      console.log('✅ Found profiles:', profiles?.length || 0);
-      console.log('✅ Profiles data:', profiles);
-
-      // Create a map of profiles by ID for quick lookup
-      const profilesMap = new Map(profiles?.map(p => [p.id, p]) || []);
-
-      // For each owner ID, get their info and property count
-      const ownersWithCounts = await Promise.all(
-        uniqueOwnerIds.map(async (ownerId) => {
-          console.log('🔍 Processing owner ID:', ownerId);
-          
-          // Count properties for this owner
-          const { count: propertiesCount } = await adminSupabase
-            .from('properties')
-            .select('*', { count: 'exact', head: true })
-            .eq('owner_id', ownerId);
-
-          console.log('✅ Properties count for', ownerId, ':', propertiesCount);
-
-          // Get the first property to get creation date
-          const { data: firstProperty } = await adminSupabase
-            .from('properties')
-            .select('created_at')
-            .eq('owner_id', ownerId)
-            .limit(1);
-
-          // Get the profile data for this owner
-          const profile = profilesMap.get(ownerId);
-          
-          // If no profile exists, create a basic one
-          if (!profile) {
-            console.log('⚠️ No profile found for owner', ownerId, '- creating basic profile');
-            
-            // Ensure ownerId is a string
-            const ownerIdStr = String(ownerId);
-            
-            // Try to create a basic profile
-            const basicProfileData = {
-              id: ownerIdStr,
-              email: `owner-${ownerIdStr.substring(0, 8)}@picnify.com`,
-              full_name: `Property Owner (${ownerIdStr.substring(0, 8)})`,
-              role: 'property_owner',
-              phone: null,
-              avatar_url: null,
-              created_at: firstProperty?.[0]?.created_at || new Date().toISOString(),
-              updated_at: new Date().toISOString()
-            };
-
-            // Try to insert the profile (this might fail due to RLS, but that's okay)
-            try {
-              const { error: insertError } = await adminSupabase
-                .from('profiles')
-                .insert(basicProfileData);
-              
-              if (!insertError) {
-                console.log('✅ Created basic profile for owner', ownerId);
-              } else {
-                console.log('⚠️ Could not create profile for owner', ownerId, '- using fallback data');
-              }
-            } catch (error) {
-              console.log('⚠️ Error creating profile for owner', ownerId, '- using fallback data');
-            }
-          }
-          
-          // Ensure ownerId is a string
-          const ownerIdStr = String(ownerId);
-          
-          const ownerData = {
-            id: ownerIdStr,
-            email: profile?.email || `owner-${ownerIdStr.substring(0, 8)}@picnify.com`,
-            full_name: profile?.full_name || `Property Owner (${ownerIdStr.substring(0, 8)})`,
-            role: profile?.role || 'property_owner',
-            phone: profile?.phone || null,
-            avatar_url: profile?.avatar_url || null,
-            created_at: profile?.created_at || firstProperty?.[0]?.created_at || new Date().toISOString(),
-            updated_at: profile?.updated_at || new Date().toISOString(),
-            properties_count: propertiesCount || 0,
-            is_active: profile?.is_active ?? true
-          } as PropertyOwner;
-
-          console.log('✅ Created owner data:', ownerData);
-          return ownerData;
-        })
-      );
-
-      console.log('✅ Property owners with counts:', ownersWithCounts.length);
-      console.log('✅ Final owners data:', ownersWithCounts);
-      return ownersWithCounts;
+      console.log('✅ Property owners loaded:', data.owners?.length || 0);
+      return data.owners || [];
     } catch (error) {
       console.error('💥 Error in getPropertyOwners:', error);
+      throw error;
+    }
+  },
+
+  // Add new property owner
+  async addPropertyOwner(ownerData: { email: string; full_name: string; phone?: string }): Promise<void> {
+    try {
+      console.log('👤 Adding new property owner:', ownerData.email);
+      
+      const { data, error } = await supabase.functions.invoke('admin-owners', {
+        method: 'POST',
+        body: ownerData
+      });
+
+      if (error) {
+        console.error('❌ Error adding property owner:', error);
+        throw error;
+      }
+
+      console.log('✅ Property owner added successfully:', data);
+    } catch (error) {
+      console.error('💥 Error in addPropertyOwner:', error);
       throw error;
     }
   },
@@ -190,22 +73,22 @@ export const adminService = {
       console.log('📊 Fetching admin statistics...');
       
       // Get owner counts
-      const { count: totalOwners } = await adminSupabase
+      const { count: totalOwners } = await supabase
         .from('profiles')
         .select('*', { count: 'exact', head: true })
         .eq('role', 'property_owner');
 
       // Get property counts
-      const { count: totalProperties } = await adminSupabase
+      const { count: totalProperties } = await supabase
         .from('properties')
         .select('*', { count: 'exact', head: true });
 
-      const { count: approvedProperties } = await adminSupabase
+      const { count: approvedProperties } = await supabase
         .from('properties')
         .select('*', { count: 'exact', head: true })
         .eq('status', 'approved');
 
-      const { count: pendingProperties } = await adminSupabase
+      const { count: pendingProperties } = await supabase
         .from('properties')
         .select('*', { count: 'exact', head: true })
         .eq('status', 'pending');
@@ -232,7 +115,7 @@ export const adminService = {
     try {
       console.log('🔄 Updating owner status:', { ownerId, isActive });
       
-      const { error } = await adminSupabase
+      const { error } = await supabase
         .from('profiles')
         .update({ 
           is_active: isActive,
@@ -259,7 +142,7 @@ export const adminService = {
       console.log('🗑️ Deleting owner:', ownerId);
       
       // First, check if owner has properties
-      const { count: propertiesCount } = await adminSupabase
+      const { count: propertiesCount } = await supabase
         .from('properties')
         .select('*', { count: 'exact', head: true })
         .eq('owner_id', ownerId);
@@ -269,7 +152,7 @@ export const adminService = {
       }
 
       // Delete the owner profile
-      const { error } = await adminSupabase
+      const { error } = await supabase
         .from('profiles')
         .delete()
         .eq('id', ownerId)
@@ -293,7 +176,7 @@ export const adminService = {
       console.log('🔍 Fetching owner details:', ownerId);
       
       // Get owner profile
-      const { data: profile, error: profileError } = await adminSupabase
+      const { data: profile, error: profileError } = await supabase
         .from('profiles')
         .select('*')
         .eq('id', ownerId)
@@ -306,7 +189,7 @@ export const adminService = {
       }
 
       // Get owner's properties
-      const { data: properties, error: propertiesError } = await adminSupabase
+      const { data: properties, error: propertiesError } = await supabase
         .from('properties')
         .select('*')
         .eq('owner_id', ownerId)
@@ -326,6 +209,7 @@ export const adminService = {
         avatar_url: profile.avatar_url,
         created_at: profile.created_at,
         updated_at: profile.updated_at,
+        is_active: profile.is_active,
         properties: properties || [],
         properties_count: properties?.length || 0
       } as PropertyOwner & { properties: any[] };

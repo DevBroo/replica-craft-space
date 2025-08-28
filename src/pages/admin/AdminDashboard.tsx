@@ -15,6 +15,7 @@ import {
   Shield
 } from 'lucide-react';
 import { adminService, PropertyOwner } from '@/lib/adminService';
+import { supabase } from '@/integrations/supabase/client';
 
 interface Property {
   id: string;
@@ -55,8 +56,8 @@ const AdminDashboard: React.FC = () => {
       const ownersData = await adminService.getPropertyOwners();
       console.log('✅ Property owners loaded:', ownersData);
 
-      // Load all properties using adminService
-      const { data: propertiesData, error: propertiesError } = await adminService.adminSupabase
+      // Load all properties using supabase
+      const { data: propertiesData, error: propertiesError } = await supabase
         .from('properties')
         .select('*');
 
@@ -98,7 +99,7 @@ const AdminDashboard: React.FC = () => {
 
   const updatePropertyStatus = async (propertyId: string, status: 'approved' | 'rejected') => {
     try {
-      const { error } = await adminService.adminSupabase
+      const { error } = await supabase
         .from('properties')
         .update({ status })
         .eq('id', propertyId);
@@ -122,7 +123,7 @@ const AdminDashboard: React.FC = () => {
 
   const toggleOwnerStatus = async (ownerId: string, isActive: boolean) => {
     try {
-      const { error } = await adminService.adminSupabase
+      const { error } = await supabase
         .from('profiles')
         .update({ is_active: !isActive })
         .eq('id', ownerId);
@@ -151,7 +152,7 @@ const AdminDashboard: React.FC = () => {
 
     try {
       // Delete owner's properties first
-      const { error: propertiesError } = await adminService.adminSupabase
+      const { error: propertiesError } = await supabase
         .from('properties')
         .delete()
         .eq('owner_id', ownerId);
@@ -159,7 +160,7 @@ const AdminDashboard: React.FC = () => {
       if (propertiesError) throw propertiesError;
 
       // Delete owner profile
-      const { error: ownerError } = await adminService.adminSupabase
+      const { error: ownerError } = await supabase
         .from('profiles')
         .delete()
         .eq('id', ownerId);

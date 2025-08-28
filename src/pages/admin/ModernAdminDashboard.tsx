@@ -25,6 +25,7 @@ import {
 } from 'lucide-react';
 import SharedSidebar from '@/components/admin/SharedSidebar';
 import { adminService, PropertyOwner } from '@/lib/adminService';
+import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -69,7 +70,7 @@ const ModernAdminDashboard: React.FC = () => {
       const ownersData = await adminService.getPropertyOwners();
       console.log('✅ Property owners loaded:', ownersData);
 
-      const { data: propertiesData, error: propertiesError } = await adminService.adminSupabase
+      const { data: propertiesData, error: propertiesError } = await supabase
         .from('properties')
         .select('*');
 
@@ -112,7 +113,7 @@ const ModernAdminDashboard: React.FC = () => {
 
   const updatePropertyStatus = async (propertyId: string, status: 'approved' | 'rejected') => {
     try {
-      const { error } = await adminService.adminSupabase
+      const { error } = await supabase
         .from('properties')
         .update({ status })
         .eq('id', propertyId);

@@ -30,6 +30,8 @@ const OwnerManagement: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [showOwnerDetails, setShowOwnerDetails] = useState<string | null>(null);
   const [selectedOwner, setSelectedOwner] = useState<PropertyOwner | null>(null);
+  const [formData, setFormData] = useState({ full_name: '', email: '', phone: '' });
+  const [submitting, setSubmitting] = useState(false);
 
   // Fetch property owners on component mount
   useEffect(() => {
@@ -488,44 +490,93 @@ const OwnerManagement: React.FC = () => {
                 <X className="w-5 h-5" />
               </button>
             </div>
-            <form className="space-y-4">
+            <form 
+              className="space-y-4"
+              onSubmit={async (e) => {
+                e.preventDefault();
+                if (!formData.full_name || !formData.email) {
+                  alert('Please fill in all required fields');
+                  return;
+                }
+                
+                setSubmitting(true);
+                try {
+                  await adminService.addPropertyOwner(formData);
+                  alert('Property owner invited successfully! They will receive an email invitation.');
+                  setShowAddModal(false);
+                  setFormData({ full_name: '', email: '', phone: '' });
+                  fetchPropertyOwners(); // Refresh the list
+                } catch (err) {
+                  alert('Failed to add property owner: ' + (err instanceof Error ? err.message : 'Unknown error'));
+                } finally {
+                  setSubmitting(false);
+                }
+              }}
+            >
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Full Name</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Full Name <span className="text-red-500">*</span>
+                </label>
                 <input
                   type="text"
+                  required
+                  value={formData.full_name}
+                  onChange={(e) => setFormData(prev => ({ ...prev, full_name: e.target.value }))}
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
                   placeholder="Enter owner's full name"
+                  disabled={submitting}
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Email Address</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Email Address <span className="text-red-500">*</span>
+                </label>
                 <input
                   type="email"
+                  required
+                  value={formData.email}
+                  onChange={(e) => setFormData(prev => ({ ...prev, email: e.target.value }))}
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
                   placeholder="Enter email address"
+                  disabled={submitting}
                 />
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Phone Number</label>
                 <input
                   type="tel"
+                  value={formData.phone}
+                  onChange={(e) => setFormData(prev => ({ ...prev, phone: e.target.value }))}
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
                   placeholder="Enter phone number"
+                  disabled={submitting}
                 />
               </div>
               <div className="flex space-x-3 pt-4">
                 <button
                   type="button"
-                  onClick={() => setShowAddModal(false)}
-                  className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 cursor-pointer"
+                  onClick={() => {
+                    setShowAddModal(false);
+                    setFormData({ full_name: '', email: '', phone: '' });
+                  }}
+                  disabled={submitting}
+                  className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 cursor-pointer disabled:opacity-50"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
-                  className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 cursor-pointer"
+                  disabled={submitting}
+                  className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 cursor-pointer disabled:opacity-50 flex items-center justify-center"
                 >
-                  Add Owner
+                  {submitting ? (
+                    <>
+                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                      Adding...
+                    </>
+                  ) : (
+                    'Add Owner'
+                  )}
                 </button>
               </div>
             </form>
