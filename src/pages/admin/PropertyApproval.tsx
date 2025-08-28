@@ -13,7 +13,8 @@ import {
   Ban,
   Bell,
   Trash2,
-  ArrowUpDown
+  ArrowUpDown,
+  Plus
 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
@@ -377,6 +378,16 @@ const PropertyApproval: React.FC = () => {
         <div className="bg-white border-b px-6 py-4">
           <div className="flex flex-wrap items-center justify-between gap-4">
             <div className="flex items-center space-x-4">
+              <IconButton
+                icon={Plus}
+                variant="primary"
+                onClick={() => window.open('/host-signup', '_blank')}
+                tooltip="Add new property"
+                aria-label="Add new property"
+                className="px-4 py-2"
+              >
+                Add New Property
+              </IconButton>
               <IconButton
                 icon={RefreshCw}
                 variant="secondary"
