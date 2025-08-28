@@ -421,62 +421,54 @@ const AgentManagement: React.FC = () => {
                           <div className="flex space-x-2">
                             <button 
                               onClick={() => handleViewAgent(agent)}
-                              className="text-blue-600 hover:text-blue-800 cursor-pointer p-1" 
-                              title="View Details"
+                              className="text-blue-600 hover:text-blue-900 p-1 hover:bg-blue-50 rounded transition-all"
+                              title="View Agent"
                             >
                               <Eye className="w-4 h-4" />
                             </button>
                             <button 
                               onClick={() => handleEditAgent(agent)}
-                              className="text-green-600 hover:text-green-800 cursor-pointer p-1" 
-                              title="Edit"
+                              className="text-green-600 hover:text-green-900 p-1 hover:bg-green-50 rounded transition-all"
+                              title="Edit Agent"
                             >
                               <Edit className="w-4 h-4" />
                             </button>
                             <button 
                               onClick={() => handleAgentInsights(agent)}
-                              className="text-purple-600 hover:text-purple-800 cursor-pointer p-1" 
+                              className="text-purple-600 hover:text-purple-900 p-1 hover:bg-purple-50 rounded transition-all"
                               title="View Insights"
                             >
                               <TrendingUp className="w-4 h-4" />
                             </button>
                             <button 
                               onClick={() => handleSendNotification(agent)}
-                              className="text-yellow-600 hover:text-yellow-800 cursor-pointer p-1" 
+                              className="text-orange-600 hover:text-orange-900 p-1 hover:bg-orange-50 rounded transition-all"
                               title="Send Notification"
                             >
                               <Bell className="w-4 h-4" />
                             </button>
                             <button 
+                              onClick={() => handleToggleStatus(agent)}
+                              className={`p-1 rounded transition-all ${
+                                agent.is_active 
+                                  ? 'text-red-600 hover:text-red-900 hover:bg-red-50' 
+                                  : 'text-green-600 hover:text-green-900 hover:bg-green-50'
+                              }`}
+                              title={agent.is_active ? 'Deactivate Agent' : 'Activate Agent'}
+                            >
+                              {agent.is_active ? <Ban className="w-4 h-4" /> : <CheckCircle className="w-4 h-4" />}
+                            </button>
+                            <button 
                               onClick={() => handleResetPassword(agent)}
-                              className="text-orange-600 hover:text-orange-800 cursor-pointer p-1" 
+                              className="text-gray-600 hover:text-gray-900 p-1 hover:bg-gray-50 rounded transition-all"
                               title="Reset Password"
                             >
                               <Key className="w-4 h-4" />
                             </button>
                             <button 
-                              onClick={() => handleToggleStatus(agent)}
-                              className={`cursor-pointer p-1 ${
-                                agent.is_active && agent.status !== 'blocked'
-                                  ? 'text-red-600 hover:text-red-800' 
-                                  : 'text-green-600 hover:text-green-800'
-                              }`}
-                              title={
-                                agent.is_active && agent.status !== 'blocked'
-                                  ? 'Deactivate' 
-                                  : 'Activate'
-                              }
-                            >
-                              {agent.is_active && agent.status !== 'blocked' ? (
-                                <Ban className="w-4 h-4" />
-                              ) : (
-                                <CheckCircle className="w-4 h-4" />
-                              )}
-                            </button>
-                            <button 
                               onClick={() => handleDeleteAgent(agent)}
-                              className="text-red-600 hover:text-red-800 cursor-pointer p-1" 
-                              title="Delete"
+                              className="text-red-600 hover:text-red-900 p-1 hover:bg-red-50 rounded transition-all"
+                              title="Delete Agent"
                             >
                               <Trash2 className="w-4 h-4" />
                             </button>
@@ -490,58 +482,73 @@ const AgentManagement: React.FC = () => {
             </div>
 
             {/* Pagination */}
-            <div className="bg-white px-6 py-3 border-t border-gray-200 flex items-center justify-between">
-              <div className="flex items-center space-x-2">
-                <span className="text-sm text-gray-700">Show</span>
-                <select
-                  value={rowsPerPage}
-                  onChange={(e) => {
-                    setRowsPerPage(Number(e.target.value));
-                    setCurrentPage(1);
-                  }}
-                  className="border border-gray-300 rounded px-2 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 cursor-pointer"
-                >
-                  <option value={10}>10</option>
-                  <option value={25}>25</option>
-                  <option value={50}>50</option>
-                </select>
-                <span className="text-sm text-gray-700">entries</span>
-              </div>
-              <div className="flex items-center space-x-2">
-                <span className="text-sm text-gray-700">
-                  Showing {startIndex + 1} to {Math.min(startIndex + rowsPerPage, filteredAgents.length)} of {filteredAgents.length} entries
-                </span>
-                <div className="flex space-x-1">
+            {totalPages > 1 && (
+              <div className="bg-white px-4 py-3 flex items-center justify-between border-t border-gray-200 sm:px-6">
+                <div className="flex-1 flex justify-between sm:hidden">
                   <button
                     onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
                     disabled={currentPage === 1}
-                    className="px-3 py-1 border border-gray-300 rounded text-sm hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+                    className="relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     Previous
                   </button>
-                  {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
-                    <button
-                      key={page}
-                      onClick={() => setCurrentPage(page)}
-                      className={`px-3 py-1 border rounded text-sm cursor-pointer ${
-                        currentPage === page
-                          ? 'bg-blue-600 text-white border-blue-600'
-                          : 'border-gray-300 hover:bg-gray-50'
-                      }`}
-                    >
-                      {page}
-                    </button>
-                  ))}
                   <button
                     onClick={() => setCurrentPage(Math.min(totalPages, currentPage + 1))}
                     disabled={currentPage === totalPages}
-                    className="px-3 py-1 border border-gray-300 rounded text-sm hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+                    className="ml-3 relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     Next
                   </button>
                 </div>
+                <div className="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between">
+                  <div>
+                    <p className="text-sm text-gray-700">
+                      Showing <span className="font-medium">{startIndex + 1}</span> to{' '}
+                      <span className="font-medium">
+                        {Math.min(startIndex + rowsPerPage, filteredAgents.length)}
+                      </span>{' '}
+                      of <span className="font-medium">{filteredAgents.length}</span> results
+                    </p>
+                  </div>
+                  <div>
+                    <nav className="relative z-0 inline-flex rounded-md shadow-sm -space-x-px" aria-label="Pagination">
+                      <button
+                        onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
+                        disabled={currentPage === 1}
+                        className="relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                      >
+                        Previous
+                      </button>
+                      
+                      {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+                        const page = i + 1;
+                        return (
+                          <button
+                            key={page}
+                            onClick={() => setCurrentPage(page)}
+                            className={`relative inline-flex items-center px-4 py-2 border text-sm font-medium ${
+                              currentPage === page
+                                ? 'z-10 bg-blue-50 border-blue-500 text-blue-600'
+                                : 'bg-white border-gray-300 text-gray-500 hover:bg-gray-50'
+                            }`}
+                          >
+                            {page}
+                          </button>
+                        );
+                      })}
+                      
+                      <button
+                        onClick={() => setCurrentPage(Math.min(totalPages, currentPage + 1))}
+                        disabled={currentPage === totalPages}
+                        className="relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                      >
+                        Next
+                      </button>
+                    </nav>
+                  </div>
+                </div>
               </div>
-            </div>
+            )}
           </div>
         </div>
       </div>
@@ -549,43 +556,35 @@ const AgentManagement: React.FC = () => {
       {/* Modals */}
       {showFormModal && (
         <AgentFormModal
-          agent={selectedAgent}
           isOpen={showFormModal}
-          onClose={() => {
-            setShowFormModal(false);
-            setSelectedAgent(null);
-          }}
+          onClose={() => setShowFormModal(false)}
+          mode={modalMode}
+          agent={selectedAgent}
           onSave={() => {
             fetchAgents();
             fetchStats();
           }}
-          mode={modalMode}
         />
       )}
 
       {showInsightsModal && selectedAgent && (
         <AgentInsightsModal
-          agent={selectedAgent}
           isOpen={showInsightsModal}
-          onClose={() => {
-            setShowInsightsModal(false);
-            setSelectedAgent(null);
-          }}
+          onClose={() => setShowInsightsModal(false)}
+          agent={selectedAgent}
         />
       )}
 
       {showNotificationModal && selectedAgent && (
         <SendNotificationModal
           isOpen={showNotificationModal}
-          onClose={() => {
-            setShowNotificationModal(false);
-            setSelectedAgent(null);
-          }}
+          onClose={() => setShowNotificationModal(false)}
           recipientType="agent"
           recipientId={selectedAgent.id}
-          recipientName={selectedAgent.full_name || ''}
+          recipientName={selectedAgent.full_name || selectedAgent.email || 'Agent'}
           onSent={() => {
-            toast.success('Notification sent successfully!');
+            console.log('Notification sent successfully');
+            setShowNotificationModal(false);
           }}
         />
       )}
