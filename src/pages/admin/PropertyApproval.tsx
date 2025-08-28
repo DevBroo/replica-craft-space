@@ -14,13 +14,20 @@ import {
   Search,
   Home,
   Edit,
-  Loader2
+  Loader2,
+  Lock,
+  Unlock,
+  BarChart3
 } from 'lucide-react';
 import SharedSidebar from '../../components/admin/SharedSidebar';
 import SharedHeader from '../../components/admin/SharedHeader';
+import IconButton from '../../components/admin/ui/IconButton';
+import PropertyDetailsDrawer from '../../components/admin/PropertyDetailsDrawer';
+import PropertyFilters from '../../components/admin/PropertyFilters';
 import { PropertyService } from '../../lib/propertyService';
 import { supabase } from '../../integrations/supabase/client';
 import { toast } from 'sonner';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '../../components/admin/ui/alert-dialog';
 
 interface PropertyWithOwner {
   id: string;
@@ -43,6 +50,11 @@ const PropertyApproval: React.FC = () => {
   const [statusFilter, setStatusFilter] = useState('all');
   const [selectedType, setSelectedType] = useState('all');
   const [searchTerm, setSearchTerm] = useState('');
+  const [ownerFilter, setOwnerFilter] = useState('');
+  const [startDate, setStartDate] = useState('');
+  const [endDate, setEndDate] = useState('');
+  const [sortBy, setSortBy] = useState('created_at');
+  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
   const [showAddModal, setShowAddModal] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
   const [rowsPerPage, setRowsPerPage] = useState(10);
@@ -51,6 +63,8 @@ const PropertyApproval: React.FC = () => {
   const [properties, setProperties] = useState<PropertyWithOwner[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [selectedPropertyId, setSelectedPropertyId] = useState<string | null>(null);
+  const [showPropertyDetails, setShowPropertyDetails] = useState(false);
 
   useEffect(() => {
     fetchProperties();
@@ -117,15 +131,63 @@ const PropertyApproval: React.FC = () => {
   const filteredProperties = properties.filter(property => {
     const ownerName = property.owner?.full_name || '';
     const ownerEmail = property.owner?.email || '';
-    const matchesSearch = 
+    const createdAt = new Date(property.created_at);
+    
+    // Search filter
+    const matchesSearch = !searchTerm || 
       property.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
       ownerName.toLowerCase().includes(searchTerm.toLowerCase()) ||
       property.id.toLowerCase().includes(searchTerm.toLowerCase()) ||
       property.address.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      ownerEmail.toLowerCase().includes(searchTerm.toLowerCase());
+      ownerEmail.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      property.property_type.toLowerCase().includes(searchTerm.toLowerCase());
+    
+    // Status filter
     const matchesStatus = statusFilter === 'all' || property.status.toLowerCase() === statusFilter.toLowerCase();
+    
+    // Type filter
     const matchesType = selectedType === 'all' || property.property_type === selectedType;
-    return matchesSearch && matchesStatus && matchesType;
+    
+    // Owner filter
+    const matchesOwner = !ownerFilter || 
+      ownerName.toLowerCase().includes(ownerFilter.toLowerCase()) ||
+      ownerEmail.toLowerCase().includes(ownerFilter.toLowerCase());
+    
+    // Date range filter
+    const matchesDateRange = (!startDate || createdAt >= new Date(startDate)) &&
+                             (!endDate || createdAt <= new Date(endDate + 'T23:59:59'));
+    
+    return matchesSearch && matchesStatus && matchesType && matchesOwner && matchesDateRange;
+  }).sort((a, b) => {
+    let aValue, bValue;
+    
+    switch (sortBy) {
+      case 'title':
+        aValue = a.title.toLowerCase();
+        bValue = b.title.toLowerCase();
+        break;
+      case 'status':
+        aValue = a.status;
+        bValue = b.status;
+        break;
+      case 'property_type':
+        aValue = a.property_type;
+        bValue = b.property_type;
+        break;
+      case 'pricing':
+        aValue = 0; // We'll need to extract pricing data
+        bValue = 0;
+        break;
+      default: // created_at
+        aValue = new Date(a.created_at).getTime();
+        bValue = new Date(b.created_at).getTime();
+    }
+    
+    if (sortOrder === 'asc') {
+      return aValue < bValue ? -1 : aValue > bValue ? 1 : 0;
+    } else {
+      return aValue > bValue ? -1 : aValue < bValue ? 1 : 0;
+    }
   });
 
   const totalPages = Math.ceil(filteredProperties.length / rowsPerPage);
@@ -148,7 +210,7 @@ const PropertyApproval: React.FC = () => {
     }
   };
 
-  const handleStatusUpdate = async (propertyId: string, newStatus: 'approved' | 'rejected') => {
+  const handleStatusUpdate = async (propertyId: string, newStatus: 'approved' | 'rejected' | 'inactive') => {
     try {
       await PropertyService.updatePropertyStatus(propertyId, newStatus);
       toast.success(`Property ${newStatus} successfully`);
@@ -157,6 +219,30 @@ const PropertyApproval: React.FC = () => {
       console.error(`Error ${newStatus} property:`, error);
       toast.error(`Failed to ${newStatus} property`);
     }
+  };
+
+  const handleToggleStatus = async (propertyId: string, currentStatus: string) => {
+    const newStatus = currentStatus === 'inactive' ? 'approved' : 'inactive';
+    await handleStatusUpdate(propertyId, newStatus);
+  };
+
+  const handleViewProperty = (propertyId: string) => {
+    setSelectedPropertyId(propertyId);
+    setShowPropertyDetails(true);
+  };
+
+  const handleEditProperty = (propertyId: string) => {
+    // Navigate to edit page or open edit modal
+    window.open(`/admin/properties/${propertyId}/edit`, '_blank');
+  };
+
+  const clearFilters = () => {
+    setStatusFilter('all');
+    setSelectedType('all');
+    setOwnerFilter('');
+    setStartDate('');
+    setEndDate('');
+    setSearchTerm('');
   };
 
   const handleDeleteProperty = async (propertyId: string) => {
@@ -217,6 +303,27 @@ const PropertyApproval: React.FC = () => {
           searchPlaceholder="Search properties..."
         />
 
+        {/* Filters */}
+        <PropertyFilters
+          searchTerm={searchTerm}
+          onSearchChange={setSearchTerm}
+          statusFilter={statusFilter}
+          onStatusChange={setStatusFilter}
+          typeFilter={selectedType}
+          onTypeChange={setSelectedType}
+          ownerFilter={ownerFilter}
+          onOwnerChange={setOwnerFilter}
+          startDate={startDate}
+          onStartDateChange={setStartDate}
+          endDate={endDate}
+          onEndDateChange={setEndDate}
+          sortBy={sortBy}
+          onSortChange={setSortBy}
+          sortOrder={sortOrder}
+          onSortOrderChange={setSortOrder}
+          onClearFilters={clearFilters}
+        />
+
         {/* Action Bar */}
         <div className="bg-white border-b px-6 py-4">
           <div className="flex flex-wrap items-center justify-between gap-4">
@@ -228,33 +335,7 @@ const PropertyApproval: React.FC = () => {
                 <Plus className="w-4 h-4 mr-2" />
                 Add New Property
               </button>
-              <div className="relative">
-                <select
-                  value={statusFilter}
-                  onChange={(e) => setStatusFilter(e.target.value)}
-                  className="appearance-none bg-white border border-gray-300 rounded-lg px-4 py-2 pr-8 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm cursor-pointer"
-                >
-                  <option value="all">All Status</option>
-                  <option value="pending">Pending</option>
-                  <option value="approved">Approved</option>
-                  <option value="rejected">Rejected</option>
-                </select>
-                <ChevronDown className="w-4 h-4 absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 pointer-events-none" />
-              </div>
-              <div className="relative">
-                <select
-                  value={selectedType}
-                  onChange={(e) => setSelectedType(e.target.value)}
-                  className="appearance-none bg-white border border-gray-300 rounded-lg px-4 py-2 pr-8 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm cursor-pointer"
-                >
-                  <option value="all">All Types</option>
-                  <option value="Day Picnic">Day Picnic</option>
-                  <option value="Villa">Villa</option>
-                  <option value="Resort">Resort</option>
-                  <option value="Farmhouse">Farmhouse</option>
-                </select>
-                <ChevronDown className="w-4 h-4 absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 pointer-events-none" />
-              </div>
+              
               {selectedProperties.length > 0 && (
                 <div className="relative">
                   <button
@@ -293,15 +374,9 @@ const PropertyApproval: React.FC = () => {
                 </div>
               )}
             </div>
-            <div className="relative">
-              <input
-                type="text"
-                placeholder="Search properties..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm w-64"
-              />
-              <Search className="w-4 h-4 absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
+            
+            <div className="text-sm text-gray-600">
+              Showing {paginatedProperties.length} of {filteredProperties.length} properties
             </div>
           </div>
         </div>
@@ -425,39 +500,93 @@ const PropertyApproval: React.FC = () => {
                             {formatStatus(property.status)}
                           </span>
                         </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                          <div className="flex space-x-2">
-                            <button className="text-blue-600 hover:text-blue-800 cursor-pointer p-1" title="View Details">
-                              <Eye className="w-4 h-4" />
-                            </button>
-                            {property.status === 'pending' && (
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                          <div className="flex space-x-1">
+                            <IconButton
+                              icon={Eye}
+                              onClick={() => handleViewProperty(property.id)}
+                              variant="ghost"
+                              size="sm"
+                              tooltip="View Details"
+                              aria-label="View property details"
+                            />
+                            <IconButton
+                              icon={BarChart3}
+                              onClick={() => handleViewProperty(property.id)}
+                              variant="ghost"
+                              size="sm"
+                              tooltip="View Insights"
+                              aria-label="View property insights"
+                            />
+                            <IconButton
+                              icon={Edit}
+                              onClick={() => handleEditProperty(property.id)}
+                              variant="ghost"
+                              size="sm"
+                              tooltip="Edit Property"
+                              aria-label="Edit property"
+                            />
+                            {property.status === 'pending' ? (
                               <>
-                                <button 
+                                <IconButton
+                                  icon={Check}
                                   onClick={() => handleStatusUpdate(property.id, 'approved')}
-                                  className="text-green-600 hover:text-green-800 cursor-pointer p-1" 
-                                  title="Approve"
-                                >
-                                  <CheckCircle className="w-4 h-4" />
-                                </button>
-                                <button 
+                                  variant="ghost"
+                                  size="sm"
+                                  tooltip="Approve"
+                                  aria-label="Approve property"
+                                  className="text-green-600 hover:text-green-800"
+                                />
+                                <IconButton
+                                  icon={X}
                                   onClick={() => handleStatusUpdate(property.id, 'rejected')}
-                                  className="text-red-600 hover:text-red-800 cursor-pointer p-1" 
-                                  title="Reject"
-                                >
-                                  <XCircle className="w-4 h-4" />
-                                </button>
+                                  variant="ghost"
+                                  size="sm"
+                                  tooltip="Reject"
+                                  aria-label="Reject property"
+                                  className="text-red-600 hover:text-red-800"
+                                />
                               </>
+                            ) : (
+                              <IconButton
+                                icon={property.status === 'inactive' ? Unlock : Lock}
+                                onClick={() => handleToggleStatus(property.id, property.status)}
+                                variant="ghost"
+                                size="sm"
+                                tooltip={property.status === 'inactive' ? 'Activate' : 'Deactivate'}
+                                aria-label={property.status === 'inactive' ? 'Activate property' : 'Deactivate property'}
+                                className={property.status === 'inactive' ? 'text-green-600 hover:text-green-800' : 'text-orange-600 hover:text-orange-800'}
+                              />
                             )}
-                            <button className="text-gray-600 hover:text-gray-800 cursor-pointer p-1" title="Edit">
-                              <Edit className="w-4 h-4" />
-                            </button>
-                            <button 
-                              onClick={() => handleDeleteProperty(property.id)}
-                              className="text-red-600 hover:text-red-800 cursor-pointer p-1" 
-                              title="Delete"
-                            >
-                              <Trash2 className="w-4 h-4" />
-                            </button>
+                            <AlertDialog>
+                              <AlertDialogTrigger asChild>
+                                <IconButton
+                                  icon={Trash2}
+                                  variant="ghost"
+                                  size="sm"
+                                  tooltip="Delete"
+                                  aria-label="Delete property"
+                                  className="text-red-600 hover:text-red-800"
+                                />
+                              </AlertDialogTrigger>
+                              <AlertDialogContent>
+                                <AlertDialogHeader>
+                                  <AlertDialogTitle>Delete Property</AlertDialogTitle>
+                                  <AlertDialogDescription>
+                                    Are you sure you want to delete this property? This action cannot be undone.
+                                  </AlertDialogDescription>
+                                </AlertDialogHeader>
+                                <AlertDialogFooter>
+                                  <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                  <AlertDialogAction
+                                    onClick={() => handleDeleteProperty(property.id)}
+                                    className="bg-red-600 hover:bg-red-700"
+                                  >
+                                    Delete
+                                  </AlertDialogAction>
+                                </AlertDialogFooter>
+                              </AlertDialogContent>
+                            </AlertDialog>
                           </div>
                         </td>
                       </tr>
@@ -528,6 +657,13 @@ const PropertyApproval: React.FC = () => {
             </div>
           )}
         </main>
+        
+        {/* Property Details Drawer */}
+        <PropertyDetailsDrawer
+          isOpen={showPropertyDetails}
+          onClose={() => setShowPropertyDetails(false)}
+          propertyId={selectedPropertyId}
+        />
       </div>
     </div>
   );
