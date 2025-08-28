@@ -12,7 +12,8 @@ import {
   Clock,
   AlertCircle,
   CheckCircle,
-  Loader2
+  Loader2,
+  Bell
 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { PropertyOwner, adminService } from '@/lib/adminService';
@@ -54,6 +55,16 @@ interface OwnerInsights {
     created_at: string;
     property_id: string;
   }>;
+  payouts?: Array<{
+    id: string;
+    period_start: string;
+    period_end: string;
+    gross_revenue: number;
+    commission_amount: number;
+    payout_amount: number;
+    status: string;
+    created_at: string;
+  }>;
 }
 
 interface ActivityLog {
@@ -71,6 +82,7 @@ const OwnerInsightsModal: React.FC<OwnerInsightsModalProps> = ({
 }) => {
   const [insights, setInsights] = useState<OwnerInsights | null>(null);
   const [activityLogs, setActivityLogs] = useState<ActivityLog[]>([]);
+  const [payouts, setPayouts] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('overview');
 
@@ -97,6 +109,17 @@ const OwnerInsightsModal: React.FC<OwnerInsightsModalProps> = ({
 
       if (logsError) throw logsError;
       setActivityLogs(logs || []);
+
+      // Load payouts
+      const { data: payoutsData, error: payoutsError } = await supabase
+        .from('owner_payouts')
+        .select('*')
+        .eq('owner_id', owner.id)
+        .order('created_at', { ascending: false })
+        .limit(10);
+
+      if (payoutsError) throw payoutsError;
+      setPayouts(payoutsData || []);
     } catch (error) {
       console.error('Error loading insights:', error);
     } finally {
@@ -175,6 +198,7 @@ const OwnerInsightsModal: React.FC<OwnerInsightsModalProps> = ({
     { id: 'overview', label: 'Overview', icon: TrendingUp },
     { id: 'properties', label: 'Properties', icon: Home },
     { id: 'revenue', label: 'Revenue', icon: DollarSign },
+    { id: 'payouts', label: 'Payouts', icon: DollarSign },
     { id: 'activity', label: 'Activity', icon: Activity }
   ];
 
@@ -189,12 +213,24 @@ const OwnerInsightsModal: React.FC<OwnerInsightsModalProps> = ({
               {owner.full_name || owner.email} • ID: {owner.id.substring(0, 8)}...
             </p>
           </div>
-          <button
-            onClick={onClose}
-            className="text-gray-400 hover:text-gray-600 transition-colors"
-          >
-            <X className="w-6 h-6" />
-          </button>
+          <div className="flex items-center space-x-3">
+            <button
+              onClick={() => {
+                // We can integrate with the SendNotificationModal here
+                alert('Notification feature integration coming soon');
+              }}
+              className="flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+            >
+              <Bell className="w-4 h-4 mr-2" />
+              Send Notification
+            </button>
+            <button
+              onClick={onClose}
+              className="text-gray-400 hover:text-gray-600 transition-colors"
+            >
+              <X className="w-6 h-6" />
+            </button>
+          </div>
         </div>
 
         {/* Tabs */}
@@ -403,6 +439,54 @@ const OwnerInsightsModal: React.FC<OwnerInsightsModalProps> = ({
                       ))}
                     </div>
                   </div>
+                </div>
+              )}
+
+              {/* Payouts Tab */}
+              {activeTab === 'payouts' && (
+                <div className="space-y-6">
+                  <h4 className="text-lg font-semibold text-gray-800">Payout History</h4>
+                  {payouts.length > 0 ? (
+                    <div className="space-y-4">
+                      {payouts.map(payout => (
+                        <div key={payout.id} className="bg-white border rounded-lg p-4">
+                          <div className="flex items-center justify-between mb-3">
+                            <div>
+                              <h5 className="font-medium text-gray-800">
+                                {formatDate(payout.period_start)} - {formatDate(payout.period_end)}
+                              </h5>
+                              <p className="text-sm text-gray-500">
+                                Payout #{payout.id.substring(0, 8)}...
+                              </p>
+                            </div>
+                            <span className={`px-2 py-1 text-xs font-medium rounded-full ${getStatusColor(payout.status)}`}>
+                              {payout.status}
+                            </span>
+                          </div>
+                          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                            <div className="text-center p-3 bg-gray-50 rounded-lg">
+                              <p className="text-xs text-gray-500 mb-1">Gross Revenue</p>
+                              <p className="font-bold text-gray-800">{formatCurrency(payout.gross_revenue)}</p>
+                            </div>
+                            <div className="text-center p-3 bg-red-50 rounded-lg">
+                              <p className="text-xs text-red-600 mb-1">Commission</p>
+                              <p className="font-bold text-red-600">{formatCurrency(payout.commission_amount)}</p>
+                            </div>
+                            <div className="text-center p-3 bg-green-50 rounded-lg">
+                              <p className="text-xs text-green-600 mb-1">Payout Amount</p>
+                              <p className="font-bold text-green-600">{formatCurrency(payout.payout_amount)}</p>
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="text-center py-8">
+                      <DollarSign className="w-12 h-12 text-gray-400 mx-auto mb-4" />
+                      <h5 className="font-medium text-gray-800 mb-2">No payouts yet</h5>
+                      <p className="text-gray-500">Payouts will appear here once bookings are completed.</p>
+                    </div>
+                  )}
                 </div>
               )}
 
