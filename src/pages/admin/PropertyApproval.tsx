@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Eye, CheckCircle, XCircle, Search, Filter, MoreVertical, Calendar, History } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
@@ -78,37 +77,56 @@ const PropertyApproval: React.FC = () => {
           property_type,
           status,
           created_at,
-          owner_id,
-          menu_available,
-          admin_blocked,
-          host_details,
-          video_url,
-          banquet_hall_capacity,
-          ground_lawn_capacity
+          owner_id
         `)
         .order('created_at', { ascending: false });
 
-      if (propertiesError) throw propertiesError;
+      if (propertiesError) {
+        console.error('Error fetching properties:', propertiesError);
+        toast.error('Failed to fetch properties');
+        setProperties([]);
+        return;
+      }
 
       if (!propertiesData) {
         setProperties([]);
         return;
       }
 
-      // Fetch owner details for each property
+      // Fetch owner details and extended property info for each property
       const propertiesWithOwners = await Promise.all(
-        propertiesData.map(async (property) => {
+        propertiesData.map(async (property: any) => {
           const { data: owner, error: ownerError } = await supabase
             .from('profiles')
             .select('full_name, email, phone')
             .eq('id', property.owner_id)
             .single();
 
+          // Try to fetch extended property details (new columns)
+          let extendedData: any = {};
+          try {
+            const { data: extended } = await supabase
+              .from('properties' as any)
+              .select('menu_available, admin_blocked, host_details, video_url, banquet_hall_capacity, ground_lawn_capacity')
+              .eq('id', property.id)
+              .single();
+            
+            if (extended) {
+              extendedData = extended;
+            }
+          } catch (error) {
+            // Gracefully handle if columns don't exist yet
+            console.log('Extended property data not available:', error);
+          }
+
           return {
             ...property,
-            menu_available: property.menu_available || false,
-            admin_blocked: property.admin_blocked || false,
-            host_details: property.host_details || {},
+            menu_available: extendedData.menu_available || false,
+            admin_blocked: extendedData.admin_blocked || false,
+            host_details: extendedData.host_details || {},
+            video_url: extendedData.video_url || undefined,
+            banquet_hall_capacity: extendedData.banquet_hall_capacity || undefined,
+            ground_lawn_capacity: extendedData.ground_lawn_capacity || undefined,
             owner: ownerError ? null : owner
           } as PropertyWithOwner;
         })
@@ -118,6 +136,7 @@ const PropertyApproval: React.FC = () => {
     } catch (error) {
       console.error('Error fetching properties:', error);
       toast.error('Failed to fetch properties');
+      setProperties([]);
     } finally {
       setLoading(false);
     }

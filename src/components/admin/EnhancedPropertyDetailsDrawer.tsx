@@ -83,21 +83,24 @@ const EnhancedPropertyDetailsDrawer: React.FC<EnhancedPropertyDetailsDrawerProps
       if (error) throw error;
 
       if (data) {
+        // Cast to any to handle new columns that may not be in types yet
+        const propertyData = data as any;
+        
         setProperty({
-          ...data,
-          menu_available: (data as any).menu_available || false,
-          admin_blocked: (data as any).admin_blocked || false,
-          host_details: (data as any).host_details || {},
-          video_url: (data as any).video_url || undefined,
-          banquet_hall_capacity: (data as any).banquet_hall_capacity || undefined,
-          ground_lawn_capacity: (data as any).ground_lawn_capacity || undefined,
+          ...propertyData,
+          menu_available: propertyData.menu_available || false,
+          admin_blocked: propertyData.admin_blocked || false,
+          host_details: propertyData.host_details || {},
+          video_url: propertyData.video_url || undefined,
+          banquet_hall_capacity: propertyData.banquet_hall_capacity || undefined,
+          ground_lawn_capacity: propertyData.ground_lawn_capacity || undefined,
         });
 
         // Fetch owner details
         const { data: owner } = await supabase
           .from('profiles')
           .select('full_name, email, phone')
-          .eq('id', data.owner_id)
+          .eq('id', propertyData.owner_id)
           .single();
 
         if (owner) {
@@ -126,16 +129,21 @@ const EnhancedPropertyDetailsDrawer: React.FC<EnhancedPropertyDetailsDrawerProps
       if (error) {
         console.log('Status history table not available:', error);
         setStatusHistory([]);
-      } else {
-        setStatusHistory((data || []).map(item => ({
-          id: item.id,
+      } else if (data && Array.isArray(data)) {
+        // Type cast to handle the new table structure
+        const historyData = data.map((item: any) => ({
+          id: item.id || '',
           from_status: item.from_status || '',
           to_status: item.to_status || '',
           reason: item.reason || '',
           comment: item.comment || '',
           actor_role: item.actor_role || '',
           created_at: item.created_at || '',
-        })));
+        })) as StatusHistoryEntry[];
+        
+        setStatusHistory(historyData);
+      } else {
+        setStatusHistory([]);
       }
     } catch (error) {
       console.log('Status history table not available:', error);

@@ -60,17 +60,20 @@ const PropertyAvailabilityCalendar: React.FC<PropertyAvailabilityCalendarProps> 
       if (error) {
         console.log('Property availability table not available:', error);
         setAvailability([]);
-      } else {
-        const mappedData: AvailabilityEntry[] = (data || []).map(item => ({
-          id: item.id,
-          day: item.day,
-          category: item.category,
-          total_capacity: item.total_capacity,
-          booked_units: item.booked_units,
-          status: item.status,
-          booking_name: item.booking_name
+      } else if (data && Array.isArray(data)) {
+        // Type cast to handle the new table structure
+        const mappedData: AvailabilityEntry[] = data.map((item: any) => ({
+          id: item.id || '',
+          day: item.day || '',
+          category: item.category || 'rooms',
+          total_capacity: item.total_capacity || 0,
+          booked_units: item.booked_units || 0,
+          status: item.status || 'available',
+          booking_name: item.booking_name || undefined
         }));
         setAvailability(mappedData);
+      } else {
+        setAvailability([]);
       }
     } catch (error) {
       console.log('Property availability table not available:', error);
