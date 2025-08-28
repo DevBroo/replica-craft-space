@@ -1,10 +1,28 @@
 
 import React, { useState, useEffect } from 'react';
-import { Eye, CheckCircle, XCircle, Search, Filter, MoreVertical, Calendar, History } from 'lucide-react';
+import { 
+  Eye, 
+  CheckCircle, 
+  XCircle, 
+  Search, 
+  Filter, 
+  MoreVertical, 
+  Calendar, 
+  History,
+  RefreshCw,
+  Ban,
+  Bell,
+  Trash2,
+  ArrowUpDown
+} from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+import IconButton from '@/components/admin/ui/IconButton';
+import SharedSidebar from '@/components/admin/SharedSidebar';
+import SharedHeader from '@/components/admin/SharedHeader';
 import ApproveRejectModal from '@/components/admin/ApproveRejectModal';
 import EnhancedPropertyDetailsDrawer from '@/components/admin/EnhancedPropertyDetailsDrawer';
+import SendNotificationModal from '@/components/admin/SendNotificationModal';
 import { usePropertyApprovalStats } from '@/hooks/usePropertyApprovalStats';
 
 interface PropertyWithOwner {
@@ -30,12 +48,16 @@ interface PropertyWithOwner {
 }
 
 const PropertyApproval: React.FC = () => {
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [rowsPerPage, setRowsPerPage] = useState(10);
   const [properties, setProperties] = useState<PropertyWithOwner[]>([]);
   const [filteredProperties, setFilteredProperties] = useState<PropertyWithOwner[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [selectedProperties, setSelectedProperties] = useState<string[]>([]);
+  const [activeDropdown, setActiveDropdown] = useState<string | null>(null);
   const [modalState, setModalState] = useState<{
     isOpen: boolean;
     action: 'approve' | 'reject';
@@ -54,6 +76,7 @@ const PropertyApproval: React.FC = () => {
     isOpen: false,
     propertyId: null,
   });
+  const [showSendNotification, setShowSendNotification] = useState<PropertyWithOwner | null>(null);
 
   const { stats } = usePropertyApprovalStats();
 
@@ -64,6 +87,17 @@ const PropertyApproval: React.FC = () => {
   useEffect(() => {
     filterProperties();
   }, [properties, searchTerm, statusFilter]);
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (!(event.target as Element).closest('.dropdown-container')) {
+        setActiveDropdown(null);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
 
   const fetchProperties = async () => {
     setLoading(true);
@@ -225,6 +259,73 @@ const PropertyApproval: React.FC = () => {
     fetchProperties();
   };
 
+  const handleToggleAdminBlock = async (property: PropertyWithOwner) => {
+    try {
+      const { error } = await supabase
+        .from('properties')
+        .update({ admin_blocked: !property.admin_blocked } as any)
+        .eq('id', property.id);
+
+      if (error) {
+        console.error('Error updating admin block status:', error);
+        toast.error('Admin block toggle not available - column may not exist');
+        return;
+      }
+
+      toast.success(`Property ${!property.admin_blocked ? 'blocked' : 'unblocked'} by admin`);
+      fetchProperties();
+    } catch (error) {
+      console.error('Error toggling admin block:', error);
+      toast.error('Failed to update admin block status');
+    }
+  };
+
+  const handleToggleMenuAvailable = async (property: PropertyWithOwner) => {
+    try {
+      const { error } = await supabase
+        .from('properties')
+        .update({ menu_available: !property.menu_available } as any)
+        .eq('id', property.id);
+
+      if (error) {
+        console.error('Error updating menu status:', error);
+        toast.error('Menu toggle not available - column may not exist');
+        return;
+      }
+
+      toast.success(`Menu ${!property.menu_available ? 'enabled' : 'disabled'} for this property`);
+      fetchProperties();
+    } catch (error) {
+      console.error('Error toggling menu status:', error);
+      toast.error('Failed to update menu status');
+    }
+  };
+
+  const handleDeleteProperty = async (property: PropertyWithOwner) => {
+    if (!confirm(`Are you sure you want to delete property "${property.title}"? This action cannot be undone.`)) {
+      return;
+    }
+
+    try {
+      const { error } = await supabase
+        .from('properties')
+        .delete()
+        .eq('id', property.id);
+
+      if (error) {
+        console.error('Error deleting property:', error);
+        toast.error('Failed to delete property');
+        return;
+      }
+
+      toast.success('Property deleted successfully');
+      fetchProperties();
+    } catch (error) {
+      console.error('Error deleting property:', error);
+      toast.error('Failed to delete property');
+    }
+  };
+
   const openDetailsDrawer = (propertyId: string) => {
     setDetailsDrawer({
       isOpen: true,
@@ -254,272 +355,459 @@ const PropertyApproval: React.FC = () => {
     }
   };
 
+  // Pagination calculations
+  const totalPages = Math.ceil(filteredProperties.length / rowsPerPage);
+  const startIndex = (currentPage - 1) * rowsPerPage;
+  const paginatedProperties = filteredProperties.slice(startIndex, startIndex + rowsPerPage);
+
   return (
-    <div className="space-y-6">
-      {/* Header with Stats */}
-      <div className="bg-white rounded-lg shadow p-6">
-        <h1 className="text-2xl font-bold text-gray-900 mb-4">Property Approval Dashboard</h1>
-        
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-          <div className="bg-yellow-50 p-4 rounded-lg">
-            <div className="flex items-center">
-              <Calendar className="w-8 h-8 text-yellow-600" />
-              <div className="ml-3">
-                <p className="text-sm font-medium text-yellow-800">Pending</p>
-                <p className="text-2xl font-bold text-yellow-900">{stats.total_pending}</p>
-              </div>
+    <div className="min-h-screen bg-gray-50">
+      <SharedSidebar 
+        sidebarCollapsed={sidebarCollapsed} 
+        setSidebarCollapsed={setSidebarCollapsed} 
+      />
+      
+      <div className={`transition-all duration-300 ${sidebarCollapsed ? 'ml-16' : 'ml-64'}`}>
+        <SharedHeader 
+          title="Property Approval" 
+          breadcrumb="Property Approval"
+        />
+
+        {/* Action Bar */}
+        <div className="bg-white border-b px-6 py-4">
+          <div className="flex flex-wrap items-center justify-between gap-4">
+            <div className="flex items-center space-x-4">
+              <IconButton
+                icon={RefreshCw}
+                variant="secondary"
+                onClick={fetchProperties}
+                disabled={loading}
+                loading={loading}
+                tooltip="Refresh property list"
+                aria-label="Refresh property list"
+                className="px-4 py-2"
+              >
+                Refresh
+              </IconButton>
+              {selectedProperties.length > 0 && (
+                <>
+                  <IconButton
+                    icon={CheckCircle}
+                    variant="primary"
+                    onClick={() => handleBulkAction('approve')}
+                    tooltip={`Approve ${selectedProperties.length} selected properties`}
+                    aria-label="Bulk approve selected properties"
+                    className="px-4 py-2 bg-green-600 hover:bg-green-700"
+                  >
+                    Approve ({selectedProperties.length})
+                  </IconButton>
+                  <IconButton
+                    icon={XCircle}
+                    variant="secondary"
+                    onClick={() => handleBulkAction('reject')}
+                    tooltip={`Reject ${selectedProperties.length} selected properties`}
+                    aria-label="Bulk reject selected properties"
+                    className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white"
+                  >
+                    Reject ({selectedProperties.length})
+                  </IconButton>
+                </>
+              )}
             </div>
-          </div>
-          
-          <div className="bg-green-50 p-4 rounded-lg">
-            <div className="flex items-center">
-              <CheckCircle className="w-8 h-8 text-green-600" />
-              <div className="ml-3">
-                <p className="text-sm font-medium text-green-800">Approved</p>
-                <p className="text-2xl font-bold text-green-900">{stats.total_approved}</p>
+            
+            {/* Summary Stats */}
+            <div className="flex items-center space-x-6 text-sm text-gray-600">
+              <div className="flex items-center space-x-2">
+                <div className="w-2 h-2 bg-yellow-500 rounded-full"></div>
+                <span>Pending: {stats.total_pending}</span>
               </div>
-            </div>
-          </div>
-          
-          <div className="bg-red-50 p-4 rounded-lg">
-            <div className="flex items-center">
-              <XCircle className="w-8 h-8 text-red-600" />
-              <div className="ml-3">
-                <p className="text-sm font-medium text-red-800">Rejected</p>
-                <p className="text-2xl font-bold text-red-900">{stats.total_rejected}</p>
+              <div className="flex items-center space-x-2">
+                <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                <span>Approved: {stats.total_approved}</span>
               </div>
-            </div>
-          </div>
-          
-          <div className="bg-blue-50 p-4 rounded-lg">
-            <div className="flex items-center">
-              <History className="w-8 h-8 text-blue-600" />
-              <div className="ml-3">
-                <p className="text-sm font-medium text-blue-800">Avg. Pending</p>
-                <p className="text-2xl font-bold text-blue-900">{Math.round(stats.avg_pending_hours)}h</p>
+              <div className="flex items-center space-x-2">
+                <div className="w-2 h-2 bg-red-500 rounded-full"></div>
+                <span>Rejected: {stats.total_rejected}</span>
               </div>
             </div>
           </div>
         </div>
-      </div>
 
-      {/* Filters and Search */}
-      <div className="bg-white rounded-lg shadow p-6">
-        <div className="flex flex-col md:flex-row gap-4 items-center justify-between">
-          <div className="flex-1 relative">
-            <Search className="w-5 h-5 absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
-            <input
-              type="text"
-              placeholder="Search properties..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-            />
+        {/* Main Content */}
+        <main className="p-6">
+
+          {/* Search and Filters */}
+          <div className="bg-white rounded-lg shadow-sm border mb-6">
+            <div className="p-4">
+              <div className="flex flex-col md:flex-row gap-4 items-center justify-between">
+                <div className="flex-1 relative">
+                  <Search className="w-5 h-5 absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
+                  <input
+                    type="text"
+                    placeholder="Search properties..."
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  />
+                </div>
+                
+                <div className="flex items-center gap-4">
+                  <select
+                    value={statusFilter}
+                    onChange={(e) => setStatusFilter(e.target.value)}
+                    className="border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  >
+                    <option value="all">All Status</option>
+                    <option value="pending">Pending</option>
+                    <option value="approved">Approved</option>
+                    <option value="rejected">Rejected</option>
+                  </select>
+
+                  <IconButton
+                    icon={Filter}
+                    variant="secondary"
+                    tooltip="Advanced Filters"
+                    aria-label="Open advanced filters"
+                    className="px-3 py-2"
+                  >
+                    Advanced Filters
+                  </IconButton>
+                </div>
+              </div>
+            </div>
           </div>
-          
-          <div className="flex items-center gap-4">
-            <select
-              value={statusFilter}
-              onChange={(e) => setStatusFilter(e.target.value)}
-              className="border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
-            >
-              <option value="all">All Status</option>
-              <option value="pending">Pending</option>
-              <option value="approved">Approved</option>
-              <option value="rejected">Rejected</option>
-            </select>
 
-            {selectedProperties.length > 0 && (
-              <div className="flex gap-2">
-                <button
-                  onClick={() => handleBulkAction('approve')}
-                  className="bg-green-600 text-white px-4 py-2 rounded-md hover:bg-green-700 flex items-center"
-                >
-                  <CheckCircle className="w-4 h-4 mr-1" />
-                  Approve ({selectedProperties.length})
-                </button>
-                <button
-                  onClick={() => handleBulkAction('reject')}
-                  className="bg-red-600 text-white px-4 py-2 rounded-md hover:bg-red-700 flex items-center"
-                >
-                  <XCircle className="w-4 h-4 mr-1" />
-                  Reject ({selectedProperties.length})
-                </button>
+          {/* Properties Table */}
+          <div className="bg-white rounded-lg shadow-sm border">
+            <div className="overflow-x-auto">
+              <table className="w-full">
+                <thead className="bg-gray-50">
+                  <tr>
+                    <th className="px-6 py-3 text-left">
+                      <input
+                        type="checkbox"
+                        checked={selectedProperties.length === paginatedProperties.length && paginatedProperties.length > 0}
+                        onChange={handleSelectAll}
+                        className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                      />
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100">
+                      <div className="flex items-center space-x-1">
+                        <span>Property</span>
+                        <ArrowUpDown className="w-3 h-3 text-gray-400" />
+                      </div>
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Owner
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Type
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Status
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100">
+                      <div className="flex items-center space-x-1">
+                        <span>Submitted</span>
+                        <ArrowUpDown className="w-3 h-3 text-gray-400" />
+                      </div>
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Actions
+                    </th>
+                  </tr>
+                </thead>
+                <tbody className="bg-white divide-y divide-gray-200">
+                  {loading ? (
+                    <tr>
+                      <td colSpan={7} className="px-6 py-4 text-center">
+                        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
+                      </td>
+                    </tr>
+                  ) : paginatedProperties.length === 0 ? (
+                    <tr>
+                      <td colSpan={7} className="px-6 py-4 text-center text-gray-500">
+                        No properties found
+                      </td>
+                    </tr>
+                  ) : (
+                    paginatedProperties.map((property) => (
+                      <tr key={property.id} className="hover:bg-gray-50">
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <input
+                            type="checkbox"
+                            checked={selectedProperties.includes(property.id)}
+                            onChange={() => handleSelectProperty(property.id)}
+                            className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                          />
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <div>
+                            <div className="text-sm font-medium text-gray-900">{property.title}</div>
+                            <div className="text-sm text-gray-500 truncate max-w-xs">{property.address}</div>
+                            <div className="flex gap-1 mt-1">
+                              {property.admin_blocked && (
+                                <span className="inline-block px-2 py-1 text-xs bg-red-100 text-red-600 rounded">
+                                  Admin Blocked
+                                </span>
+                              )}
+                              {property.menu_available && (
+                                <span className="inline-block px-2 py-1 text-xs bg-blue-100 text-blue-600 rounded">
+                                  Menu Available
+                                </span>
+                              )}
+                              {property.video_url && (
+                                <span className="inline-block px-2 py-1 text-xs bg-purple-100 text-purple-600 rounded">
+                                  Video
+                                </span>
+                              )}
+                              {(property.banquet_hall_capacity || property.ground_lawn_capacity) && (
+                                <span className="inline-block px-2 py-1 text-xs bg-green-100 text-green-600 rounded">
+                                  Events
+                                </span>
+                              )}
+                            </div>
+                          </div>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                          <div>
+                            <div className="font-medium">
+                              {property.owner?.full_name || 'Unknown'}
+                            </div>
+                            <div className="text-gray-500">{property.owner?.email || 'No email'}</div>
+                          </div>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                          {property.property_type}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <span className={getStatusBadge(property.status)}>
+                            {property.status}
+                          </span>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                          {new Date(property.created_at).toLocaleDateString('en-US', {
+                            year: 'numeric',
+                            month: 'short',
+                            day: 'numeric'
+                          })}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                          <div className="flex items-center space-x-1">
+                            <IconButton
+                              icon={Eye}
+                              variant="ghost"
+                              size="sm"
+                              tooltip="View Details"
+                              aria-label="View property details"
+                              onClick={() => openDetailsDrawer(property.id)}
+                              className="text-blue-600 hover:text-blue-800 hover:bg-blue-50"
+                            />
+                            
+                            {property.status === 'pending' && (
+                              <>
+                                <IconButton
+                                  icon={CheckCircle}
+                                  variant="ghost"
+                                  size="sm"
+                                  tooltip="Approve Property"
+                                  aria-label="Approve property"
+                                  onClick={() => setModalState({
+                                    isOpen: true,
+                                    action: 'approve',
+                                    propertyIds: [property.id],
+                                    propertyTitles: [property.title],
+                                  })}
+                                  className="text-green-600 hover:text-green-800 hover:bg-green-50"
+                                />
+                                <IconButton
+                                  icon={XCircle}
+                                  variant="ghost"
+                                  size="sm"
+                                  tooltip="Reject Property"
+                                  aria-label="Reject property"
+                                  onClick={() => setModalState({
+                                    isOpen: true,
+                                    action: 'reject',
+                                    propertyIds: [property.id],
+                                    propertyTitles: [property.title],
+                                  })}
+                                  className="text-red-600 hover:text-red-800 hover:bg-red-50"
+                                />
+                              </>
+                            )}
+
+                            {/* More Actions Dropdown */}
+                            <div className="relative dropdown-container">
+                              <IconButton
+                                icon={MoreVertical}
+                                variant="ghost"
+                                size="sm"
+                                tooltip="More Actions"
+                                aria-label="More property actions"
+                                onClick={() => setActiveDropdown(activeDropdown === property.id ? null : property.id)}
+                                className="text-gray-600 hover:text-gray-800 hover:bg-gray-50"
+                              />
+                              
+                              {activeDropdown === property.id && (
+                                <div className="absolute right-0 top-full mt-1 w-48 bg-white border border-gray-200 rounded-lg shadow-lg z-10">
+                                  <div className="py-1">
+                                    <IconButton
+                                      icon={property.admin_blocked ? CheckCircle : Ban}
+                                      variant="ghost"
+                                      onClick={() => handleToggleAdminBlock(property)}
+                                      className={`w-full justify-start px-4 py-2 text-sm rounded-none ${
+                                        property.admin_blocked 
+                                          ? 'hover:bg-green-50 text-green-600' 
+                                          : 'hover:bg-red-50 text-red-600'
+                                      }`}
+                                    >
+                                      {property.admin_blocked ? 'Unblock Property' : 'Admin Block'}
+                                    </IconButton>
+                                    
+                                    <IconButton
+                                      icon={CheckCircle}
+                                      variant="ghost"
+                                      onClick={() => handleToggleMenuAvailable(property)}
+                                      className="w-full justify-start px-4 py-2 text-sm rounded-none hover:bg-blue-50 text-blue-600"
+                                    >
+                                      {property.menu_available ? 'Disable Menu' : 'Enable Menu'}
+                                    </IconButton>
+                                    
+                                    <IconButton
+                                      icon={Bell}
+                                      variant="ghost"
+                                      onClick={() => setShowSendNotification(property)}
+                                      className="w-full justify-start px-4 py-2 text-sm rounded-none hover:bg-purple-50 text-purple-600"
+                                    >
+                                      Send Notification
+                                    </IconButton>
+                                    
+                                    <IconButton
+                                      icon={Trash2}
+                                      variant="ghost"
+                                      onClick={() => handleDeleteProperty(property)}
+                                      className="w-full justify-start px-4 py-2 text-sm rounded-none hover:bg-red-50 text-red-600"
+                                    >
+                                      Delete Property
+                                    </IconButton>
+                                  </div>
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                        </td>
+                      </tr>
+                    ))
+                  )}
+                </tbody>
+              </table>
+            </div>
+
+            {/* Pagination */}
+            {!loading && filteredProperties.length > 0 && (
+              <div className="bg-gray-50 px-4 py-3 border-t border-gray-200 sm:px-6">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center space-x-2">
+                    <span className="text-sm text-gray-700">Show</span>
+                    <select
+                      value={rowsPerPage}
+                      onChange={(e) => {
+                        setRowsPerPage(Number(e.target.value));
+                        setCurrentPage(1);
+                      }}
+                      className="border border-gray-300 rounded-md px-2 py-1 text-sm"
+                    >
+                      <option value={10}>10</option>
+                      <option value={25}>25</option>
+                      <option value={50}>50</option>
+                    </select>
+                    <span className="text-sm text-gray-700">entries</span>
+                  </div>
+                  
+                  <div className="text-sm text-gray-700">
+                    Showing {startIndex + 1} to {Math.min(startIndex + rowsPerPage, filteredProperties.length)} of {filteredProperties.length} entries
+                  </div>
+                  
+                  <div className="flex items-center space-x-2">
+                    <button
+                      onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
+                      disabled={currentPage === 1}
+                      className="px-3 py-1 text-sm border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      Previous
+                    </button>
+                    
+                    {Array.from({ length: totalPages }, (_, i) => i + 1)
+                      .filter(page => 
+                        page === 1 || 
+                        page === totalPages || 
+                        Math.abs(page - currentPage) <= 1
+                      )
+                      .map((page, index, array) => (
+                        <React.Fragment key={page}>
+                          {index > 0 && array[index - 1] !== page - 1 && (
+                            <span className="px-2 text-gray-400">...</span>
+                          )}
+                          <button
+                            onClick={() => setCurrentPage(page)}
+                            className={`px-3 py-1 text-sm border rounded-md ${
+                              currentPage === page
+                                ? 'bg-blue-600 text-white border-blue-600'
+                                : 'border-gray-300 hover:bg-gray-50'
+                            }`}
+                          >
+                            {page}
+                          </button>
+                        </React.Fragment>
+                      ))
+                    }
+                    
+                    <button
+                      onClick={() => setCurrentPage(Math.min(totalPages, currentPage + 1))}
+                      disabled={currentPage === totalPages}
+                      className="px-3 py-1 text-sm border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      Next
+                    </button>
+                  </div>
+                </div>
               </div>
             )}
           </div>
-        </div>
+
+          {/* Modals */}
+          <ApproveRejectModal
+            isOpen={modalState.isOpen}
+            onClose={() => setModalState(prev => ({ ...prev, isOpen: false }))}
+            propertyIds={modalState.propertyIds}
+            propertyTitles={modalState.propertyTitles}
+            action={modalState.action}
+            onComplete={handleModalComplete}
+          />
+
+          <EnhancedPropertyDetailsDrawer
+            isOpen={detailsDrawer.isOpen}
+            onClose={closeDetailsDrawer}
+            propertyId={detailsDrawer.propertyId}
+            onPropertyUpdate={fetchProperties}
+          />
+
+          {showSendNotification && showSendNotification.owner_id && (
+            <SendNotificationModal
+              isOpen={true}
+              onClose={() => setShowSendNotification(null)}
+              recipientType="owner"
+              recipientId={showSendNotification.owner_id}
+              recipientName={showSendNotification.owner?.full_name || showSendNotification.owner?.email || 'Property Owner'}
+              onSent={() => {
+                setShowSendNotification(null);
+                toast.success('Notification sent successfully');
+              }}
+            />
+          )}
+        </main>
       </div>
-
-      {/* Properties Table */}
-      <div className="bg-white rounded-lg shadow overflow-hidden">
-        <div className="overflow-x-auto">
-          <table className="min-w-full divide-y divide-gray-200">
-            <thead className="bg-gray-50">
-              <tr>
-                <th className="px-6 py-3 text-left">
-                  <input
-                    type="checkbox"
-                    checked={selectedProperties.length === filteredProperties.length && filteredProperties.length > 0}
-                    onChange={handleSelectAll}
-                    className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-                  />
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Property
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Owner
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Type
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Status
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Submitted
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Actions
-                </th>
-              </tr>
-            </thead>
-            <tbody className="bg-white divide-y divide-gray-200">
-              {loading ? (
-                <tr>
-                  <td colSpan={7} className="px-6 py-4 text-center">
-                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
-                  </td>
-                </tr>
-              ) : filteredProperties.length === 0 ? (
-                <tr>
-                  <td colSpan={7} className="px-6 py-4 text-center text-gray-500">
-                    No properties found
-                  </td>
-                </tr>
-              ) : (
-                filteredProperties.map((property) => (
-                  <tr key={property.id} className="hover:bg-gray-50">
-                    <td className="px-6 py-4">
-                      <input
-                        type="checkbox"
-                        checked={selectedProperties.includes(property.id)}
-                        onChange={() => handleSelectProperty(property.id)}
-                        className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-                      />
-                    </td>
-                    <td className="px-6 py-4">
-                      <div>
-                        <div className="text-sm font-medium text-gray-900">{property.title}</div>
-                        <div className="text-sm text-gray-500 truncate max-w-xs">{property.address}</div>
-                        <div className="flex gap-1 mt-1">
-                          {property.admin_blocked && (
-                            <span className="inline-block px-2 py-1 text-xs bg-red-100 text-red-600 rounded">
-                              Admin Blocked
-                            </span>
-                          )}
-                          {property.menu_available && (
-                            <span className="inline-block px-2 py-1 text-xs bg-blue-100 text-blue-600 rounded">
-                              Menu Available
-                            </span>
-                          )}
-                          {property.video_url && (
-                            <span className="inline-block px-2 py-1 text-xs bg-purple-100 text-purple-600 rounded">
-                              Video
-                            </span>
-                          )}
-                          {(property.banquet_hall_capacity || property.ground_lawn_capacity) && (
-                            <span className="inline-block px-2 py-1 text-xs bg-green-100 text-green-600 rounded">
-                              Events
-                            </span>
-                          )}
-                        </div>
-                      </div>
-                    </td>
-                    <td className="px-6 py-4">
-                      <div className="text-sm text-gray-900">
-                        {property.owner?.full_name || 'Unknown'}
-                      </div>
-                      <div className="text-sm text-gray-500">
-                        {property.owner?.email || 'No email'}
-                      </div>
-                    </td>
-                    <td className="px-6 py-4 text-sm text-gray-900">
-                      {property.property_type}
-                    </td>
-                    <td className="px-6 py-4">
-                      <span className={getStatusBadge(property.status)}>
-                        {property.status}
-                      </span>
-                    </td>
-                    <td className="px-6 py-4 text-sm text-gray-500">
-                      {new Date(property.created_at).toLocaleDateString()}
-                    </td>
-                    <td className="px-6 py-4">
-                      <div className="flex items-center space-x-2">
-                        <button
-                          onClick={() => openDetailsDrawer(property.id)}
-                          className="text-blue-600 hover:text-blue-800"
-                          title="View Details"
-                        >
-                          <Eye className="w-4 h-4" />
-                        </button>
-                        
-                        {property.status === 'pending' && (
-                          <>
-                            <button
-                              onClick={() => setModalState({
-                                isOpen: true,
-                                action: 'approve',
-                                propertyIds: [property.id],
-                                propertyTitles: [property.title],
-                              })}
-                              className="text-green-600 hover:text-green-800"
-                              title="Approve"
-                            >
-                              <CheckCircle className="w-4 h-4" />
-                            </button>
-                            <button
-                              onClick={() => setModalState({
-                                isOpen: true,
-                                action: 'reject',
-                                propertyIds: [property.id],
-                                propertyTitles: [property.title],
-                              })}
-                              className="text-red-600 hover:text-red-800"
-                              title="Reject"
-                            >
-                              <XCircle className="w-4 h-4" />
-                            </button>
-                          </>
-                        )}
-                      </div>
-                    </td>
-                  </tr>
-                ))
-              )}
-            </tbody>
-          </table>
-        </div>
-      </div>
-
-      {/* Modals */}
-      <ApproveRejectModal
-        isOpen={modalState.isOpen}
-        onClose={() => setModalState(prev => ({ ...prev, isOpen: false }))}
-        propertyIds={modalState.propertyIds}
-        propertyTitles={modalState.propertyTitles}
-        action={modalState.action}
-        onComplete={handleModalComplete}
-      />
-
-      <EnhancedPropertyDetailsDrawer
-        isOpen={detailsDrawer.isOpen}
-        onClose={closeDetailsDrawer}
-        propertyId={detailsDrawer.propertyId}
-        onPropertyUpdate={fetchProperties}
-      />
     </div>
   );
 };
