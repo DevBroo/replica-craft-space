@@ -1,5 +1,6 @@
 
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { 
   Eye, 
   CheckCircle, 
@@ -50,6 +51,7 @@ interface PropertyWithOwner {
 }
 
 const PropertyApproval: React.FC = () => {
+  const navigate = useNavigate();
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
   const [rowsPerPage, setRowsPerPage] = useState(10);
@@ -382,7 +384,7 @@ const PropertyApproval: React.FC = () => {
               <IconButton
                 icon={Plus}
                 variant="primary"
-                onClick={() => window.open('/host-signup', '_blank')}
+                onClick={() => navigate('/host/signup')}
                 tooltip="Add new property"
                 aria-label="Add new property"
                 className="px-4 py-2"
