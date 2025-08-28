@@ -382,6 +382,54 @@ export type Database = {
         }
         Relationships: []
       }
+      notifications: {
+        Row: {
+          content: string | null
+          created_at: string
+          expires_at: string | null
+          id: string
+          priority: string
+          related_entity_id: string | null
+          related_entity_type: string | null
+          status: string
+          target_audience: string | null
+          target_user_id: string | null
+          title: string
+          type: string
+          updated_at: string
+        }
+        Insert: {
+          content?: string | null
+          created_at?: string
+          expires_at?: string | null
+          id?: string
+          priority?: string
+          related_entity_id?: string | null
+          related_entity_type?: string | null
+          status?: string
+          target_audience?: string | null
+          target_user_id?: string | null
+          title: string
+          type?: string
+          updated_at?: string
+        }
+        Update: {
+          content?: string | null
+          created_at?: string
+          expires_at?: string | null
+          id?: string
+          priority?: string
+          related_entity_id?: string | null
+          related_entity_type?: string | null
+          status?: string
+          target_audience?: string | null
+          target_user_id?: string | null
+          title?: string
+          type?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       photos_with_captions: {
         Row: {
           alt_text: string | null
@@ -428,6 +476,7 @@ export type Database = {
           email: string | null
           full_name: string | null
           id: string
+          is_active: boolean
           phone: string | null
           role: string | null
           updated_at: string
@@ -438,6 +487,7 @@ export type Database = {
           email?: string | null
           full_name?: string | null
           id: string
+          is_active?: boolean
           phone?: string | null
           role?: string | null
           updated_at?: string
@@ -448,6 +498,7 @@ export type Database = {
           email?: string | null
           full_name?: string | null
           id?: string
+          is_active?: boolean
           phone?: string | null
           role?: string | null
           updated_at?: string
