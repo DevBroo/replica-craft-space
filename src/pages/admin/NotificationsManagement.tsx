@@ -13,6 +13,8 @@ import { Bell, Plus, Trash2, Edit, Users, AlertTriangle, Info, CheckCircle, Send
 import { toast } from 'sonner';
 import ComposeNotificationModal from '@/components/admin/ComposeNotificationModal';
 import NotificationAnalytics from '@/components/admin/NotificationAnalytics';
+import SharedSidebar from '@/components/admin/SharedSidebar';
+import SharedHeader from '@/components/admin/SharedHeader';
 
 interface Notification {
   id: string;
@@ -55,6 +57,7 @@ export default function NotificationsManagement() {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [isComposeModalOpen, setIsComposeModalOpen] = useState(false);
   const [editingNotification, setEditingNotification] = useState<Notification | null>(null);
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
 
   const [formData, setFormData] = useState<{
     title: string;
@@ -180,245 +183,271 @@ export default function NotificationsManagement() {
 
   if (loading) {
     return (
-      <div className="container mx-auto p-6">
-        <div className="space-y-4">
-          {[...Array(5)].map((_, i) => (
-            <Card key={i} className="animate-pulse">
-              <CardHeader>
-                <div className="h-4 bg-muted rounded w-3/4"></div>
-                <div className="h-3 bg-muted rounded w-1/2"></div>
-              </CardHeader>
-            </Card>
-          ))}
+      <div className="flex min-h-screen w-full">
+        <SharedSidebar 
+          sidebarCollapsed={sidebarCollapsed} 
+          setSidebarCollapsed={setSidebarCollapsed} 
+        />
+        <div className="flex-1 flex flex-col overflow-hidden">
+          <SharedHeader 
+            title="Notifications Management"
+            breadcrumb="Admin > Notifications Management"
+          />
+          <main className="flex-1 overflow-x-hidden overflow-y-auto bg-gray-50 p-6">
+            <div className="space-y-4">
+              {[...Array(5)].map((_, i) => (
+                <Card key={i} className="animate-pulse">
+                  <CardHeader>
+                    <div className="h-4 bg-muted rounded w-3/4"></div>
+                    <div className="h-3 bg-muted rounded w-1/2"></div>
+                  </CardHeader>
+                </Card>
+              ))}
+            </div>
+          </main>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="container mx-auto p-6 space-y-6">
-      <div className="flex items-center justify-between">
-        <div className="flex items-center space-x-2">
-          <Bell className="h-6 w-6" />
-          <h1 className="text-3xl font-bold">Notifications Management</h1>
-        </div>
-        
-        <div className="flex space-x-2">
-          <Button onClick={() => setIsComposeModalOpen(true)}>
-            <Send className="h-4 w-4 mr-2" />
-            Send Notification
-          </Button>
-          <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-            <DialogTrigger asChild>
-              <Button variant="outline" onClick={resetForm}>
-                <Plus className="h-4 w-4 mr-2" />
-                Create Notification
-              </Button>
-            </DialogTrigger>
-          <DialogContent className="sm:max-w-[500px]">
-            <DialogHeader>
-              <DialogTitle>
-                {editingNotification ? 'Edit Notification' : 'Create New Notification'}
-              </DialogTitle>
-              <DialogDescription>
-                Send notifications to users based on their roles or specific users.
-              </DialogDescription>
-            </DialogHeader>
-            
-            <form onSubmit={handleSubmit} className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="title">Title</Label>
-                <Input
-                  id="title"
-                  value={formData.title}
-                  onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-                  placeholder="Notification title"
-                  required
-                />
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="content">Content</Label>
-                <Textarea
-                  id="content"
-                  value={formData.content}
-                  onChange={(e) => setFormData({ ...formData, content: e.target.value })}
-                  placeholder="Notification content"
-                  rows={3}
-                />
-              </div>
-
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="type">Type</Label>
-                  <Select value={formData.type} onValueChange={(value: any) => setFormData({ ...formData, type: value })}>
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="info">Info</SelectItem>
-                      <SelectItem value="warning">Warning</SelectItem>
-                      <SelectItem value="error">Error</SelectItem>
-                      <SelectItem value="success">Success</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="priority">Priority</Label>
-                  <Select value={formData.priority} onValueChange={(value: any) => setFormData({ ...formData, priority: value })}>
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="low">Low</SelectItem>
-                      <SelectItem value="normal">Normal</SelectItem>
-                      <SelectItem value="high">High</SelectItem>
-                      <SelectItem value="urgent">Urgent</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="target_audience">Target Audience</Label>
-                <Select value={formData.target_audience} onValueChange={(value: any) => setFormData({ ...formData, target_audience: value })}>
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">All Users</SelectItem>
-                    <SelectItem value="admin">Admins</SelectItem>
-                    <SelectItem value="owner">Property Owners</SelectItem>
-                    <SelectItem value="agent">Agents</SelectItem>
-                    <SelectItem value="user">Regular Users</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="expires_at">Expires At (Optional)</Label>
-                <Input
-                  id="expires_at"
-                  type="date"
-                  value={formData.expires_at}
-                  onChange={(e) => setFormData({ ...formData, expires_at: e.target.value })}
-                />
-              </div>
-
-              <div className="flex justify-end space-x-2">
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={() => setIsDialogOpen(false)}
-                >
-                  Cancel
-                </Button>
-                <Button type="submit">
-                  {editingNotification ? 'Update' : 'Create'}
-                </Button>
-              </div>
-            </form>
-          </DialogContent>
-        </Dialog>
-        </div>
-      </div>
-
-      <ComposeNotificationModal
-        isOpen={isComposeModalOpen}
-        onClose={() => setIsComposeModalOpen(false)}
-        onSent={loadNotifications}
+    <div className="flex min-h-screen w-full">
+      <SharedSidebar 
+        sidebarCollapsed={sidebarCollapsed} 
+        setSidebarCollapsed={setSidebarCollapsed} 
       />
+      <div className="flex-1 flex flex-col overflow-hidden">
+        <SharedHeader 
+          title="Notifications Management"
+          breadcrumb="Admin > Notifications Management"
+        />
+        <main className="flex-1 overflow-x-hidden overflow-y-auto bg-gray-50 p-6">
+          <div className="space-y-6">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center space-x-2">
+                <Bell className="h-6 w-6" />
+                <h1 className="text-3xl font-bold">Notifications Management</h1>
+              </div>
+              
+              <div className="flex space-x-2">
+                <Button onClick={() => setIsComposeModalOpen(true)}>
+                  <Send className="h-4 w-4 mr-2" />
+                  Send Notification
+                </Button>
+                <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+                  <DialogTrigger asChild>
+                    <Button variant="outline" onClick={resetForm}>
+                      <Plus className="h-4 w-4 mr-2" />
+                      Create Notification
+                    </Button>
+                  </DialogTrigger>
+                <DialogContent className="sm:max-w-[500px]">
+                  <DialogHeader>
+                    <DialogTitle>
+                      {editingNotification ? 'Edit Notification' : 'Create New Notification'}
+                    </DialogTitle>
+                    <DialogDescription>
+                      Send notifications to users based on their roles or specific users.
+                    </DialogDescription>
+                  </DialogHeader>
+                  
+                  <form onSubmit={handleSubmit} className="space-y-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="title">Title</Label>
+                      <Input
+                        id="title"
+                        value={formData.title}
+                        onChange={(e) => setFormData({ ...formData, title: e.target.value })}
+                        placeholder="Notification title"
+                        required
+                      />
+                    </div>
 
-      <Tabs value={activeTab} onValueChange={setActiveTab}>
-        <TabsList>
-          <TabsTrigger value="notifications">Notifications</TabsTrigger>
-          <TabsTrigger value="analytics">Analytics</TabsTrigger>
-        </TabsList>
+                    <div className="space-y-2">
+                      <Label htmlFor="content">Content</Label>
+                      <Textarea
+                        id="content"
+                        value={formData.content}
+                        onChange={(e) => setFormData({ ...formData, content: e.target.value })}
+                        placeholder="Notification content"
+                        rows={3}
+                      />
+                    </div>
 
-        <TabsContent value="notifications" className="space-y-4">
-          <Tabs defaultValue="all">
-            <TabsList>
-              <TabsTrigger value="all">All</TabsTrigger>
-              <TabsTrigger value="unread">Unread</TabsTrigger>
-              <TabsTrigger value="info">Info</TabsTrigger>
-              <TabsTrigger value="warning">Warning</TabsTrigger>
-              <TabsTrigger value="error">Error</TabsTrigger>
-              <TabsTrigger value="success">Success</TabsTrigger>
-              <TabsTrigger value="archived">Archived</TabsTrigger>
-            </TabsList>
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <Label htmlFor="type">Type</Label>
+                        <Select value={formData.type} onValueChange={(value: any) => setFormData({ ...formData, type: value })}>
+                          <SelectTrigger>
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="info">Info</SelectItem>
+                            <SelectItem value="warning">Warning</SelectItem>
+                            <SelectItem value="error">Error</SelectItem>
+                            <SelectItem value="success">Success</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
 
-            <TabsContent value="all" className="space-y-4">
-              {filteredNotifications.length === 0 ? (
-                <Card>
-                  <CardContent className="flex items-center justify-center h-40">
-                    <p className="text-muted-foreground">No notifications found</p>
-                  </CardContent>
-                </Card>
-              ) : (
-                filteredNotifications.map((notification) => {
-                  const TypeIcon = typeIcons[notification.type];
-                  return (
-                    <Card key={notification.id}>
-                      <CardHeader>
-                        <div className="flex items-start justify-between">
-                          <div className="flex items-start space-x-3 flex-1">
-                            <TypeIcon className="h-5 w-5 mt-0.5 text-muted-foreground" />
-                            <div className="flex-1">
-                              <CardTitle className="text-lg">{notification.title}</CardTitle>
-                              {notification.content && (
-                                <CardDescription className="mt-1">
-                                  {notification.content}
-                                </CardDescription>
-                              )}
-                              <div className="flex items-center space-x-2 mt-3">
-                                <Badge className={typeColors[notification.type]}>
-                                  {notification.type}
-                                </Badge>
-                                <Badge className={priorityColors[notification.priority]}>
-                                  {notification.priority}
-                                </Badge>
-                                <Badge variant="outline">
-                                  <Users className="h-3 w-3 mr-1" />
-                                  {notification.target_audience}
-                                </Badge>
-                                <span className="text-xs text-muted-foreground">
-                                  {new Date(notification.created_at).toLocaleDateString()}
-                                </span>
+                      <div className="space-y-2">
+                        <Label htmlFor="priority">Priority</Label>
+                        <Select value={formData.priority} onValueChange={(value: any) => setFormData({ ...formData, priority: value })}>
+                          <SelectTrigger>
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="low">Low</SelectItem>
+                            <SelectItem value="normal">Normal</SelectItem>
+                            <SelectItem value="high">High</SelectItem>
+                            <SelectItem value="urgent">Urgent</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label htmlFor="target_audience">Target Audience</Label>
+                      <Select value={formData.target_audience} onValueChange={(value: any) => setFormData({ ...formData, target_audience: value })}>
+                        <SelectTrigger>
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="all">All Users</SelectItem>
+                          <SelectItem value="admin">Admins</SelectItem>
+                          <SelectItem value="owner">Property Owners</SelectItem>
+                          <SelectItem value="agent">Agents</SelectItem>
+                          <SelectItem value="user">Regular Users</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label htmlFor="expires_at">Expires At (Optional)</Label>
+                      <Input
+                        id="expires_at"
+                        type="date"
+                        value={formData.expires_at}
+                        onChange={(e) => setFormData({ ...formData, expires_at: e.target.value })}
+                      />
+                    </div>
+
+                    <div className="flex justify-end space-x-2">
+                      <Button
+                        type="button"
+                        variant="outline"
+                        onClick={() => setIsDialogOpen(false)}
+                      >
+                        Cancel
+                      </Button>
+                      <Button type="submit">
+                        {editingNotification ? 'Update' : 'Create'}
+                      </Button>
+                    </div>
+                  </form>
+                </DialogContent>
+              </Dialog>
+              </div>
+            </div>
+
+            <ComposeNotificationModal
+              isOpen={isComposeModalOpen}
+              onClose={() => setIsComposeModalOpen(false)}
+              onSent={loadNotifications}
+            />
+
+            <Tabs value={activeTab} onValueChange={setActiveTab}>
+              <TabsList>
+                <TabsTrigger value="notifications">Notifications</TabsTrigger>
+                <TabsTrigger value="analytics">Analytics</TabsTrigger>
+              </TabsList>
+
+              <TabsContent value="notifications" className="space-y-4">
+                <Tabs defaultValue="all">
+                  <TabsList>
+                    <TabsTrigger value="all">All</TabsTrigger>
+                    <TabsTrigger value="unread">Unread</TabsTrigger>
+                    <TabsTrigger value="info">Info</TabsTrigger>
+                    <TabsTrigger value="warning">Warning</TabsTrigger>
+                    <TabsTrigger value="error">Error</TabsTrigger>
+                    <TabsTrigger value="success">Success</TabsTrigger>
+                    <TabsTrigger value="archived">Archived</TabsTrigger>
+                  </TabsList>
+
+                  <TabsContent value="all" className="space-y-4">
+                    {filteredNotifications.length === 0 ? (
+                      <Card>
+                        <CardContent className="flex items-center justify-center h-40">
+                          <p className="text-muted-foreground">No notifications found</p>
+                        </CardContent>
+                      </Card>
+                    ) : (
+                      filteredNotifications.map((notification) => {
+                        const TypeIcon = typeIcons[notification.type];
+                        return (
+                          <Card key={notification.id}>
+                            <CardHeader>
+                              <div className="flex items-start justify-between">
+                                <div className="flex items-start space-x-3 flex-1">
+                                  <TypeIcon className="h-5 w-5 mt-0.5 text-muted-foreground" />
+                                  <div className="flex-1">
+                                    <CardTitle className="text-lg">{notification.title}</CardTitle>
+                                    {notification.content && (
+                                      <CardDescription className="mt-1">
+                                        {notification.content}
+                                      </CardDescription>
+                                    )}
+                                    <div className="flex items-center space-x-2 mt-3">
+                                      <Badge className={typeColors[notification.type]}>
+                                        {notification.type}
+                                      </Badge>
+                                      <Badge className={priorityColors[notification.priority]}>
+                                        {notification.priority}
+                                      </Badge>
+                                      <Badge variant="outline">
+                                        <Users className="h-3 w-3 mr-1" />
+                                        {notification.target_audience}
+                                      </Badge>
+                                      <span className="text-xs text-muted-foreground">
+                                        {new Date(notification.created_at).toLocaleDateString()}
+                                      </span>
+                                    </div>
+                                  </div>
+                                </div>
+                                <div className="flex items-center space-x-2">
+                                  <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    onClick={() => handleEdit(notification)}
+                                  >
+                                    <Edit className="h-4 w-4" />
+                                  </Button>
+                                  <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    onClick={() => handleDelete(notification.id)}
+                                  >
+                                    <Trash2 className="h-4 w-4" />
+                                  </Button>
+                                </div>
                               </div>
-                            </div>
-                          </div>
-                          <div className="flex items-center space-x-2">
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => handleEdit(notification)}
-                            >
-                              <Edit className="h-4 w-4" />
-                            </Button>
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => handleDelete(notification.id)}
-                            >
-                              <Trash2 className="h-4 w-4" />
-                            </Button>
-                          </div>
-                        </div>
-                      </CardHeader>
-                    </Card>
-                  );
-                })
-              )}
-            </TabsContent>
-          </Tabs>
-        </TabsContent>
+                            </CardHeader>
+                          </Card>
+                        );
+                      })
+                    )}
+                  </TabsContent>
+                </Tabs>
+              </TabsContent>
 
-        <TabsContent value="analytics">
-          <NotificationAnalytics />
-        </TabsContent>
+              <TabsContent value="analytics">
+                <NotificationAnalytics />
+              </TabsContent>
 
-      </Tabs>
+            </Tabs>
+          </div>
+        </main>
+      </div>
     </div>
   );
 }
