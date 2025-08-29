@@ -3,6 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { Search, Filter, Plus, Eye, UserCheck, Clock, CheckCircle, AlertTriangle, Download, BarChart3 } from 'lucide-react';
 import { toast } from 'sonner';
 import { supportTicketService } from '@/lib/supportTicketService';
+import { supabase } from '@/integrations/supabase/client';
 import CreateTicketModal from '@/components/admin/support/CreateTicketModal';
 import TicketDetailsDrawer from '@/components/admin/support/TicketDetailsDrawer';
 import SupportTicketReports from '@/components/admin/support/SupportTicketReports';
@@ -24,6 +25,24 @@ const SupportTickets = () => {
     avgResolutionTime: '2.3 days'
   });
 
+  // Real-time updates
+  useEffect(() => {
+    const channel = supabase
+      .channel('support-tickets-list')
+      .on('postgres_changes', {
+        event: '*',
+        schema: 'public',
+        table: 'support_tickets'
+      }, () => {
+        loadTickets();
+      })
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [searchTerm, statusFilter, priorityFilter]);
+
   useEffect(() => {
     loadTickets();
   }, [searchTerm, statusFilter, priorityFilter]);
@@ -32,8 +51,8 @@ const SupportTickets = () => {
     try {
       setLoading(true);
       const data = await supportTicketService.getTickets({
-        status: statusFilter,
-        priority: priorityFilter,
+        status: statusFilter !== 'all' ? statusFilter : undefined,
+        priority: priorityFilter !== 'all' ? priorityFilter : undefined,
         search: searchTerm || undefined,
         limit: 50
       });
@@ -52,7 +71,11 @@ const SupportTickets = () => {
       });
     } catch (error) {
       console.error('Error loading tickets:', error);
-      toast.error('Failed to load tickets');
+      if (error.message?.includes('foreign key')) {
+        toast.error('Database integrity issue detected. Please contact support.');
+      } else {
+        toast.error('Failed to load tickets');
+      }
     } finally {
       setLoading(false);
     }

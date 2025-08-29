@@ -16,28 +16,28 @@ import {
   ResponsiveContainer 
 } from 'recharts';
 import { supportTicketService, TicketAnalytics } from '@/lib/supportTicketService';
-import { Calendar, Download, Users, Clock, TrendingUp, AlertCircle } from 'lucide-react';
+import { supabase } from '@/integrations/supabase/client';
+import { Calendar, Download, Users, Clock, TrendingUp, AlertCircle, RefreshCw } from 'lucide-react';
+import { toast } from 'sonner';
 
 const SupportTicketReports: React.FC = () => {
   const [analytics, setAnalytics] = useState<TicketAnalytics | null>(null);
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
   const [dateRange, setDateRange] = useState('30');
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
 
-  useEffect(() => {
-    loadAnalytics();
-  }, [dateRange, startDate, endDate]);
-
-  const loadAnalytics = async () => {
+  const loadAnalytics = async (showRefreshToast = false) => {
     try {
-      setLoading(true);
+      setLoading(!showRefreshToast);
+      setRefreshing(showRefreshToast);
       let start, end;
       
-      if (dateRange === 'custom') {
+      if (dateRange === 'custom' && startDate && endDate) {
         start = startDate;
         end = endDate;
-      } else {
+      } else if (dateRange !== 'all') {
         const days = parseInt(dateRange);
         const endDate = new Date();
         const startDate = new Date();
@@ -49,12 +49,40 @@ const SupportTicketReports: React.FC = () => {
 
       const data = await supportTicketService.getTicketAnalytics(start, end);
       setAnalytics(data);
+      
+      if (showRefreshToast) {
+        toast.success('Analytics refreshed');
+      }
     } catch (error) {
       console.error('Error loading analytics:', error);
+      toast.error('Failed to load analytics');
     } finally {
       setLoading(false);
+      setRefreshing(false);
     }
   };
+
+  // Real-time updates
+  useEffect(() => {
+    const channel = supabase
+      .channel('support-tickets-analytics')
+      .on('postgres_changes', {
+        event: '*',
+        schema: 'public',
+        table: 'support_tickets'
+      }, () => {
+        loadAnalytics();
+      })
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [dateRange, startDate, endDate]);
+
+  useEffect(() => {
+    loadAnalytics();
+  }, [dateRange, startDate, endDate]);
 
   const exportReport = () => {
     if (!analytics) return;
@@ -122,6 +150,8 @@ const SupportTicketReports: React.FC = () => {
               <option value="7">Last 7 days</option>
               <option value="30">Last 30 days</option>
               <option value="90">Last 90 days</option>
+              <option value="365">Last 12 months</option>
+              <option value="all">All time</option>
               <option value="custom">Custom Range</option>
             </select>
           </div>
@@ -143,6 +173,15 @@ const SupportTicketReports: React.FC = () => {
               />
             </div>
           )}
+          
+          <button
+            onClick={() => loadAnalytics(true)}
+            disabled={refreshing}
+            className="flex items-center space-x-2 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 disabled:opacity-50"
+          >
+            <RefreshCw className={`w-4 h-4 ${refreshing ? 'animate-spin' : ''}`} />
+            <span>Refresh</span>
+          </button>
           
           <button
             onClick={exportReport}
@@ -210,69 +249,101 @@ const SupportTicketReports: React.FC = () => {
         {/* Tickets by Category */}
         <div className="bg-white rounded-lg border p-6">
           <h3 className="text-lg font-semibold text-gray-900 mb-4">Tickets by Category</h3>
-          <ResponsiveContainer width="100%" height={300}>
-            <PieChart>
-              <Pie
-                data={categoryData}
-                cx="50%"
-                cy="50%"
-                labelLine={false}
-                label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
-                outerRadius={80}
-                fill="#8884d8"
-                dataKey="value"
-              >
-                {categoryData.map((entry, index) => (
-                  <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                ))}
-              </Pie>
-              <Tooltip />
-            </PieChart>
-          </ResponsiveContainer>
+          {categoryData.length > 0 ? (
+            <ResponsiveContainer width="100%" height={300}>
+              <PieChart>
+                <Pie
+                  data={categoryData}
+                  cx="50%"
+                  cy="50%"
+                  labelLine={false}
+                  label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
+                  outerRadius={80}
+                  fill="#8884d8"
+                  dataKey="value"
+                >
+                  {categoryData.map((entry, index) => (
+                    <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                  ))}
+                </Pie>
+                <Tooltip />
+              </PieChart>
+            </ResponsiveContainer>
+          ) : (
+            <div className="flex flex-col items-center justify-center h-[300px] text-gray-500">
+              <AlertCircle className="w-12 h-12 mb-2 text-gray-400" />
+              <p className="text-lg font-medium">No category data available</p>
+              <p className="text-sm">Create some tickets to see category distribution</p>
+            </div>
+          )}
         </div>
 
         {/* Tickets by Status */}
         <div className="bg-white rounded-lg border p-6">
           <h3 className="text-lg font-semibold text-gray-900 mb-4">Tickets by Status</h3>
-          <ResponsiveContainer width="100%" height={300}>
-            <BarChart data={statusData}>
-              <CartesianGrid strokeDasharray="3 3" />
-              <XAxis dataKey="name" />
-              <YAxis />
-              <Tooltip />
-              <Bar dataKey="value" fill="#8884d8" />
-            </BarChart>
-          </ResponsiveContainer>
+          {statusData.length > 0 ? (
+            <ResponsiveContainer width="100%" height={300}>
+              <BarChart data={statusData}>
+                <CartesianGrid strokeDasharray="3 3" />
+                <XAxis dataKey="name" />
+                <YAxis />
+                <Tooltip />
+                <Bar dataKey="value" fill="#8884d8" />
+              </BarChart>
+            </ResponsiveContainer>
+          ) : (
+            <div className="flex flex-col items-center justify-center h-[300px] text-gray-500">
+              <Clock className="w-12 h-12 mb-2 text-gray-400" />
+              <p className="text-lg font-medium">No status data available</p>
+              <p className="text-sm">Create some tickets to see status distribution</p>
+            </div>
+          )}
         </div>
 
         {/* Agent Performance */}
         <div className="bg-white rounded-lg border p-6">
           <h3 className="text-lg font-semibold text-gray-900 mb-4">Agent Performance</h3>
-          <ResponsiveContainer width="100%" height={300}>
-            <BarChart data={agentData}>
-              <CartesianGrid strokeDasharray="3 3" />
-              <XAxis dataKey="agent_name" />
-              <YAxis />
-              <Tooltip />
-              <Legend />
-              <Bar dataKey="tickets" fill="#8884d8" name="Tickets Handled" />
-              <Bar dataKey="avg_resolution_hours" fill="#82ca9d" name="Avg Resolution (hours)" />
-            </BarChart>
-          </ResponsiveContainer>
+          {agentData.length > 0 ? (
+            <ResponsiveContainer width="100%" height={300}>
+              <BarChart data={agentData}>
+                <CartesianGrid strokeDasharray="3 3" />
+                <XAxis dataKey="agent_name" />
+                <YAxis />
+                <Tooltip />
+                <Legend />
+                <Bar dataKey="tickets" fill="#8884d8" name="Tickets Handled" />
+                <Bar dataKey="avg_resolution_hours" fill="#82ca9d" name="Avg Resolution (hours)" />
+              </BarChart>
+            </ResponsiveContainer>
+          ) : (
+            <div className="flex flex-col items-center justify-center h-[300px] text-gray-500">
+              <Users className="w-12 h-12 mb-2 text-gray-400" />
+              <p className="text-lg font-medium">No agent data available</p>
+              <p className="text-sm">Assign tickets to agents to see performance metrics</p>
+            </div>
+          )}
         </div>
 
         {/* Ticket Trend */}
         <div className="bg-white rounded-lg border p-6">
           <h3 className="text-lg font-semibold text-gray-900 mb-4">Ticket Volume Trend</h3>
-          <ResponsiveContainer width="100%" height={300}>
-            <LineChart data={trendData}>
-              <CartesianGrid strokeDasharray="3 3" />
-              <XAxis dataKey="date" />
-              <YAxis />
-              <Tooltip />
-              <Line type="monotone" dataKey="tickets" stroke="#8884d8" strokeWidth={2} />
-            </LineChart>
-          </ResponsiveContainer>
+          {trendData.length > 0 ? (
+            <ResponsiveContainer width="100%" height={300}>
+              <LineChart data={trendData}>
+                <CartesianGrid strokeDasharray="3 3" />
+                <XAxis dataKey="date" />
+                <YAxis />
+                <Tooltip />
+                <Line type="monotone" dataKey="tickets" stroke="#8884d8" strokeWidth={2} />
+              </LineChart>
+            </ResponsiveContainer>
+          ) : (
+            <div className="flex flex-col items-center justify-center h-[300px] text-gray-500">
+              <TrendingUp className="w-12 h-12 mb-2 text-gray-400" />
+              <p className="text-lg font-medium">No trend data available</p>
+              <p className="text-sm">Create tickets over time to see volume trends</p>
+            </div>
+          )}
         </div>
       </div>
 
