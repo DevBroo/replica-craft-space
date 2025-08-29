@@ -14,6 +14,39 @@ export type Database = {
   }
   public: {
     Tables: {
+      bank_details_audit_log: {
+        Row: {
+          access_type: string
+          accessed_by: string
+          accessed_fields: string[] | null
+          created_at: string
+          id: string
+          ip_address: string | null
+          owner_id: string
+          user_agent: string | null
+        }
+        Insert: {
+          access_type: string
+          accessed_by: string
+          accessed_fields?: string[] | null
+          created_at?: string
+          id?: string
+          ip_address?: string | null
+          owner_id: string
+          user_agent?: string | null
+        }
+        Update: {
+          access_type?: string
+          accessed_by?: string
+          accessed_fields?: string[] | null
+          created_at?: string
+          id?: string
+          ip_address?: string | null
+          owner_id?: string
+          user_agent?: string | null
+        }
+        Relationships: []
+      }
       bookings: {
         Row: {
           agent_id: string | null
@@ -1384,6 +1417,21 @@ export type Database = {
       }
     }
     Functions: {
+      get_bank_details_safe: {
+        Args: { p_owner_id: string }
+        Returns: {
+          account_holder_name: string
+          account_number_masked: string
+          account_type: string
+          bank_name: string
+          branch_name: string
+          id: string
+          ifsc_code: string
+          micr_code: string
+          pan_number_masked: string
+          upi_id_masked: string
+        }[]
+      }
       get_booking_analytics: {
         Args: { end_date?: string; start_date?: string }
         Returns: {
@@ -1525,6 +1573,14 @@ export type Database = {
       }
       is_admin: {
         Args: Record<PropertyKey, never>
+        Returns: boolean
+      }
+      log_bank_details_access: {
+        Args: {
+          p_access_type: string
+          p_accessed_fields?: string[]
+          p_owner_id: string
+        }
         Returns: boolean
       }
       log_contact_access: {
