@@ -28,6 +28,35 @@ export interface SupportTicket {
   status_change_reason?: string;
 }
 
+export interface DatabaseTicket {
+  id: string;
+  created_by: string;
+  customer_email?: string;
+  customer_phone?: string;
+  subject: string;
+  description?: string;
+  priority: string;
+  status: string;
+  category: string;
+  assigned_agent?: string;
+  created_at: string;
+  updated_at: string;
+  closed_at?: string;
+  resolved_at?: string;
+  reopened_count: number;
+  merged_into_ticket_id?: string;
+  sla_due_at?: string;
+  escalation_level: number;
+  escalated: boolean;
+  last_message_at?: string;
+  satisfaction_rating?: number;
+  satisfaction_comment?: string;
+  satisfaction_submitted_at?: string;
+  status_change_reason?: string;
+  assigned_agent_profile?: any;
+  created_by_profile?: any;
+}
+
 export interface TicketMessage {
   id: string;
   ticket_id: string;
@@ -78,7 +107,7 @@ class SupportTicketService {
     search?: string;
     limit?: number;
     offset?: number;
-  }) {
+  }): Promise<DatabaseTicket[]> {
     let query = supabase
       .from('support_tickets')
       .select(`
@@ -118,10 +147,10 @@ class SupportTicketService {
 
     const { data, error } = await query;
     if (error) throw error;
-    return data as any[];
+    return data as DatabaseTicket[];
   }
 
-  async getTicketById(ticketId: string) {
+  async getTicketById(ticketId: string): Promise<DatabaseTicket> {
     const { data, error } = await supabase
       .from('support_tickets')
       .select(`
@@ -133,13 +162,13 @@ class SupportTicketService {
       .single();
 
     if (error) throw error;
-    return data as any;
+    return data as DatabaseTicket;
   }
 
   async createTicket(ticket: Partial<SupportTicket>) {
     const { data, error } = await supabase
       .from('support_tickets')
-      .insert([ticket])
+      .insert(ticket)
       .select()
       .single();
 
@@ -313,31 +342,24 @@ class SupportTicketService {
       open_tickets: result.open_tickets || 0,
       resolved_tickets: result.resolved_tickets || 0,
       avg_resolution_hours: result.avg_resolution_hours || 0,
-      by_category: result.by_category || {},
-      by_status: result.by_status || {},
-      by_agent: result.by_agent || [],
-      tickets_trend: result.tickets_trend || []
+      by_category: (result.by_category && typeof result.by_category === 'object') ? result.by_category as Record<string, number> : {},
+      by_status: (result.by_status && typeof result.by_status === 'object') ? result.by_status as Record<string, number> : {},
+      by_agent: Array.isArray(result.by_agent) ? result.by_agent : [],
+      tickets_trend: Array.isArray(result.tickets_trend) ? result.tickets_trend : []
     };
   }
 
   async bulkUpdateStatus(ticketIds: string[], status: string, reason?: string) {
-    const updates = ticketIds.map(id => ({
-      id,
-      status,
-      status_change_reason: reason,
-      updated_at: new Date().toISOString()
-    }));
-
     // Use individual updates instead of upsert for better type safety
-    const promises = updates.map(update => 
+    const promises = ticketIds.map(id => 
       supabase
         .from('support_tickets')
         .update({
-          status: update.status,
-          status_change_reason: update.status_change_reason,
-          updated_at: update.updated_at
+          status,
+          status_change_reason: reason,
+          updated_at: new Date().toISOString()
         })
-        .eq('id', update.id)
+        .eq('id', id)
         .select()
     );
 
