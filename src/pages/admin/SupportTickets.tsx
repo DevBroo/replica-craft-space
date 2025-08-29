@@ -4,11 +4,14 @@ import { Search, Filter, Plus, Eye, UserCheck, Clock, CheckCircle, AlertTriangle
 import { toast } from 'sonner';
 import { supportTicketService } from '@/lib/supportTicketService';
 import { supabase } from '@/integrations/supabase/client';
+import SharedSidebar from '@/components/admin/SharedSidebar';
+import SharedHeader from '@/components/admin/SharedHeader';
 import CreateTicketModal from '@/components/admin/support/CreateTicketModal';
 import TicketDetailsDrawer from '@/components/admin/support/TicketDetailsDrawer';
 import SupportTicketReports from '@/components/admin/support/SupportTicketReports';
 
 const SupportTickets = () => {
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [tickets, setTickets] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
@@ -144,53 +147,57 @@ const SupportTickets = () => {
   };
 
   return (
-    <div className="p-6">
-      {/* Header */}
-      <div className="flex justify-between items-center mb-6">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900">Support Tickets</h1>
-          <p className="text-gray-600">Manage customer support requests and tickets</p>
-        </div>
-        <button
-          onClick={() => setShowCreateModal(true)}
-          className="flex items-center space-x-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
-        >
-          <Plus className="w-4 h-4" />
-          <span>Create Ticket</span>
-        </button>
-      </div>
+    <div className="flex h-screen bg-gray-50">
+      <SharedSidebar 
+        sidebarCollapsed={sidebarCollapsed} 
+        setSidebarCollapsed={setSidebarCollapsed} 
+      />
+      
+      <div className={`flex-1 flex flex-col min-w-0 transition-all duration-200 ${sidebarCollapsed ? 'ml-16' : 'ml-64'}`}>
+        <SharedHeader title="Support Tickets" />
+        
+        <main className="flex-1 overflow-auto p-6">
+          {/* Tabs */}
+          <div className="border-b border-gray-200 mb-6">
+            <nav className="-mb-px flex space-x-8">
+              <button
+                onClick={() => setActiveTab('tickets')}
+                className={`py-2 px-1 border-b-2 font-medium text-sm ${
+                  activeTab === 'tickets'
+                    ? 'border-blue-500 text-blue-600'
+                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                }`}
+              >
+                Tickets
+              </button>
+              <button
+                onClick={() => setActiveTab('reports')}
+                className={`py-2 px-1 border-b-2 font-medium text-sm flex items-center space-x-2 ${
+                  activeTab === 'reports'
+                    ? 'border-blue-500 text-blue-600'
+                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                }`}
+              >
+                <BarChart3 className="w-4 h-4" />
+                <span>Reports</span>
+              </button>
+            </nav>
+          </div>
 
-      {/* Tabs */}
-      <div className="border-b border-gray-200 mb-6">
-        <nav className="-mb-px flex space-x-8">
-          <button
-            onClick={() => setActiveTab('tickets')}
-            className={`py-2 px-1 border-b-2 font-medium text-sm ${
-              activeTab === 'tickets'
-                ? 'border-blue-500 text-blue-600'
-                : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-            }`}
-          >
-            Tickets
-          </button>
-          <button
-            onClick={() => setActiveTab('reports')}
-            className={`py-2 px-1 border-b-2 font-medium text-sm flex items-center space-x-2 ${
-              activeTab === 'reports'
-                ? 'border-blue-500 text-blue-600'
-                : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-            }`}
-          >
-            <BarChart3 className="w-4 h-4" />
-            <span>Reports</span>
-          </button>
-        </nav>
-      </div>
-
-      {activeTab === 'reports' ? (
-        <SupportTicketReports />
-      ) : (
-        <>
+          {activeTab === 'reports' ? (
+            <SupportTicketReports />
+          ) : (
+            <>
+              {/* Create Ticket Button */}
+              <div className="flex justify-end mb-6">
+                <button
+                  onClick={() => setShowCreateModal(true)}
+                  className="flex items-center space-x-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+                >
+                  <Plus className="w-4 h-4" />
+                  <span>Create Ticket</span>
+                </button>
+              </div>
           {/* Stats Cards */}
           <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-6">
             <div className="bg-white p-6 rounded-lg shadow">
@@ -423,24 +430,26 @@ const SupportTickets = () => {
               </table>
             </div>
           </div>
-        </>
-      )}
+            </>
+          )}
 
-      {/* Modals */}
-      <CreateTicketModal
-        isOpen={showCreateModal}
-        onClose={() => setShowCreateModal(false)}
-        onTicketCreated={loadTickets}
-      />
+          {/* Modals */}
+          <CreateTicketModal
+            isOpen={showCreateModal}
+            onClose={() => setShowCreateModal(false)}
+            onTicketCreated={loadTickets}
+          />
 
-      {selectedTicketId && (
-        <TicketDetailsDrawer
-          ticketId={selectedTicketId}
-          isOpen={!!selectedTicketId}
-          onClose={() => setSelectedTicketId(null)}
-          onTicketUpdate={loadTickets}
-        />
-      )}
+          {selectedTicketId && (
+            <TicketDetailsDrawer
+              ticketId={selectedTicketId}
+              isOpen={!!selectedTicketId}
+              onClose={() => setSelectedTicketId(null)}
+              onTicketUpdate={loadTickets}
+            />
+          )}
+        </main>
+      </div>
     </div>
   );
 };
