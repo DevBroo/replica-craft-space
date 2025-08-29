@@ -1,0 +1,355 @@
+
+import { supabase } from '@/integrations/supabase/client';
+
+export interface SupportTicket {
+  id: string;
+  created_by: string;
+  customer_email?: string;
+  customer_phone?: string;
+  subject: string;
+  description?: string;
+  priority: 'high' | 'medium' | 'low';
+  status: 'open' | 'in-progress' | 'resolved' | 'closed';
+  category: 'Payment' | 'Booking' | 'Property' | 'Technical' | 'Other';
+  assigned_agent?: string;
+  created_at: string;
+  updated_at: string;
+  closed_at?: string;
+  resolved_at?: string;
+  reopened_count: number;
+  merged_into_ticket_id?: string;
+  sla_due_at?: string;
+  escalation_level: number;
+  escalated: boolean;
+  last_message_at?: string;
+  satisfaction_rating?: number;
+  satisfaction_comment?: string;
+  satisfaction_submitted_at?: string;
+  status_change_reason?: string;
+}
+
+export interface TicketMessage {
+  id: string;
+  ticket_id: string;
+  author_id?: string;
+  author_role: string;
+  content?: string;
+  is_internal: boolean;
+  created_at: string;
+}
+
+export interface TicketAttachment {
+  id: string;
+  ticket_id: string;
+  message_id?: string;
+  storage_path: string;
+  file_name?: string;
+  file_type?: string;
+  file_size?: number;
+  is_internal: boolean;
+  created_at: string;
+}
+
+export interface TicketAnalytics {
+  total_tickets: number;
+  open_tickets: number;
+  resolved_tickets: number;
+  avg_resolution_hours: number;
+  by_category: Record<string, number>;
+  by_status: Record<string, number>;
+  by_agent: Array<{
+    agent_id: string;
+    agent_name: string;
+    tickets: number;
+    avg_resolution_hours: number;
+  }>;
+  tickets_trend: Array<{
+    date: string;
+    tickets: number;
+  }>;
+}
+
+class SupportTicketService {
+  async getTickets(params?: {
+    status?: string;
+    priority?: string;
+    category?: string;
+    assigned_agent?: string;
+    search?: string;
+    limit?: number;
+    offset?: number;
+  }) {
+    let query = supabase
+      .from('support_tickets')
+      .select(`
+        *,
+        assigned_agent_profile:profiles!support_tickets_assigned_agent_fkey(full_name, email),
+        created_by_profile:profiles!support_tickets_created_by_fkey(full_name, email)
+      `)
+      .order('created_at', { ascending: false });
+
+    if (params?.status && params.status !== 'all') {
+      query = query.eq('status', params.status);
+    }
+    
+    if (params?.priority && params.priority !== 'all') {
+      query = query.eq('priority', params.priority);
+    }
+    
+    if (params?.category && params.category !== 'all') {
+      query = query.eq('category', params.category);
+    }
+    
+    if (params?.assigned_agent) {
+      query = query.eq('assigned_agent', params.assigned_agent);
+    }
+    
+    if (params?.search) {
+      query = query.or(`subject.ilike.%${params.search}%,description.ilike.%${params.search}%`);
+    }
+    
+    if (params?.limit) {
+      query = query.limit(params.limit);
+    }
+    
+    if (params?.offset) {
+      query = query.range(params.offset, params.offset + (params.limit || 50) - 1);
+    }
+
+    const { data, error } = await query;
+    if (error) throw error;
+    return data;
+  }
+
+  async getTicketById(ticketId: string) {
+    const { data, error } = await supabase
+      .from('support_tickets')
+      .select(`
+        *,
+        assigned_agent_profile:profiles!support_tickets_assigned_agent_fkey(full_name, email),
+        created_by_profile:profiles!support_tickets_created_by_fkey(full_name, email)
+      `)
+      .eq('id', ticketId)
+      .single();
+
+    if (error) throw error;
+    return data;
+  }
+
+  async createTicket(ticket: Partial<SupportTicket>) {
+    const { data, error } = await supabase
+      .from('support_tickets')
+      .insert([ticket])
+      .select()
+      .single();
+
+    if (error) throw error;
+    return data;
+  }
+
+  async updateTicket(ticketId: string, updates: Partial<SupportTicket>) {
+    const { data, error } = await supabase
+      .from('support_tickets')
+      .update(updates)
+      .eq('id', ticketId)
+      .select()
+      .single();
+
+    if (error) throw error;
+    return data;
+  }
+
+  async assignAgent(ticketId: string, agentId: string) {
+    return this.updateTicket(ticketId, { assigned_agent: agentId });
+  }
+
+  async updateStatus(ticketId: string, status: string, reason?: string) {
+    return this.updateTicket(ticketId, { 
+      status: status as any, 
+      status_change_reason: reason 
+    });
+  }
+
+  async escalateTicket(ticketId: string, reason: string) {
+    const { data: escalation, error } = await supabase
+      .from('support_ticket_escalations')
+      .insert([{
+        ticket_id: ticketId,
+        to_level: 1,
+        reason,
+        escalated_by: (await supabase.auth.getUser()).data.user?.id
+      }])
+      .select()
+      .single();
+
+    if (error) throw error;
+
+    // Update ticket escalation status
+    await this.updateTicket(ticketId, {
+      escalated: true,
+      escalation_level: 1
+    });
+
+    return escalation;
+  }
+
+  async mergeTickets(sourceTicketId: string, targetTicketId: string, reason: string) {
+    const { data, error } = await supabase
+      .from('support_ticket_merges')
+      .insert([{
+        source_ticket_id: sourceTicketId,
+        target_ticket_id: targetTicketId,
+        reason,
+        merged_by: (await supabase.auth.getUser()).data.user?.id
+      }])
+      .select()
+      .single();
+
+    if (error) throw error;
+
+    // Update source ticket to show it's merged
+    await this.updateTicket(sourceTicketId, {
+      merged_into_ticket_id: targetTicketId,
+      status: 'closed'
+    });
+
+    return data;
+  }
+
+  async getTicketMessages(ticketId: string) {
+    const { data, error } = await supabase
+      .from('support_ticket_messages')
+      .select(`
+        *,
+        author_profile:profiles!support_ticket_messages_author_id_fkey(full_name, email, role)
+      `)
+      .eq('ticket_id', ticketId)
+      .order('created_at', { ascending: true });
+
+    if (error) throw error;
+    return data;
+  }
+
+  async addMessage(ticketId: string, content: string, isInternal: boolean = false) {
+    const user = (await supabase.auth.getUser()).data.user;
+    if (!user) throw new Error('Not authenticated');
+
+    // Get user role
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('role')
+      .eq('id', user.id)
+      .single();
+
+    const { data, error } = await supabase
+      .from('support_ticket_messages')
+      .insert([{
+        ticket_id: ticketId,
+        author_id: user.id,
+        author_role: profile?.role || 'user',
+        content,
+        is_internal: isInternal
+      }])
+      .select()
+      .single();
+
+    if (error) throw error;
+    return data;
+  }
+
+  async getTicketAttachments(ticketId: string) {
+    const { data, error } = await supabase
+      .from('support_ticket_attachments')
+      .select('*')
+      .eq('ticket_id', ticketId)
+      .order('created_at', { ascending: false });
+
+    if (error) throw error;
+    return data;
+  }
+
+  async uploadAttachment(ticketId: string, file: File, messageId?: string, isInternal: boolean = false) {
+    const fileName = `${Date.now()}-${file.name}`;
+    const filePath = `tickets/${ticketId}/${fileName}`;
+
+    // Upload to storage
+    const { error: uploadError } = await supabase.storage
+      .from('support-attachments')
+      .upload(filePath, file);
+
+    if (uploadError) throw uploadError;
+
+    // Save metadata
+    const { data, error } = await supabase
+      .from('support_ticket_attachments')
+      .insert([{
+        ticket_id: ticketId,
+        message_id: messageId,
+        storage_path: filePath,
+        file_name: file.name,
+        file_type: file.type,
+        file_size: file.size,
+        is_internal: isInternal
+      }])
+      .select()
+      .single();
+
+    if (error) throw error;
+    return data;
+  }
+
+  async getTicketAnalytics(startDate?: string, endDate?: string): Promise<TicketAnalytics> {
+    const { data, error } = await supabase.rpc('get_ticket_analytics', {
+      start_date: startDate,
+      end_date: endDate
+    });
+
+    if (error) throw error;
+    return data[0];
+  }
+
+  async bulkUpdateStatus(ticketIds: string[], status: string, reason?: string) {
+    const updates = ticketIds.map(id => ({
+      id,
+      status,
+      status_change_reason: reason
+    }));
+
+    const { data, error } = await supabase
+      .from('support_tickets')
+      .upsert(updates)
+      .select();
+
+    if (error) throw error;
+    return data;
+  }
+
+  async submitSatisfactionRating(ticketId: string, rating: number, comment?: string) {
+    const { data, error } = await supabase
+      .from('support_tickets')
+      .update({
+        satisfaction_rating: rating,
+        satisfaction_comment: comment,
+        satisfaction_submitted_at: new Date().toISOString()
+      })
+      .eq('id', ticketId)
+      .select()
+      .single();
+
+    if (error) throw error;
+    return data;
+  }
+
+  async getAvailableAgents() {
+    const { data, error } = await supabase
+      .from('profiles')
+      .select('id, full_name, email')
+      .eq('role', 'agent')
+      .eq('is_active', true);
+
+    if (error) throw error;
+    return data;
+  }
+}
+
+export const supportTicketService = new SupportTicketService();

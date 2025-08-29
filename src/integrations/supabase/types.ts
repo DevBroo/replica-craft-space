@@ -1528,6 +1528,276 @@ export type Database = {
           },
         ]
       }
+      support_sla_policies: {
+        Row: {
+          category: string
+          id: string
+          is_active: boolean
+          priority: string
+          resolution_time_minutes: number
+          response_time_minutes: number
+        }
+        Insert: {
+          category: string
+          id?: string
+          is_active?: boolean
+          priority: string
+          resolution_time_minutes?: number
+          response_time_minutes?: number
+        }
+        Update: {
+          category?: string
+          id?: string
+          is_active?: boolean
+          priority?: string
+          resolution_time_minutes?: number
+          response_time_minutes?: number
+        }
+        Relationships: []
+      }
+      support_ticket_attachments: {
+        Row: {
+          created_at: string
+          file_name: string | null
+          file_size: number | null
+          file_type: string | null
+          id: string
+          is_internal: boolean
+          message_id: string | null
+          storage_path: string
+          ticket_id: string
+        }
+        Insert: {
+          created_at?: string
+          file_name?: string | null
+          file_size?: number | null
+          file_type?: string | null
+          id?: string
+          is_internal?: boolean
+          message_id?: string | null
+          storage_path: string
+          ticket_id: string
+        }
+        Update: {
+          created_at?: string
+          file_name?: string | null
+          file_size?: number | null
+          file_type?: string | null
+          id?: string
+          is_internal?: boolean
+          message_id?: string | null
+          storage_path?: string
+          ticket_id?: string
+        }
+        Relationships: []
+      }
+      support_ticket_escalations: {
+        Row: {
+          created_at: string
+          escalated_by: string | null
+          from_level: number | null
+          id: string
+          reason: string | null
+          resolved: boolean
+          resolved_at: string | null
+          ticket_id: string
+          to_level: number
+        }
+        Insert: {
+          created_at?: string
+          escalated_by?: string | null
+          from_level?: number | null
+          id?: string
+          reason?: string | null
+          resolved?: boolean
+          resolved_at?: string | null
+          ticket_id: string
+          to_level: number
+        }
+        Update: {
+          created_at?: string
+          escalated_by?: string | null
+          from_level?: number | null
+          id?: string
+          reason?: string | null
+          resolved?: boolean
+          resolved_at?: string | null
+          ticket_id?: string
+          to_level?: number
+        }
+        Relationships: []
+      }
+      support_ticket_merges: {
+        Row: {
+          created_at: string
+          id: string
+          merged_by: string | null
+          reason: string | null
+          source_ticket_id: string
+          target_ticket_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          merged_by?: string | null
+          reason?: string | null
+          source_ticket_id: string
+          target_ticket_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          merged_by?: string | null
+          reason?: string | null
+          source_ticket_id?: string
+          target_ticket_id?: string
+        }
+        Relationships: []
+      }
+      support_ticket_messages: {
+        Row: {
+          author_id: string | null
+          author_role: string
+          content: string | null
+          created_at: string
+          id: string
+          is_internal: boolean
+          ticket_id: string
+        }
+        Insert: {
+          author_id?: string | null
+          author_role: string
+          content?: string | null
+          created_at?: string
+          id?: string
+          is_internal?: boolean
+          ticket_id: string
+        }
+        Update: {
+          author_id?: string | null
+          author_role?: string
+          content?: string | null
+          created_at?: string
+          id?: string
+          is_internal?: boolean
+          ticket_id?: string
+        }
+        Relationships: []
+      }
+      support_ticket_status_history: {
+        Row: {
+          actor_id: string | null
+          actor_role: string | null
+          created_at: string
+          from_status: string | null
+          id: string
+          reason: string | null
+          ticket_id: string
+          to_status: string
+        }
+        Insert: {
+          actor_id?: string | null
+          actor_role?: string | null
+          created_at?: string
+          from_status?: string | null
+          id?: string
+          reason?: string | null
+          ticket_id: string
+          to_status: string
+        }
+        Update: {
+          actor_id?: string | null
+          actor_role?: string | null
+          created_at?: string
+          from_status?: string | null
+          id?: string
+          reason?: string | null
+          ticket_id?: string
+          to_status?: string
+        }
+        Relationships: []
+      }
+      support_tickets: {
+        Row: {
+          assigned_agent: string | null
+          category: string
+          closed_at: string | null
+          created_at: string
+          created_by: string
+          customer_email: string | null
+          customer_phone: string | null
+          description: string | null
+          escalated: boolean
+          escalation_level: number
+          id: string
+          last_message_at: string | null
+          merged_into_ticket_id: string | null
+          priority: string
+          reopened_count: number
+          resolved_at: string | null
+          satisfaction_comment: string | null
+          satisfaction_rating: number | null
+          satisfaction_submitted_at: string | null
+          sla_due_at: string | null
+          status: string
+          status_change_reason: string | null
+          subject: string
+          updated_at: string
+        }
+        Insert: {
+          assigned_agent?: string | null
+          category?: string
+          closed_at?: string | null
+          created_at?: string
+          created_by: string
+          customer_email?: string | null
+          customer_phone?: string | null
+          description?: string | null
+          escalated?: boolean
+          escalation_level?: number
+          id?: string
+          last_message_at?: string | null
+          merged_into_ticket_id?: string | null
+          priority?: string
+          reopened_count?: number
+          resolved_at?: string | null
+          satisfaction_comment?: string | null
+          satisfaction_rating?: number | null
+          satisfaction_submitted_at?: string | null
+          sla_due_at?: string | null
+          status?: string
+          status_change_reason?: string | null
+          subject: string
+          updated_at?: string
+        }
+        Update: {
+          assigned_agent?: string | null
+          category?: string
+          closed_at?: string | null
+          created_at?: string
+          created_by?: string
+          customer_email?: string | null
+          customer_phone?: string | null
+          description?: string | null
+          escalated?: boolean
+          escalation_level?: number
+          id?: string
+          last_message_at?: string | null
+          merged_into_ticket_id?: string | null
+          priority?: string
+          reopened_count?: number
+          resolved_at?: string | null
+          satisfaction_comment?: string | null
+          satisfaction_rating?: number | null
+          satisfaction_submitted_at?: string | null
+          sla_due_at?: string | null
+          status?: string
+          status_change_reason?: string | null
+          subject?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       user_saved_properties: {
         Row: {
           created_at: string
@@ -1881,6 +2151,10 @@ export type Database = {
         }
         Returns: number
       }
+      can_access_ticket: {
+        Args: { p_ticket_id: string }
+        Returns: boolean
+      }
       generate_commission_for_booking: {
         Args: { p_booking_id: string }
         Returns: string
@@ -2080,6 +2354,19 @@ export type Database = {
           revenue: number
         }[]
       }
+      get_ticket_analytics: {
+        Args: { end_date?: string; start_date?: string }
+        Returns: {
+          avg_resolution_hours: number
+          by_agent: Json
+          by_category: Json
+          by_status: Json
+          open_tickets: number
+          resolved_tickets: number
+          tickets_trend: Json
+          total_tickets: number
+        }[]
+      }
       get_time_series_analytics: {
         Args: {
           end_date?: string
@@ -2110,6 +2397,10 @@ export type Database = {
         }[]
       }
       is_admin: {
+        Args: Record<PropertyKey, never>
+        Returns: boolean
+      }
+      is_agent: {
         Args: Record<PropertyKey, never>
         Returns: boolean
       }
