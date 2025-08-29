@@ -2,6 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import { X, User, Mail, Phone, MessageSquare, Tag, Flag, AlertCircle } from 'lucide-react';
 import { supportTicketService } from '@/lib/supportTicketService';
+import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 
 interface CreateTicketModalProps {
@@ -18,8 +19,8 @@ const CreateTicketModal: React.FC<CreateTicketModalProps> = ({
   const [formData, setFormData] = useState({
     subject: '',
     description: '',
-    priority: 'medium',
-    category: 'Other',
+    priority: 'medium' as 'high' | 'medium' | 'low',
+    category: 'Other' as 'Payment' | 'Booking' | 'Property' | 'Technical' | 'Other',
     customer_email: '',
     customer_phone: '',
     assigned_agent: ''

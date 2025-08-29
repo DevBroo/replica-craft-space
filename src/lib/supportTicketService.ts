@@ -118,7 +118,7 @@ class SupportTicketService {
 
     const { data, error } = await query;
     if (error) throw error;
-    return data;
+    return data as any[];
   }
 
   async getTicketById(ticketId: string) {
@@ -133,7 +133,7 @@ class SupportTicketService {
       .single();
 
     if (error) throw error;
-    return data;
+    return data as any;
   }
 
   async createTicket(ticket: Partial<SupportTicket>) {
@@ -305,23 +305,51 @@ class SupportTicketService {
     });
 
     if (error) throw error;
-    return data[0];
+    
+    // Handle the response data and convert to proper types
+    const result = data[0];
+    return {
+      total_tickets: result.total_tickets || 0,
+      open_tickets: result.open_tickets || 0,
+      resolved_tickets: result.resolved_tickets || 0,
+      avg_resolution_hours: result.avg_resolution_hours || 0,
+      by_category: result.by_category || {},
+      by_status: result.by_status || {},
+      by_agent: result.by_agent || [],
+      tickets_trend: result.tickets_trend || []
+    };
   }
 
   async bulkUpdateStatus(ticketIds: string[], status: string, reason?: string) {
     const updates = ticketIds.map(id => ({
       id,
       status,
-      status_change_reason: reason
+      status_change_reason: reason,
+      updated_at: new Date().toISOString()
     }));
 
-    const { data, error } = await supabase
-      .from('support_tickets')
-      .upsert(updates)
-      .select();
+    // Use individual updates instead of upsert for better type safety
+    const promises = updates.map(update => 
+      supabase
+        .from('support_tickets')
+        .update({
+          status: update.status,
+          status_change_reason: update.status_change_reason,
+          updated_at: update.updated_at
+        })
+        .eq('id', update.id)
+        .select()
+    );
 
-    if (error) throw error;
-    return data;
+    const results = await Promise.all(promises);
+    
+    // Check for errors
+    const errors = results.filter(result => result.error);
+    if (errors.length > 0) {
+      throw errors[0].error;
+    }
+
+    return results.map(result => result.data).flat();
   }
 
   async submitSatisfactionRating(ticketId: string, rating: number, comment?: string) {

@@ -36,7 +36,7 @@ const TicketDetailsDrawer: React.FC<TicketDetailsDrawerProps> = ({
   onClose,
   onTicketUpdate
 }) => {
-  const [ticket, setTicket] = useState<SupportTicket | null>(null);
+  const [ticket, setTicket] = useState<any | null>(null);
   const [messages, setMessages] = useState<TicketMessage[]>([]);
   const [attachments, setAttachments] = useState<TicketAttachment[]>([]);
   const [loading, setLoading] = useState(true);
@@ -265,7 +265,7 @@ const TicketDetailsDrawer: React.FC<TicketDetailsDrawerProps> = ({
                   <div>
                     <span className="font-medium text-gray-700">Assigned to:</span>
                     <span className="ml-2 text-gray-900">
-                      {(ticket as any)?.assigned_agent_profile?.full_name || 'Unassigned'}
+                      {ticket?.assigned_agent_profile?.full_name || 'Unassigned'}
                     </span>
                   </div>
                   <div>
