@@ -12,7 +12,11 @@ import picnifyLogo from '/lovable-uploads/f7960b1f-407a-4738-b8f6-067ea4600889.p
 const OwnerLogin: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
-  const { login, loginWithOtp, verifyOtp, loading, error, isAuthenticated, user, clearError } = useAuth();
+  const { login, loginWithOtp, verifyOtp, loading, error, isAuthenticated, user, clearError, logout } = useAuth();
+  
+  // Check if this is a switch account request
+  const searchParams = new URLSearchParams(location.search);
+  const isSwitchMode = searchParams.get('switch') === '1';
   
   const [loginMethod, setLoginMethod] = useState<'email' | 'otp'>('email');
   const [email, setEmail] = useState('');
@@ -36,16 +40,16 @@ const OwnerLogin: React.FC = () => {
     }
   }, [location.state]);
 
-  // Redirect if already authenticated
+  // Redirect if already authenticated (but not in switch mode)
   useEffect(() => {
-    console.log('🔍 OwnerLogin - loading:', loading, 'isAuthenticated:', isAuthenticated, 'user:', user);
+    console.log('🔍 OwnerLogin - loading:', loading, 'isAuthenticated:', isAuthenticated, 'user:', user, 'isSwitchMode:', isSwitchMode);
     
-    // Only redirect if we're sure the user is authenticated
-    if (!loading && isAuthenticated && user) {
+    // Only redirect if we're sure the user is authenticated and not in switch mode
+    if (!loading && isAuthenticated && user && !isSwitchMode) {
       console.log('✅ User is authenticated, redirecting to dashboard');
       navigate('/owner/view', { replace: true });
     }
-  }, [loading, isAuthenticated, user, navigate]);
+  }, [loading, isAuthenticated, user, navigate, isSwitchMode]);
 
   // OTP timer effect
   useEffect(() => {
@@ -112,6 +116,16 @@ const OwnerLogin: React.FC = () => {
     setOtp('');
   };
 
+  const handleSignOutAndContinue = async () => {
+    try {
+      await logout();
+      // Clear the switch parameter after logout
+      navigate('/owner/login', { replace: true });
+    } catch (error) {
+      console.error('Failed to sign out:', error);
+    }
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-orange-50 to-red-100 flex items-center justify-center p-4">
       <div className="w-full max-w-md">
@@ -145,7 +159,29 @@ const OwnerLogin: React.FC = () => {
             <CardTitle className="text-center">Sign In to Your Account</CardTitle>
           </CardHeader>
           <CardContent>
-            {/* Login Method Tabs */}
+            {/* Switch Account Mode */}
+            {isSwitchMode && isAuthenticated && user && (
+              <Alert className="mb-6" variant="default">
+                <AlertDescription>
+                  You are currently signed in as <strong>{user.email}</strong> ({user.role}). 
+                  To add a property as an owner, please sign out and sign in with a property owner account.
+                </AlertDescription>
+                <div className="mt-3">
+                  <Button 
+                    onClick={handleSignOutAndContinue}
+                    variant="outline"
+                    size="sm"
+                  >
+                    Sign out and continue
+                  </Button>
+                </div>
+              </Alert>
+            )}
+
+            {/* Don't show login form if in switch mode and user is authenticated */}
+            {!(isSwitchMode && isAuthenticated && user) && (
+              <>
+                {/* Login Method Tabs */}
             <div className="flex mb-6 bg-gray-100 rounded-lg p-1">
               <button
                 onClick={() => handleTabChange('email')}
@@ -331,6 +367,8 @@ const OwnerLogin: React.FC = () => {
                 </Link>
               </div>
             </div>
+              </>
+            )}
           </CardContent>
         </Card>
       </div>

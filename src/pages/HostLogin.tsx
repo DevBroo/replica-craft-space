@@ -12,7 +12,11 @@ import picnifyLogo from '/lovable-uploads/f7960b1f-407a-4738-b8f6-067ea4600889.p
 const HostLogin: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
-  const { login, loginWithOtp, verifyOtp, loading, error, isAuthenticated, user, clearError } = useAuth();
+  const { login, loginWithOtp, verifyOtp, loading, error, isAuthenticated, user, clearError, logout } = useAuth();
+  
+  // Check if this is a switch account request
+  const searchParams = new URLSearchParams(location.search);
+  const isSwitchMode = searchParams.get('switch') === '1';
   
   const [loginMethod, setLoginMethod] = useState<'email' | 'otp'>('email');
   const [email, setEmail] = useState('');
@@ -36,9 +40,9 @@ const HostLogin: React.FC = () => {
     }
   }, [location.state]);
 
-  // Redirect if already authenticated and is host (with grace period)
+  // Redirect if already authenticated and is host (with grace period) - but not in switch mode
   useEffect(() => {
-    if (!loading && isAuthenticated && user) {
+    if (!loading && isAuthenticated && user && !isSwitchMode) {
       // Add 1.5 second grace period for role resolution
       const timer = setTimeout(() => {
         if (user.role === 'owner' || user.role === 'agent') {
@@ -52,7 +56,7 @@ const HostLogin: React.FC = () => {
       
       return () => clearTimeout(timer);
     }
-  }, [loading, isAuthenticated, user, navigate]);
+  }, [loading, isAuthenticated, user, navigate, isSwitchMode]);
 
   // OTP timer effect
   useEffect(() => {
@@ -116,6 +120,16 @@ const HostLogin: React.FC = () => {
     setOtp('');
   };
 
+  const handleSignOutAndContinue = async () => {
+    try {
+      await logout();
+      // Clear the switch parameter after logout
+      navigate('/host/login', { replace: true });
+    } catch (error) {
+      console.error('Failed to sign out:', error);
+    }
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-orange-50 to-red-100 flex items-center justify-center p-4">
       <div className="w-full max-w-md">
@@ -149,7 +163,29 @@ const HostLogin: React.FC = () => {
             <CardTitle className="text-center">Sign In to Your Account</CardTitle>
           </CardHeader>
           <CardContent>
-            {/* Login Method Tabs */}
+            {/* Switch Account Mode */}
+            {isSwitchMode && isAuthenticated && user && (
+              <Alert className="mb-6" variant="default">
+                <AlertDescription>
+                  You are currently signed in as <strong>{user.email}</strong> ({user.role}). 
+                  To add a property as a host, please sign out and sign in with a host account.
+                </AlertDescription>
+                <div className="mt-3">
+                  <Button 
+                    onClick={handleSignOutAndContinue}
+                    variant="outline"
+                    size="sm"
+                  >
+                    Sign out and continue
+                  </Button>
+                </div>
+              </Alert>
+            )}
+
+            {/* Don't show login form if in switch mode and user is authenticated */}
+            {!(isSwitchMode && isAuthenticated && user) && (
+              <>
+                {/* Login Method Tabs */}
             <div className="flex mb-6 bg-gray-100 rounded-lg p-1">
               <button
                 onClick={() => handleTabChange('email')}
@@ -341,6 +377,8 @@ const HostLogin: React.FC = () => {
                 </Link>
               </div>
             </div>
+              </>
+            )}
           </CardContent>
         </Card>
       </div>
