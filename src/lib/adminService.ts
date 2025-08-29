@@ -1,5 +1,6 @@
 import { supabase } from '../integrations/supabase/client';
 import { bankingService } from './bankingService';
+import { profileSecurityService } from './profileSecurityService';
 
 export interface PropertyOwner {
   id: string;
@@ -228,17 +229,14 @@ export const adminService = {
     try {
       console.log('🔍 Fetching extended owner details:', ownerId);
       
-      // Get basic owner profile
-      const { data: profile, error: profileError } = await supabase
-        .from('profiles')
-        .select('*')
-        .eq('id', ownerId)
-        .eq('role', 'property_owner')
-        .single();
+      // Get profile data securely with audit logging
+      const profile = await profileSecurityService.getFullProfileForAdmin(
+        ownerId,
+        'Owner details retrieval for admin management - extended details view'
+      );
 
-      if (profileError) {
-        console.error('❌ Error fetching owner profile:', profileError);
-        throw profileError;
+      if (!profile) {
+        throw new Error('Owner profile not found or access denied');
       }
 
       // Get extended owner profile
@@ -522,17 +520,14 @@ export const adminService = {
     try {
       console.log('🔍 Fetching owner details:', ownerId);
       
-      // Get owner profile
-      const { data: profile, error: profileError } = await supabase
-        .from('profiles')
-        .select('*')
-        .eq('id', ownerId)
-        .eq('role', 'property_owner')
-        .single();
+      // Get owner profile securely  
+      const profile = await profileSecurityService.getFullProfileForAdmin(
+        ownerId,
+        'Owner details retrieval for admin management - basic view'
+      );
 
-      if (profileError) {
-        console.error('❌ Error fetching owner profile:', profileError);
-        throw profileError;
+      if (!profile) {
+        throw new Error('Owner profile not found or access denied');
       }
 
       // Get owner's properties

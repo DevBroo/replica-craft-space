@@ -813,6 +813,42 @@ export type Database = {
           },
         ]
       }
+      profiles_access_audit: {
+        Row: {
+          access_reason: string | null
+          access_type: string
+          accessed_by: string
+          accessed_fields: string[] | null
+          created_at: string
+          id: string
+          ip_address: string | null
+          profile_id: string
+          user_agent: string | null
+        }
+        Insert: {
+          access_reason?: string | null
+          access_type: string
+          accessed_by: string
+          accessed_fields?: string[] | null
+          created_at?: string
+          id?: string
+          ip_address?: string | null
+          profile_id: string
+          user_agent?: string | null
+        }
+        Update: {
+          access_reason?: string | null
+          access_type?: string
+          accessed_by?: string
+          accessed_fields?: string[] | null
+          created_at?: string
+          id?: string
+          ip_address?: string | null
+          profile_id?: string
+          user_agent?: string | null
+        }
+        Relationships: []
+      }
       properties: {
         Row: {
           address: string
@@ -1462,6 +1498,54 @@ export type Database = {
           review_count: number
         }[]
       }
+      get_profile_admin_full: {
+        Args: { p_access_reason: string; p_profile_id: string }
+        Returns: {
+          avatar_url: string
+          commission_rate: number
+          created_at: string
+          created_by: string
+          email: string
+          full_name: string
+          id: string
+          is_active: boolean
+          phone: string
+          role: string
+          updated_at: string
+        }[]
+      }
+      get_profile_secure: {
+        Args: { p_access_reason?: string; p_profile_id: string }
+        Returns: {
+          avatar_url: string
+          created_at: string
+          email_masked: string
+          full_name: string
+          id: string
+          is_active: boolean
+          phone_masked: string
+          role: string
+        }[]
+      }
+      get_profiles_admin_list: {
+        Args: {
+          p_access_reason?: string
+          p_limit?: number
+          p_offset?: number
+          p_role_filter?: string
+          p_search?: string
+        }
+        Returns: {
+          created_at: string
+          email_partial: string
+          full_name: string
+          id: string
+          is_active: boolean
+          phone_partial: string
+          role: string
+          total_count: number
+        }[]
+      }
       get_property_approval_stats: {
         Args: Record<PropertyKey, never>
         Returns: {
@@ -1596,6 +1680,15 @@ export type Database = {
           p_owner_id: string
         }
         Returns: undefined
+      }
+      log_profile_access: {
+        Args: {
+          p_access_reason?: string
+          p_access_type: string
+          p_accessed_fields?: string[]
+          p_profile_id: string
+        }
+        Returns: boolean
       }
       log_property_status_change: {
         Args: {
