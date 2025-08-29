@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/admin/ui/card';
 import { Button } from '@/components/admin/ui/button';
@@ -9,7 +8,13 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/admin/ui/tabs';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
-import { Save, Shield, Key, Lock, Users, Phone, FileText, AlertTriangle, Eye, Plus, Trash2, UserCheck } from 'lucide-react';
+import { Save, Shield, Key, Lock, Users, Phone, FileText, AlertTriangle, Eye, Plus, Trash2, UserCheck, Monitor, Globe } from 'lucide-react';
+
+// Import the new components
+import { DeviceManagement } from './DeviceManagement';
+import { GeoRestrictions } from './GeoRestrictions';
+import { MFAManagement } from './MFAManagement';
+import { SecurityAuditLogs } from './SecurityAuditLogs';
 
 interface SecurityConfig {
   // Basic Security
@@ -68,13 +73,6 @@ const defaultConfig: SecurityConfig = {
   geo_blocking_enabled: false
 };
 
-interface RolePermission {
-  id: string;
-  role: string;
-  permissions: string[];
-  description: string;
-}
-
 interface IPWhitelistEntry {
   id: string;
   cidr: string;
@@ -88,21 +86,12 @@ export const SecuritySettings: React.FC = () => {
   const [saving, setSaving] = useState(false);
   const [activeTab, setActiveTab] = useState('general');
   
-  // Role Management
-  const [roles, setRoles] = useState<RolePermission[]>([]);
-  const [newRole, setNewRole] = useState({ role: '', permissions: [], description: '' });
-  
   // IP Whitelist
   const [ipWhitelist, setIpWhitelist] = useState<IPWhitelistEntry[]>([]);
   const [newIpEntry, setNewIpEntry] = useState({ cidr: '', description: '' });
-  
-  // Login Audit Logs
-  const [loginAuditLogs, setLoginAuditLogs] = useState<any[]>([]);
-  const [auditLoading, setAuditLoading] = useState(false);
 
   useEffect(() => {
     loadSettings();
-    loadRoles();
     loadIPWhitelist();
   }, []);
 
@@ -132,33 +121,6 @@ export const SecuritySettings: React.FC = () => {
     }
   };
 
-  const loadRoles = async () => {
-    try {
-      const { data: userRoles } = await supabase
-        .from('user_roles')
-        .select('*')
-        .order('role');
-
-      if (userRoles) {
-        // Group by role and aggregate permissions
-        const roleMap = new Map();
-        userRoles.forEach(ur => {
-          if (!roleMap.has(ur.role)) {
-            roleMap.set(ur.role, {
-              id: ur.role,
-              role: ur.role,
-              permissions: [ur.role],
-              description: `${ur.role} role permissions`
-            });
-          }
-        });
-        setRoles(Array.from(roleMap.values()));
-      }
-    } catch (error) {
-      console.error('Error loading roles:', error);
-    }
-  };
-
   const loadIPWhitelist = async () => {
     try {
       const { data: whitelist } = await supabase
@@ -178,33 +140,6 @@ export const SecuritySettings: React.FC = () => {
       console.error('Error loading IP whitelist:', error);
     }
   };
-
-  const loadLoginAuditLogs = async () => {
-    if (activeTab !== 'audit') return;
-    
-    try {
-      setAuditLoading(true);
-      const { data: logs } = await supabase
-        .from('login_audit')
-        .select('*')
-        .order('created_at', { ascending: false })
-        .limit(50);
-
-      if (logs) {
-        setLoginAuditLogs(logs);
-      }
-    } catch (error) {
-      console.error('Error loading audit logs:', error);
-    } finally {
-      setAuditLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    if (activeTab === 'audit') {
-      loadLoginAuditLogs();
-    }
-  }, [activeTab]);
 
   const saveSettings = async () => {
     try {
@@ -313,12 +248,13 @@ export const SecuritySettings: React.FC = () => {
   return (
     <div className="space-y-6">
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <TabsList className="grid w-full grid-cols-6">
+        <TabsList className="grid w-full grid-cols-7">
           <TabsTrigger value="general">General</TabsTrigger>
-          <TabsTrigger value="roles">Roles & Permissions</TabsTrigger>
-          <TabsTrigger value="passwords">Password Policies</TabsTrigger>
-          <TabsTrigger value="2fa">Two-Factor Auth</TabsTrigger>
-          <TabsTrigger value="network">Network Security</TabsTrigger>
+          <TabsTrigger value="passwords">Passwords</TabsTrigger>
+          <TabsTrigger value="2fa">2FA Management</TabsTrigger>
+          <TabsTrigger value="devices">Devices</TabsTrigger>
+          <TabsTrigger value="network">Network</TabsTrigger>
+          <TabsTrigger value="geo">Geographic</TabsTrigger>
           <TabsTrigger value="audit">Audit Logs</TabsTrigger>
         </TabsList>
 
@@ -335,6 +271,7 @@ export const SecuritySettings: React.FC = () => {
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
+              
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label htmlFor="session_timeout">Session Timeout (hours)</Label>
@@ -450,49 +387,6 @@ export const SecuritySettings: React.FC = () => {
           </Card>
         </TabsContent>
 
-        {/* Roles & Permissions */}
-        <TabsContent value="roles" className="space-y-6">
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center">
-                <Users className="h-5 w-5 mr-2" />
-                Role-Based Access Control
-              </CardTitle>
-              <CardDescription>
-                Manage admin roles and their permissions
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="space-y-4">
-                {[
-                  { role: 'super_admin', description: 'Full system access and control', permissions: ['All Permissions'] },
-                  { role: 'finance_admin', description: 'Financial operations and commission management', permissions: ['View Finances', 'Manage Payouts', 'Commission Settings'] },
-                  { role: 'support_admin', description: 'Customer support and ticket management', permissions: ['View Tickets', 'Manage Support', 'User Assistance'] },
-                  { role: 'analytics_admin', description: 'Analytics and reporting access', permissions: ['View Analytics', 'Generate Reports', 'Data Export'] },
-                  { role: 'notifications_admin', description: 'Notification system management', permissions: ['Manage Notifications', 'Send Alerts', 'Template Management'] }
-                ].map((role) => (
-                  <div key={role.role} className="p-4 border border-gray-200 rounded-lg">
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <h4 className="font-medium capitalize">{role.role.replace('_', ' ')}</h4>
-                        <p className="text-sm text-gray-500">{role.description}</p>
-                        <div className="flex flex-wrap gap-1 mt-2">
-                          {role.permissions.map(permission => (
-                            <span key={permission} className="px-2 py-1 bg-blue-100 text-blue-800 text-xs rounded">
-                              {permission}
-                            </span>
-                          ))}
-                        </div>
-                      </div>
-                      <UserCheck className="h-5 w-5 text-green-600" />
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
-
         {/* Password Policies */}
         <TabsContent value="passwords" className="space-y-6">
           <Card>
@@ -506,6 +400,7 @@ export const SecuritySettings: React.FC = () => {
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
+              
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label htmlFor="min_length">Minimum Password Length</Label>
@@ -590,68 +485,14 @@ export const SecuritySettings: React.FC = () => {
           </Card>
         </TabsContent>
 
-        {/* Two-Factor Authentication */}
-        <TabsContent value="2fa" className="space-y-6">
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center">
-                <Phone className="h-5 w-5 mr-2" />
-                Two-Factor Authentication
-              </CardTitle>
-              <CardDescription>
-                Configure 2FA methods and requirements
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="flex items-center justify-between">
-                <div className="space-y-0.5">
-                  <Label>Require 2FA for All Users</Label>
-                  <p className="text-sm text-gray-500">Mandatory 2FA for all user accounts</p>
-                </div>
-                <Switch
-                  checked={config.two_factor_enabled}
-                  onCheckedChange={(checked) => setConfig({ ...config, two_factor_enabled: checked })}
-                />
-              </div>
+        {/* 2FA Management - New Enhanced Component */}
+        <TabsContent value="2fa">
+          <MFAManagement />
+        </TabsContent>
 
-              <div className="space-y-4 pt-4 border-t">
-                <h4 className="font-medium">Available 2FA Methods</h4>
-                
-                <div className="flex items-center justify-between">
-                  <div className="space-y-0.5">
-                    <Label>SMS OTP</Label>
-                    <p className="text-sm text-gray-500">Send verification codes via SMS</p>
-                  </div>
-                  <Switch
-                    checked={config.allow_sms_2fa}
-                    onCheckedChange={(checked) => setConfig({ ...config, allow_sms_2fa: checked })}
-                  />
-                </div>
-
-                <div className="flex items-center justify-between">
-                  <div className="space-y-0.5">
-                    <Label>Authenticator App</Label>
-                    <p className="text-sm text-gray-500">TOTP via Google Authenticator, Authy, etc.</p>
-                  </div>
-                  <Switch
-                    checked={config.allow_authenticator_2fa}
-                    onCheckedChange={(checked) => setConfig({ ...config, allow_authenticator_2fa: checked })}
-                  />
-                </div>
-
-                <div className="flex items-center justify-between">
-                  <div className="space-y-0.5">
-                    <Label>Email OTP</Label>
-                    <p className="text-sm text-gray-500">Send verification codes via email</p>
-                  </div>
-                  <Switch
-                    checked={config.allow_email_2fa}
-                    onCheckedChange={(checked) => setConfig({ ...config, allow_email_2fa: checked })}
-                  />
-                </div>
-              </div>
-            </CardContent>
-          </Card>
+        {/* Device Management - New Component */}
+        <TabsContent value="devices">
+          <DeviceManagement />
         </TabsContent>
 
         {/* Network Security */}
@@ -675,17 +516,6 @@ export const SecuritySettings: React.FC = () => {
                 <Switch
                   checked={config.ip_whitelist_enabled}
                   onCheckedChange={(checked) => setConfig({ ...config, ip_whitelist_enabled: checked })}
-                />
-              </div>
-
-              <div className="flex items-center justify-between">
-                <div className="space-y-0.5">
-                  <Label>Geo-blocking</Label>
-                  <p className="text-sm text-gray-500">Block access from certain countries</p>
-                </div>
-                <Switch
-                  checked={config.geo_blocking_enabled}
-                  onCheckedChange={(checked) => setConfig({ ...config, geo_blocking_enabled: checked })}
                 />
               </div>
 
@@ -745,62 +575,14 @@ export const SecuritySettings: React.FC = () => {
           </Card>
         </TabsContent>
 
-        {/* Audit Logs */}
-        <TabsContent value="audit" className="space-y-6">
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center">
-                <FileText className="h-5 w-5 mr-2" />
-                Login Audit Logs
-              </CardTitle>
-              <CardDescription>
-                View login/logout activity and security events
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              {auditLoading ? (
-                <div className="flex items-center justify-center py-8">
-                  <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600"></div>
-                  <span className="ml-2">Loading audit logs...</span>
-                </div>
-              ) : (
-                <div className="space-y-4">
-                  {loginAuditLogs.length === 0 ? (
-                    <div className="text-center py-8 text-gray-500">
-                      No audit logs found
-                    </div>
-                  ) : (
-                    <div className="space-y-2">
-                      {loginAuditLogs.map((log) => (
-                        <div key={log.id} className="p-3 border border-gray-200 rounded-lg">
-                          <div className="flex items-center justify-between">
-                            <div>
-                              <div className="flex items-center space-x-2">
-                                <span className={`px-2 py-1 text-xs rounded ${
-                                  log.event === 'login_success' ? 'bg-green-100 text-green-800' :
-                                  log.event === 'login_failure' ? 'bg-red-100 text-red-800' :
-                                  'bg-gray-100 text-gray-800'
-                                }`}>
-                                  {log.event.replace('_', ' ')}
-                                </span>
-                                <span className="font-medium">{log.email}</span>
-                              </div>
-                              <div className="text-sm text-gray-500 mt-1">
-                                IP: {log.ip_address} • Country: {log.country || 'Unknown'}
-                              </div>
-                            </div>
-                            <div className="text-sm text-gray-500">
-                              {new Date(log.created_at).toLocaleString()}
-                            </div>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                </div>
-              )}
-            </CardContent>
-          </Card>
+        {/* Geographic Restrictions - New Component */}
+        <TabsContent value="geo">
+          <GeoRestrictions />
+        </TabsContent>
+
+        {/* Security Audit Logs - New Component */}
+        <TabsContent value="audit">
+          <SecurityAuditLogs />
         </TabsContent>
       </Tabs>
 
