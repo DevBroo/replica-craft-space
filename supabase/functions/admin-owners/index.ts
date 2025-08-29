@@ -286,14 +286,39 @@ serve(async (req) => {
       
       const filters: FilterOwnerRequest = requestBody.filters || {};
       
-      // Build query with filters
+      // First, get all unique owner IDs from properties table
+      const { data: propertyOwners, error: propOwnersError } = await supabaseAdmin
+        .from('properties')
+        .select('owner_id, created_at')
+        .order('created_at', { ascending: false });
+
+      if (propOwnersError) {
+        console.error('❌ Error fetching property owners:', propOwnersError);
+        return new Response(JSON.stringify({ error: propOwnersError.message }), {
+          status: 500,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        });
+      }
+
+      // Get unique owner IDs
+      const uniqueOwnerIds = [...new Set(propertyOwners?.map(p => p.owner_id) || [])];
+      console.log(`📊 Found ${uniqueOwnerIds.length} unique property owners`);
+
+      if (uniqueOwnerIds.length === 0) {
+        return new Response(JSON.stringify({ owners: [] }), {
+          status: 200,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        });
+      }
+
+      // Build query to get profiles for all property owners
       let query = supabaseAdmin
         .from('profiles')
         .select(`
           *,
           created_by_profile:created_by(full_name)
         `)
-        .eq('role', 'property_owner');
+        .in('id', uniqueOwnerIds);
 
       // Apply search filter
       if (filters.search) {
@@ -339,14 +364,51 @@ serve(async (req) => {
 
           return {
             ...owner,
+            properties_count: count || 0,
+            // Ensure property_owner role is set if they own properties
+            role: owner.role || 'property_owner'
+          };
+        })
+      );
+
+      // Handle missing profiles by creating basic owner records
+      const ownerIds = new Set(owners?.map(o => o.id) || []);
+      const missingOwnerIds = uniqueOwnerIds.filter(id => !ownerIds.has(id));
+      
+      const missingOwners = await Promise.all(
+        missingOwnerIds.map(async (ownerId) => {
+          const { count } = await supabaseAdmin
+            .from('properties')
+            .select('*', { count: 'exact', head: true })
+            .eq('owner_id', ownerId);
+
+          // Try to get basic info from auth.users if possible
+          const { data: authUser } = await supabaseAdmin.auth.admin.getUserById(ownerId);
+          
+          return {
+            id: ownerId,
+            email: authUser?.user?.email || `owner-${ownerId.slice(0, 8)}@unknown.com`,
+            full_name: authUser?.user?.user_metadata?.full_name || 
+                      authUser?.user?.user_metadata?.first_name + ' ' + authUser?.user?.user_metadata?.last_name ||
+                      `Property Owner (${ownerId.slice(0, 8)})`,
+            role: 'property_owner',
+            phone: authUser?.user?.user_metadata?.phone || null,
+            avatar_url: null,
+            created_at: authUser?.user?.created_at || new Date().toISOString(),
+            updated_at: new Date().toISOString(),
+            is_active: true,
+            created_by: null,
+            commission_rate: 0.1,
+            created_by_profile: null,
             properties_count: count || 0
           };
         })
       );
 
-      console.log(`✅ Found ${ownersWithCounts.length} property owners`);
+      const allOwners = [...ownersWithCounts, ...missingOwners];
+      console.log(`✅ Found ${allOwners.length} total property owners (${ownersWithCounts.length} with profiles, ${missingOwners.length} missing profiles)`);
 
-      return new Response(JSON.stringify({ owners: ownersWithCounts }), {
+      return new Response(JSON.stringify({ owners: allOwners }), {
         status: 200,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' }
       });
