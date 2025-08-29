@@ -316,7 +316,9 @@ export class EnhancedBookingService {
         .from('booking_action_logs')
         .select(`
           *,
-          profiles!actor_id (full_name)
+          actor:profiles!actor_id (
+            full_name
+          )
         `)
         .eq('booking_id', bookingId)
         .order('created_at', { ascending: false });

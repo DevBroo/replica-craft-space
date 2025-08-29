@@ -18,9 +18,9 @@ interface BookingHistoryEntry {
   reason?: string;
   metadata: any;
   created_at: string;
-  profiles?: {
+  actor?: {
     full_name: string;
-  };
+  } | null;
 }
 
 const BookingHistoryModal: React.FC<BookingHistoryModalProps> = ({
@@ -131,7 +131,7 @@ const BookingHistoryModal: React.FC<BookingHistoryModalProps> = ({
                       </Badge>
                       <div className="flex items-center gap-1 text-sm text-muted-foreground">
                         <User className="h-3 w-3" />
-                        {entry.profiles?.full_name || 'System'}
+                        {entry.actor?.full_name || 'System'}
                       </div>
                     </div>
                     <div className="flex items-center gap-1 text-sm text-muted-foreground">

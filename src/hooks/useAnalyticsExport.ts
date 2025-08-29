@@ -10,40 +10,46 @@ export const useAnalyticsExport = () => {
   const [exporting, setExporting] = useState(false);
 
   const exportToCsv = ({ data, filename, headers }: ExportData) => {
-    if (!data.length) return;
-
     setExporting(true);
-    
     try {
-      const csvHeaders = headers || Object.keys(data[0]);
-      const csvContent = [
-        csvHeaders.join(','),
-        ...data.map(row => 
-          csvHeaders.map(header => {
-            const value = row[header];
-            // Handle values that might contain commas
-            if (typeof value === 'string' && value.includes(',')) {
-              return `"${value}"`;
-            }
-            return value;
-          }).join(',')
-        )
-      ].join('\n');
+      let csvContent = '';
+      
+      if (Array.isArray(data) && data.length > 0) {
+        // If data is an array of objects, convert to CSV
+        if (typeof data[0] === 'object') {
+          const keys = headers || Object.keys(data[0]);
+          csvContent = keys.join(',') + '\n';
+          csvContent += data.map(row => 
+            keys.map(key => {
+              const value = row[key];
+              // Handle commas and quotes in CSV
+              if (typeof value === 'string' && (value.includes(',') || value.includes('"'))) {
+                return `"${value.replace(/"/g, '""')}"`;
+              }
+              return value;
+            }).join(',')
+          ).join('\n');
+        } else {
+          // If data is already a CSV string
+          csvContent = data.join('\n');
+        }
+      } else if (typeof data[0] === 'string') {
+        // If data is an array of strings (pre-formatted CSV)
+        csvContent = data.join('\n');
+      }
 
+      // Create and download the file
       const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
       const link = document.createElement('a');
-      
-      if (link.download !== undefined) {
-        const url = URL.createObjectURL(blob);
-        link.setAttribute('href', url);
-        link.setAttribute('download', `${filename}.csv`);
-        link.style.visibility = 'hidden';
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-      }
+      const url = URL.createObjectURL(blob);
+      link.setAttribute('href', url);
+      link.setAttribute('download', `${filename}.csv`);
+      link.style.visibility = 'hidden';
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
     } catch (error) {
-      console.error('Error exporting CSV:', error);
+      console.error('Export failed:', error);
     } finally {
       setExporting(false);
     }
@@ -51,57 +57,52 @@ export const useAnalyticsExport = () => {
 
   const exportToPdf = ({ data, filename }: ExportData) => {
     setExporting(true);
-    
     try {
-      // Simple PDF export using print functionality
-      const printWindow = window.open('', '_blank');
-      if (!printWindow) return;
-
+      // Simple PDF export by opening print dialog
+      // In a real implementation, you'd use a library like jsPDF
       const htmlContent = `
-        <!DOCTYPE html>
         <html>
-        <head>
-          <title>${filename}</title>
-          <style>
-            body { font-family: Arial, sans-serif; margin: 20px; }
-            table { width: 100%; border-collapse: collapse; margin-top: 20px; }
-            th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
-            th { background-color: #f2f2f2; }
-            h1 { color: #333; }
-          </style>
-        </head>
-        <body>
-          <h1>${filename}</h1>
-          <p>Generated on: ${new Date().toLocaleDateString()}</p>
-          <table>
-            <thead>
-              <tr>
-                ${Object.keys(data[0] || {}).map(key => `<th>${key}</th>`).join('')}
-              </tr>
-            </thead>
-            <tbody>
-              ${data.map(row => `
-                <tr>
-                  ${Object.values(row).map(value => `<td>${value}</td>`).join('')}
-                </tr>
-              `).join('')}
-            </tbody>
-          </table>
-        </body>
+          <head>
+            <title>${filename}</title>
+            <style>
+              body { font-family: Arial, sans-serif; }
+              table { border-collapse: collapse; width: 100%; }
+              th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+              th { background-color: #f2f2f2; }
+            </style>
+          </head>
+          <body>
+            <h1>${filename}</h1>
+            <table>
+              ${Array.isArray(data) && data.length > 0 ? `
+                <thead>
+                  <tr>
+                    ${Object.keys(data[0]).map(key => `<th>${key}</th>`).join('')}
+                  </tr>
+                </thead>
+                <tbody>
+                  ${data.map(row => `
+                    <tr>
+                      ${Object.values(row).map(value => `<td>${value}</td>`).join('')}
+                    </tr>
+                  `).join('')}
+                </tbody>
+              ` : ''}
+            </table>
+          </body>
         </html>
       `;
-
-      printWindow.document.write(htmlContent);
-      printWindow.document.close();
       
-      // Auto-print after a short delay
-      setTimeout(() => {
+      const printWindow = window.open('', '_blank');
+      if (printWindow) {
+        printWindow.document.write(htmlContent);
+        printWindow.document.close();
+        printWindow.focus();
         printWindow.print();
         printWindow.close();
-      }, 500);
-      
+      }
     } catch (error) {
-      console.error('Error exporting PDF:', error);
+      console.error('PDF export failed:', error);
     } finally {
       setExporting(false);
     }

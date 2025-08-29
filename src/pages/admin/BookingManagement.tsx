@@ -1,252 +1,111 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { 
-  Plus,
-  Check,
-  Eye,
-  X,
-  Trash2,
-  ArrowUpDown,
-  CalendarCheck,
-  CalendarX,
-  ListChecks,
-  ChevronDown,
-  Search,
-  Home,
-  Edit,
-  TrendingUp,
-  DollarSign,
-  CreditCard,
-  RefreshCw,
-  AlertCircle,
-  User,
-  Users,
-  Building
-} from 'lucide-react';
-import { supabase } from '@/integrations/supabase/client';
 import SharedSidebar from '../../components/admin/SharedSidebar';
 import SharedHeader from '../../components/admin/SharedHeader';
-import IconButton from '../../components/admin/ui/IconButton';
-import { toast } from '../../components/admin/ui/use-toast';
-
-interface BookingData {
-  id: string;
-  created_at: string;
-  updated_at: string;
-  property_id: string;
-  property_title: string;
-  user_id: string;
-  user_name: string;
-  owner_id: string;
-  owner_name: string;
-  agent_id?: string;
-  agent_name?: string;
-  check_in_date: string;
-  check_out_date: string;
-  guests: number;
-  total_amount: number;
-  status: string;
-  payment_status: string;
-  refund_status: string;
-  refund_amount: number;
-}
-
-interface BookingAnalytics {
-  total_bookings: number;
-  total_revenue: number;
-  average_booking_value: number;
-  bookings_by_status: Record<string, number>;
-  payments_by_status: Record<string, number>;
-  refunds: {
-    total_refund_amount: number;
-    by_status: Record<string, number>;
-  };
-  cancellations: number;
-}
+import { Button } from "@/components/admin/ui/button";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/admin/ui/card";
+import { Input } from "@/components/admin/ui/input";
+import { Label } from "@/components/admin/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/admin/ui/select";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/admin/ui/table";
+import { Badge } from "@/components/admin/ui/badge";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/admin/ui/dialog";
+import { Separator } from "@/components/admin/ui/separator";
+import { Checkbox } from "@/components/admin/ui/checkbox";
+import { Textarea } from "@/components/admin/ui/textarea";
+import { CalendarDays, DollarSign, Users, TrendingUp, Search, Filter, Download, Check, X, Eye, Edit2, Trash2, ChevronUp, ChevronDown, RefreshCw, History, CreditCard, FileText, ArrowUpDown } from "lucide-react";
+import { EnhancedBookingService, BookingFilters, BookingUpdateData } from "@/lib/enhancedBookingService";
+import BookingModificationModal from "@/components/admin/BookingModificationModal";
+import BookingHistoryModal from "@/components/admin/BookingHistoryModal";
+import { useAnalyticsExport } from "@/hooks/useAnalyticsExport";
 
 const BookingManagement: React.FC = () => {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
-  const [statusFilter, setStatusFilter] = useState('all');
-  const [paymentFilter, setPaymentFilter] = useState('all');
-  const [refundFilter, setRefundFilter] = useState('all');
-  const [searchTerm, setSearchTerm] = useState('');
-  const [showDetailsDrawer, setShowDetailsDrawer] = useState(false);
-  const [selectedBookingDetails, setSelectedBookingDetails] = useState<BookingData | null>(null);
-  const [currentPage, setCurrentPage] = useState(1);
-  const [rowsPerPage, setRowsPerPage] = useState(10);
+  const [filters, setFilters] = useState<BookingFilters>({
+    status: undefined,
+    payment_status: undefined,
+    refund_status: undefined,
+    search: undefined,
+    start_date: undefined,
+    end_date: undefined,
+    property_id: undefined,
+    owner_id: undefined,
+    agent_id: undefined,
+    user_id: undefined
+  });
   const [selectedBookings, setSelectedBookings] = useState<string[]>([]);
-  const [showBulkActions, setShowBulkActions] = useState(false);
-  const [dateFrom, setDateFrom] = useState('');
-  const [dateTo, setDateTo] = useState('');
-  const [sortBy, setSortBy] = useState<'created_at' | 'total_amount' | 'check_in_date'>('created_at');
+  const [showDetailsDrawer, setShowDetailsDrawer] = useState(false);
+  const [selectedBooking, setSelectedBooking] = useState<any>(null);
+  const [showModificationModal, setShowModificationModal] = useState(false);
+  const [showHistoryModal, setShowHistoryModal] = useState(false);
+  const [showBulkActionModal, setShowBulkActionModal] = useState(false);
+  const [bulkAction, setBulkAction] = useState<string>('');
+  const [bulkReason, setBulkReason] = useState<string>('');
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize] = useState(10);
+  const [sortBy, setSortBy] = useState<string>('created_at');
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
-  const [propertyFilter, setPropertyFilter] = useState('');
-  const [userFilter, setUserFilter] = useState('');
-  const [ownerFilter, setOwnerFilter] = useState('');
-  const [agentFilter, setAgentFilter] = useState('');
 
   const queryClient = useQueryClient();
+  const { exportToCsv, exporting } = useAnalyticsExport();
 
   // Fetch booking analytics
   const { data: analytics } = useQuery({
-    queryKey: ['booking-analytics', dateFrom, dateTo],
+    queryKey: ['booking-analytics', filters.start_date, filters.end_date, filters.property_id, filters.owner_id, filters.agent_id],
     queryFn: async () => {
-      const startDate = dateFrom || new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
-      const endDate = dateTo || new Date().toISOString().split('T')[0];
-      
-      const { data, error } = await supabase.rpc('get_booking_analytics_detailed', {
-        start_date: startDate,
-        end_date: endDate
-      });
-
-      if (error) throw error;
-      return data[0] as BookingAnalytics;
-    }
+      return await EnhancedBookingService.getBookingAnalytics(
+        filters.start_date,
+        filters.end_date,
+        filters.property_id,
+        filters.owner_id,
+        filters.agent_id
+      );
+    },
   });
 
-  // Fetch bookings with filters
-  const { data: bookings = [], isLoading, refetch } = useQuery({
-    queryKey: ['bookings-admin', {
-      search: searchTerm,
-      status: statusFilter,
-      payment: paymentFilter,
-      refund: refundFilter,
-      property: propertyFilter,
-      user: userFilter,
-      owner: ownerFilter,
-      agent: agentFilter,
-      dateFrom,
-      dateTo,
-      sortBy,
-      sortOrder,
-      page: currentPage,
-      limit: rowsPerPage
-    }],
+  // Fetch bookings with pagination and filters
+  const { data: bookingsData, isLoading } = useQuery({
+    queryKey: ['admin-bookings', currentPage, pageSize, sortBy, sortOrder, filters],
     queryFn: async () => {
-      let query = supabase.from('booking_admin_list').select('*');
-
-      // Apply filters
-      if (searchTerm) {
-        query = query.or(`id.ilike.%${searchTerm}%,user_name.ilike.%${searchTerm}%,property_title.ilike.%${searchTerm}%`);
-      }
-      if (statusFilter !== 'all') {
-        query = query.eq('status', statusFilter);
-      }
-      if (paymentFilter !== 'all') {
-        query = query.eq('payment_status', paymentFilter);
-      }
-      if (refundFilter !== 'all') {
-        query = query.eq('refund_status', refundFilter);
-      }
-      if (propertyFilter) {
-        query = query.ilike('property_title', `%${propertyFilter}%`);
-      }
-      if (userFilter) {
-        query = query.ilike('user_name', `%${userFilter}%`);
-      }
-      if (ownerFilter) {
-        query = query.ilike('owner_name', `%${ownerFilter}%`);
-      }
-      if (agentFilter && agentFilter !== 'none') {
-        if (agentFilter === 'has_agent') {
-          query = query.not('agent_id', 'is', null);
-        } else {
-          query = query.ilike('agent_name', `%${agentFilter}%`);
-        }
-      } else if (agentFilter === 'none') {
-        query = query.is('agent_id', null);
-      }
-      if (dateFrom) {
-        query = query.gte('created_at', dateFrom);
-      }
-      if (dateTo) {
-        query = query.lte('created_at', dateTo + 'T23:59:59');
-      }
-
-      // Apply sorting
-      query = query.order(sortBy, { ascending: sortOrder === 'asc' });
-
-      // Apply pagination
-      const from = (currentPage - 1) * rowsPerPage;
-      const to = from + rowsPerPage - 1;
-      query = query.range(from, to);
-
-      const { data, error } = await query;
-      if (error) throw error;
-      return data as BookingData[];
-    }
+      return await EnhancedBookingService.getBookings(
+        currentPage,
+        pageSize,
+        filters,
+        sortBy,
+        sortOrder
+      );
+    },
   });
 
   // Update booking mutation
   const updateBookingMutation = useMutation({
-    mutationFn: async ({ id, updates }: { id: string; updates: Partial<BookingData> }) => {
-      const { data, error } = await supabase
-        .from('bookings')
-        .update(updates)
-        .eq('id', id)
-        .select()
-        .single();
-
-      if (error) throw error;
-      return data;
+    mutationFn: async ({ bookingId, updateData, reason }: { bookingId: string; updateData: BookingUpdateData; reason: string }) => {
+      return await EnhancedBookingService.updateBooking(bookingId, updateData, reason);
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['bookings-admin'] });
+      queryClient.invalidateQueries({ queryKey: ['admin-bookings'] });
       queryClient.invalidateQueries({ queryKey: ['booking-analytics'] });
-      toast({ title: 'Success', description: 'Booking updated successfully' });
     },
-    onError: (error) => {
-      console.error('Error updating booking:', error);
-      toast({ title: 'Error', description: 'Failed to update booking', variant: 'destructive' });
-    }
   });
 
   // Bulk update mutation
   const bulkUpdateMutation = useMutation({
-    mutationFn: async ({ ids, updates }: { ids: string[]; updates: Partial<BookingData> }) => {
-      const { data, error } = await supabase
-        .from('bookings')
-        .update(updates)
-        .in('id', ids);
-
-      if (error) throw error;
-      return data;
+    mutationFn: async ({ bookingIds, updateData, reason }: { bookingIds: string[]; updateData: BookingUpdateData; reason: string }) => {
+      return await EnhancedBookingService.bulkUpdateBookings(bookingIds, updateData, reason);
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['bookings-admin'] });
+      queryClient.invalidateQueries({ queryKey: ['admin-bookings'] });
       queryClient.invalidateQueries({ queryKey: ['booking-analytics'] });
       setSelectedBookings([]);
-      setShowBulkActions(false);
-      toast({ title: 'Success', description: 'Bookings updated successfully' });
+      setShowBulkActionModal(false);
+      setBulkAction('');
+      setBulkReason('');
     },
-    onError: (error) => {
-      console.error('Error bulk updating bookings:', error);
-      toast({ title: 'Error', description: 'Failed to update bookings', variant: 'destructive' });
-    }
   });
-
-  const getStatusColor = (status: string) => {
-    switch (status?.toLowerCase()) {
-      case 'confirmed': return 'bg-green-100 text-green-800 border-green-200';
-      case 'pending': return 'bg-yellow-100 text-yellow-800 border-yellow-200';
-      case 'cancelled': return 'bg-red-100 text-red-800 border-red-200';
-      case 'completed': return 'bg-blue-100 text-blue-800 border-blue-200';
-      default: return 'bg-gray-100 text-gray-800 border-gray-200';
-    }
-  };
-
-  const getPaymentStatusColor = (status: string) => {
-    switch (status?.toLowerCase()) {
-      case 'paid': return 'bg-green-100 text-green-800 border-green-200';
-      case 'pending': return 'bg-yellow-100 text-yellow-800 border-yellow-200';
-      case 'failed': return 'bg-red-100 text-red-800 border-red-200';
-      default: return 'bg-gray-100 text-gray-800 border-gray-200';
-    }
-  };
 
   const handleSelectAll = (checked: boolean) => {
     if (checked) {
-      setSelectedBookings(bookings.map(b => b.id));
+      setSelectedBookings(bookingsData?.data?.map(b => b.id) || []);
     } else {
       setSelectedBookings([]);
     }
@@ -254,47 +113,86 @@ const BookingManagement: React.FC = () => {
 
   const handleSelectBooking = (bookingId: string, checked: boolean) => {
     if (checked) {
-      setSelectedBookings([...selectedBookings, bookingId]);
+      setSelectedBookings(prev => [...prev, bookingId]);
     } else {
-      setSelectedBookings(selectedBookings.filter(id => id !== bookingId));
+      setSelectedBookings(prev => prev.filter(id => id !== bookingId));
     }
   };
 
-  const handleBulkAction = (action: string) => {
-    if (selectedBookings.length === 0) return;
+  const handleBulkAction = () => {
+    if (selectedBookings.length === 0 || !bulkAction) return;
+    setShowBulkActionModal(true);
+  };
 
-    let updates: Partial<BookingData> = {};
+  const processBulkAction = async () => {
+    if (!bulkReason.trim()) {
+      alert('Please provide a reason for the bulk action');
+      return;
+    }
+
+    const updateData: BookingUpdateData = {};
     
-    switch (action) {
+    switch (bulkAction) {
       case 'confirm':
-        updates = { status: 'confirmed' };
+        updateData.status = 'confirmed';
         break;
       case 'cancel':
-        updates = { status: 'cancelled' };
+        updateData.status = 'cancelled';
         break;
       case 'mark-paid':
-        updates = { payment_status: 'paid' };
+        updateData.payment_status = 'paid';
         break;
-      case 'mark-failed':
-        updates = { payment_status: 'failed' };
+      case 'approve-refund':
+        updateData.refund_status = 'approved';
+        break;
+      case 'process-refund':
+        updateData.refund_status = 'processed';
         break;
       default:
         return;
     }
 
-    bulkUpdateMutation.mutate({ ids: selectedBookings, updates });
+    try {
+      await bulkUpdateMutation.mutateAsync({
+        bookingIds: selectedBookings,
+        updateData,
+        reason: bulkReason
+      });
+    } catch (error) {
+      console.error('Bulk action failed:', error);
+      alert('Bulk action failed. Please try again.');
+    }
   };
 
-  const handleViewDetails = (booking: BookingData) => {
-    setSelectedBookingDetails(booking);
+  const handleViewDetails = (booking: any) => {
+    setSelectedBooking(booking);
     setShowDetailsDrawer(true);
   };
 
-  const handleUpdateBooking = (id: string, field: string, value: any) => {
-    updateBookingMutation.mutate({ id, updates: { [field]: value } });
+  const handleModifyBooking = (booking: any) => {
+    setSelectedBooking(booking);
+    setShowModificationModal(true);
   };
 
-  const handleSort = (field: 'created_at' | 'total_amount' | 'check_in_date') => {
+  const handleViewHistory = (booking: any) => {
+    setSelectedBooking(booking);
+    setShowHistoryModal(true);
+  };
+
+  const handleUpdateBooking = async (bookingId: string, updateData: BookingUpdateData, reason: string) => {
+    try {
+      await updateBookingMutation.mutateAsync({
+        bookingId,
+        updateData,
+        reason
+      });
+    } catch (error) {
+      console.error('Update failed:', error);
+      throw error;
+    }
+  };
+
+  const handleSort = (field: string) => {
     if (sortBy === field) {
       setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc');
     } else {
@@ -303,560 +201,702 @@ const BookingManagement: React.FC = () => {
     }
   };
 
+  const handleExport = async () => {
+    try {
+      const csvContent = await EnhancedBookingService.exportBookings(filters, 'csv');
+      exportToCsv({
+        data: [csvContent],
+        filename: `bookings-export-${new Date().toISOString().split('T')[0]}`,
+      });
+    } catch (error) {
+      console.error('Export failed:', error);
+      alert('Export failed. Please try again.');
+    }
+  };
+
+  // Helper functions
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('en-IN', {
       style: 'currency',
       currency: 'INR',
-      maximumFractionDigits: 0
     }).format(amount);
   };
 
   const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('en-US', {
-      month: 'short',
-      day: 'numeric',
-      year: 'numeric'
-    });
+    return new Date(dateString).toLocaleDateString('en-IN');
+  };
+
+  const updateFilters = (key: keyof BookingFilters, value: any) => {
+    setFilters(prev => ({
+      ...prev,
+      [key]: value === 'all' || value === '' ? undefined : value
+    }));
+    setCurrentPage(1); // Reset to first page when filters change
+  };
+
+  const getStatusColor = (status: string) => {
+    switch (status.toLowerCase()) {
+      case 'confirmed': return 'default';
+      case 'pending': return 'secondary';
+      case 'cancelled': return 'destructive';
+      case 'completed': return 'outline';
+      default: return 'outline';
+    }
+  };
+
+  const getPaymentStatusColor = (status: string) => {
+    switch (status.toLowerCase()) {
+      case 'paid': return 'default';
+      case 'pending': return 'secondary';
+      case 'failed': return 'destructive';
+      case 'refunded': return 'outline';
+      default: return 'outline';
+    }
   };
 
   return (
-    <div className="min-h-screen bg-background w-full">
+    <div className="flex h-screen bg-gray-50">
       <SharedSidebar 
         sidebarCollapsed={sidebarCollapsed} 
         setSidebarCollapsed={setSidebarCollapsed} 
       />
       
-      <div className={`transition-all duration-300 ${sidebarCollapsed ? 'ml-16' : 'ml-64'}`}>
-        <SharedHeader 
-          title="Booking Management" 
-          breadcrumb="Booking Management"
-          searchPlaceholder="Search bookings..."
-        />
-
-        {/* Analytics Cards */}
-        {analytics && (
-          <div className="px-6 py-4 bg-background border-b">
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-              <div className="bg-card border rounded-lg p-4">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm text-muted-foreground">Total Bookings</p>
-                    <p className="text-2xl font-bold text-foreground">{analytics.total_bookings}</p>
-                  </div>
-                  <div className="h-8 w-8 bg-primary/10 rounded-full flex items-center justify-center">
-                    <TrendingUp className="h-4 w-4 text-primary" />
-                  </div>
-                </div>
-              </div>
-              
-              <div className="bg-card border rounded-lg p-4">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm text-muted-foreground">Total Revenue</p>
-                    <p className="text-2xl font-bold text-foreground">{formatCurrency(analytics.total_revenue)}</p>
-                  </div>
-                  <div className="h-8 w-8 bg-primary/10 rounded-full flex items-center justify-center">
-                    <DollarSign className="h-4 w-4 text-primary" />
-                  </div>
-                </div>
-              </div>
-              
-              <div className="bg-card border rounded-lg p-4">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm text-muted-foreground">Avg Booking Value</p>
-                    <p className="text-2xl font-bold text-foreground">{formatCurrency(analytics.average_booking_value)}</p>
-                  </div>
-                  <div className="h-8 w-8 bg-primary/10 rounded-full flex items-center justify-center">
-                    <CreditCard className="h-4 w-4 text-primary" />
-                  </div>
-                </div>
-              </div>
-              
-              <div className="bg-card border rounded-lg p-4">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm text-muted-foreground">Cancellations</p>
-                    <p className="text-2xl font-bold text-foreground">{analytics.cancellations}</p>
-                  </div>
-                  <div className="h-8 w-8 bg-destructive/10 rounded-full flex items-center justify-center">
-                    <AlertCircle className="h-4 w-4 text-destructive" />
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* Filters Bar */}
-        <div className="bg-card border-b px-6 py-4">
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-            {/* First Row - Status and Payment Filters */}
-            <div className="flex flex-wrap items-center gap-2">
-              <select
-                value={statusFilter}
-                onChange={(e) => setStatusFilter(e.target.value)}
-                className="appearance-none bg-background border border-input rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
-              >
-                <option value="all">All Status</option>
-                <option value="pending">Pending</option>
-                <option value="confirmed">Confirmed</option>
-                <option value="completed">Completed</option>
-                <option value="cancelled">Cancelled</option>
-              </select>
-              
-              <select
-                value={paymentFilter}
-                onChange={(e) => setPaymentFilter(e.target.value)}
-                className="appearance-none bg-background border border-input rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
-              >
-                <option value="all">All Payments</option>
-                <option value="pending">Payment Pending</option>
-                <option value="paid">Paid</option>
-                <option value="failed">Failed</option>
-              </select>
-              
-              <select
-                value={refundFilter}
-                onChange={(e) => setRefundFilter(e.target.value)}
-                className="appearance-none bg-background border border-input rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
-              >
-                <option value="all">All Refunds</option>
-                <option value="none">No Refund</option>
-                <option value="requested">Refund Requested</option>
-                <option value="processing">Processing</option>
-                <option value="completed">Refund Completed</option>
-                <option value="rejected">Refund Rejected</option>
-              </select>
-            </div>
-
-            {/* Second Row - Entity Filters */}
-            <div className="flex flex-wrap items-center gap-2">
-              <input
-                type="text"
-                placeholder="Filter by property..."
-                value={propertyFilter}
-                onChange={(e) => setPropertyFilter(e.target.value)}
-                className="bg-background border border-input rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring flex-1 min-w-0"
-              />
-              
-              <input
-                type="text"
-                placeholder="Filter by user..."
-                value={userFilter}
-                onChange={(e) => setUserFilter(e.target.value)}
-                className="bg-background border border-input rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring flex-1 min-w-0"
-              />
-            </div>
-
-            {/* Third Row - Date Range and Search */}
-            <div className="flex flex-wrap items-center gap-2">
-              <input
-                type="date"
-                value={dateFrom}
-                onChange={(e) => setDateFrom(e.target.value)}
-                className="bg-background border border-input rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
-              />
-              <span className="text-muted-foreground text-sm">to</span>
-              <input
-                type="date"
-                value={dateTo}
-                onChange={(e) => setDateTo(e.target.value)}
-                className="bg-background border border-input rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
-              />
-              
-              <div className="relative flex-1 min-w-0">
-                <input
-                  type="text"
-                  placeholder="Search bookings..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="w-full pl-10 pr-4 py-2 bg-background border border-input rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-ring"
-                />
-                <Search className="w-4 h-4 absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground" />
-              </div>
-            </div>
+      <div className="flex-1 flex flex-col min-w-0">
+        <SharedHeader title="Booking Management" />
+        
+        <main className="flex-1 overflow-auto p-6">
+          {/* Enhanced Summary Cards */}
+          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-5 mb-6">
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">Total Bookings</CardTitle>
+                <CalendarDays className="h-4 w-4 text-muted-foreground" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">{analytics?.total_bookings || 0}</div>
+              </CardContent>
+            </Card>
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">Total Revenue</CardTitle>
+                <DollarSign className="h-4 w-4 text-muted-foreground" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">{formatCurrency(analytics?.total_revenue || 0)}</div>
+              </CardContent>
+            </Card>
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">Total Refunds</CardTitle>
+                <RefreshCw className="h-4 w-4 text-muted-foreground" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">{formatCurrency(analytics?.total_refunds || 0)}</div>
+              </CardContent>
+            </Card>
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">Average Booking Value</CardTitle>
+                <TrendingUp className="h-4 w-4 text-muted-foreground" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">{formatCurrency(analytics?.average_booking_value || 0)}</div>
+              </CardContent>
+            </Card>
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">Cancellation Rate</CardTitle>
+                <Users className="h-4 w-4 text-muted-foreground" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">{analytics?.cancellation_rate?.toFixed(1) || 0}%</div>
+              </CardContent>
+            </Card>
           </div>
 
-          {/* Bulk Actions */}
-          {selectedBookings.length > 0 && (
-            <div className="flex items-center gap-2 mt-4 pt-4 border-t">
-              <span className="text-sm text-muted-foreground">
-                {selectedBookings.length} booking(s) selected:
-              </span>
-              <button
-                onClick={() => handleBulkAction('confirm')}
-                className="px-3 py-1 bg-primary text-primary-foreground rounded text-sm hover:bg-primary/90"
-              >
-                Confirm
-              </button>
-              <button
-                onClick={() => handleBulkAction('cancel')}
-                className="px-3 py-1 bg-destructive text-destructive-foreground rounded text-sm hover:bg-destructive/90"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={() => handleBulkAction('mark-paid')}
-                className="px-3 py-1 bg-secondary text-secondary-foreground rounded text-sm hover:bg-secondary/90"
-              >
-                Mark Paid
-              </button>
-              <button
-                onClick={() => setSelectedBookings([])}
-                className="px-3 py-1 bg-muted text-muted-foreground rounded text-sm hover:bg-muted/90"
-              >
-                Clear Selection
-              </button>
-            </div>
-          )}
-        </div>
-
-        {/* Booking Table */}
-        <main className="p-6">
-          <div className="bg-card rounded-lg shadow-sm border">
-            {isLoading ? (
-              <div className="flex items-center justify-center h-64">
-                <RefreshCw className="h-8 w-8 animate-spin text-muted-foreground" />
+          {/* Enhanced Filters */}
+          <Card className="mb-6">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Filter className="h-5 w-5" />
+                Filters & Search
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+                <div className="space-y-2">
+                  <Label htmlFor="search">Search</Label>
+                  <div className="relative">
+                    <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
+                    <Input
+                      id="search"
+                      placeholder="Search bookings, guests, properties..."
+                      value={filters.search || ''}
+                      onChange={(e) => updateFilters('search', e.target.value)}
+                      className="pl-8"
+                    />
+                  </div>
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="status-filter">Booking Status</Label>
+                  <Select value={filters.status || 'all'} onValueChange={(value) => updateFilters('status', value)}>
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">All Statuses</SelectItem>
+                      <SelectItem value="pending">Pending</SelectItem>
+                      <SelectItem value="confirmed">Confirmed</SelectItem>
+                      <SelectItem value="cancelled">Cancelled</SelectItem>
+                      <SelectItem value="completed">Completed</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="payment-filter">Payment Status</Label>
+                  <Select value={filters.payment_status || 'all'} onValueChange={(value) => updateFilters('payment_status', value)}>
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">All Payment Status</SelectItem>
+                      <SelectItem value="pending">Pending</SelectItem>
+                      <SelectItem value="paid">Paid</SelectItem>
+                      <SelectItem value="failed">Failed</SelectItem>
+                      <SelectItem value="refunded">Refunded</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="refund-filter">Refund Status</Label>
+                  <Select value={filters.refund_status || 'all'} onValueChange={(value) => updateFilters('refund_status', value)}>
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">All Refund Status</SelectItem>
+                      <SelectItem value="none">None</SelectItem>
+                      <SelectItem value="requested">Requested</SelectItem>
+                      <SelectItem value="approved">Approved</SelectItem>
+                      <SelectItem value="processed">Processed</SelectItem>
+                      <SelectItem value="rejected">Rejected</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
               </div>
-            ) : (
-              <div className="overflow-x-auto">
-                <table className="w-full">
-                  <thead className="bg-muted/50">
-                    <tr>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
-                        <input
-                          type="checkbox"
-                          checked={selectedBookings.length === bookings.length && bookings.length > 0}
-                          onChange={(e) => handleSelectAll(e.target.checked)}
-                          className="rounded border-input text-primary focus:ring-ring"
-                        />
-                      </th>
-                      <th 
-                        className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider cursor-pointer hover:bg-muted/75"
-                        onClick={() => handleSort('created_at')}
-                      >
-                        <div className="flex items-center space-x-1">
-                          <span>Booking ID</span>
-                          <ArrowUpDown className="w-3 h-3" />
-                        </div>
-                      </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
-                        Guest Details
-                      </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
-                        Property
-                      </th>
-                      <th 
-                        className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider cursor-pointer hover:bg-muted/75"
-                        onClick={() => handleSort('check_in_date')}
-                      >
-                        <div className="flex items-center space-x-1">
-                          <span>Check-in / Check-out</span>
-                          <ArrowUpDown className="w-3 h-3" />
-                        </div>
-                      </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
-                        Status
-                      </th>
-                      <th 
-                        className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider cursor-pointer hover:bg-muted/75"
-                        onClick={() => handleSort('total_amount')}
-                      >
-                        <div className="flex items-center space-x-1">
-                          <span>Amount</span>
-                          <ArrowUpDown className="w-3 h-3" />
-                        </div>
-                      </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
-                        Actions
-                      </th>
-                    </tr>
-                  </thead>
-                  <tbody className="bg-card divide-y divide-border">
-                    {bookings.map((booking) => (
-                      <tr key={booking.id} className="hover:bg-muted/25">
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <input
-                            type="checkbox"
-                            checked={selectedBookings.includes(booking.id)}
-                            onChange={(e) => handleSelectBooking(booking.id, e.target.checked)}
-                            className="rounded border-input text-primary focus:ring-ring"
-                          />
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-foreground">
-                          <div>
-                            <div className="font-mono">{booking.id.slice(0, 8)}</div>
-                            <div className="text-xs text-muted-foreground">
-                              {formatDate(booking.created_at)}
-                            </div>
-                          </div>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-foreground">
-                          <div className="flex items-center">
-                            <div className="w-8 h-8 bg-primary/10 rounded-full flex items-center justify-center mr-3">
-                              <User className="w-4 h-4 text-primary" />
-                            </div>
-                            <div>
-                              <div className="font-medium">{booking.user_name || 'Unknown User'}</div>
-                              <div className="text-muted-foreground text-xs">{booking.guests} guests</div>
-                            </div>
-                          </div>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <div className="flex items-center">
-                            <div className="w-8 h-8 bg-secondary/10 rounded-full flex items-center justify-center mr-3">
-                              <Building className="w-4 h-4 text-secondary" />
-                            </div>
-                            <div>
-                              <div className="text-sm font-medium text-foreground">
-                                {booking.property_title || 'Unknown Property'}
-                              </div>
-                              <div className="text-xs text-muted-foreground">
-                                Owner: {booking.owner_name || 'Unknown'}
-                              </div>
-                            </div>
-                          </div>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-foreground">
-                          <div>
-                            <div className="flex items-center text-primary">
-                              <CalendarCheck className="w-4 h-4 mr-1" />
-                              {formatDate(booking.check_in_date)}
-                            </div>
-                            <div className="flex items-center text-muted-foreground mt-1">
-                              <CalendarX className="w-4 h-4 mr-1" />
-                              {formatDate(booking.check_out_date)}
-                            </div>
-                          </div>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <div className="space-y-2">
-                            <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium border ${getStatusColor(booking.status)}`}>
-                              {booking.status}
-                            </span>
-                            <br />
-                            <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium border ${getPaymentStatusColor(booking.payment_status)}`}>
-                              {booking.payment_status}
-                            </span>
-                          </div>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-foreground">
-                          <div>
-                            <div className="font-semibold">{formatCurrency(booking.total_amount)}</div>
-                            {booking.refund_amount > 0 && (
-                              <div className="text-xs text-destructive">
-                                Refund: {formatCurrency(booking.refund_amount)}
-                              </div>
-                            )}
-                          </div>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm">
-                          <div className="flex items-center space-x-2">
-                            <IconButton
-                              icon={Eye}
-                              onClick={() => handleViewDetails(booking)}
-                              variant="ghost"
-                              size="sm"
-                              tooltip="View Details"
-                            />
-                            <IconButton
-                              icon={Check}
-                              onClick={() => handleUpdateBooking(booking.id, 'status', 'confirmed')}
-                              variant="success"
-                              size="sm"
-                              tooltip="Confirm Booking"
-                              disabled={booking.status === 'confirmed'}
-                            />
-                            <IconButton
-                              icon={X}
-                              onClick={() => handleUpdateBooking(booking.id, 'status', 'cancelled')}
-                              variant="danger"
-                              size="sm"
-                              tooltip="Cancel Booking"
-                              disabled={booking.status === 'cancelled'}
-                            />
-                          </div>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            )}
-
-            {/* Pagination */}
-            <div className="px-6 py-4 border-t border-border flex items-center justify-between">
-              <div className="flex items-center space-x-2">
-                <select
-                  value={rowsPerPage}
-                  onChange={(e) => setRowsPerPage(Number(e.target.value))}
-                  className="appearance-none bg-background border border-input rounded-md px-3 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
-                >
-                  <option value={10}>10 per page</option>
-                  <option value={25}>25 per page</option>
-                  <option value={50}>50 per page</option>
-                  <option value={100}>100 per page</option>
-                </select>
-              </div>
-              
-              <div className="flex items-center space-x-2">
-                <button
-                  onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
-                  disabled={currentPage === 1}
-                  className="px-3 py-1 border border-input rounded-md text-sm disabled:opacity-50 disabled:cursor-not-allowed hover:bg-muted"
-                >
-                  Previous
-                </button>
-                <span className="text-sm text-muted-foreground">
-                  Page {currentPage}
-                </span>
-                <button
-                  onClick={() => setCurrentPage(currentPage + 1)}
-                  disabled={bookings.length < rowsPerPage}
-                  className="px-3 py-1 border border-input rounded-md text-sm disabled:opacity-50 disabled:cursor-not-allowed hover:bg-muted"
-                >
-                  Next
-                </button>
-              </div>
-            </div>
-          </div>
-        </main>
-
-        {/* Booking Details Drawer */}
-        {showDetailsDrawer && selectedBookingDetails && (
-          <div className="fixed inset-0 z-50 overflow-hidden">
-            <div className="absolute inset-0 bg-black/50" onClick={() => setShowDetailsDrawer(false)} />
-            <div className="absolute right-0 top-0 h-full w-full max-w-2xl bg-card border-l shadow-xl">
-              <div className="flex h-full flex-col">
-                <div className="flex items-center justify-between px-6 py-4 border-b">
-                  <h3 className="text-lg font-semibold text-foreground">Booking Details</h3>
-                  <IconButton
-                    icon={X}
-                    onClick={() => setShowDetailsDrawer(false)}
-                    variant="ghost"
-                    size="sm"
+              <div className="grid gap-4 md:grid-cols-2 mt-4">
+                <div className="space-y-2">
+                  <Label htmlFor="start-date">Start Date</Label>
+                  <Input
+                    id="start-date"
+                    type="date"
+                    value={filters.start_date || ''}
+                    onChange={(e) => updateFilters('start_date', e.target.value)}
                   />
                 </div>
-                
-                <div className="flex-1 overflow-y-auto p-6 space-y-6">
-                  {/* Booking Info */}
-                  <div className="space-y-4">
-                    <h4 className="text-sm font-medium text-foreground">Booking Information</h4>
-                    <div className="grid grid-cols-2 gap-4 text-sm">
-                      <div>
-                        <span className="text-muted-foreground">Booking ID:</span>
-                        <div className="font-mono">{selectedBookingDetails.id}</div>
-                      </div>
-                      <div>
-                        <span className="text-muted-foreground">Created:</span>
-                        <div>{formatDate(selectedBookingDetails.created_at)}</div>
-                      </div>
-                      <div>
-                        <span className="text-muted-foreground">Check-in:</span>
-                        <div>{formatDate(selectedBookingDetails.check_in_date)}</div>
-                      </div>
-                      <div>
-                        <span className="text-muted-foreground">Check-out:</span>
-                        <div>{formatDate(selectedBookingDetails.check_out_date)}</div>
-                      </div>
-                      <div>
-                        <span className="text-muted-foreground">Guests:</span>
-                        <div>{selectedBookingDetails.guests}</div>
-                      </div>
-                      <div>
-                        <span className="text-muted-foreground">Total Amount:</span>
-                        <div className="font-semibold">{formatCurrency(selectedBookingDetails.total_amount)}</div>
-                      </div>
-                    </div>
-                  </div>
+                <div className="space-y-2">
+                  <Label htmlFor="end-date">End Date</Label>
+                  <Input
+                    id="end-date"
+                    type="date"
+                    value={filters.end_date || ''}
+                    onChange={(e) => updateFilters('end_date', e.target.value)}
+                  />
+                </div>
+              </div>
+            </CardContent>
+          </Card>
 
-                  {/* Status Updates */}
-                  <div className="space-y-4">
-                    <h4 className="text-sm font-medium text-foreground">Status Management</h4>
-                    <div className="space-y-3">
-                      <div>
-                        <label className="text-sm text-muted-foreground">Booking Status:</label>
-                        <select
-                          value={selectedBookingDetails.status}
-                          onChange={(e) => handleUpdateBooking(selectedBookingDetails.id, 'status', e.target.value)}
-                          className="w-full mt-1 bg-background border border-input rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
-                        >
-                          <option value="pending">Pending</option>
-                          <option value="confirmed">Confirmed</option>
-                          <option value="completed">Completed</option>
-                          <option value="cancelled">Cancelled</option>
-                        </select>
+          {/* Enhanced Bookings Table */}
+          <Card>
+            <CardHeader>
+              <div className="flex items-center justify-between">
+                <CardTitle>
+                  Bookings 
+                  {bookingsData?.count && (
+                    <span className="text-sm font-normal text-muted-foreground ml-2">
+                      ({bookingsData.count} total)
+                    </span>
+                  )}
+                </CardTitle>
+                <div className="flex items-center gap-2">
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    onClick={handleExport}
+                    disabled={exporting}
+                  >
+                    <Download className="h-4 w-4 mr-2" />
+                    {exporting ? 'Exporting...' : 'Export CSV'}
+                  </Button>
+                  {selectedBookings.length > 0 && (
+                    <>
+                      <Select value={bulkAction} onValueChange={setBulkAction}>
+                        <SelectTrigger className="w-48">
+                          <SelectValue placeholder="Bulk Actions" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="confirm">Confirm Bookings</SelectItem>
+                          <SelectItem value="cancel">Cancel Bookings</SelectItem>
+                          <SelectItem value="mark-paid">Mark as Paid</SelectItem>
+                          <SelectItem value="approve-refund">Approve Refunds</SelectItem>
+                          <SelectItem value="process-refund">Process Refunds</SelectItem>
+                        </SelectContent>
+                      </Select>
+                      <Button 
+                        variant="outline" 
+                        size="sm"
+                        onClick={handleBulkAction}
+                        disabled={!bulkAction}
+                      >
+                        Apply to {selectedBookings.length} selected
+                      </Button>
+                    </>
+                  )}
+                </div>
+              </div>
+            </CardHeader>
+            <CardContent>
+              <Table>
+                <TableHeader>
+                  <TableRow key="header">
+                    <TableHead className="w-12">
+                      <Checkbox 
+                        checked={selectedBookings.length === bookingsData?.data?.length && bookingsData?.data?.length > 0}
+                        onCheckedChange={handleSelectAll}
+                      />
+                    </TableHead>
+                    <TableHead 
+                      className="cursor-pointer hover:bg-muted/50"
+                      onClick={() => handleSort('created_at')}
+                    >
+                      <div className="flex items-center gap-1">
+                        Date
+                        {sortBy === 'created_at' && (
+                          <ArrowUpDown className="h-4 w-4" />
+                        )}
                       </div>
-                      
-                      <div>
-                        <label className="text-sm text-muted-foreground">Payment Status:</label>
-                        <select
-                          value={selectedBookingDetails.payment_status}
-                          onChange={(e) => handleUpdateBooking(selectedBookingDetails.id, 'payment_status', e.target.value)}
-                          className="w-full mt-1 bg-background border border-input rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
-                        >
-                          <option value="pending">Pending</option>
-                          <option value="paid">Paid</option>
-                          <option value="failed">Failed</option>
-                        </select>
+                    </TableHead>
+                    <TableHead 
+                      className="cursor-pointer hover:bg-muted/50"
+                      onClick={() => handleSort('property_title')}
+                    >
+                      <div className="flex items-center gap-1">
+                        Property
+                        {sortBy === 'property_title' && (
+                          <ArrowUpDown className="h-4 w-4" />
+                        )}
                       </div>
-                      
-                      <div>
-                        <label className="text-sm text-muted-foreground">Refund Status:</label>
-                        <select
-                          value={selectedBookingDetails.refund_status}
-                          onChange={(e) => handleUpdateBooking(selectedBookingDetails.id, 'refund_status', e.target.value)}
-                          className="w-full mt-1 bg-background border border-input rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
-                        >
-                          <option value="none">No Refund</option>
-                          <option value="requested">Requested</option>
-                          <option value="processing">Processing</option>
-                          <option value="completed">Completed</option>
-                          <option value="rejected">Rejected</option>
-                        </select>
+                    </TableHead>
+                    <TableHead>Guest Details</TableHead>
+                    <TableHead>Dates</TableHead>
+                    <TableHead>Guests</TableHead>
+                    <TableHead 
+                      className="cursor-pointer hover:bg-muted/50"
+                      onClick={() => handleSort('total_amount')}
+                    >
+                      <div className="flex items-center gap-1">
+                        Amount
+                        {sortBy === 'total_amount' && (
+                          <ArrowUpDown className="h-4 w-4" />
+                        )}
                       </div>
-                      
-                      <div>
-                        <label className="text-sm text-muted-foreground">Refund Amount:</label>
-                        <input
-                          type="number"
-                          value={selectedBookingDetails.refund_amount}
-                          onChange={(e) => handleUpdateBooking(selectedBookingDetails.id, 'refund_amount', Number(e.target.value))}
-                          className="w-full mt-1 bg-background border border-input rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
-                          min="0"
-                          max={selectedBookingDetails.total_amount}
-                          step="0.01"
-                        />
-                      </div>
-                    </div>
-                  </div>
+                    </TableHead>
+                    <TableHead>Status</TableHead>
+                    <TableHead>Payment</TableHead>
+                    <TableHead>Refund</TableHead>
+                    <TableHead>Actions</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {isLoading ? (
+                    <TableRow>
+                      <TableCell colSpan={11} className="text-center py-8">
+                        Loading bookings...
+                      </TableCell>
+                    </TableRow>
+                  ) : bookingsData?.data?.length === 0 ? (
+                    <TableRow>
+                      <TableCell colSpan={11} className="text-center py-8">
+                        No bookings found
+                      </TableCell>
+                    </TableRow>
+                  ) : (
+                    bookingsData?.data?.map((booking) => (
+                      <TableRow key={booking.id}>
+                        <TableCell>
+                          <Checkbox 
+                            checked={selectedBookings.includes(booking.id)}
+                            onCheckedChange={(checked) => handleSelectBooking(booking.id, checked as boolean)}
+                          />
+                        </TableCell>
+                        <TableCell>
+                          <div className="text-sm">
+                            {formatDate(booking.created_at)}
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          <div className="font-medium">{booking.property_title}</div>
+                          {booking.owner_name && (
+                            <div className="text-sm text-muted-foreground">Owner: {booking.owner_name}</div>
+                          )}
+                          {booking.agent_name && (
+                            <div className="text-sm text-muted-foreground">Agent: {booking.agent_name}</div>
+                          )}
+                        </TableCell>
+                        <TableCell>
+                          <div className="font-medium">{booking.user_name}</div>
+                          <div className="text-sm text-muted-foreground">{booking.user_email}</div>
+                          {booking.user_phone && (
+                            <div className="text-sm text-muted-foreground">{booking.user_phone}</div>
+                          )}
+                        </TableCell>
+                        <TableCell>
+                          <div className="text-sm">
+                            {formatDate(booking.check_in_date)} - {formatDate(booking.check_out_date)}
+                          </div>
+                        </TableCell>
+                        <TableCell>{booking.guests}</TableCell>
+                        <TableCell>
+                          <div className="font-medium">{formatCurrency(booking.total_amount)}</div>
+                          {booking.refund_amount > 0 && (
+                            <div className="text-sm text-red-600">
+                              Refund: {formatCurrency(booking.refund_amount)}
+                            </div>
+                          )}
+                          {booking.payment_mode && (
+                            <div className="text-xs text-muted-foreground flex items-center gap-1">
+                              <CreditCard className="h-3 w-3" />
+                              {booking.payment_mode}
+                            </div>
+                          )}
+                          {booking.transaction_id && (
+                            <div className="text-xs text-muted-foreground">
+                              TXN: {booking.transaction_id.slice(-8)}
+                            </div>
+                          )}
+                        </TableCell>
+                        <TableCell>
+                          <Badge variant={getStatusColor(booking.status)}>
+                            {booking.status}
+                          </Badge>
+                          {booking.cancellation_reason && (
+                            <div className="text-xs text-muted-foreground mt-1 max-w-32 truncate" title={booking.cancellation_reason}>
+                              {booking.cancellation_reason}
+                            </div>
+                          )}
+                        </TableCell>
+                        <TableCell>
+                          <Badge variant={getPaymentStatusColor(booking.payment_status)}>
+                            {booking.payment_status}
+                          </Badge>
+                        </TableCell>
+                        <TableCell>
+                          <Badge variant={booking.refund_status === 'none' ? 'outline' : 'secondary'}>
+                            {booking.refund_status}
+                          </Badge>
+                          {booking.refund_amount > 0 && (
+                            <div className="text-xs text-muted-foreground mt-1">
+                              {formatCurrency(booking.refund_amount)}
+                            </div>
+                          )}
+                        </TableCell>
+                        <TableCell>
+                          <div className="flex items-center gap-1">
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => handleViewDetails(booking)}
+                              title="View Details"
+                            >
+                              <Eye className="h-4 w-4" />
+                            </Button>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => handleModifyBooking(booking)}
+                              title="Modify Booking"
+                            >
+                              <Edit2 className="h-4 w-4" />
+                            </Button>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => handleViewHistory(booking)}
+                              title="View History"
+                            >
+                              <History className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    ))
+                  )}
+                </TableBody>
+              </Table>
 
-                  {/* Guest Info */}
-                  <div className="space-y-4">
-                    <h4 className="text-sm font-medium text-foreground">Guest Information</h4>
-                    <div className="text-sm">
-                      <div className="font-medium">{selectedBookingDetails.user_name || 'Unknown User'}</div>
-                    </div>
-                  </div>
+              {/* Enhanced Pagination */}
+              <div className="flex items-center justify-between px-6 py-4">
+                <div className="text-sm text-muted-foreground">
+                  Showing {((currentPage - 1) * pageSize) + 1} to {Math.min(currentPage * pageSize, bookingsData?.count || 0)} of {bookingsData?.count || 0} bookings
+                </div>
+                <div className="flex items-center gap-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                    disabled={currentPage === 1}
+                  >
+                    Previous
+                  </Button>
+                  <span className="text-sm">
+                    Page {currentPage} of {bookingsData?.totalPages || 1}
+                  </span>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setCurrentPage(p => p + 1)}
+                    disabled={currentPage === (bookingsData?.totalPages || 1)}
+                  >
+                    Next
+                  </Button>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </main>
+      </div>
 
-                  {/* Property Info */}
-                  <div className="space-y-4">
-                    <h4 className="text-sm font-medium text-foreground">Property Information</h4>
-                    <div className="text-sm">
-                      <div className="font-medium">{selectedBookingDetails.property_title || 'Unknown Property'}</div>
-                      <div className="text-muted-foreground">Owner: {selectedBookingDetails.owner_name || 'Unknown'}</div>
-                      {selectedBookingDetails.agent_name && (
-                        <div className="text-muted-foreground">Agent: {selectedBookingDetails.agent_name}</div>
-                      )}
+      {/* Enhanced Booking Details Drawer */}
+      {showDetailsDrawer && selectedBooking && (
+        <Dialog open={showDetailsDrawer} onOpenChange={setShowDetailsDrawer}>
+          <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2">
+                <FileText className="h-5 w-5" />
+                Booking Details - {selectedBooking.property_title}
+              </DialogTitle>
+            </DialogHeader>
+            
+            <div className="space-y-6">
+              {/* Property Information */}
+              <div>
+                <h3 className="text-lg font-semibold mb-3">Property Information</h3>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <Label className="text-sm font-medium">Property Name</Label>
+                    <p className="text-sm text-muted-foreground">{selectedBooking.property_title}</p>
+                  </div>
+                  <div>
+                    <Label className="text-sm font-medium">Owner</Label>
+                    <p className="text-sm text-muted-foreground">{selectedBooking.owner_name || 'N/A'}</p>
+                  </div>
+                  {selectedBooking.agent_name && (
+                    <div>
+                      <Label className="text-sm font-medium">Agent</Label>
+                      <p className="text-sm text-muted-foreground">{selectedBooking.agent_name}</p>
                     </div>
+                  )}
+                </div>
+              </div>
+
+              <Separator />
+
+              {/* Guest Information */}
+              <div>
+                <h3 className="text-lg font-semibold mb-3">Guest Information</h3>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <Label className="text-sm font-medium">Guest Name</Label>
+                    <p className="text-sm text-muted-foreground">{selectedBooking.user_name}</p>
+                  </div>
+                  <div>
+                    <Label className="text-sm font-medium">Email</Label>
+                    <p className="text-sm text-muted-foreground">{selectedBooking.user_email}</p>
+                  </div>
+                  <div>
+                    <Label className="text-sm font-medium">Phone</Label>
+                    <p className="text-sm text-muted-foreground">{selectedBooking.user_phone || 'N/A'}</p>
+                  </div>
+                  <div>
+                    <Label className="text-sm font-medium">Number of Guests</Label>
+                    <p className="text-sm text-muted-foreground">{selectedBooking.guests}</p>
                   </div>
                 </div>
               </div>
+
+              <Separator />
+
+              {/* Booking Details */}
+              <div>
+                <h3 className="text-lg font-semibold mb-3">Booking Details</h3>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <Label className="text-sm font-medium">Check-in Date</Label>
+                    <p className="text-sm text-muted-foreground">{formatDate(selectedBooking.check_in_date)}</p>
+                  </div>
+                  <div>
+                    <Label className="text-sm font-medium">Check-out Date</Label>
+                    <p className="text-sm text-muted-foreground">{formatDate(selectedBooking.check_out_date)}</p>
+                  </div>
+                  <div>
+                    <Label className="text-sm font-medium">Total Amount</Label>
+                    <p className="text-sm text-muted-foreground">{formatCurrency(selectedBooking.total_amount)}</p>
+                  </div>
+                  <div>
+                    <Label className="text-sm font-medium">Booking Date</Label>
+                    <p className="text-sm text-muted-foreground">{formatDate(selectedBooking.created_at)}</p>
+                  </div>
+                </div>
+              </div>
+
+              <Separator />
+
+              {/* Payment Information */}
+              <div>
+                <h3 className="text-lg font-semibold mb-3">Payment Information</h3>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <Label className="text-sm font-medium">Payment Mode</Label>
+                    <p className="text-sm text-muted-foreground">{selectedBooking.payment_mode || 'N/A'}</p>
+                  </div>
+                  <div>
+                    <Label className="text-sm font-medium">Transaction ID</Label>
+                    <p className="text-sm text-muted-foreground">{selectedBooking.transaction_id || 'N/A'}</p>
+                  </div>
+                  <div>
+                    <Label className="text-sm font-medium">Refund Amount</Label>
+                    <p className="text-sm text-muted-foreground">
+                      {selectedBooking.refund_amount ? formatCurrency(selectedBooking.refund_amount) : 'N/A'}
+                    </p>
+                  </div>
+                  {selectedBooking.refund_requested_at && (
+                    <div>
+                      <Label className="text-sm font-medium">Refund Requested</Label>
+                      <p className="text-sm text-muted-foreground">{formatDate(selectedBooking.refund_requested_at)}</p>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              <Separator />
+
+              {/* Status Information */}
+              <div>
+                <h3 className="text-lg font-semibold mb-3">Status Information</h3>
+                <div className="grid grid-cols-3 gap-4">
+                  <div>
+                    <Label className="text-sm font-medium">Booking Status</Label>
+                    <div className="mt-1">
+                      <Badge variant={getStatusColor(selectedBooking.status)}>
+                        {selectedBooking.status}
+                      </Badge>
+                    </div>
+                  </div>
+                  <div>
+                    <Label className="text-sm font-medium">Payment Status</Label>
+                    <div className="mt-1">
+                      <Badge variant={getPaymentStatusColor(selectedBooking.payment_status)}>
+                        {selectedBooking.payment_status}
+                      </Badge>
+                    </div>
+                  </div>
+                  <div>
+                    <Label className="text-sm font-medium">Refund Status</Label>
+                    <div className="mt-1">
+                      <Badge variant={selectedBooking.refund_status === 'none' ? 'outline' : 'secondary'}>
+                        {selectedBooking.refund_status}
+                      </Badge>
+                    </div>
+                  </div>
+                </div>
+                {selectedBooking.cancellation_reason && (
+                  <div className="mt-4">
+                    <Label className="text-sm font-medium">Cancellation Reason</Label>
+                    <p className="text-sm text-muted-foreground">{selectedBooking.cancellation_reason}</p>
+                  </div>
+                )}
+                {selectedBooking.modification_reason && (
+                  <div className="mt-4">
+                    <Label className="text-sm font-medium">Last Modification Reason</Label>
+                    <p className="text-sm text-muted-foreground">{selectedBooking.modification_reason}</p>
+                  </div>
+                )}
+              </div>
+
+              {/* Action Buttons */}
+              <div className="flex justify-end gap-3">
+                <Button variant="outline" onClick={() => handleModifyBooking(selectedBooking)}>
+                  <Edit2 className="h-4 w-4 mr-2" />
+                  Modify Booking
+                </Button>
+                <Button variant="outline" onClick={() => handleViewHistory(selectedBooking)}>
+                  <History className="h-4 w-4 mr-2" />
+                  View History
+                </Button>
+              </div>
             </div>
-          </div>
-        )}
-      </div>
+          </DialogContent>
+        </Dialog>
+      )}
+
+      {/* Booking Modification Modal */}
+      {showModificationModal && selectedBooking && (
+        <BookingModificationModal
+          open={showModificationModal}
+          onOpenChange={setShowModificationModal}
+          booking={selectedBooking}
+          onUpdate={handleUpdateBooking}
+        />
+      )}
+
+      {/* Booking History Modal */}
+      {showHistoryModal && selectedBooking && (
+        <BookingHistoryModal
+          open={showHistoryModal}
+          onOpenChange={setShowHistoryModal}
+          bookingId={selectedBooking.id}
+          propertyTitle={selectedBooking.property_title}
+        />
+      )}
+
+      {/* Bulk Action Modal */}
+      {showBulkActionModal && (
+        <Dialog open={showBulkActionModal} onOpenChange={setShowBulkActionModal}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Bulk Action: {bulkAction.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase())}</DialogTitle>
+            </DialogHeader>
+            <div className="space-y-4">
+              <p className="text-sm text-muted-foreground">
+                You are about to apply this action to {selectedBookings.length} selected bookings.
+              </p>
+              <div className="space-y-2">
+                <Label htmlFor="bulk-reason">Reason for this action *</Label>
+                <Textarea
+                  id="bulk-reason"
+                  value={bulkReason}
+                  onChange={(e) => setBulkReason(e.target.value)}
+                  placeholder="Please provide a reason for this bulk action..."
+                  rows={3}
+                  required
+                />
+              </div>
+              <div className="flex justify-end gap-3">
+                <Button variant="outline" onClick={() => setShowBulkActionModal(false)}>
+                  Cancel
+                </Button>
+                <Button 
+                  onClick={processBulkAction} 
+                  disabled={!bulkReason.trim() || bulkUpdateMutation.isPending}
+                >
+                  {bulkUpdateMutation.isPending ? 'Processing...' : 'Apply Action'}
+                </Button>
+              </div>
+            </div>
+          </DialogContent>
+        </Dialog>
+      )}
     </div>
   );
 };
