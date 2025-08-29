@@ -47,9 +47,13 @@ const OwnerLogin: React.FC = () => {
     // Only redirect if we're sure the user is authenticated and not in switch mode
     if (!loading && isAuthenticated && user && !isSwitchMode) {
       console.log('✅ User is authenticated, redirecting to dashboard');
-      navigate('/owner/view', { replace: true });
+      
+      // Check for redirect parameter
+      const redirectTo = searchParams.get('redirect');
+      const targetUrl = redirectTo || '/owner/view';
+      navigate(targetUrl, { replace: true });
     }
-  }, [loading, isAuthenticated, user, navigate, isSwitchMode]);
+  }, [loading, isAuthenticated, user, navigate, isSwitchMode, searchParams]);
 
   // OTP timer effect
   useEffect(() => {

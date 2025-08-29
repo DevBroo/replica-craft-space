@@ -5,6 +5,7 @@ import { AuthProvider } from '@/contexts/AuthContext';
 import { AdminAuthProvider } from '@/contexts/AdminAuthContext';
 import { PropertyCacheProvider } from '@/contexts/PropertyCacheContext';
 import { WishlistProvider } from '@/contexts/WishlistContext';
+import { OwnerRoute } from '@/components/auth/ProtectedRoute';
 import { Toaster } from '@/components/ui/toaster';
 import { Skeleton } from '@/components/ui/skeleton';
 
@@ -230,7 +231,7 @@ function App() {
                   } />
                   <Route path="/owner/view" element={
                     <Suspense fallback={<LoadingSpinner />}>
-                      <OwnerDashboardView />
+                      <OwnerRoute><OwnerDashboardView /></OwnerRoute>
                     </Suspense>
                   } />
                   <Route path="/owner/day-picnic-setup/:propertyId" element={

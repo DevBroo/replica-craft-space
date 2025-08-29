@@ -19,6 +19,15 @@ const OwnerDashboardView: React.FC = () => {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [activeTab, setActiveTab] = useState('dashboard');
 
+  // Handle deep linking from URL parameters
+  useEffect(() => {
+    const urlParams = new URLSearchParams(window.location.search);
+    const tab = urlParams.get('tab');
+    if (tab && ['properties', 'bookings', 'earnings', 'reviews', 'profile', 'settings'].includes(tab)) {
+      setActiveTab(tab);
+    }
+  }, []);
+
   // Handle authentication state
   useEffect(() => {
     console.log('🔐 OwnerDashboardView: Auth state check:', { 

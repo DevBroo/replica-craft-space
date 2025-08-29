@@ -61,6 +61,15 @@ const Properties: React.FC<PropertiesProps> = ({
 
   useEffect(() => {
     fetchProperties();
+    
+    // Check for URL parameters to auto-open add property modal
+    const urlParams = new URLSearchParams(window.location.search);
+    if (urlParams.get('add') === '1') {
+      handleAddProperty();
+      // Clean URL after opening modal
+      const newUrl = window.location.pathname + window.location.search.replace(/[?&]add=1/, '').replace(/^&/, '?');
+      window.history.replaceState({}, '', newUrl);
+    }
   }, []);
 
   const fetchProperties = async () => {
@@ -219,7 +228,7 @@ const Properties: React.FC<PropertiesProps> = ({
       });
 
       // Navigate to Day Picnic setup page
-      navigate(`/host/day-picnic-setup/${data.id}`);
+      navigate(`/owner/day-picnic-setup/${data.id}`);
       
     } catch (error: any) {
       console.error('Error creating Day Picnic property:', error);

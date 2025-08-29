@@ -384,7 +384,7 @@ const PropertyApproval: React.FC = () => {
               <IconButton
                 icon={Plus}
                 variant="primary"
-                onClick={() => navigate('/owner/login?switch=1')}
+                onClick={() => navigate('/owner/login?switch=1&redirect=/owner/view?tab=properties&add=1')}
                 tooltip="Add new property"
                 aria-label="Add new property"
                 className="px-4 py-2"
