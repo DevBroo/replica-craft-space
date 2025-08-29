@@ -54,26 +54,43 @@ const ModernAdminDashboard: React.FC = () => {
 
   // Check admin authentication
   useEffect(() => {
-    const isAdminAuthenticated = localStorage.getItem('adminAuthenticated');
-    if (!isAdminAuthenticated) {
-      navigate('/admin/login');
-      return;
-    }
-    loadData();
+    const checkAdminAuth = async () => {
+      try {
+        const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+        if (sessionError || !session) {
+          console.error('❌ No valid session, redirecting to admin login');
+          navigate('/admin/login');
+          return;
+        }
+
+        // Verify admin role in database
+        const { data: profile, error: profileError } = await supabase
+          .from('profiles')
+          .select('role')
+          .eq('id', session.user.id)
+          .single();
+
+        if (profileError || !profile || profile.role !== 'admin') {
+          console.error('❌ Admin access required, redirecting to login');
+          navigate('/admin/login');
+          return;
+        }
+
+        console.log('✅ Admin authentication verified');
+        loadData();
+      } catch (error) {
+        console.error('❌ Auth check failed:', error);
+        navigate('/admin/login');
+      }
+    };
+
+    checkAdminAuth();
   }, [navigate]);
 
   const loadData = async () => {
     setLoading(true);
     try {
       console.log('🔍 Loading modern admin dashboard data...');
-      
-      // Check if we have a valid session before making requests
-      const { data: { session }, error: sessionError } = await supabase.auth.getSession();
-      if (sessionError || !session) {
-        console.error('❌ No valid session, redirecting to admin login');
-        navigate('/admin/login');
-        return;
-      }
       
       const ownersData = await adminService.getPropertyOwners();
       console.log('✅ Property owners loaded:', ownersData);
@@ -108,10 +125,15 @@ const ModernAdminDashboard: React.FC = () => {
     }
   };
 
-  const handleLogout = () => {
-    localStorage.removeItem('adminAuthenticated');
-    localStorage.removeItem('adminUser');
-    navigate('/admin/login');
+  const handleLogout = async () => {
+    try {
+      await supabase.auth.signOut();
+      navigate('/admin/login');
+    } catch (error) {
+      console.error('❌ Logout error:', error);
+      // Force redirect even if signOut fails
+      navigate('/admin/login');
+    }
   };
 
   const toggleTheme = () => {
@@ -213,34 +235,34 @@ const ModernAdminDashboard: React.FC = () => {
 
       {/* Modern Navigation */}
       <nav className="border-b border-border bg-card/50">
-        <div className="container">
-          <div className="flex space-x-8">
-            {[
-              { id: 'overview', label: 'Overview', icon: BarChart3, path: '/admin/dashboard' },
-              { id: 'owners', label: 'Property Owners', icon: Users, path: '/admin/owner-management' },
-              { id: 'properties', label: 'Properties', icon: Building, path: '/admin/property-approval' },
-              { id: 'bookings', label: 'Bookings', icon: Calendar, path: '/admin/booking-management' },
-              { id: 'analytics', label: 'Analytics', icon: TrendingUp, path: '/admin/analytics' },
-            ].map((tab) => {
-              const Icon = tab.icon;
-              const isActive = location.pathname === tab.path || (tab.id === 'overview' && location.pathname === '/admin/dashboard');
-              return (
-                <button
-                  key={tab.id}
-                  onClick={() => navigate(tab.path)}
-                  className={`flex items-center space-x-2 py-4 px-1 border-b-2 font-medium text-sm transition-colors ${
-                    isActive
-                      ? 'border-primary text-primary'
-                      : 'border-transparent text-muted-foreground hover:text-foreground hover:border-border'
-                  }`}
-                >
-                  <Icon className="h-4 w-4" />
-                  <span>{tab.label}</span>
-                </button>
-              );
-            })}
-          </div>
-        </div>
+    <div className="container">
+      <div className="flex space-x-8">
+        {[
+          { id: 'overview', label: 'Overview', icon: BarChart3, path: '/admin/dashboard' },
+          { id: 'owners', label: 'Property Owners', icon: Users, path: '/admin/owner-management' },
+          { id: 'properties', label: 'Properties', icon: Building, path: '/admin/property-approval' },
+          { id: 'bookings', label: 'Bookings', icon: Calendar, path: '/admin/booking-management' },
+          { id: 'analytics', label: 'Analytics', icon: TrendingUp, path: '/admin/analytics' },
+        ].map((tab) => {
+          const Icon = tab.icon;
+          const isActive = location.pathname === tab.path || (tab.id === 'overview' && location.pathname === '/admin/dashboard');
+          return (
+            <button
+              key={tab.id}
+              onClick={() => navigate(tab.path)}
+              className={`flex items-center space-x-2 py-4 px-1 border-b-2 font-medium text-sm transition-colors ${
+                isActive
+                  ? 'border-primary text-primary'
+                  : 'border-transparent text-muted-foreground hover:text-foreground hover:border-border'
+              }`}
+            >
+              <Icon className="h-4 w-4" />
+              <span>{tab.label}</span>
+            </button>
+          );
+        })}
+      </div>
+    </div>
       </nav>
 
         <main className="container py-8 space-y-8">

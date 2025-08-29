@@ -46,12 +46,16 @@ const OwnerLogin: React.FC = () => {
     
     // Only redirect if we're sure the user is authenticated and not in switch mode
     if (!loading && isAuthenticated && user && !isSwitchMode) {
-      console.log('✅ User is authenticated, redirecting to dashboard');
+      console.log('✅ User is authenticated, checking role...');
       
-      // Check for redirect parameter
-      const redirectTo = searchParams.get('redirect');
-      const targetUrl = redirectTo || '/owner/view';
-      navigate(targetUrl, { replace: true });
+      // Only redirect if user is actually a property owner
+      if (user.role === 'property_owner' || user.role === 'owner') {
+        console.log('✅ User is property owner, redirecting to dashboard');
+        const redirectTo = searchParams.get('redirect');
+        const targetUrl = redirectTo || '/owner/view';
+        navigate(targetUrl, { replace: true });
+      }
+      // Don't redirect users with other roles - let them sign out if needed
     }
   }, [loading, isAuthenticated, user, navigate, isSwitchMode, searchParams]);
 
