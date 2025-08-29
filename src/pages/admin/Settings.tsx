@@ -1,7 +1,7 @@
 
 import React, { useState } from 'react';
-import { SharedSidebar } from '@/components/admin/SharedSidebar';
-import { SharedHeader } from '@/components/admin/SharedHeader';
+import SharedSidebar from '@/components/admin/SharedSidebar';
+import SharedHeader from '@/components/admin/SharedHeader';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/admin/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/admin/ui/tabs';
 import { GeneralSettings } from '@/components/admin/settings/GeneralSettings';
