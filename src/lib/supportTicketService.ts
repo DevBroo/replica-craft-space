@@ -57,6 +57,17 @@ export interface DatabaseTicket {
   created_by_profile?: any;
 }
 
+export interface CreateTicketData {
+  created_by: string;
+  subject: string;
+  description?: string;
+  priority: 'high' | 'medium' | 'low';
+  category: 'Payment' | 'Booking' | 'Property' | 'Technical' | 'Other';
+  customer_email?: string;
+  customer_phone?: string;
+  assigned_agent?: string;
+}
+
 export interface TicketMessage {
   id: string;
   ticket_id: string;
@@ -165,7 +176,7 @@ class SupportTicketService {
     return data as DatabaseTicket;
   }
 
-  async createTicket(ticket: Partial<SupportTicket>) {
+  async createTicket(ticket: CreateTicketData) {
     const { data, error } = await supabase
       .from('support_tickets')
       .insert(ticket)
@@ -344,8 +355,16 @@ class SupportTicketService {
       avg_resolution_hours: result.avg_resolution_hours || 0,
       by_category: (result.by_category && typeof result.by_category === 'object') ? result.by_category as Record<string, number> : {},
       by_status: (result.by_status && typeof result.by_status === 'object') ? result.by_status as Record<string, number> : {},
-      by_agent: Array.isArray(result.by_agent) ? result.by_agent : [],
-      tickets_trend: Array.isArray(result.tickets_trend) ? result.tickets_trend : []
+      by_agent: Array.isArray(result.by_agent) ? result.by_agent.map((agent: any) => ({
+        agent_id: agent.agent_id || '',
+        agent_name: agent.agent_name || '',
+        tickets: agent.tickets || 0,
+        avg_resolution_hours: agent.avg_resolution_hours || 0
+      })) : [],
+      tickets_trend: Array.isArray(result.tickets_trend) ? result.tickets_trend.map((trend: any) => ({
+        date: trend.date || '',
+        tickets: trend.tickets || 0
+      })) : []
     };
   }
 
