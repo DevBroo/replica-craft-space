@@ -222,6 +222,7 @@ export type Database = {
         Row: {
           category: string
           created_at: string
+          extended_config: Json | null
           is_secret: boolean
           key: string
           updated_at: string
@@ -231,6 +232,7 @@ export type Database = {
         Insert: {
           category: string
           created_at?: string
+          extended_config?: Json | null
           is_secret?: boolean
           key: string
           updated_at?: string
@@ -240,6 +242,7 @@ export type Database = {
         Update: {
           category?: string
           created_at?: string
+          extended_config?: Json | null
           is_secret?: boolean
           key?: string
           updated_at?: string
