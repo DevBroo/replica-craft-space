@@ -1,17 +1,19 @@
+
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
-import MyProperties from './MyProperties';
+import { useOwnerStats } from '@/hooks/useOwnerData';
 
 const OwnerDashboardView: React.FC = () => {
   const navigate = useNavigate();
   const { user, isAuthenticated, loading, logout } = useAuth();
+  const { stats, loading: statsLoading } = useOwnerStats(user?.id || '');
   
   // Dashboard state
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [activeTab, setActiveTab] = useState('dashboard');
 
-  // Handle authentication state - BYPASS ROLE CHECKING
+  // Handle authentication state
   useEffect(() => {
     console.log('🔐 OwnerDashboardView: Auth state check:', { 
       loading, 
@@ -19,26 +21,18 @@ const OwnerDashboardView: React.FC = () => {
       user: user ? { id: user.id, email: user.email, role: user.role } : null 
     });
     
-    // Don't do anything while loading
     if (loading) {
       console.log('⏳ Auth loading, waiting...');
       return;
     }
     
-    // Only redirect if user is definitely not authenticated
     if (!isAuthenticated || !user) {
       console.log('❌ User not authenticated, redirecting to owner login');
       navigate('/owner/login', { replace: true });
     } else {
-      console.log('✅ User authenticated, showing dashboard (bypassing role check)');
-      console.log('🔍 User details:', { id: user.id, email: user.email, role: user.role });
+      console.log('✅ User authenticated, showing dashboard');
     }
   }, [isAuthenticated, user, loading, navigate]);
-
-  // Debug component mount
-  useEffect(() => {
-    console.log('🏠 OwnerDashboardView component mounted');
-  }, []);
 
   const handleLogout = async () => {
     try {
@@ -92,7 +86,12 @@ const OwnerDashboardView: React.FC = () => {
   const renderContent = () => {
     switch (activeTab) {
       case 'properties':
-        return <MyProperties />;
+        return (
+          <div className="text-center py-16">
+            <h2 className="text-2xl font-bold text-gray-800 mb-4">My Properties</h2>
+            <p className="text-gray-600">Properties management coming soon...</p>
+          </div>
+        );
       case 'bookings':
         return (
           <div className="text-center py-16">
@@ -131,26 +130,16 @@ const OwnerDashboardView: React.FC = () => {
       default:
         return (
           <>
-            {/* Role Information Banner */}
-            <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-6">
-              <div className="flex items-center">
-                <i className="fas fa-info-circle text-yellow-600 mr-3"></i>
-                <div>
-                  <h3 className="text-sm font-medium text-yellow-800">Dashboard Access Granted</h3>
-                  <p className="text-sm text-yellow-700 mt-1">
-                    You are accessing the Property Owner Dashboard. Your current role is: <strong>{user?.role || 'Unknown'}</strong>
-                  </p>
-                </div>
-              </div>
-            </div>
-
+            {/* Dashboard Content */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
               <div className="bg-white rounded-lg shadow-sm p-6 border-l-4 border-blue-500">
                 <div className="flex items-center justify-between">
                   <div>
                     <p className="text-gray-600 text-sm">Total Properties</p>
-                    <p className="text-2xl font-bold text-gray-800">0</p>
-                    <p className="text-xs text-gray-500">No properties listed yet</p>
+                    <p className="text-2xl font-bold text-gray-800">{stats.totalProperties}</p>
+                    <p className="text-xs text-gray-500">
+                      {stats.totalProperties === 0 ? 'No properties listed yet' : 'Properties listed'}
+                    </p>
                   </div>
                   <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center">
                     <i className="fas fa-home text-blue-600 text-xl"></i>
@@ -161,8 +150,10 @@ const OwnerDashboardView: React.FC = () => {
                 <div className="flex items-center justify-between">
                   <div>
                     <p className="text-gray-600 text-sm">Active Bookings</p>
-                    <p className="text-2xl font-bold text-gray-800">0</p>
-                    <p className="text-xs text-gray-500">No bookings yet</p>
+                    <p className="text-2xl font-bold text-gray-800">{stats.activeBookings}</p>
+                    <p className="text-xs text-gray-500">
+                      {stats.activeBookings === 0 ? 'No bookings yet' : 'Active bookings'}
+                    </p>
                   </div>
                   <div className="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center">
                     <i className="fas fa-calendar-check text-green-600 text-xl"></i>
@@ -173,8 +164,10 @@ const OwnerDashboardView: React.FC = () => {
                 <div className="flex items-center justify-between">
                   <div>
                     <p className="text-gray-600 text-sm">Monthly Revenue</p>
-                    <p className="text-2xl font-bold text-gray-800">₹0</p>
-                    <p className="text-xs text-gray-500">Start listing to earn</p>
+                    <p className="text-2xl font-bold text-gray-800">₹{stats.revenueThisMonth}</p>
+                    <p className="text-xs text-gray-500">
+                      {stats.revenueThisMonth === 0 ? 'Start listing to earn' : 'This month'}
+                    </p>
                   </div>
                   <div className="w-12 h-12 bg-yellow-100 rounded-lg flex items-center justify-center">
                     <i className="fas fa-dollar-sign text-yellow-600 text-xl"></i>
@@ -185,8 +178,12 @@ const OwnerDashboardView: React.FC = () => {
                 <div className="flex items-center justify-between">
                   <div>
                     <p className="text-gray-600 text-sm">Average Rating</p>
-                    <p className="text-2xl font-bold text-gray-800">-</p>
-                    <p className="text-xs text-gray-500">No reviews yet</p>
+                    <p className="text-2xl font-bold text-gray-800">
+                      {stats.averageRating > 0 ? stats.averageRating.toFixed(1) : '-'}
+                    </p>
+                    <p className="text-xs text-gray-500">
+                      {stats.averageRating === 0 ? 'No reviews yet' : 'Average rating'}
+                    </p>
                   </div>
                   <div className="w-12 h-12 bg-purple-100 rounded-lg flex items-center justify-center">
                     <i className="fas fa-star text-purple-600 text-xl"></i>
@@ -194,36 +191,33 @@ const OwnerDashboardView: React.FC = () => {
                 </div>
               </div>
             </div>
+
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
               <div className="bg-white rounded-lg shadow-sm p-6">
                 <h3 className="text-lg font-semibold text-gray-800 mb-4">Recent Bookings</h3>
-                <div className="space-y-4">
-                  <div className="text-center py-8">
-                    <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                      <i className="fas fa-calendar-plus text-gray-400 text-xl"></i>
-                    </div>
-                    <h4 className="text-lg font-medium text-gray-800 mb-2">No bookings yet</h4>
-                    <p className="text-gray-600 mb-4">Start by listing your first property to receive bookings</p>
-                    <button 
-                      onClick={() => setActiveTab('properties')}
-                      className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors"
-                    >
-                      <i className="fas fa-plus mr-2"></i>
-                      Add Your First Property
-                    </button>
+                <div className="text-center py-8">
+                  <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <i className="fas fa-calendar-plus text-gray-400 text-xl"></i>
                   </div>
+                  <h4 className="text-lg font-medium text-gray-800 mb-2">No bookings yet</h4>
+                  <p className="text-gray-600 mb-4">Start by listing your first property to receive bookings</p>
+                  <button 
+                    onClick={() => setActiveTab('properties')}
+                    className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors"
+                  >
+                    <i className="fas fa-plus mr-2"></i>
+                    Add Your First Property
+                  </button>
                 </div>
               </div>
               <div className="bg-white rounded-lg shadow-sm p-6">
                 <h3 className="text-lg font-semibold text-gray-800 mb-4">Recent Messages</h3>
-                <div className="space-y-4">
-                  <div className="text-center py-8">
-                    <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                      <i className="fas fa-comments text-gray-400 text-xl"></i>
-                    </div>
-                    <h4 className="text-lg font-medium text-gray-800 mb-2">No messages yet</h4>
-                    <p className="text-gray-600 mb-4">You'll receive messages from guests once you have bookings</p>
+                <div className="text-center py-8">
+                  <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <i className="fas fa-comments text-gray-400 text-xl"></i>
                   </div>
+                  <h4 className="text-lg font-medium text-gray-800 mb-2">No messages yet</h4>
+                  <p className="text-gray-600">You'll receive messages from guests once you have bookings</p>
                 </div>
               </div>
             </div>
@@ -232,7 +226,6 @@ const OwnerDashboardView: React.FC = () => {
     }
   };
 
-  // Always render the full dashboard layout with sidebar
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Sidebar */}
@@ -249,7 +242,7 @@ const OwnerDashboardView: React.FC = () => {
           )}
           <button
             onClick={toggleSidebar}
-            className="p-2 rounded-lg hover:bg-gray-100 cursor-pointer"
+            className="p-2 rounded-lg hover:bg-gray-100"
           >
             <i className="fas fa-bars text-gray-600"></i>
           </button>
@@ -259,7 +252,7 @@ const OwnerDashboardView: React.FC = () => {
             <button
               key={item.id}
               onClick={() => setActiveTab(item.id)}
-              className={`w-full flex items-center px-4 py-3 text-left hover:bg-blue-50 transition-colors cursor-pointer ${
+              className={`w-full flex items-center px-4 py-3 text-left hover:bg-blue-50 transition-colors ${
                 activeTab === item.id ? 'bg-blue-50 border-r-2 border-blue-600 text-blue-600' : 'text-gray-600'
               }`}
             >
@@ -284,7 +277,7 @@ const OwnerDashboardView: React.FC = () => {
             </div>
             <div className="flex items-center space-x-4">
               <div className="relative">
-                <button className="p-2 rounded-lg hover:bg-gray-100 cursor-pointer">
+                <button className="p-2 rounded-lg hover:bg-gray-100">
                   <i className="fas fa-bell text-gray-600"></i>
                   <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">5</span>
                 </button>
