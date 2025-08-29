@@ -10,6 +10,7 @@ import { SecuritySettings } from '@/components/admin/settings/SecuritySettings';
 import { AppearanceSettings } from '@/components/admin/settings/AppearanceSettings';
 import { NotificationSettings } from '@/components/admin/settings/NotificationSettings';
 import { AdvancedSettings } from '@/components/admin/settings/AdvancedSettings';
+import { KYCVerificationSettings } from '@/components/admin/settings/KYCVerificationSettings';
 import { useAdminRole } from '@/hooks/useAdminRole';
 import { Alert, AlertDescription } from '@/components/admin/ui/alert';
 import { AlertTriangle } from 'lucide-react';
@@ -70,7 +71,8 @@ const AdminSettings: React.FC = () => {
   const availableTabs = [
     { id: 'general', label: 'General', component: GeneralSettings },
     { id: 'payments', label: 'Payment & Bank', component: PaymentBankSettings, requiredRole: 'finance' },
-    { id: 'security', label: 'Security', component: SecuritySettings },
+    { id: 'security', label: 'Security & Users', component: SecuritySettings },
+    { id: 'kyc', label: 'KYC & Verification', component: KYCVerificationSettings },
     { id: 'appearance', label: 'Appearance', component: AppearanceSettings },
     { id: 'notifications', label: 'Notifications', component: NotificationSettings, requiredRole: 'notifications' },
     { id: 'advanced', label: 'Advanced', component: AdvancedSettings }
@@ -99,12 +101,12 @@ const AdminSettings: React.FC = () => {
             <CardHeader>
               <CardTitle>System Configuration</CardTitle>
               <CardDescription>
-                Manage system-wide settings, integrations, and configurations
+                Manage system-wide settings, security, integrations, and configurations
               </CardDescription>
             </CardHeader>
             <CardContent>
               <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-                <TabsList className="grid w-full grid-cols-6">
+                <TabsList className="grid w-full grid-cols-7">
                   {visibleTabs.map(tab => (
                     <TabsTrigger key={tab.id} value={tab.id}>
                       {tab.label}

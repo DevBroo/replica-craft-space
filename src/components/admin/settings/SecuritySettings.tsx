@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/admin/ui/card';
 import { Button } from '@/components/admin/ui/button';
@@ -5,11 +6,13 @@ import { Input } from '@/components/admin/ui/input';
 import { Label } from '@/components/admin/ui/label';
 import { Switch } from '@/components/admin/ui/switch';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/admin/ui/select';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/admin/ui/tabs';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
-import { Save, Shield, Key, Lock } from 'lucide-react';
+import { Save, Shield, Key, Lock, Users, Phone, FileText, AlertTriangle, Eye, Plus, Trash2, UserCheck } from 'lucide-react';
 
 interface SecurityConfig {
+  // Basic Security
   two_factor_enabled: boolean;
   session_timeout: number;
   password_min_length: number;
@@ -17,6 +20,28 @@ interface SecurityConfig {
   max_login_attempts: number;
   lockout_duration: number;
   ip_whitelist_enabled: boolean;
+  
+  // User Management
+  default_user_role: string;
+  auto_activate_users: boolean;
+  require_email_verification: boolean;
+  allow_self_registration: boolean;
+  
+  // Password Policies
+  force_password_expiry: boolean;
+  password_expiry_days: number;
+  prevent_password_reuse: boolean;
+  password_history_count: number;
+  
+  // Two-Factor Authentication Methods
+  allow_sms_2fa: boolean;
+  allow_authenticator_2fa: boolean;
+  allow_email_2fa: boolean;
+  
+  // Security Alerts
+  failed_login_alerts: boolean;
+  suspicious_activity_alerts: boolean;
+  geo_blocking_enabled: boolean;
 }
 
 const defaultConfig: SecurityConfig = {
@@ -26,16 +51,59 @@ const defaultConfig: SecurityConfig = {
   require_special_chars: true,
   max_login_attempts: 5,
   lockout_duration: 30,
-  ip_whitelist_enabled: false
+  ip_whitelist_enabled: false,
+  default_user_role: 'user',
+  auto_activate_users: true,
+  require_email_verification: true,
+  allow_self_registration: true,
+  force_password_expiry: false,
+  password_expiry_days: 90,
+  prevent_password_reuse: true,
+  password_history_count: 5,
+  allow_sms_2fa: true,
+  allow_authenticator_2fa: true,
+  allow_email_2fa: true,
+  failed_login_alerts: true,
+  suspicious_activity_alerts: true,
+  geo_blocking_enabled: false
 };
+
+interface RolePermission {
+  id: string;
+  role: string;
+  permissions: string[];
+  description: string;
+}
+
+interface IPWhitelistEntry {
+  id: string;
+  cidr: string;
+  description: string;
+  is_active: boolean;
+}
 
 export const SecuritySettings: React.FC = () => {
   const [config, setConfig] = useState<SecurityConfig>(defaultConfig);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [activeTab, setActiveTab] = useState('general');
+  
+  // Role Management
+  const [roles, setRoles] = useState<RolePermission[]>([]);
+  const [newRole, setNewRole] = useState({ role: '', permissions: [], description: '' });
+  
+  // IP Whitelist
+  const [ipWhitelist, setIpWhitelist] = useState<IPWhitelistEntry[]>([]);
+  const [newIpEntry, setNewIpEntry] = useState({ cidr: '', description: '' });
+  
+  // Login Audit Logs
+  const [loginAuditLogs, setLoginAuditLogs] = useState<any[]>([]);
+  const [auditLoading, setAuditLoading] = useState(false);
 
   useEffect(() => {
     loadSettings();
+    loadRoles();
+    loadIPWhitelist();
   }, []);
 
   const loadSettings = async () => {
@@ -63,6 +131,80 @@ export const SecuritySettings: React.FC = () => {
       setLoading(false);
     }
   };
+
+  const loadRoles = async () => {
+    try {
+      const { data: userRoles } = await supabase
+        .from('user_roles')
+        .select('*')
+        .order('role');
+
+      if (userRoles) {
+        // Group by role and aggregate permissions
+        const roleMap = new Map();
+        userRoles.forEach(ur => {
+          if (!roleMap.has(ur.role)) {
+            roleMap.set(ur.role, {
+              id: ur.role,
+              role: ur.role,
+              permissions: [ur.role],
+              description: `${ur.role} role permissions`
+            });
+          }
+        });
+        setRoles(Array.from(roleMap.values()));
+      }
+    } catch (error) {
+      console.error('Error loading roles:', error);
+    }
+  };
+
+  const loadIPWhitelist = async () => {
+    try {
+      const { data: whitelist } = await supabase
+        .from('admin_ip_whitelist')
+        .select('*')
+        .order('created_at', { ascending: false });
+
+      if (whitelist) {
+        setIpWhitelist(whitelist.map(item => ({
+          id: item.id,
+          cidr: item.cidr,
+          description: item.description || '',
+          is_active: item.is_active
+        })));
+      }
+    } catch (error) {
+      console.error('Error loading IP whitelist:', error);
+    }
+  };
+
+  const loadLoginAuditLogs = async () => {
+    if (activeTab !== 'audit') return;
+    
+    try {
+      setAuditLoading(true);
+      const { data: logs } = await supabase
+        .from('login_audit')
+        .select('*')
+        .order('created_at', { ascending: false })
+        .limit(50);
+
+      if (logs) {
+        setLoginAuditLogs(logs);
+      }
+    } catch (error) {
+      console.error('Error loading audit logs:', error);
+    } finally {
+      setAuditLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    if (activeTab === 'audit') {
+      loadLoginAuditLogs();
+    }
+  }, [activeTab]);
 
   const saveSettings = async () => {
     try {
@@ -93,6 +235,65 @@ export const SecuritySettings: React.FC = () => {
     }
   };
 
+  const addIPWhitelistEntry = async () => {
+    if (!newIpEntry.cidr || !newIpEntry.description) {
+      toast.error('Please fill in all fields');
+      return;
+    }
+
+    try {
+      const { error } = await supabase
+        .from('admin_ip_whitelist')
+        .insert({
+          cidr: newIpEntry.cidr,
+          description: newIpEntry.description
+        });
+
+      if (error) throw error;
+
+      toast.success('IP whitelist entry added');
+      setNewIpEntry({ cidr: '', description: '' });
+      loadIPWhitelist();
+    } catch (error) {
+      console.error('Error adding IP whitelist entry:', error);
+      toast.error('Failed to add IP whitelist entry');
+    }
+  };
+
+  const toggleIPWhitelistEntry = async (id: string, isActive: boolean) => {
+    try {
+      const { error } = await supabase
+        .from('admin_ip_whitelist')
+        .update({ is_active: isActive })
+        .eq('id', id);
+
+      if (error) throw error;
+
+      toast.success(`IP whitelist entry ${isActive ? 'activated' : 'deactivated'}`);
+      loadIPWhitelist();
+    } catch (error) {
+      console.error('Error updating IP whitelist entry:', error);
+      toast.error('Failed to update IP whitelist entry');
+    }
+  };
+
+  const deleteIPWhitelistEntry = async (id: string) => {
+    try {
+      const { error } = await supabase
+        .from('admin_ip_whitelist')
+        .delete()
+        .eq('id', id);
+
+      if (error) throw error;
+
+      toast.success('IP whitelist entry deleted');
+      loadIPWhitelist();
+    } catch (error) {
+      console.error('Error deleting IP whitelist entry:', error);
+      toast.error('Failed to delete IP whitelist entry');
+    }
+  };
+
   if (loading) {
     return (
       <div className="space-y-6">
@@ -106,135 +307,497 @@ export const SecuritySettings: React.FC = () => {
 
   return (
     <div className="space-y-6">
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center">
-            <Shield className="h-5 w-5 mr-2" />
-            Authentication & Access
-          </CardTitle>
-          <CardDescription>
-            Configure user authentication and access controls
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="flex items-center justify-between">
-            <div className="space-y-0.5">
-              <Label>Two-Factor Authentication</Label>
-              <p className="text-sm text-gray-500">Require 2FA for all admin accounts</p>
-            </div>
-            <Switch
-              checked={config.two_factor_enabled}
-              onCheckedChange={(checked) => setConfig({ ...config, two_factor_enabled: checked })}
-            />
-          </div>
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+        <TabsList className="grid w-full grid-cols-6">
+          <TabsTrigger value="general">General</TabsTrigger>
+          <TabsTrigger value="roles">Roles & Permissions</TabsTrigger>
+          <TabsTrigger value="passwords">Password Policies</TabsTrigger>
+          <TabsTrigger value="2fa">Two-Factor Auth</TabsTrigger>
+          <TabsTrigger value="network">Network Security</TabsTrigger>
+          <TabsTrigger value="audit">Audit Logs</TabsTrigger>
+        </TabsList>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="session_timeout">Session Timeout (hours)</Label>
-              <Input
-                id="session_timeout"
-                type="number"
-                value={config.session_timeout}
-                onChange={(e) => setConfig({ ...config, session_timeout: parseInt(e.target.value) || 24 })}
-                min="1"
-                max="168"
-              />
-            </div>
+        {/* General Security Settings */}
+        <TabsContent value="general" className="space-y-6">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center">
+                <Shield className="h-5 w-5 mr-2" />
+                Authentication & Access
+              </CardTitle>
+              <CardDescription>
+                Configure basic authentication and access controls
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="session_timeout">Session Timeout (hours)</Label>
+                  <Input
+                    id="session_timeout"
+                    type="number"
+                    value={config.session_timeout}
+                    onChange={(e) => setConfig({ ...config, session_timeout: parseInt(e.target.value) || 24 })}
+                    min="1"
+                    max="168"
+                  />
+                </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="max_attempts">Max Login Attempts</Label>
-              <Input
-                id="max_attempts"
-                type="number"
-                value={config.max_login_attempts}
-                onChange={(e) => setConfig({ ...config, max_login_attempts: parseInt(e.target.value) || 5 })}
-                min="3"
-                max="20"
-              />
-            </div>
+                <div className="space-y-2">
+                  <Label htmlFor="max_attempts">Max Login Attempts</Label>
+                  <Input
+                    id="max_attempts"
+                    type="number"
+                    value={config.max_login_attempts}
+                    onChange={(e) => setConfig({ ...config, max_login_attempts: parseInt(e.target.value) || 5 })}
+                    min="3"
+                    max="20"
+                  />
+                </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="lockout_duration">Account Lockout (minutes)</Label>
-              <Input
-                id="lockout_duration"
-                type="number"
-                value={config.lockout_duration}
-                onChange={(e) => setConfig({ ...config, lockout_duration: parseInt(e.target.value) || 30 })}
-                min="5"
-                max="1440"
-              />
-            </div>
-          </div>
-        </CardContent>
-      </Card>
+                <div className="space-y-2">
+                  <Label htmlFor="lockout_duration">Account Lockout (minutes)</Label>
+                  <Input
+                    id="lockout_duration"
+                    type="number"
+                    value={config.lockout_duration}
+                    onChange={(e) => setConfig({ ...config, lockout_duration: parseInt(e.target.value) || 30 })}
+                    min="5"
+                    max="1440"
+                  />
+                </div>
 
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center">
-            <Key className="h-5 w-5 mr-2" />
-            Password Policy
-          </CardTitle>
-          <CardDescription>
-            Set password requirements and complexity rules
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="min_length">Minimum Password Length</Label>
-              <Select 
-                value={config.password_min_length.toString()} 
-                onValueChange={(value) => setConfig({ ...config, password_min_length: parseInt(value) })}
-              >
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="6">6 characters</SelectItem>
-                  <SelectItem value="8">8 characters</SelectItem>
-                  <SelectItem value="10">10 characters</SelectItem>
-                  <SelectItem value="12">12 characters</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
+                <div className="space-y-2">
+                  <Label htmlFor="default_role">Default User Role</Label>
+                  <Select 
+                    value={config.default_user_role} 
+                    onValueChange={(value) => setConfig({ ...config, default_user_role: value })}
+                  >
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="user">User</SelectItem>
+                      <SelectItem value="agent">Agent</SelectItem>
+                      <SelectItem value="owner">Property Owner</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
 
-          <div className="flex items-center justify-between">
-            <div className="space-y-0.5">
-              <Label>Require Special Characters</Label>
-              <p className="text-sm text-gray-500">Passwords must contain symbols (!@#$%^&*)</p>
-            </div>
-            <Switch
-              checked={config.require_special_chars}
-              onCheckedChange={(checked) => setConfig({ ...config, require_special_chars: checked })}
-            />
-          </div>
-        </CardContent>
-      </Card>
+              <div className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <div className="space-y-0.5">
+                    <Label>Auto-activate Users</Label>
+                    <p className="text-sm text-gray-500">Automatically activate new user accounts</p>
+                  </div>
+                  <Switch
+                    checked={config.auto_activate_users}
+                    onCheckedChange={(checked) => setConfig({ ...config, auto_activate_users: checked })}
+                  />
+                </div>
 
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center">
-            <Lock className="h-5 w-5 mr-2" />
-            Network Security
-          </CardTitle>
-          <CardDescription>
-            Configure IP restrictions and network access controls
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="flex items-center justify-between">
-            <div className="space-y-0.5">
-              <Label>IP Address Whitelist</Label>
-              <p className="text-sm text-gray-500">Restrict admin access to specific IP addresses</p>
-            </div>
-            <Switch
-              checked={config.ip_whitelist_enabled}
-              onCheckedChange={(checked) => setConfig({ ...config, ip_whitelist_enabled: checked })}
-            />
-          </div>
-        </CardContent>
-      </Card>
+                <div className="flex items-center justify-between">
+                  <div className="space-y-0.5">
+                    <Label>Require Email Verification</Label>
+                    <p className="text-sm text-gray-500">Users must verify email before activation</p>
+                  </div>
+                  <Switch
+                    checked={config.require_email_verification}
+                    onCheckedChange={(checked) => setConfig({ ...config, require_email_verification: checked })}
+                  />
+                </div>
+
+                <div className="flex items-center justify-between">
+                  <div className="space-y-0.5">
+                    <Label>Allow Self Registration</Label>
+                    <p className="text-sm text-gray-500">Users can create their own accounts</p>
+                  </div>
+                  <Switch
+                    checked={config.allow_self_registration}
+                    onCheckedChange={(checked) => setConfig({ ...config, allow_self_registration: checked })}
+                  />
+                </div>
+
+                <div className="flex items-center justify-between">
+                  <div className="space-y-0.5">
+                    <Label>Failed Login Alerts</Label>
+                    <p className="text-sm text-gray-500">Send alerts for failed login attempts</p>
+                  </div>
+                  <Switch
+                    checked={config.failed_login_alerts}
+                    onCheckedChange={(checked) => setConfig({ ...config, failed_login_alerts: checked })}
+                  />
+                </div>
+
+                <div className="flex items-center justify-between">
+                  <div className="space-y-0.5">
+                    <Label>Suspicious Activity Alerts</Label>
+                    <p className="text-sm text-gray-500">Monitor and alert on suspicious behavior</p>
+                  </div>
+                  <Switch
+                    checked={config.suspicious_activity_alerts}
+                    onCheckedChange={(checked) => setConfig({ ...config, suspicious_activity_alerts: checked })}
+                  />
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        {/* Roles & Permissions */}
+        <TabsContent value="roles" className="space-y-6">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center">
+                <Users className="h-5 w-5 mr-2" />
+                Role-Based Access Control
+              </CardTitle>
+              <CardDescription>
+                Manage admin roles and their permissions
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="space-y-4">
+                {[
+                  { role: 'super_admin', description: 'Full system access and control', permissions: ['All Permissions'] },
+                  { role: 'finance_admin', description: 'Financial operations and commission management', permissions: ['View Finances', 'Manage Payouts', 'Commission Settings'] },
+                  { role: 'support_admin', description: 'Customer support and ticket management', permissions: ['View Tickets', 'Manage Support', 'User Assistance'] },
+                  { role: 'analytics_admin', description: 'Analytics and reporting access', permissions: ['View Analytics', 'Generate Reports', 'Data Export'] },
+                  { role: 'notifications_admin', description: 'Notification system management', permissions: ['Manage Notifications', 'Send Alerts', 'Template Management'] }
+                ].map((role) => (
+                  <div key={role.role} className="p-4 border border-gray-200 rounded-lg">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <h4 className="font-medium capitalize">{role.role.replace('_', ' ')}</h4>
+                        <p className="text-sm text-gray-500">{role.description}</p>
+                        <div className="flex flex-wrap gap-1 mt-2">
+                          {role.permissions.map(permission => (
+                            <span key={permission} className="px-2 py-1 bg-blue-100 text-blue-800 text-xs rounded">
+                              {permission}
+                            </span>
+                          ))}
+                        </div>
+                      </div>
+                      <UserCheck className="h-5 w-5 text-green-600" />
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        {/* Password Policies */}
+        <TabsContent value="passwords" className="space-y-6">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center">
+                <Key className="h-5 w-5 mr-2" />
+                Password Policies
+              </CardTitle>
+              <CardDescription>
+                Configure password requirements and security policies
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="min_length">Minimum Password Length</Label>
+                  <Select 
+                    value={config.password_min_length.toString()} 
+                    onValueChange={(value) => setConfig({ ...config, password_min_length: parseInt(value) })}
+                  >
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="6">6 characters</SelectItem>
+                      <SelectItem value="8">8 characters</SelectItem>
+                      <SelectItem value="10">10 characters</SelectItem>
+                      <SelectItem value="12">12 characters</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="expiry_days">Password Expiry (days)</Label>
+                  <Input
+                    id="expiry_days"
+                    type="number"
+                    value={config.password_expiry_days}
+                    onChange={(e) => setConfig({ ...config, password_expiry_days: parseInt(e.target.value) || 90 })}
+                    min="30"
+                    max="365"
+                    disabled={!config.force_password_expiry}
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="history_count">Password History Count</Label>
+                  <Input
+                    id="history_count"
+                    type="number"
+                    value={config.password_history_count}
+                    onChange={(e) => setConfig({ ...config, password_history_count: parseInt(e.target.value) || 5 })}
+                    min="3"
+                    max="10"
+                    disabled={!config.prevent_password_reuse}
+                  />
+                </div>
+              </div>
+
+              <div className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <div className="space-y-0.5">
+                    <Label>Require Special Characters</Label>
+                    <p className="text-sm text-gray-500">Passwords must contain symbols (!@#$%^&*)</p>
+                  </div>
+                  <Switch
+                    checked={config.require_special_chars}
+                    onCheckedChange={(checked) => setConfig({ ...config, require_special_chars: checked })}
+                  />
+                </div>
+
+                <div className="flex items-center justify-between">
+                  <div className="space-y-0.5">
+                    <Label>Force Password Expiry</Label>
+                    <p className="text-sm text-gray-500">Require users to change passwords regularly</p>
+                  </div>
+                  <Switch
+                    checked={config.force_password_expiry}
+                    onCheckedChange={(checked) => setConfig({ ...config, force_password_expiry: checked })}
+                  />
+                </div>
+
+                <div className="flex items-center justify-between">
+                  <div className="space-y-0.5">
+                    <Label>Prevent Password Reuse</Label>
+                    <p className="text-sm text-gray-500">Users cannot reuse recent passwords</p>
+                  </div>
+                  <Switch
+                    checked={config.prevent_password_reuse}
+                    onCheckedChange={(checked) => setConfig({ ...config, prevent_password_reuse: checked })}
+                  />
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        {/* Two-Factor Authentication */}
+        <TabsContent value="2fa" className="space-y-6">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center">
+                <Phone className="h-5 w-5 mr-2" />
+                Two-Factor Authentication
+              </CardTitle>
+              <CardDescription>
+                Configure 2FA methods and requirements
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="flex items-center justify-between">
+                <div className="space-y-0.5">
+                  <Label>Require 2FA for All Users</Label>
+                  <p className="text-sm text-gray-500">Mandatory 2FA for all user accounts</p>
+                </div>
+                <Switch
+                  checked={config.two_factor_enabled}
+                  onCheckedChange={(checked) => setConfig({ ...config, two_factor_enabled: checked })}
+                />
+              </div>
+
+              <div className="space-y-4 pt-4 border-t">
+                <h4 className="font-medium">Available 2FA Methods</h4>
+                
+                <div className="flex items-center justify-between">
+                  <div className="space-y-0.5">
+                    <Label>SMS OTP</Label>
+                    <p className="text-sm text-gray-500">Send verification codes via SMS</p>
+                  </div>
+                  <Switch
+                    checked={config.allow_sms_2fa}
+                    onCheckedChange={(checked) => setConfig({ ...config, allow_sms_2fa: checked })}
+                  />
+                </div>
+
+                <div className="flex items-center justify-between">
+                  <div className="space-y-0.5">
+                    <Label>Authenticator App</Label>
+                    <p className="text-sm text-gray-500">TOTP via Google Authenticator, Authy, etc.</p>
+                  </div>
+                  <Switch
+                    checked={config.allow_authenticator_2fa}
+                    onCheckedChange={(checked) => setConfig({ ...config, allow_authenticator_2fa: checked })}
+                  />
+                </div>
+
+                <div className="flex items-center justify-between">
+                  <div className="space-y-0.5">
+                    <Label>Email OTP</Label>
+                    <p className="text-sm text-gray-500">Send verification codes via email</p>
+                  </div>
+                  <Switch
+                    checked={config.allow_email_2fa}
+                    onCheckedChange={(checked) => setConfig({ ...config, allow_email_2fa: checked })}
+                  />
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        {/* Network Security */}
+        <TabsContent value="network" className="space-y-6">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center">
+                <Lock className="h-5 w-5 mr-2" />
+                Network Security & IP Management
+              </CardTitle>
+              <CardDescription>
+                Configure IP restrictions and network access controls
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              <div className="flex items-center justify-between">
+                <div className="space-y-0.5">
+                  <Label>IP Address Whitelist</Label>
+                  <p className="text-sm text-gray-500">Restrict admin access to specific IP addresses</p>
+                </div>
+                <Switch
+                  checked={config.ip_whitelist_enabled}
+                  onCheckedChange={(checked) => setConfig({ ...config, ip_whitelist_enabled: checked })}
+                />
+              </div>
+
+              <div className="flex items-center justify-between">
+                <div className="space-y-0.5">
+                  <Label>Geo-blocking</Label>
+                  <p className="text-sm text-gray-500">Block access from certain countries</p>
+                </div>
+                <Switch
+                  checked={config.geo_blocking_enabled}
+                  onCheckedChange={(checked) => setConfig({ ...config, geo_blocking_enabled: checked })}
+                />
+              </div>
+
+              {config.ip_whitelist_enabled && (
+                <div className="space-y-4 pt-4 border-t">
+                  <div className="flex items-center justify-between">
+                    <h4 className="font-medium">IP Whitelist Entries</h4>
+                    <Button
+                      onClick={addIPWhitelistEntry}
+                      size="sm"
+                      disabled={!newIpEntry.cidr || !newIpEntry.description}
+                    >
+                      <Plus className="h-4 w-4 mr-2" />
+                      Add Entry
+                    </Button>
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <Input
+                      placeholder="IP Address or CIDR (e.g., 192.168.1.0/24)"
+                      value={newIpEntry.cidr}
+                      onChange={(e) => setNewIpEntry({ ...newIpEntry, cidr: e.target.value })}
+                    />
+                    <Input
+                      placeholder="Description"
+                      value={newIpEntry.description}
+                      onChange={(e) => setNewIpEntry({ ...newIpEntry, description: e.target.value })}
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    {ipWhitelist.map((entry) => (
+                      <div key={entry.id} className="flex items-center justify-between p-3 border border-gray-200 rounded-lg">
+                        <div>
+                          <div className="font-medium">{entry.cidr}</div>
+                          <div className="text-sm text-gray-500">{entry.description}</div>
+                        </div>
+                        <div className="flex items-center space-x-2">
+                          <Switch
+                            checked={entry.is_active}
+                            onCheckedChange={(checked) => toggleIPWhitelistEntry(entry.id, checked)}
+                          />
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => deleteIPWhitelistEntry(entry.id)}
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        {/* Audit Logs */}
+        <TabsContent value="audit" className="space-y-6">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center">
+                <FileText className="h-5 w-5 mr-2" />
+                Login Audit Logs
+              </CardTitle>
+              <CardDescription>
+                View login/logout activity and security events
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              {auditLoading ? (
+                <div className="flex items-center justify-center py-8">
+                  <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600"></div>
+                  <span className="ml-2">Loading audit logs...</span>
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  {loginAuditLogs.length === 0 ? (
+                    <div className="text-center py-8 text-gray-500">
+                      No audit logs found
+                    </div>
+                  ) : (
+                    <div className="space-y-2">
+                      {loginAuditLogs.map((log) => (
+                        <div key={log.id} className="p-3 border border-gray-200 rounded-lg">
+                          <div className="flex items-center justify-between">
+                            <div>
+                              <div className="flex items-center space-x-2">
+                                <span className={`px-2 py-1 text-xs rounded ${
+                                  log.event === 'login_success' ? 'bg-green-100 text-green-800' :
+                                  log.event === 'login_failure' ? 'bg-red-100 text-red-800' :
+                                  'bg-gray-100 text-gray-800'
+                                }`}>
+                                  {log.event.replace('_', ' ')}
+                                </span>
+                                <span className="font-medium">{log.email}</span>
+                              </div>
+                              <div className="text-sm text-gray-500 mt-1">
+                                IP: {log.ip_address} • Country: {log.country || 'Unknown'}
+                              </div>
+                            </div>
+                            <div className="text-sm text-gray-500">
+                              {new Date(log.created_at).toLocaleString()}
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
+      </Tabs>
 
       <div className="flex justify-end">
         <Button onClick={saveSettings} disabled={saving}>

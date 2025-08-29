@@ -822,6 +822,48 @@ export type Database = {
         }
         Relationships: []
       }
+      kyc_verifications: {
+        Row: {
+          documents: Json
+          id: string
+          id_hash: string | null
+          id_number_masked: string | null
+          rejection_reason: string | null
+          status: Database["public"]["Enums"]["kyc_status"]
+          submitted_at: string
+          type: Database["public"]["Enums"]["kyc_type"]
+          user_id: string
+          verified_at: string | null
+          verified_by: string | null
+        }
+        Insert: {
+          documents?: Json
+          id?: string
+          id_hash?: string | null
+          id_number_masked?: string | null
+          rejection_reason?: string | null
+          status?: Database["public"]["Enums"]["kyc_status"]
+          submitted_at?: string
+          type: Database["public"]["Enums"]["kyc_type"]
+          user_id: string
+          verified_at?: string | null
+          verified_by?: string | null
+        }
+        Update: {
+          documents?: Json
+          id?: string
+          id_hash?: string | null
+          id_number_masked?: string | null
+          rejection_reason?: string | null
+          status?: Database["public"]["Enums"]["kyc_status"]
+          submitted_at?: string
+          type?: Database["public"]["Enums"]["kyc_type"]
+          user_id?: string
+          verified_at?: string | null
+          verified_by?: string | null
+        }
+        Relationships: []
+      }
       legal_documents: {
         Row: {
           content: string
@@ -852,6 +894,39 @@ export type Database = {
           title?: string
           updated_at?: string
           version?: number
+        }
+        Relationships: []
+      }
+      login_audit: {
+        Row: {
+          country: string | null
+          created_at: string
+          email: string | null
+          event: string
+          id: string
+          ip_address: string | null
+          user_agent: string | null
+          user_id: string | null
+        }
+        Insert: {
+          country?: string | null
+          created_at?: string
+          email?: string | null
+          event: string
+          id?: string
+          ip_address?: string | null
+          user_agent?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          country?: string | null
+          created_at?: string
+          email?: string | null
+          event?: string
+          id?: string
+          ip_address?: string | null
+          user_agent?: string | null
+          user_id?: string | null
         }
         Relationships: []
       }
@@ -1242,6 +1317,57 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      password_history: {
+        Row: {
+          changed_at: string
+          id: string
+          password_fingerprint: string
+          user_id: string
+        }
+        Insert: {
+          changed_at?: string
+          id?: string
+          password_fingerprint: string
+          user_id: string
+        }
+        Update: {
+          changed_at?: string
+          id?: string
+          password_fingerprint?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      phone_verification_codes: {
+        Row: {
+          code_hash: string
+          consumed_at: string | null
+          created_at: string
+          expires_at: string
+          id: string
+          phone: string
+          user_id: string
+        }
+        Insert: {
+          code_hash: string
+          consumed_at?: string | null
+          created_at?: string
+          expires_at: string
+          id?: string
+          phone: string
+          user_id: string
+        }
+        Update: {
+          code_hash?: string
+          consumed_at?: string | null
+          created_at?: string
+          expires_at?: string
+          id?: string
+          phone?: string
+          user_id?: string
+        }
+        Relationships: []
       }
       photos_with_captions: {
         Row: {
@@ -2019,6 +2145,30 @@ export type Database = {
           },
         ]
       }
+      suspicious_activity_logs: {
+        Row: {
+          created_at: string
+          details: Json
+          event: string
+          id: string
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          details?: Json
+          event: string
+          id?: string
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          details?: Json
+          event?: string
+          id?: string
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       system_audit_logs: {
         Row: {
           action: string
@@ -2124,6 +2274,33 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      user_security_settings: {
+        Row: {
+          last_password_change: string | null
+          phone_verified: boolean
+          preferred_mfa_method: string
+          require_2fa: boolean
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          last_password_change?: string | null
+          phone_verified?: boolean
+          preferred_mfa_method?: string
+          require_2fa?: boolean
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          last_password_change?: string | null
+          phone_verified?: boolean
+          preferred_mfa_method?: string
+          require_2fa?: boolean
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
       }
       web_push_subscriptions: {
         Row: {
@@ -2851,6 +3028,8 @@ export type Database = {
         | "notifications_admin"
         | "finance_admin"
         | "analytics_admin"
+      kyc_status: "pending" | "verified" | "rejected"
+      kyc_type: "aadhaar" | "pan" | "gst" | "business"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -2986,6 +3165,8 @@ export const Constants = {
         "finance_admin",
         "analytics_admin",
       ],
+      kyc_status: ["pending", "verified", "rejected"],
+      kyc_type: ["aadhaar", "pan", "gst", "business"],
     },
   },
 } as const
