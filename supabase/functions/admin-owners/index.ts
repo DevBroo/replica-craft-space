@@ -75,8 +75,35 @@ serve(async (req) => {
     // Extract JWT token from Authorization header
     const token = authHeader.replace('Bearer ', '');
     
-    // Verify the user is an admin using the JWT token
-    const { data: { user }, error: userError } = await supabase.auth.getUser(token);
+    // Verify the user using multiple methods for better reliability
+    let user = null;
+    let userError = null;
+    
+    try {
+      // First try: use the token with the authenticated client
+      const { data: userData, error: authError } = await supabase.auth.getUser(token);
+      if (authError) {
+        console.log('⚠️ First auth method failed:', authError.message);
+        // Second try: use admin client to get user by JWT
+        try {
+          const { data: adminUserData, error: adminAuthError } = await supabaseAdmin.auth.getUser(token);
+          if (!adminAuthError && adminUserData?.user) {
+            user = adminUserData.user;
+          } else {
+            userError = adminAuthError || authError;
+          }
+        } catch (adminError) {
+          console.log('⚠️ Admin auth also failed:', adminError);
+          userError = adminError;
+        }
+      } else {
+        user = userData.user;
+      }
+    } catch (err) {
+      console.error('❌ Authentication error:', err);
+      userError = err;
+    }
+    
     if (userError || !user) {
       console.error('❌ User authentication failed:', userError);
       return new Response(JSON.stringify({ 

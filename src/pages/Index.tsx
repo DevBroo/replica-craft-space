@@ -146,12 +146,21 @@ const Index: React.FC = () => {
                   }
                   
                    if (isAuthenticated && user) {
-                     console.log('✅ User is authenticated, navigating to dashboard');
+                     console.log('✅ User is authenticated, checking role...');
                      console.log('🔍 User role:', user.role);
-                     navigate('/host/dashboard');
+                     
+                     // Check if user is owner or property_owner
+                     if (user.role === 'property_owner' || user.role === 'owner') {
+                       navigate('/owner/view');
+                     } else if (user.role === 'admin') {
+                       navigate('/admin/dashboard');
+                     } else {
+                       // Non-owner authenticated user, redirect to owner login
+                       navigate('/owner/login');
+                     }
                    } else {
-                     console.log('❌ User not authenticated, navigating to login');
-                     navigate('/host/login');
+                     console.log('❌ User not authenticated, navigating to owner login');
+                     navigate('/owner/login');
                    }
                 }}
                 className="w-full text-left px-4 py-3 text-sm text-gray-700 hover:bg-gray-50 hover:text-brand-orange transition-colors duration-200 border-b border-gray-100"
@@ -321,12 +330,21 @@ const Index: React.FC = () => {
                     });
                     
                      if (isAuthenticated && user) {
-                       console.log('✅ User is authenticated, navigating to dashboard');
+                       console.log('✅ User is authenticated, checking role...');
                        console.log('🔍 User role:', user.role);
-                       navigate('/host/dashboard');
+                       
+                       // Check if user is owner or property_owner
+                       if (user.role === 'property_owner' || user.role === 'owner') {
+                         navigate('/owner/view');
+                       } else if (user.role === 'admin') {
+                         navigate('/admin/dashboard');
+                       } else {
+                         // Non-owner authenticated user, redirect to owner login
+                         navigate('/owner/login');
+                       }
                      } else {
-                       console.log('❌ User not authenticated, navigating to login');
-                       navigate('/host/login');
+                       console.log('❌ User not authenticated, navigating to owner login');
+                       navigate('/owner/login');
                      }
                     setIsMobileMenuOpen(false);
                   }}

@@ -67,6 +67,14 @@ const ModernAdminDashboard: React.FC = () => {
     try {
       console.log('🔍 Loading modern admin dashboard data...');
       
+      // Check if we have a valid session before making requests
+      const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+      if (sessionError || !session) {
+        console.error('❌ No valid session, redirecting to admin login');
+        navigate('/admin/login');
+        return;
+      }
+      
       const ownersData = await adminService.getPropertyOwners();
       console.log('✅ Property owners loaded:', ownersData);
 
