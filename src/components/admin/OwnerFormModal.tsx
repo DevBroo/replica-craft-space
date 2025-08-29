@@ -2,7 +2,9 @@
 import React, { useState, useEffect } from 'react';
 import { X, Upload, Loader2, Save, User, Building, CreditCard, FileText, Bell, Key, RotateCcw } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
+import { bankingService } from '@/lib/bankingService';
 import { PropertyOwner, adminService } from '@/lib/adminService';
+import { toast } from 'sonner';
 
 interface OwnerFormModalProps {
   isOpen: boolean;
@@ -194,25 +196,26 @@ const OwnerFormModal: React.FC<OwnerFormModalProps> = ({
         });
       }
 
-      // Load bank details
-      const { data: bank } = await supabase
-        .from('owner_bank_details')
-        .select('*')
-        .eq('owner_id', owner.id)
-        .single();
-
-      if (bank) {
-        setBankDetails({
-          account_holder_name: bank.account_holder_name || '',
-          bank_name: bank.bank_name || '',
-          branch_name: bank.branch_name || '',
-          account_number: bank.account_number || '',
-          ifsc_code: bank.ifsc_code || '',
-          account_type: bank.account_type || 'Savings',
-          pan_number: bank.pan_number || '',
-          upi_id: bank.upi_id || '',
-          micr_code: bank.micr_code || ''
-        });
+      // Load bank details securely
+      try {
+        const bankData = await bankingService.getBankDetails(owner.id);
+        
+        if (bankData) {
+          setBankDetails({
+            account_holder_name: bankData.account_holder_name || '',
+            bank_name: bankData.bank_name || '',
+            branch_name: bankData.branch_name || '',
+            account_number: bankData.account_number_masked || '',
+            ifsc_code: bankData.ifsc_code || '',
+            account_type: bankData.account_type || 'Savings',
+            pan_number: bankData.pan_number_masked || '',
+            upi_id: bankData.upi_id_masked || '',
+            micr_code: bankData.micr_code || ''
+          });
+        }
+      } catch (error) {
+        console.error('Error loading bank details:', error);
+        toast.error('Failed to load bank details');
       }
     } catch (error) {
       console.error('Error loading owner data:', error);
@@ -303,24 +306,24 @@ const OwnerFormModal: React.FC<OwnerFormModalProps> = ({
 
       if (ownerProfileError) throw ownerProfileError;
 
-      // Upsert bank details
+      // Save bank details securely
       if (bankDetails.account_holder_name && bankDetails.bank_name && bankDetails.account_number && bankDetails.ifsc_code) {
-        const { error: bankError } = await supabase
-          .from('owner_bank_details')
-          .upsert({
-            owner_id: owner.id,
+        try {
+          await bankingService.saveBankDetails(owner.id, {
             account_holder_name: bankDetails.account_holder_name,
             bank_name: bankDetails.bank_name,
-            branch_name: bankDetails.branch_name || '',
+            branch_name: bankDetails.branch_name,
             account_number: bankDetails.account_number,
             ifsc_code: bankDetails.ifsc_code,
-            account_type: bankDetails.account_type || 'Savings',
-            pan_number: bankDetails.pan_number || '',
+            account_type: bankDetails.account_type,
+            pan_number: bankDetails.pan_number,
             upi_id: bankDetails.upi_id || '',
             micr_code: bankDetails.micr_code || ''
           });
-
-        if (bankError) throw bankError;
+        } catch (error) {
+          console.error('Error saving bank details:', error);
+          throw new Error('Failed to save bank details: ' + (error as Error).message);
+        }
       }
 
       // Log activity

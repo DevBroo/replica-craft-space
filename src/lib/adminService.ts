@@ -1,4 +1,5 @@
 import { supabase } from '../integrations/supabase/client';
+import { bankingService } from './bankingService';
 
 export interface PropertyOwner {
   id: string;
@@ -247,12 +248,8 @@ export const adminService = {
         .eq('user_id', ownerId)
         .single();
 
-      // Get bank details
-      const { data: bankDetails, error: bankError } = await supabase
-        .from('owner_bank_details')
-        .select('*')
-        .eq('owner_id', ownerId)
-        .single();
+      // Get bank details securely
+      const bankDetails = await bankingService.getBankDetails(ownerId);
 
       // Get owner's properties
       const { data: properties, error: propertiesError } = await supabase
@@ -409,24 +406,19 @@ export const adminService = {
         if (businessError) throw businessError;
       }
 
-      // Update bank details if provided
+      // Update bank details if provided - using secure banking service
       if (profileData.bank && profileData.bank.account_holder_name && profileData.bank.bank_name && profileData.bank.account_number && profileData.bank.ifsc_code) {
-        const { error: bankError } = await supabase
-          .from('owner_bank_details')
-          .upsert({
-            owner_id: ownerId,
-            account_holder_name: profileData.bank.account_holder_name,
-            bank_name: profileData.bank.bank_name,
-            branch_name: profileData.bank.branch_name || '',
-            account_number: profileData.bank.account_number,
-            ifsc_code: profileData.bank.ifsc_code,
-            account_type: profileData.bank.account_type || 'Savings',
-            pan_number: profileData.bank.pan_number || '',
-            upi_id: profileData.bank.upi_id || '',
-            micr_code: profileData.bank.micr_code || ''
-          });
-
-        if (bankError) throw bankError;
+        await bankingService.saveBankDetails(ownerId, {
+          account_holder_name: profileData.bank.account_holder_name,
+          bank_name: profileData.bank.bank_name,
+          branch_name: profileData.bank.branch_name,
+          account_number: profileData.bank.account_number,
+          ifsc_code: profileData.bank.ifsc_code,
+          account_type: profileData.bank.account_type,
+          pan_number: profileData.bank.pan_number,
+          upi_id: profileData.bank.upi_id,
+          micr_code: profileData.bank.micr_code
+        });
       }
 
       // Log activity
