@@ -429,15 +429,16 @@ const Properties: React.FC<PropertiesProps> = ({
                      )}
                    </div>
                       <div className="flex items-center space-x-1">
-                       <Button
-                         size="sm"
-                         variant="outline"
-                         onClick={() => handleViewProperty(property)}
-                         className="p-2"
-                         title="View Property"
-                       >
-                         <Eye className="w-4 h-4" />
-                       </Button>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => handleViewProperty(property)}
+                          className="flex items-center gap-2 px-3"
+                          title="View Property"
+                        >
+                          <Eye className="w-4 h-4" />
+                          <span className="text-sm">View Details</span>
+                        </Button>
                        <Button
                          size="sm"
                          variant="outline"
