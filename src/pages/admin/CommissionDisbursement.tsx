@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { 
   Plus,
@@ -65,7 +64,7 @@ const CommissionDisbursement: React.FC = () => {
     totalAmount: 0
   });
 
-  const { exportData } = useAnalyticsExport();
+  const { exportToCsv, exportToPdf, exporting } = useAnalyticsExport();
 
   // Load commissions
   const loadCommissions = async () => {
@@ -231,11 +230,12 @@ const CommissionDisbursement: React.FC = () => {
           await commissionService.bulkUpdateStatus(selectedCommissions, 'processing');
           break;
         case 'export':
-          await exportData(
-            commissions.filter(c => selectedCommissions.includes(c.id)),
-            'selected-commissions',
-            'csv'
-          );
+          const selectedData = commissions.filter(c => selectedCommissions.includes(c.id));
+          exportToCsv({
+            data: selectedData,
+            filename: 'selected-commissions',
+            headers: ['id', 'property_title', 'booking_id', 'owner_name', 'agent_name', 'total_booking_amount', 'admin_commission', 'owner_share', 'agent_commission', 'disbursement_status']
+          });
           break;
       }
       
@@ -253,7 +253,18 @@ const CommissionDisbursement: React.FC = () => {
 
   const handleExportAll = async (format: 'csv' | 'pdf') => {
     try {
-      await exportData(commissions, 'commission-disbursements', format);
+      if (format === 'csv') {
+        exportToCsv({
+          data: commissions,
+          filename: 'commission-disbursements',
+          headers: ['id', 'property_title', 'booking_id', 'owner_name', 'agent_name', 'total_booking_amount', 'admin_commission', 'owner_share', 'agent_commission', 'disbursement_status']
+        });
+      } else {
+        exportToPdf({
+          data: commissions,
+          filename: 'commission-disbursements'
+        });
+      }
     } catch (error) {
       console.error('Error exporting data:', error);
     }
@@ -372,6 +383,7 @@ const CommissionDisbursement: React.FC = () => {
                   onClick={() => handleExportAll('csv')}
                   className="text-gray-600 hover:text-gray-800 cursor-pointer p-2 border border-gray-300 rounded-lg flex items-center"
                   title="Export to CSV"
+                  disabled={exporting}
                 >
                   <FileText className="w-4 h-4 mr-1" />
                   CSV
@@ -380,6 +392,7 @@ const CommissionDisbursement: React.FC = () => {
                   onClick={() => handleExportAll('pdf')}
                   className="text-gray-600 hover:text-gray-800 cursor-pointer p-2 border border-gray-300 rounded-lg flex items-center"
                   title="Export to PDF"
+                  disabled={exporting}
                 >
                   <Download className="w-4 h-4 mr-1" />
                   PDF
