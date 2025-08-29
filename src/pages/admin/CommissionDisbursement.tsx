@@ -66,6 +66,10 @@ const CommissionDisbursement: React.FC = () => {
 
   const { exportToCsv, exportToPdf, exporting } = useAnalyticsExport();
 
+  // Derived state for button controls
+  const selectedSingle = selectedCommissions.length === 1 ? commissions.find(c => c.id === selectedCommissions[0]) : null;
+  const canProcessSelected = selectedSingle && ['approved', 'processing'].includes(selectedSingle.disbursement_status);
+
   // Load commissions
   const loadCommissions = async () => {
     setLoading(true);
@@ -308,9 +312,18 @@ const CommissionDisbursement: React.FC = () => {
           <div className="flex flex-wrap items-center justify-between gap-4">
             <div className="flex items-center space-x-4">
               <button
-                onClick={() => setShowProcessModal(true)}
-                className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors cursor-pointer flex items-center"
-                disabled={selectedCommissions.length !== 1}
+                onClick={() => {
+                  if (selectedSingle) {
+                    setSelectedCommission(selectedSingle);
+                    setShowProcessModal(true);
+                  }
+                }}
+                className={`px-4 py-2 rounded-lg transition-colors flex items-center ${
+                  canProcessSelected 
+                    ? 'bg-blue-600 text-white hover:bg-blue-700 cursor-pointer'
+                    : 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                }`}
+                disabled={!canProcessSelected}
               >
                 <Plus className="w-4 h-4 mr-2" />
                 Process Payments
