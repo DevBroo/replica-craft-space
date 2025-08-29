@@ -42,30 +42,18 @@ const OwnerDashboard: React.FC = () => {
       // User is not authenticated, redirect to owner login
       console.log('❌ User not authenticated, redirecting to owner login');
       navigate('/owner/login', { replace: true });
-    } else if (user.role !== 'owner') {
-      // User is authenticated but not an owner, redirect to appropriate page
-      console.log('⚠️ User not owner, redirecting to appropriate page');
+    } else if (!['property_owner', 'owner'].includes(user.role)) {
+      // User is authenticated but not a property owner, redirect to appropriate page
+      console.log('⚠️ User not property owner, role:', user.role);
       console.log('🔍 User details:', { id: user.id, email: user.email, role: user.role });
-      
-      // TEMPORARY FIX: If user role is customer, assume they should be owner
-      // This is for testing purposes - remove this in production
-      if (user.role === 'customer') {
-        console.log('🔄 TEMPORARY FIX: Assuming customer should be owner for testing');
-        console.log('⚠️ This is a temporary fix - update user role in database');
-        // Update the user role in localStorage temporarily
-        const updatedUser = { ...user, role: 'owner' };
-        localStorage.setItem('sb-user', JSON.stringify(updatedUser));
-        console.log('✅ Role temporarily set to owner, showing dashboard');
-        return; // Don't redirect, show dashboard
-      }
       
       if (user.role === 'admin') {
         navigate('/admin/dashboard');
       } else if (user.role === 'agent') {
-        navigate('/agent/dashboard');
+        navigate('/agent/dashboard');  
       } else {
-        console.log('❌ User role is customer, redirecting to homepage');
-        navigate('/'); // Customer goes to main page
+        console.log('❌ User role is not property owner, redirecting to homepage');
+        navigate('/'); // Other roles go to main page
       }
     } else {
       // User is authenticated owner, show dashboard
@@ -116,7 +104,7 @@ const OwnerDashboard: React.FC = () => {
   }
 
   // Show login redirect if not authenticated
-  if (!isAuthenticated || !user || user.role !== 'owner') {
+  if (!isAuthenticated || !user || !['property_owner', 'owner'].includes(user.role)) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">

@@ -114,7 +114,10 @@ export const AdminRoute: React.FC<{ children: ReactNode }> = ({ children }) => (
 );
 
 export const OwnerRoute: React.FC<{ children: ReactNode }> = ({ children }) => (
-  <ProtectedRoute requiredRole="owner" redirectTo="/owner/login">
+  <ProtectedRoute 
+    requiredRoles={["property_owner", "owner"]} 
+    redirectTo="/owner/login"
+  >
     {children}
   </ProtectedRoute>
 );
