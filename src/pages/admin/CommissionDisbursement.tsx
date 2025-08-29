@@ -320,73 +320,115 @@ const CommissionDisbursement: React.FC = () => {
   const generateSampleCommissions = async () => {
     try {
       console.log('📊 Generating sample commission data...');
-      const sampleData = [
-        {
-          booking_id: crypto.randomUUID(),
-          property_id: crypto.randomUUID(),
-          owner_id: crypto.randomUUID(),
-          agent_id: crypto.randomUUID(),
-          total_booking_amount: 15000,
-          admin_commission: 1500,
-          owner_share: 12750,
-          agent_commission: 750,
-          disbursement_status: 'pending',
-          due_date: '2024-09-20'
-        },
-        {
-          booking_id: crypto.randomUUID(),
-          property_id: crypto.randomUUID(),
-          owner_id: crypto.randomUUID(),
-          agent_id: null,
-          total_booking_amount: 8000,
-          admin_commission: 800,
-          owner_share: 7200,
-          agent_commission: 0,
-          disbursement_status: 'approved',
-          due_date: '2024-09-15'
-        },
-        {
-          booking_id: crypto.randomUUID(),
-          property_id: crypto.randomUUID(),
-          owner_id: crypto.randomUUID(),
-          agent_id: crypto.randomUUID(),
-          total_booking_amount: 22000,
-          admin_commission: 2200,
-          owner_share: 18700,
-          agent_commission: 1100,
-          disbursement_status: 'pending',
-          due_date: '2024-09-27'
-        }
-      ];
+      
+      // First, fetch real bookings to use their valid IDs
+      const { data: bookings, error: bookingsError } = await supabase
+        .from('bookings')
+        .select(`
+          id,
+          property_id,
+          user_id,
+          agent_id,
+          total_amount,
+          properties!inner(
+            owner_id,
+            title
+          )
+        `)
+        .limit(3);
 
-      // Insert sample data into commission_disbursements table
+      if (bookingsError) {
+        console.error('Error fetching bookings:', bookingsError);
+        toast({
+          title: "Error",
+          description: "No bookings found to generate commission data.",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      if (!bookings || bookings.length === 0) {
+        toast({
+          title: "Info",
+          description: "No bookings available. Create some bookings first.",
+        });
+        return;
+      }
+
+      // Generate commission data based on real bookings
+      const sampleData = bookings.map((booking, index) => {
+        const adminRate = 0.10; // 10% admin commission
+        const agentRate = booking.agent_id ? 0.05 : 0; // 5% agent commission if agent exists
+        
+        const adminCommission = booking.total_amount * adminRate;
+        const agentCommission = booking.total_amount * agentRate;
+        const ownerShare = booking.total_amount - adminCommission - agentCommission;
+        
+        const statuses = ['pending', 'approved', 'pending'];
+        const dueDates = [
+          new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0], // 7 days from now
+          new Date(Date.now() + 3 * 24 * 60 * 60 * 1000).toISOString().split('T')[0], // 3 days from now
+          new Date(Date.now() + 10 * 24 * 60 * 60 * 1000).toISOString().split('T')[0] // 10 days from now
+        ];
+
+        return {
+          booking_id: booking.id,
+          property_id: booking.property_id,
+          owner_id: booking.properties.owner_id,
+          agent_id: booking.agent_id,
+          total_booking_amount: booking.total_amount,
+          admin_commission: Math.round(adminCommission * 100) / 100,
+          owner_share: Math.round(ownerShare * 100) / 100,
+          agent_commission: Math.round(agentCommission * 100) / 100,
+          disbursement_status: statuses[index % statuses.length],
+          due_date: dueDates[index % dueDates.length]
+        };
+      });
+
+      // Check if commission records already exist for these bookings
+      const { data: existingCommissions } = await supabase
+        .from('commission_disbursements')
+        .select('booking_id')
+        .in('booking_id', sampleData.map(d => d.booking_id));
+
+      const existingBookingIds = new Set(existingCommissions?.map(c => c.booking_id) || []);
+      const newSampleData = sampleData.filter(d => !existingBookingIds.has(d.booking_id));
+
+      if (newSampleData.length === 0) {
+        toast({
+          title: "Info",
+          description: "Commission data already exists for these bookings.",
+        });
+        return;
+      }
+
       const { error } = await supabase
         .from('commission_disbursements')
-        .insert(sampleData);
+        .insert(newSampleData);
 
       if (error) {
         console.error('Error inserting sample data:', error);
         toast({
           title: "Error",
-          description: "Failed to generate sample data: " + error.message,
-          variant: "destructive"
+          description: `Failed to generate sample data: ${error.message}`,
+          variant: "destructive",
         });
-      } else {
-        console.log('✅ Sample commission data generated successfully');
-        toast({
-          title: "Success",
-          description: "Sample commission data generated successfully",
-        });
-        // Reload data
-        await loadCommissions();
-        await loadRevenueSummary();
+        return;
       }
+
+      toast({
+        title: "Success",
+        description: `Generated ${newSampleData.length} commission records successfully!`,
+      });
+      
+      await loadCommissions();
+      await loadRevenueSummary();
     } catch (error) {
       console.error('Error generating sample data:', error);
       toast({
         title: "Error",
-        description: "Failed to generate sample data",
-        variant: "destructive"
+        description: "Failed to generate sample data. Please try again.",
+        variant: "destructive",
       });
     }
   };
