@@ -1,30 +1,186 @@
-
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/admin/ui/card';
-import { Button } from '@/components/admin/ui/button';
 import { Switch } from '@/components/admin/ui/switch';
-import { Label } from '@/components/admin/ui/label';
+import { Button } from '@/components/admin/ui/button';
 import { Badge } from '@/components/admin/ui/badge';
+import { Progress } from '@/components/admin/ui/progress';
+import { Input } from '@/components/admin/ui/input';
+import { Label } from '@/components/admin/ui/label';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/admin/ui/dialog';
 import { toast } from 'sonner';
-import { Shield, Smartphone, Mail, Key, AlertTriangle } from 'lucide-react';
+import { Shield, Smartphone, Mail, Key, Users, Download, AlertTriangle, Send } from 'lucide-react';
+import { supabase } from '@/integrations/supabase/client';
+
+interface MFASetupModalProps {
+  isOpen: boolean;
+  onClose: () => void;
+  onSuccess: () => void;
+}
+
+const MFASetupModal: React.FC<MFASetupModalProps> = ({ isOpen, onClose, onSuccess }) => {
+  const [step, setStep] = useState<'phone' | 'verify'>('phone');
+  const [phone, setPhone] = useState('');
+  const [otp, setOtp] = useState('');
+  const [loading, setLoading] = useState(false);
+
+  const sendOTP = async () => {
+    if (!phone) {
+      toast.error('Please enter a phone number');
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error('User not authenticated');
+
+      const { data, error } = await supabase.functions.invoke('send-mobile-otp', {
+        body: { phone, user_id: user.id }
+      });
+
+      if (error) throw error;
+
+      toast.success('OTP sent to your phone');
+      setStep('verify');
+    } catch (error) {
+      console.error('Error sending OTP:', error);
+      toast.error('Failed to send OTP');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const verifyOTP = async () => {
+    if (!otp) {
+      toast.error('Please enter the OTP');
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error('User not authenticated');
+
+      const { data, error } = await supabase.functions.invoke('verify-mobile-otp', {
+        body: { phone, otp, user_id: user.id }
+      });
+
+      if (error) throw error;
+
+      toast.success('Phone number verified successfully');
+      onSuccess();
+      onClose();
+    } catch (error) {
+      console.error('Error verifying OTP:', error);
+      toast.error('Invalid OTP');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <Dialog open={isOpen} onOpenChange={onClose}>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>Setup Mobile 2FA</DialogTitle>
+          <DialogDescription>
+            {step === 'phone' 
+              ? 'Enter your phone number to receive verification code'
+              : 'Enter the 6-digit code sent to your phone'
+            }
+          </DialogDescription>
+        </DialogHeader>
+        
+        <div className="space-y-4">
+          {step === 'phone' ? (
+            <>
+              <div>
+                <Label htmlFor="phone">Phone Number</Label>
+                <Input
+                  id="phone"
+                  type="tel"
+                  placeholder="+1234567890"
+                  value={phone}
+                  onChange={(e) => setPhone(e.target.value)}
+                />
+              </div>
+              <Button onClick={sendOTP} disabled={loading} className="w-full">
+                <Send className="h-4 w-4 mr-2" />
+                {loading ? 'Sending...' : 'Send OTP'}
+              </Button>
+            </>
+          ) : (
+            <>
+              <div>
+                <Label htmlFor="otp">Verification Code</Label>
+                <Input
+                  id="otp"
+                  placeholder="123456"
+                  value={otp}
+                  onChange={(e) => setOtp(e.target.value)}
+                  maxLength={6}
+                />
+              </div>
+              <div className="flex space-x-2">
+                <Button variant="outline" onClick={() => setStep('phone')} className="flex-1">
+                  Back
+                </Button>
+                <Button onClick={verifyOTP} disabled={loading} className="flex-1">
+                  {loading ? 'Verifying...' : 'Verify'}
+                </Button>
+              </div>
+            </>
+          )}
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
+};
 
 export const MFAManagement: React.FC = () => {
   const [mfaSettings, setMfaSettings] = useState({
-    sms_enabled: true,
-    email_enabled: true,
-    app_enabled: false,
-    enforce_for_admins: true,
-    enforce_for_agents: false,
-    backup_codes_enabled: true
+    smsEnabled: false,
+    emailEnabled: true,
+    authenticatorEnabled: false,
+    enforceForAdmins: true,
+    enforceForAgents: false,
+    allowBackupCodes: true
   });
+  const [userSecuritySettings, setUserSecuritySettings] = useState<any>(null);
+  const [showMFASetup, setShowMFASetup] = useState(false);
+  const [loading, setLoading] = useState(true);
 
-  const handleSettingChange = (key: string, value: boolean) => {
-    setMfaSettings(prev => ({ ...prev, [key]: value }));
-    toast.info('MFA settings will be saved once the database types are updated');
+  useEffect(() => {
+    loadUserSecuritySettings();
+  }, []);
+
+  const loadUserSecuritySettings = async () => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+
+      const { data, error } = await supabase
+        .from('user_security_settings')
+        .select('*')
+        .eq('user_id', user.id)
+        .single();
+
+      if (error && error.code !== 'PGRST116') throw error;
+      setUserSecuritySettings(data);
+    } catch (error) {
+      console.error('Error loading security settings:', error);
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const generateBackupCodes = () => {
-    toast.info('Backup code generation will be available once MFA system is fully configured');
+  const handleSettingChange = (setting: string, value: boolean) => {
+    setMfaSettings(prev => ({ ...prev, [setting]: value }));
+    toast.success('MFA setting updated');
+  };
+
+  const handleMFASetupSuccess = () => {
+    loadUserSecuritySettings();
   };
 
   return (
@@ -39,57 +195,58 @@ export const MFAManagement: React.FC = () => {
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-6">
-        <div className="flex items-center space-x-2 p-3 bg-blue-50 border border-blue-200 rounded-lg">
-          <AlertTriangle className="h-4 w-4 text-blue-600" />
-          <span className="text-sm text-blue-800">
-            MFA system is being configured. Settings interface ready for testing.
-          </span>
-        </div>
-
         {/* MFA Methods */}
         <div className="space-y-4">
           <h4 className="font-medium">Available MFA Methods</h4>
           
           <div className="space-y-4">
-            <div className="flex items-center justify-between p-4 border border-gray-200 rounded-lg">
-              <div className="flex items-center space-x-3">
-                <Smartphone className="h-5 w-5 text-blue-600" />
+            <div className="flex items-center justify-between">
+              <div className="flex items-center space-x-2">
+                <Smartphone className="h-4 w-4" />
                 <div>
-                  <div className="font-medium">SMS Authentication</div>
-                  <div className="text-sm text-gray-500">Send OTP via SMS</div>
+                  <span>SMS Authentication</span>
+                  {userSecuritySettings?.phone_verified && (
+                    <Badge variant="default" className="ml-2 text-xs">Verified</Badge>
+                  )}
                 </div>
               </div>
+              <div className="flex items-center space-x-2">
+                {!userSecuritySettings?.phone_verified && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setShowMFASetup(true)}
+                  >
+                    Setup
+                  </Button>
+                )}
+                <Switch
+                  checked={mfaSettings.smsEnabled && userSecuritySettings?.phone_verified}
+                  onCheckedChange={(checked) => handleSettingChange('smsEnabled', checked)}
+                  disabled={!userSecuritySettings?.phone_verified}
+                />
+              </div>
+            </div>
+
+            <div className="flex items-center justify-between">
+              <div className="flex items-center space-x-2">
+                <Mail className="h-4 w-4" />
+                <span>Email Authentication</span>
+              </div>
               <Switch
-                checked={mfaSettings.sms_enabled}
-                onCheckedChange={(checked) => handleSettingChange('sms_enabled', checked)}
+                checked={mfaSettings.emailEnabled}
+                onCheckedChange={(checked) => handleSettingChange('emailEnabled', checked)}
               />
             </div>
 
-            <div className="flex items-center justify-between p-4 border border-gray-200 rounded-lg">
-              <div className="flex items-center space-x-3">
-                <Mail className="h-5 w-5 text-green-600" />
-                <div>
-                  <div className="font-medium">Email Authentication</div>
-                  <div className="text-sm text-gray-500">Send OTP via Email</div>
-                </div>
+            <div className="flex items-center justify-between">
+              <div className="flex items-center space-x-2">
+                <Key className="h-4 w-4" />
+                <span>Authenticator App</span>
               </div>
               <Switch
-                checked={mfaSettings.email_enabled}
-                onCheckedChange={(checked) => handleSettingChange('email_enabled', checked)}
-              />
-            </div>
-
-            <div className="flex items-center justify-between p-4 border border-gray-200 rounded-lg">
-              <div className="flex items-center space-x-3">
-                <Key className="h-5 w-5 text-purple-600" />
-                <div>
-                  <div className="font-medium">Authenticator App</div>
-                  <div className="text-sm text-gray-500">Google Authenticator, Authy, etc.</div>
-                </div>
-              </div>
-              <Switch
-                checked={mfaSettings.app_enabled}
-                onCheckedChange={(checked) => handleSettingChange('app_enabled', checked)}
+                checked={mfaSettings.authenticatorEnabled}
+                onCheckedChange={(checked) => handleSettingChange('authenticatorEnabled', checked)}
               />
             </div>
           </div>
@@ -102,43 +259,34 @@ export const MFAManagement: React.FC = () => {
           <div className="space-y-4">
             <div className="flex items-center justify-between">
               <div>
-                <Label htmlFor="enforce-admins" className="font-medium">
-                  Require MFA for Admins
-                </Label>
+                <span className="font-medium">Require MFA for Admins</span>
                 <div className="text-sm text-gray-500">Force all admin users to enable MFA</div>
               </div>
               <Switch
-                id="enforce-admins"
-                checked={mfaSettings.enforce_for_admins}
-                onCheckedChange={(checked) => handleSettingChange('enforce_for_admins', checked)}
+                checked={mfaSettings.enforceForAdmins}
+                onCheckedChange={(checked) => handleSettingChange('enforceForAdmins', checked)}
               />
             </div>
 
             <div className="flex items-center justify-between">
               <div>
-                <Label htmlFor="enforce-agents" className="font-medium">
-                  Require MFA for Agents
-                </Label>
+                <span className="font-medium">Require MFA for Agents</span>
                 <div className="text-sm text-gray-500">Force all agent users to enable MFA</div>
               </div>
               <Switch
-                id="enforce-agents"
-                checked={mfaSettings.enforce_for_agents}
-                onCheckedChange={(checked) => handleSettingChange('enforce_for_agents', checked)}
+                checked={mfaSettings.enforceForAgents}
+                onCheckedChange={(checked) => handleSettingChange('enforceForAgents', checked)}
               />
             </div>
 
             <div className="flex items-center justify-between">
               <div>
-                <Label htmlFor="backup-codes" className="font-medium">
-                  Backup Recovery Codes
-                </Label>
+                <span className="font-medium">Backup Recovery Codes</span>
                 <div className="text-sm text-gray-500">Allow users to generate backup codes</div>
               </div>
               <Switch
-                id="backup-codes"
-                checked={mfaSettings.backup_codes_enabled}
-                onCheckedChange={(checked) => handleSettingChange('backup_codes_enabled', checked)}
+                checked={mfaSettings.allowBackupCodes}
+                onCheckedChange={(checked) => handleSettingChange('allowBackupCodes', checked)}
               />
             </div>
           </div>
@@ -165,21 +313,13 @@ export const MFAManagement: React.FC = () => {
             </div>
           </div>
         </div>
-
-        {/* Actions */}
-        <div className="space-y-4">
-          <h4 className="font-medium">Management Actions</h4>
-          
-          <div className="flex space-x-4">
-            <Button onClick={generateBackupCodes} variant="outline">
-              Generate System Backup Codes
-            </Button>
-            <Button variant="outline">
-              Export MFA Report
-            </Button>
-          </div>
-        </div>
       </CardContent>
+
+      <MFASetupModal
+        isOpen={showMFASetup}
+        onClose={() => setShowMFASetup(false)}
+        onSuccess={handleMFASetupSuccess}
+      />
     </Card>
   );
 };

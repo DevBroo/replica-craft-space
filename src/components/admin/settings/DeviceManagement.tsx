@@ -1,25 +1,74 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/admin/ui/card';
 import { Button } from '@/components/admin/ui/button';
 import { Badge } from '@/components/admin/ui/badge';
 import { toast } from 'sonner';
-import { Monitor, Smartphone, Clock, Globe, AlertTriangle } from 'lucide-react';
+import { Monitor, Smartphone, Clock, Globe, AlertTriangle, Shield } from 'lucide-react';
+import { supabase } from '@/integrations/supabase/client';
+
+interface UserDevice {
+  id: string;
+  user_id: string;
+  device_id: string;
+  device_name: string;
+  user_agent?: string;
+  ip_address?: string;
+  country?: string;
+  region?: string;
+  last_seen: string;
+  revoked_at?: string;
+  user_name?: string;
+  user_email?: string;
+}
 
 export const DeviceManagement: React.FC = () => {
-  const [devices] = useState([
-    {
-      id: '1',
-      device_name: 'Chrome on Windows',
-      ip_address: '192.168.1.100',
-      country: 'India',
-      region: 'Maharashtra',
-      last_seen: new Date().toISOString(),
-      user_agent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
-      user_name: 'Current Session',
-      user_email: 'admin@picnify.com'
+  const [devices, setDevices] = useState<UserDevice[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    loadDevices();
+  }, []);
+
+  const loadDevices = async () => {
+    try {
+      // First load devices, then load user profiles separately
+      const { data: devicesData, error: devicesError } = await supabase
+        .from('user_devices')
+        .select('*')
+        .order('last_seen', { ascending: false });
+
+      if (devicesError) throw devicesError;
+
+      // Load user profiles for the devices
+      const userIds = [...new Set(devicesData.map(d => d.user_id))];
+      const { data: profilesData, error: profilesError } = await supabase
+        .from('profiles')
+        .select('id, full_name, email')
+        .in('id', userIds);
+
+      if (profilesError) throw profilesError;
+
+      // Map profiles to devices
+      const profilesMap = new Map(profilesData.map(p => [p.id, p]));
+      
+      const devicesWithUserInfo = devicesData.map(device => {
+        const profile = profilesMap.get(device.user_id);
+        return {
+          ...device,
+          user_name: profile?.full_name || 'Unknown User',
+          user_email: profile?.email || 'unknown@email.com'
+        };
+      });
+
+      setDevices(devicesWithUserInfo);
+    } catch (error) {
+      console.error('Error loading devices:', error);
+      toast.error('Failed to load devices');
+    } finally {
+      setLoading(false);
     }
-  ]);
+  };
 
   const getDeviceIcon = (userAgent: string | null) => {
     if (!userAgent) return <Monitor className="h-4 w-4" />;
@@ -43,8 +92,21 @@ export const DeviceManagement: React.FC = () => {
     return `${Math.floor(diffMins / 1440)} days ago`;
   };
 
-  const handleRevokeDevice = (deviceId: string) => {
-    toast.info('Device management functionality will be available once the database types are updated');
+  const handleRevokeDevice = async (deviceId: string) => {
+    try {
+      const { error } = await supabase
+        .from('user_devices')
+        .update({ revoked_at: new Date().toISOString() })
+        .eq('id', deviceId);
+
+      if (error) throw error;
+
+      toast.success('Device revoked successfully');
+      loadDevices();
+    } catch (error) {
+      console.error('Error revoking device:', error);
+      toast.error('Failed to revoke device');
+    }
   };
 
   return (
@@ -60,14 +122,19 @@ export const DeviceManagement: React.FC = () => {
       </CardHeader>
       <CardContent>
         <div className="space-y-4">
-          <div className="flex items-center space-x-2 p-3 bg-blue-50 border border-blue-200 rounded-lg">
-            <AlertTriangle className="h-4 w-4 text-blue-600" />
-            <span className="text-sm text-blue-800">
-              Device management is being configured. Currently showing sample data.
-            </span>
-          </div>
-          
-          {devices.map((device) => (
+          {loading ? (
+            <div className="flex items-center justify-center p-8">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+            </div>
+          ) : devices.length === 0 ? (
+            <div className="flex items-center space-x-2 p-3 bg-muted rounded-lg">
+              <Shield className="h-4 w-4 text-muted-foreground" />
+              <span className="text-sm text-muted-foreground">
+                No active device sessions found.
+              </span>
+            </div>
+          ) : (
+            devices.map((device) => (
             <div key={device.id} className="flex items-center justify-between p-4 border border-gray-200 rounded-lg">
               <div className="flex items-start space-x-4">
                 <div className="mt-1">
@@ -79,9 +146,15 @@ export const DeviceManagement: React.FC = () => {
                     <span className="font-medium">
                       {device.device_name}
                     </span>
-                    <Badge variant="secondary" className="text-xs">
-                      Current Session
-                    </Badge>
+                    {device.revoked_at ? (
+                      <Badge variant="destructive" className="text-xs">
+                        Revoked
+                      </Badge>
+                    ) : (
+                      <Badge variant="secondary" className="text-xs">
+                        Active
+                      </Badge>
+                    )}
                   </div>
                   
                   <div className="text-sm text-gray-600">
@@ -112,18 +185,24 @@ export const DeviceManagement: React.FC = () => {
               </div>
 
               <div className="flex items-center space-x-2">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => handleRevokeDevice(device.id)}
-                  className="text-gray-500 hover:text-gray-700"
-                  disabled
-                >
-                  Current Session
-                </Button>
+                {device.revoked_at ? (
+                  <Badge variant="outline" className="text-xs">
+                    Revoked {formatLastSeen(device.revoked_at)}
+                  </Badge>
+                ) : (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => handleRevokeDevice(device.id)}
+                    className="text-destructive hover:text-destructive"
+                  >
+                    Revoke Access
+                  </Button>
+                )}
               </div>
             </div>
-          ))}
+            ))
+          )}
         </div>
       </CardContent>
     </Card>

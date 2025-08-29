@@ -1,61 +1,111 @@
-
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/admin/ui/card';
 import { Button } from '@/components/admin/ui/button';
 import { Input } from '@/components/admin/ui/input';
-import { Badge } from '@/components/admin/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/admin/ui/select';
+import { Badge } from '@/components/admin/ui/badge';
 import { toast } from 'sonner';
-import { Shield, Search, Download, Filter, AlertTriangle, User, Settings, Lock } from 'lucide-react';
+import { 
+  Search, 
+  Download, 
+  Shield, 
+  AlertTriangle, 
+  Clock, 
+  User, 
+  Globe,
+  Eye,
+  UserPlus,
+  Lock,
+  Unlock,
+  Settings
+} from 'lucide-react';
+import { supabase } from '@/integrations/supabase/client';
+
+interface AuditLog {
+  id: string;
+  user_id?: string;
+  action: string;
+  entity_type?: string;
+  entity_id?: string;
+  ip_address?: string;
+  user_agent?: string;
+  risk_level?: 'low' | 'medium' | 'high' | 'critical';
+  details: any;
+  created_at: string;
+  user_email?: string;
+}
 
 export const SecurityAuditLogs: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [filterAction, setFilterAction] = useState('all');
   const [filterTimeframe, setFilterTimeframe] = useState('7d');
+  const [auditLogs, setAuditLogs] = useState<AuditLog[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  // Sample audit log data
-  const [auditLogs] = useState([
-    {
-      id: '1',
-      timestamp: new Date().toISOString(),
-      action: 'login_success',
-      actor: 'admin@picnify.com',
-      ip_address: '192.168.1.100',
-      user_agent: 'Chrome 119.0.0.0',
-      details: 'Admin login from trusted location',
-      risk_level: 'low'
-    },
-    {
-      id: '2', 
-      timestamp: new Date(Date.now() - 300000).toISOString(),
-      action: 'password_change',
-      actor: 'user@example.com',
-      ip_address: '203.0.113.45',
-      user_agent: 'Firefox 118.0.1',
-      details: 'Password changed successfully',
-      risk_level: 'medium'
-    },
-    {
-      id: '3',
-      timestamp: new Date(Date.now() - 600000).toISOString(),
-      action: 'failed_login',
-      actor: 'unknown@example.com',
-      ip_address: '198.51.100.23',
-      user_agent: 'curl/7.68.0',
-      details: 'Multiple failed login attempts detected',
-      risk_level: 'high'
+  useEffect(() => {
+    loadAuditLogs();
+  }, [filterTimeframe]);
+
+  const loadAuditLogs = async () => {
+    setLoading(true);
+    try {
+      // Calculate date range based on filter
+      const now = new Date();
+      const daysBack = filterTimeframe === '24h' ? 1 : 
+                      filterTimeframe === '7d' ? 7 : 
+                      filterTimeframe === '30d' ? 30 : 90;
+      
+      const startDate = new Date(now.getTime() - daysBack * 24 * 60 * 60 * 1000);
+
+      // Load audit logs without profile join for now
+      const { data, error } = await supabase
+        .from('security_audit_logs')
+        .select('*')
+        .gte('created_at', startDate.toISOString())
+        .order('created_at', { ascending: false })
+        .limit(100);
+
+      if (error) throw error;
+
+      // Load user profiles separately
+      const userIds = [...new Set(data.map(d => d.user_id).filter(Boolean))];
+      const { data: profilesData } = await supabase
+        .from('profiles')
+        .select('id, email')
+        .in('id', userIds);
+
+      const profilesMap = new Map(profilesData?.map(p => [p.id, p]) || []);
+
+      const logsWithUserInfo = data.map(log => ({
+        ...log,
+        risk_level: (log.risk_level as 'low' | 'medium' | 'high' | 'critical') || 'low',
+        user_email: profilesMap.get(log.user_id!)?.email || 'System',
+        details: log.details || {}
+      }));
+
+      setAuditLogs(logsWithUserInfo);
+    } catch (error) {
+      console.error('Error loading audit logs:', error);
+      toast.error('Failed to load audit logs');
+    } finally {
+      setLoading(false);
     }
-  ]);
+  };
 
   const getActionIcon = (action: string) => {
     switch (action) {
+      case 'login':
       case 'login_success':
       case 'login_failed':
         return <User className="h-4 w-4" />;
       case 'password_change':
         return <Lock className="h-4 w-4" />;
-      case 'settings_change':
+      case 'profile_update':
         return <Settings className="h-4 w-4" />;
+      case 'view_profile':
+        return <Eye className="h-4 w-4" />;
+      case 'create_user':
+        return <UserPlus className="h-4 w-4" />;
       default:
         return <Shield className="h-4 w-4" />;
     }
@@ -63,6 +113,7 @@ export const SecurityAuditLogs: React.FC = () => {
 
   const getRiskBadgeColor = (level: string) => {
     switch (level) {
+      case 'critical': return 'destructive';
       case 'high': return 'destructive';
       case 'medium': return 'default';
       case 'low': return 'secondary';
@@ -75,14 +126,42 @@ export const SecurityAuditLogs: React.FC = () => {
   };
 
   const exportLogs = () => {
-    toast.info('Audit log export functionality will be available once the database types are updated');
+    try {
+      const csvData = filteredLogs.map(log => ({
+        timestamp: log.created_at,
+        action: log.action,
+        user: log.user_email,
+        ip_address: log.ip_address || 'N/A',
+        risk_level: log.risk_level || 'low',
+        details: typeof log.details === 'object' ? JSON.stringify(log.details) : log.details
+      }));
+
+      const csv = [
+        'Timestamp,Action,User,IP Address,Risk Level,Details',
+        ...csvData.map(row => 
+          `"${row.timestamp}","${row.action}","${row.user}","${row.ip_address}","${row.risk_level}","${row.details}"`
+        )
+      ].join('\n');
+
+      const blob = new Blob([csv], { type: 'text/csv' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `security-audit-logs-${new Date().toISOString().split('T')[0]}.csv`;
+      a.click();
+      URL.revokeObjectURL(url);
+
+      toast.success('Audit logs exported successfully');
+    } catch (error) {
+      console.error('Error exporting logs:', error);
+      toast.error('Failed to export logs');
+    }
   };
 
   const filteredLogs = auditLogs.filter(log => {
-    const matchesSearch = searchTerm === '' || 
-      log.actor.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      log.action.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      log.details.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesSearch = log.action.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         (log.user_email || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         (typeof log.details === 'string' ? log.details : JSON.stringify(log.details)).toLowerCase().includes(searchTerm.toLowerCase());
     
     const matchesAction = filterAction === 'all' || log.action === filterAction;
     
@@ -100,118 +179,142 @@ export const SecurityAuditLogs: React.FC = () => {
           Monitor system-wide security events, user activities, and potential threats
         </CardDescription>
       </CardHeader>
-      <CardContent className="space-y-6">
-        <div className="flex items-center space-x-2 p-3 bg-blue-50 border border-blue-200 rounded-lg">
-          <AlertTriangle className="h-4 w-4 text-blue-600" />
-          <span className="text-sm text-blue-800">
-            Security audit logs are being configured. Currently showing sample data for interface testing.
-          </span>
-        </div>
-
-        {/* Filters and Search */}
-        <div className="flex flex-col md:flex-row gap-4">
-          <div className="flex-1">
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
-              <Input
-                placeholder="Search logs by user, action, or details..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-10"
-              />
+      <CardContent>
+        <div className="space-y-6">
+          {loading && (
+            <div className="flex items-center justify-center p-8">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
             </div>
+          )}
+
+          {/* Filters and Search */}
+          <div className="flex flex-col md:flex-row gap-4">
+            <div className="flex-1">
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+                <Input
+                  placeholder="Search logs by user, action, or details..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="pl-10"
+                />
+              </div>
+            </div>
+            
+            <Select value={filterAction} onValueChange={setFilterAction}>
+              <SelectTrigger className="w-full md:w-48">
+                <SelectValue placeholder="Filter by action" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Actions</SelectItem>
+                <SelectItem value="login">Login Success</SelectItem>
+                <SelectItem value="login_failed">Failed Login</SelectItem>
+                <SelectItem value="password_change">Password Change</SelectItem>
+                <SelectItem value="profile_update">Profile Update</SelectItem>
+              </SelectContent>
+            </Select>
+
+            <Select value={filterTimeframe} onValueChange={setFilterTimeframe}>
+              <SelectTrigger className="w-full md:w-32">
+                <SelectValue placeholder="Timeframe" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="24h">Last 24h</SelectItem>
+                <SelectItem value="7d">Last 7 days</SelectItem>
+                <SelectItem value="30d">Last 30 days</SelectItem>
+                <SelectItem value="90d">Last 90 days</SelectItem>
+              </SelectContent>
+            </Select>
+
+            <Button onClick={exportLogs} variant="outline" className="flex items-center">
+              <Download className="h-4 w-4 mr-2" />
+              Export
+            </Button>
           </div>
-          
-          <Select value={filterAction} onValueChange={setFilterAction}>
-            <SelectTrigger className="w-full md:w-48">
-              <SelectValue placeholder="Filter by action" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All Actions</SelectItem>
-              <SelectItem value="login_success">Login Success</SelectItem>
-              <SelectItem value="failed_login">Failed Login</SelectItem>
-              <SelectItem value="password_change">Password Change</SelectItem>
-              <SelectItem value="settings_change">Settings Change</SelectItem>
-            </SelectContent>
-          </Select>
 
-          <Select value={filterTimeframe} onValueChange={setFilterTimeframe}>
-            <SelectTrigger className="w-full md:w-32">
-              <SelectValue placeholder="Timeframe" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="1h">Last Hour</SelectItem>
-              <SelectItem value="24h">Last 24h</SelectItem>
-              <SelectItem value="7d">Last 7 days</SelectItem>
-              <SelectItem value="30d">Last 30 days</SelectItem>
-            </SelectContent>
-          </Select>
-
-          <Button onClick={exportLogs} variant="outline" className="flex items-center">
-            <Download className="h-4 w-4 mr-2" />
-            Export
-          </Button>
-        </div>
-
-        {/* Audit Log Entries */}
-        <div className="space-y-2">
-          {filteredLogs.length === 0 ? (
-            <div className="text-center py-8 text-gray-500">
-              No audit logs match the current filters
-            </div>
-          ) : (
-            filteredLogs.map((log) => (
-              <div key={log.id} className="border border-gray-200 rounded-lg p-4">
-                <div className="flex items-start justify-between">
-                  <div className="flex items-start space-x-3">
-                    <div className="mt-1">
-                      {getActionIcon(log.action)}
-                    </div>
-                    
-                    <div className="flex-1">
-                      <div className="flex items-center space-x-2">
-                        <span className="font-medium capitalize">
-                          {log.action.replace('_', ' ')}
-                        </span>
-                        <Badge variant={getRiskBadgeColor(log.risk_level)} className="text-xs">
-                          {log.risk_level.toUpperCase()} RISK
-                        </Badge>
+          {!loading && (
+            <div className="space-y-4">
+              {filteredLogs.length === 0 ? (
+                <div className="flex items-center justify-center p-8 text-muted-foreground">
+                  <Shield className="h-8 w-8 mr-2" />
+                  <span>No audit logs found for the selected criteria</span>
+                </div>
+              ) : (
+                filteredLogs.map((log) => (
+                  <div key={log.id} className="flex items-start justify-between p-4 border border-gray-200 rounded-lg">
+                    <div className="flex items-start space-x-4">
+                      <div className="mt-1">
+                        {getActionIcon(log.action)}
                       </div>
                       
-                      <div className="text-sm text-gray-600 mt-1">
-                        <div>User: <span className="font-mono">{log.actor}</span></div>
-                        <div>IP: <span className="font-mono">{log.ip_address}</span></div>
-                        <div>Details: {log.details}</div>
-                      </div>
-                      
-                      <div className="text-xs text-gray-500 mt-2">
-                        {formatTimestamp(log.timestamp)} • {log.user_agent}
+                      <div className="flex-1 space-y-1">
+                        <div className="flex items-center space-x-2">
+                          <span className="font-medium capitalize">
+                            {log.action.replace('_', ' ')}
+                          </span>
+                          <Badge variant={getRiskBadgeColor(log.risk_level || 'low')} className="text-xs">
+                            {log.risk_level || 'low'} risk
+                          </Badge>
+                        </div>
+                        
+                        <div className="text-sm text-gray-600">
+                          <div className="flex items-center space-x-4">
+                            <span className="flex items-center space-x-1">
+                              <User className="h-3 w-3" />
+                              <span>{log.user_email}</span>
+                            </span>
+                            {log.ip_address && (
+                              <span className="flex items-center space-x-1">
+                                <Globe className="h-3 w-3" />
+                                <span>{log.ip_address}</span>
+                              </span>
+                            )}
+                          </div>
+                        </div>
+                        
+                        <p className="text-sm text-gray-500">
+                          {typeof log.details === 'object' ? JSON.stringify(log.details) : log.details}
+                        </p>
+                        
+                        <div className="flex items-center space-x-1 text-xs text-gray-400">
+                          <Clock className="h-3 w-3" />
+                          <span>{formatTimestamp(log.created_at)}</span>
+                          {log.user_agent && <span>• {log.user_agent}</span>}
+                        </div>
                       </div>
                     </div>
                   </div>
-                </div>
-              </div>
-            ))
+                ))
+              )}
+            </div>
           )}
-        </div>
 
-        {/* Summary Stats */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 pt-4 border-t">
-          <div className="text-center">
-            <div className="text-2xl font-bold text-green-600">234</div>
-            <div className="text-sm text-gray-500">Successful Logins</div>
-          </div>
-          <div className="text-center">
-            <div className="text-2xl font-bold text-red-600">12</div>
-            <div className="text-sm text-gray-500">Failed Logins</div>
-          </div>
-          <div className="text-center">
-            <div className="text-2xl font-bold text-blue-600">45</div>
-            <div className="text-sm text-gray-500">Settings Changes</div>
-          </div>
-          <div className="text-center">
-            <div className="text-2xl font-bold text-orange-600">3</div>
-            <div className="text-sm text-gray-500">High Risk Events</div>
+          {/* Summary Stats */}
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-4 pt-4 border-t">
+            <div className="text-center">
+              <div className="text-2xl font-bold text-green-600">
+                {filteredLogs.filter(l => l.action.includes('login') && !l.action.includes('failed')).length}
+              </div>
+              <div className="text-sm text-gray-500">Successful Logins</div>
+            </div>
+            <div className="text-center">
+              <div className="text-2xl font-bold text-red-600">
+                {filteredLogs.filter(l => l.action.includes('failed')).length}
+              </div>
+              <div className="text-sm text-gray-500">Failed Attempts</div>
+            </div>
+            <div className="text-center">
+              <div className="text-2xl font-bold text-blue-600">
+                {filteredLogs.filter(l => l.action.includes('change') || l.action.includes('update')).length}
+              </div>
+              <div className="text-sm text-gray-500">Settings Changes</div>
+            </div>
+            <div className="text-center">
+              <div className="text-2xl font-bold text-orange-600">
+                {filteredLogs.filter(l => l.risk_level === 'high' || l.risk_level === 'critical').length}
+              </div>
+              <div className="text-sm text-gray-500">High Risk Events</div>
+            </div>
           </div>
         </div>
       </CardContent>

@@ -14,6 +14,42 @@ export type Database = {
   }
   public: {
     Tables: {
+      activity_anomalies: {
+        Row: {
+          anomaly_type: string
+          created_at: string | null
+          description: string | null
+          id: string
+          metadata: Json | null
+          resolved: boolean | null
+          resolved_at: string | null
+          severity: string | null
+          user_id: string | null
+        }
+        Insert: {
+          anomaly_type: string
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          metadata?: Json | null
+          resolved?: boolean | null
+          resolved_at?: string | null
+          severity?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          anomaly_type?: string
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          metadata?: Json | null
+          resolved?: boolean | null
+          resolved_at?: string | null
+          severity?: string | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       admin_bank_details: {
         Row: {
           account_holder_name: string
@@ -1860,6 +1896,78 @@ export type Database = {
           },
         ]
       }
+      security_audit_logs: {
+        Row: {
+          action: string
+          created_at: string | null
+          details: Json | null
+          entity_id: string | null
+          entity_type: string | null
+          id: string
+          ip_address: string | null
+          risk_level: string | null
+          user_agent: string | null
+          user_id: string | null
+        }
+        Insert: {
+          action: string
+          created_at?: string | null
+          details?: Json | null
+          entity_id?: string | null
+          entity_type?: string | null
+          id?: string
+          ip_address?: string | null
+          risk_level?: string | null
+          user_agent?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          action?: string
+          created_at?: string | null
+          details?: Json | null
+          entity_id?: string | null
+          entity_type?: string | null
+          id?: string
+          ip_address?: string | null
+          risk_level?: string | null
+          user_agent?: string | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
+      security_geo_rules: {
+        Row: {
+          country_code: string
+          created_at: string | null
+          description: string | null
+          id: string
+          is_active: boolean | null
+          role: string | null
+          rule_type: string
+          updated_at: string | null
+        }
+        Insert: {
+          country_code: string
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          is_active?: boolean | null
+          role?: string | null
+          rule_type: string
+          updated_at?: string | null
+        }
+        Update: {
+          country_code?: string
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          is_active?: boolean | null
+          role?: string | null
+          rule_type?: string
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       support_sla_policies: {
         Row: {
           category: string
@@ -2206,6 +2314,51 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      user_devices: {
+        Row: {
+          country: string | null
+          created_at: string | null
+          device_id: string
+          device_name: string
+          id: string
+          ip_address: string | null
+          last_seen: string | null
+          region: string | null
+          revoked_at: string | null
+          updated_at: string | null
+          user_agent: string | null
+          user_id: string
+        }
+        Insert: {
+          country?: string | null
+          created_at?: string | null
+          device_id: string
+          device_name: string
+          id?: string
+          ip_address?: string | null
+          last_seen?: string | null
+          region?: string | null
+          revoked_at?: string | null
+          updated_at?: string | null
+          user_agent?: string | null
+          user_id: string
+        }
+        Update: {
+          country?: string | null
+          created_at?: string | null
+          device_id?: string
+          device_name?: string
+          id?: string
+          ip_address?: string | null
+          last_seen?: string | null
+          region?: string | null
+          revoked_at?: string | null
+          updated_at?: string | null
+          user_agent?: string | null
+          user_id?: string
+        }
+        Relationships: []
       }
       user_roles: {
         Row: {

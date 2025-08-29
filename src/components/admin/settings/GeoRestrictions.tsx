@@ -1,13 +1,13 @@
-
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/admin/ui/card';
 import { Button } from '@/components/admin/ui/button';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/admin/ui/select';
 import { Input } from '@/components/admin/ui/input';
 import { Label } from '@/components/admin/ui/label';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/admin/ui/select';
 import { Badge } from '@/components/admin/ui/badge';
 import { toast } from 'sonner';
-import { Globe, Plus, AlertTriangle } from 'lucide-react';
+import { Globe, Shield, AlertTriangle, Plus, Trash2 } from 'lucide-react';
+import { supabase } from '@/integrations/supabase/client';
 
 const COMMON_COUNTRIES = [
   { code: 'US', name: 'United States' },
@@ -22,28 +22,109 @@ const COMMON_COUNTRIES = [
   { code: 'CN', name: 'China' },
 ];
 
+interface GeoRule {
+  id: string;
+  country_code: string;
+  rule_type: 'allow' | 'block';
+  role?: string;
+  is_active: boolean;
+  description?: string;
+  created_at: string;
+}
+
 export const GeoRestrictions: React.FC = () => {
+  const [rules, setRules] = useState<GeoRule[]>([]);
+  const [loading, setLoading] = useState(true);
   const [newRule, setNewRule] = useState({
     country_code: '',
-    rule_type: 'block' as 'allow' | 'block',
+    rule_type: 'allow' as 'allow' | 'block',
     role: '',
     description: ''
   });
 
+  useEffect(() => {
+    loadGeoRules();
+  }, []);
+
+  const loadGeoRules = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('security_geo_rules')
+        .select('*')
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+      setRules((data || []).map(rule => ({
+        ...rule,
+        rule_type: rule.rule_type as 'allow' | 'block'
+      })));
+    } catch (error) {
+      console.error('Error loading geo rules:', error);
+      toast.error('Failed to load geographic rules');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const addGeoRule = async () => {
-    if (!newRule.country_code || !newRule.description) {
-      toast.error('Please fill in all required fields');
+    if (!newRule.country_code || !newRule.rule_type) {
+      toast.error('Country and rule type are required');
       return;
     }
 
-    toast.info('Geographic restrictions functionality will be available once the database types are updated');
-    
-    setNewRule({
-      country_code: '',
-      rule_type: 'block',
-      role: '',
-      description: ''
-    });
+    try {
+      const { error } = await supabase
+        .from('security_geo_rules')
+        .insert({
+          country_code: newRule.country_code,
+          rule_type: newRule.rule_type,
+          role: newRule.role || null,
+          description: newRule.description || null
+        });
+
+      if (error) throw error;
+
+      toast.success('Geographic rule added successfully');
+      setNewRule({ country_code: '', rule_type: 'allow', role: '', description: '' });
+      loadGeoRules();
+    } catch (error) {
+      console.error('Error adding geo rule:', error);
+      toast.error('Failed to add geographic rule');
+    }
+  };
+
+  const deleteGeoRule = async (ruleId: string) => {
+    try {
+      const { error } = await supabase
+        .from('security_geo_rules')
+        .delete()
+        .eq('id', ruleId);
+
+      if (error) throw error;
+
+      toast.success('Geographic rule deleted successfully');
+      loadGeoRules();
+    } catch (error) {
+      console.error('Error deleting geo rule:', error);
+      toast.error('Failed to delete geographic rule');
+    }
+  };
+
+  const toggleRuleStatus = async (ruleId: string, isActive: boolean) => {
+    try {
+      const { error } = await supabase
+        .from('security_geo_rules')
+        .update({ is_active: !isActive })
+        .eq('id', ruleId);
+
+      if (error) throw error;
+
+      toast.success('Rule status updated successfully');
+      loadGeoRules();
+    } catch (error) {
+      console.error('Error updating rule status:', error);
+      toast.error('Failed to update rule status');
+    }
   };
 
   const getCountryName = (code: string) => {
@@ -63,13 +144,6 @@ export const GeoRestrictions: React.FC = () => {
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-6">
-        <div className="flex items-center space-x-2 p-3 bg-blue-50 border border-blue-200 rounded-lg">
-          <AlertTriangle className="h-4 w-4 text-blue-600" />
-          <span className="text-sm text-blue-800">
-            Geographic restrictions are being configured. Setup interface ready for testing.
-          </span>
-        </div>
-
         {/* Add New Rule */}
         <div className="p-4 border border-gray-200 rounded-lg space-y-4">
           <h4 className="font-medium">Add New Geographic Rule</h4>
@@ -104,8 +178,8 @@ export const GeoRestrictions: React.FC = () => {
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="block">Block Access</SelectItem>
                   <SelectItem value="allow">Allow Access</SelectItem>
+                  <SelectItem value="block">Block Access</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -145,27 +219,63 @@ export const GeoRestrictions: React.FC = () => {
           </Button>
         </div>
 
-        {/* Sample Rules Display */}
-        <div className="space-y-4">
-          <h4 className="font-medium">Geographic Rules (Sample)</h4>
-          
-          <div className="space-y-2">
-            <div className="flex items-center justify-between p-3 border border-gray-200 rounded-lg">
-              <div className="flex items-center space-x-4">
-                <div>
-                  <div className="flex items-center space-x-2">
-                    <Badge variant="default">ALLOW</Badge>
-                    <span className="font-medium">India</span>
-                    <Badge variant="outline" className="capitalize">All Roles</Badge>
+        <div className="mt-6 space-y-4">
+          <h4 className="font-medium">Active Geographic Rules</h4>
+          {loading ? (
+            <div className="flex items-center justify-center p-8">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+            </div>
+          ) : rules.length === 0 ? (
+            <div className="flex items-center space-x-2 p-3 bg-muted rounded-lg">
+              <Globe className="h-4 w-4 text-muted-foreground" />
+              <span className="text-sm text-muted-foreground">
+                No geographic restrictions configured.
+              </span>
+            </div>
+          ) : (
+            <div className="space-y-2">
+              {rules.map((rule) => (
+                <div key={rule.id} className="flex items-center justify-between p-3 border rounded-lg">
+                  <div className="flex items-center space-x-3">
+                    <Badge 
+                      variant={rule.rule_type === 'allow' ? 'default' : 'destructive'}
+                      className="capitalize"
+                    >
+                      {rule.rule_type}
+                    </Badge>
+                    <span className="font-medium">{getCountryName(rule.country_code)}</span>
+                    {rule.role && (
+                      <Badge variant="outline" className="text-xs">
+                        {rule.role}
+                      </Badge>
+                    )}
+                    {!rule.is_active && (
+                      <Badge variant="secondary" className="text-xs">
+                        Inactive
+                      </Badge>
+                    )}
                   </div>
-                  <div className="text-sm text-gray-500 mt-1">
-                    Allow all users from India
+                  <div className="flex items-center space-x-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => toggleRuleStatus(rule.id, rule.is_active)}
+                    >
+                      {rule.is_active ? 'Disable' : 'Enable'}
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => deleteGeoRule(rule.id)}
+                      className="text-destructive hover:text-destructive"
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
                   </div>
                 </div>
-              </div>
-              <div className="text-sm text-gray-500">Sample Rule</div>
+              ))}
             </div>
-          </div>
+          )}
         </div>
       </CardContent>
     </Card>
