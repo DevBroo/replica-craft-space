@@ -3,6 +3,12 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { useOwnerStats } from '@/hooks/useOwnerData';
+import PropertiesNew from '@/components/owner/PropertiesNew';
+import Bookings from '@/components/owner/Bookings';
+import Earnings from '@/components/owner/Earnings';
+import Reviews from '@/components/owner/Reviews';
+import Profile from '@/components/owner/Profile';
+import Settings from '@/components/owner/Settings';
 
 const OwnerDashboardView: React.FC = () => {
   const navigate = useNavigate();
@@ -86,46 +92,58 @@ const OwnerDashboardView: React.FC = () => {
   const renderContent = () => {
     switch (activeTab) {
       case 'properties':
-        return (
-          <div className="text-center py-16">
-            <h2 className="text-2xl font-bold text-gray-800 mb-4">My Properties</h2>
-            <p className="text-gray-600">Properties management coming soon...</p>
-          </div>
-        );
+        return <PropertiesNew />;
       case 'bookings':
         return (
-          <div className="text-center py-16">
-            <h2 className="text-2xl font-bold text-gray-800 mb-4">Bookings</h2>
-            <p className="text-gray-600">Bookings management coming soon...</p>
-          </div>
+          <Bookings 
+            sidebarCollapsed={sidebarCollapsed}
+            toggleSidebar={toggleSidebar}
+            activeTab={activeTab}
+            setActiveTab={setActiveTab}
+          />
         );
       case 'earnings':
         return (
-          <div className="text-center py-16">
-            <h2 className="text-2xl font-bold text-gray-800 mb-4">Earnings</h2>
-            <p className="text-gray-600">Earnings management coming soon...</p>
-          </div>
+          <Earnings 
+            sidebarCollapsed={sidebarCollapsed}
+            toggleSidebar={toggleSidebar}
+            activeTab={activeTab}
+            setActiveTab={setActiveTab}
+          />
         );
       case 'reviews':
         return (
+          <Reviews 
+            sidebarCollapsed={sidebarCollapsed}
+            toggleSidebar={toggleSidebar}
+            activeTab={activeTab}
+            setActiveTab={setActiveTab}
+          />
+        );
+      case 'messages':
+        return (
           <div className="text-center py-16">
-            <h2 className="text-2xl font-bold text-gray-800 mb-4">Reviews</h2>
-            <p className="text-gray-600">Reviews management coming soon...</p>
+            <h2 className="text-2xl font-bold text-gray-800 mb-4">Messages</h2>
+            <p className="text-gray-600">Messages management coming soon...</p>
           </div>
         );
       case 'profile':
         return (
-          <div className="text-center py-16">
-            <h2 className="text-2xl font-bold text-gray-800 mb-4">Profile</h2>
-            <p className="text-gray-600">Profile management coming soon...</p>
-          </div>
+          <Profile 
+            sidebarCollapsed={sidebarCollapsed}
+            toggleSidebar={toggleSidebar}
+            activeTab={activeTab}
+            setActiveTab={setActiveTab}
+          />
         );
       case 'settings':
         return (
-          <div className="text-center py-16">
-            <h2 className="text-2xl font-bold text-gray-800 mb-4">Settings</h2>
-            <p className="text-gray-600">Settings management coming soon...</p>
-          </div>
+          <Settings 
+            sidebarCollapsed={sidebarCollapsed}
+            toggleSidebar={toggleSidebar}
+            activeTab={activeTab}
+            setActiveTab={setActiveTab}
+          />
         );
       default:
         return (
@@ -199,25 +217,57 @@ const OwnerDashboardView: React.FC = () => {
                   <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
                     <i className="fas fa-calendar-plus text-gray-400 text-xl"></i>
                   </div>
-                  <h4 className="text-lg font-medium text-gray-800 mb-2">No bookings yet</h4>
-                  <p className="text-gray-600 mb-4">Start by listing your first property to receive bookings</p>
+                  <h4 className="text-lg font-medium text-gray-800 mb-2">
+                    {stats.totalProperties > 0 ? 'View your bookings' : 'No bookings yet'}
+                  </h4>
+                  <p className="text-gray-600 mb-4">
+                    {stats.totalProperties > 0 
+                      ? 'Click the button below to view and manage your bookings' 
+                      : 'Start by listing your first property to receive bookings'
+                    }
+                  </p>
                   <button 
-                    onClick={() => setActiveTab('properties')}
+                    onClick={() => setActiveTab(stats.totalProperties > 0 ? 'bookings' : 'properties')}
                     className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors"
                   >
-                    <i className="fas fa-plus mr-2"></i>
-                    Add Your First Property
+                    <i className={`fas ${stats.totalProperties > 0 ? 'fa-calendar-check' : 'fa-plus'} mr-2`}></i>
+                    {stats.totalProperties > 0 ? 'View Bookings' : 'Add Your First Property'}
                   </button>
                 </div>
               </div>
               <div className="bg-white rounded-lg shadow-sm p-6">
-                <h3 className="text-lg font-semibold text-gray-800 mb-4">Recent Messages</h3>
-                <div className="text-center py-8">
-                  <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                    <i className="fas fa-comments text-gray-400 text-xl"></i>
-                  </div>
-                  <h4 className="text-lg font-medium text-gray-800 mb-2">No messages yet</h4>
-                  <p className="text-gray-600">You'll receive messages from guests once you have bookings</p>
+                <h3 className="text-lg font-semibold text-gray-800 mb-4">Quick Actions</h3>
+                <div className="space-y-3">
+                  <button 
+                    onClick={() => setActiveTab('properties')}
+                    className="w-full text-left p-3 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors flex items-center"
+                  >
+                    <i className="fas fa-home text-blue-600 mr-3"></i>
+                    <div>
+                      <p className="font-medium text-gray-800">Manage Properties</p>
+                      <p className="text-sm text-gray-600">View and edit your {stats.totalProperties} properties</p>
+                    </div>
+                  </button>
+                  <button 
+                    onClick={() => setActiveTab('earnings')}
+                    className="w-full text-left p-3 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors flex items-center"
+                  >
+                    <i className="fas fa-chart-line text-green-600 mr-3"></i>
+                    <div>
+                      <p className="font-medium text-gray-800">View Earnings</p>
+                      <p className="text-sm text-gray-600">Track your revenue and payouts</p>
+                    </div>
+                  </button>
+                  <button 
+                    onClick={() => setActiveTab('reviews')}
+                    className="w-full text-left p-3 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors flex items-center"
+                  >
+                    <i className="fas fa-star text-yellow-600 mr-3"></i>
+                    <div>
+                      <p className="font-medium text-gray-800">Manage Reviews</p>
+                      <p className="text-sm text-gray-600">View and respond to guest reviews</p>
+                    </div>
+                  </button>
                 </div>
               </div>
             </div>
