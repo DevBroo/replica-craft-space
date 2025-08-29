@@ -22,7 +22,10 @@ import {
   Home,
   Edit,
   AlertTriangle,
-  FileText
+  FileText,
+  Info,
+  UserX,
+  Database
 } from 'lucide-react';
 import SharedSidebar from '../../components/admin/SharedSidebar';
 import SharedHeader from '../../components/admin/SharedHeader';
@@ -32,6 +35,8 @@ import ProcessPaymentModal from '../../components/admin/commission/ProcessPaymen
 import ApproveRejectModal from '../../components/admin/commission/ApproveRejectModal';
 import EditCommissionModal from '../../components/admin/commission/EditCommissionModal';
 import RevenueSplitSummary from '../../components/admin/commission/RevenueSplitSummary';
+import { supabase } from '@/integrations/supabase/client';
+import { useToast } from '@/hooks/use-toast';
 
 const CommissionDisbursement: React.FC = () => {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
@@ -64,7 +69,11 @@ const CommissionDisbursement: React.FC = () => {
     totalAmount: 0
   });
 
+  // Diagnostic states
+  const [userRole, setUserRole] = useState<string | null>(null);
+
   const { exportToCsv, exportToPdf, exporting } = useAnalyticsExport();
+  const { toast } = useToast();
 
   // Derived state for button controls
   const selectedSingle = selectedCommissions.length === 1 ? commissions.find(c => c.id === selectedCommissions[0]) : null;
@@ -104,6 +113,39 @@ const CommissionDisbursement: React.FC = () => {
       console.error('Error loading revenue summary:', error);
     }
   };
+
+  // Check user role on mount
+  useEffect(() => {
+    const checkUserRole = async () => {
+      try {
+        const { data: { user } } = await supabase.auth.getUser();
+        console.log('📊 Commission page - Current user:', user?.email);
+        
+        if (user) {
+          const { data: profile } = await supabase
+            .from('profiles')
+            .select('role')
+            .eq('id', user.id)
+            .single();
+          
+          console.log('📊 Commission page - User role:', profile?.role);
+          setUserRole(profile?.role || 'unknown');
+          
+          if (profile?.role !== 'admin') {
+            toast({
+              title: "Access Notice",
+              description: `You're logged in as '${profile?.role}'. Admin access needed for commission management.`,
+              variant: "destructive"
+            });
+          }
+        }
+      } catch (error) {
+        console.error('Error checking user role:', error);
+      }
+    };
+    
+    checkUserRole();
+  }, []);
 
   useEffect(() => {
     loadCommissions();
@@ -274,6 +316,102 @@ const CommissionDisbursement: React.FC = () => {
     }
   };
 
+  // Generate sample commission data for testing
+  const generateSampleCommissions = async () => {
+    try {
+      console.log('📊 Generating sample commission data...');
+      const sampleData = [
+        {
+          booking_id: crypto.randomUUID(),
+          property_id: crypto.randomUUID(),
+          owner_id: crypto.randomUUID(),
+          agent_id: crypto.randomUUID(),
+          property_title: 'Sunset Villa Resort',
+          owner_name: 'John Smith',
+          owner_email: 'john.smith@example.com',
+          agent_name: 'Sarah Johnson',
+          agent_email: 'sarah.j@example.com',
+          total_booking_amount: 15000,
+          admin_commission: 1500,
+          owner_share: 12750,
+          agent_commission: 750,
+          disbursement_status: 'pending',
+          check_in_date: '2024-09-15',
+          check_out_date: '2024-09-18',
+          due_date: '2024-09-20'
+        },
+        {
+          booking_id: crypto.randomUUID(),
+          property_id: crypto.randomUUID(),
+          owner_id: crypto.randomUUID(),
+          agent_id: null,
+          property_title: 'Mountain Cottage Retreat',
+          owner_name: 'Emily Davis',
+          owner_email: 'emily.d@example.com',
+          agent_name: null,
+          agent_email: null,
+          total_booking_amount: 8000,
+          admin_commission: 800,
+          owner_share: 7200,
+          agent_commission: 0,
+          disbursement_status: 'approved',
+          check_in_date: '2024-09-10',
+          check_out_date: '2024-09-12',
+          due_date: '2024-09-15'
+        },
+        {
+          booking_id: crypto.randomUUID(),
+          property_id: crypto.randomUUID(),
+          owner_id: crypto.randomUUID(),
+          agent_id: crypto.randomUUID(),
+          property_title: 'Lakeside Paradise',
+          owner_name: 'Mike Wilson',
+          owner_email: 'mike.w@example.com',
+          agent_name: 'Lisa Chen',
+          agent_email: 'lisa.c@example.com',
+          total_booking_amount: 22000,
+          admin_commission: 2200,
+          owner_share: 18700,
+          agent_commission: 1100,
+          disbursement_status: 'processing',
+          check_in_date: '2024-09-20',
+          check_out_date: '2024-09-25',
+          due_date: '2024-09-27'
+        }
+      ];
+
+      // Insert sample data into commission_disbursements table
+      const { error } = await supabase
+        .from('commission_disbursements')
+        .insert(sampleData);
+
+      if (error) {
+        console.error('Error inserting sample data:', error);
+        toast({
+          title: "Error",
+          description: "Failed to generate sample data: " + error.message,
+          variant: "destructive"
+        });
+      } else {
+        console.log('✅ Sample commission data generated successfully');
+        toast({
+          title: "Success",
+          description: "Sample commission data generated successfully",
+        });
+        // Reload data
+        await loadCommissions();
+        await loadRevenueSummary();
+      }
+    } catch (error) {
+      console.error('Error generating sample data:', error);
+      toast({
+        title: "Error",
+        description: "Failed to generate sample data",
+        variant: "destructive"
+      });
+    }
+  };
+
   return (
     <div className="min-h-screen bg-gray-50 w-full">
       <SharedSidebar 
@@ -311,23 +449,37 @@ const CommissionDisbursement: React.FC = () => {
         <div className="bg-white border-b px-6 py-4">
           <div className="flex flex-wrap items-center justify-between gap-4">
             <div className="flex items-center space-x-4">
-              <button
-                onClick={() => {
-                  if (selectedSingle) {
-                    setSelectedCommission(selectedSingle);
-                    setShowProcessModal(true);
-                  }
-                }}
-                className={`px-4 py-2 rounded-lg transition-colors flex items-center ${
-                  canProcessSelected 
-                    ? 'bg-blue-600 text-white hover:bg-blue-700 cursor-pointer'
-                    : 'bg-gray-300 text-gray-500 cursor-not-allowed'
-                }`}
-                disabled={!canProcessSelected}
-              >
-                <Plus className="w-4 h-4 mr-2" />
-                Process Payments
-              </button>
+              <div className="relative group">
+                <button
+                  onClick={() => {
+                    if (selectedSingle) {
+                      setSelectedCommission(selectedSingle);
+                      setShowProcessModal(true);
+                    }
+                  }}
+                  className={`px-4 py-2 rounded-lg transition-colors flex items-center ${
+                    canProcessSelected 
+                      ? 'bg-blue-600 text-white hover:bg-blue-700 cursor-pointer'
+                      : 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                  }`}
+                  disabled={!canProcessSelected}
+                >
+                  <Plus className="w-4 h-4 mr-2" />
+                  Process Payments
+                </button>
+                {!canProcessSelected && (
+                  <div className="absolute bottom-full left-0 mb-2 w-64 bg-black text-white text-xs rounded py-2 px-3 opacity-0 group-hover:opacity-100 transition-opacity z-10">
+                    {selectedCommissions.length === 0 ? 
+                      "Select one commission to process payment" :
+                      selectedCommissions.length > 1 ?
+                      "Select only one commission at a time" :
+                      selectedSingle?.disbursement_status === 'pending' ?
+                      "Commission must be approved first" :
+                      "Commission status doesn't allow payment processing"
+                    }
+                  </div>
+                )}
+              </div>
               
               <div className="relative">
                 <select
@@ -497,8 +649,45 @@ const CommissionDisbursement: React.FC = () => {
                     </tr>
                   ) : commissions.length === 0 ? (
                     <tr>
-                      <td colSpan={14} className="px-6 py-8 text-center text-gray-500">
-                        No commissions found
+                      <td colSpan={14} className="px-6 py-12">
+                        <div className="text-center">
+                          <Database className="w-12 h-12 text-gray-400 mx-auto mb-4" />
+                          <h3 className="text-lg font-medium text-gray-900 mb-2">No Commission Data Found</h3>
+                          <div className="text-gray-500 space-y-2 mb-6">
+                            <p>This could be due to:</p>
+                            <ul className="text-sm space-y-1">
+                              <li>• No commission data has been generated yet</li>
+                              <li>• User role restrictions (Current role: <span className="font-medium">{userRole || 'unknown'}</span>)</li>
+                              <li>• Database access permissions</li>
+                              <li>• Applied filters removing all results</li>
+                            </ul>
+                          </div>
+                          
+                          {userRole === 'admin' ? (
+                            <div className="space-y-3">
+                              <button
+                                onClick={generateSampleCommissions}
+                                className="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 transition-colors cursor-pointer flex items-center mx-auto"
+                              >
+                                <Database className="w-4 h-4 mr-2" />
+                                Generate Sample Data
+                              </button>
+                              <p className="text-xs text-gray-400">
+                                This will create 3 sample commission records for testing
+                              </p>
+                            </div>
+                          ) : (
+                            <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 max-w-md mx-auto">
+                              <div className="flex items-center">
+                                <UserX className="w-5 h-5 text-yellow-600 mr-2" />
+                                <div className="text-sm">
+                                  <p className="font-medium text-yellow-800">Admin Access Required</p>
+                                  <p className="text-yellow-700">You need admin permissions to manage commissions</p>
+                                </div>
+                              </div>
+                            </div>
+                          )}
+                        </div>
                       </td>
                     </tr>
                   ) : (
