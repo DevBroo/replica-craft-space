@@ -9,8 +9,10 @@ import { Badge } from '@/components/admin/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/admin/ui/tabs';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/admin/ui/dialog';
 import { Label } from '@/components/admin/ui/label';
-import { Bell, Plus, Trash2, Edit, Users, AlertTriangle, Info, CheckCircle } from 'lucide-react';
+import { Bell, Plus, Trash2, Edit, Users, AlertTriangle, Info, CheckCircle, Send, BarChart } from 'lucide-react';
 import { toast } from 'sonner';
+import ComposeNotificationModal from '@/components/admin/ComposeNotificationModal';
+import NotificationAnalytics from '@/components/admin/NotificationAnalytics';
 
 interface Notification {
   id: string;
@@ -49,8 +51,9 @@ const priorityColors = {
 export default function NotificationsManagement() {
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState('all');
+  const [activeTab, setActiveTab] = useState('notifications');
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [isComposeModalOpen, setIsComposeModalOpen] = useState(false);
   const [editingNotification, setEditingNotification] = useState<Notification | null>(null);
 
   const [formData, setFormData] = useState<{
@@ -200,13 +203,18 @@ export default function NotificationsManagement() {
           <h1 className="text-3xl font-bold">Notifications Management</h1>
         </div>
         
-        <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-          <DialogTrigger asChild>
-            <Button onClick={resetForm}>
-              <Plus className="h-4 w-4 mr-2" />
-              Create Notification
-            </Button>
-          </DialogTrigger>
+        <div className="flex space-x-2">
+          <Button onClick={() => setIsComposeModalOpen(true)}>
+            <Send className="h-4 w-4 mr-2" />
+            Send Notification
+          </Button>
+          <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+            <DialogTrigger asChild>
+              <Button variant="outline" onClick={resetForm}>
+                <Plus className="h-4 w-4 mr-2" />
+                Create Notification
+              </Button>
+            </DialogTrigger>
           <DialogContent className="sm:max-w-[500px]">
             <DialogHeader>
               <DialogTitle>
@@ -313,82 +321,103 @@ export default function NotificationsManagement() {
             </form>
           </DialogContent>
         </Dialog>
+        </div>
       </div>
+
+      <ComposeNotificationModal
+        isOpen={isComposeModalOpen}
+        onClose={() => setIsComposeModalOpen(false)}
+        onSent={loadNotifications}
+      />
 
       <Tabs value={activeTab} onValueChange={setActiveTab}>
         <TabsList>
-          <TabsTrigger value="all">All</TabsTrigger>
-          <TabsTrigger value="unread">Unread</TabsTrigger>
-          <TabsTrigger value="info">Info</TabsTrigger>
-          <TabsTrigger value="warning">Warning</TabsTrigger>
-          <TabsTrigger value="error">Error</TabsTrigger>
-          <TabsTrigger value="success">Success</TabsTrigger>
-          <TabsTrigger value="archived">Archived</TabsTrigger>
+          <TabsTrigger value="notifications">Notifications</TabsTrigger>
+          <TabsTrigger value="analytics">Analytics</TabsTrigger>
         </TabsList>
 
-        <TabsContent value={activeTab} className="space-y-4">
-          {filteredNotifications.length === 0 ? (
-            <Card>
-              <CardContent className="flex items-center justify-center h-40">
-                <p className="text-muted-foreground">No notifications found</p>
-              </CardContent>
-            </Card>
-          ) : (
-            filteredNotifications.map((notification) => {
-              const TypeIcon = typeIcons[notification.type];
-              return (
-                <Card key={notification.id}>
-                  <CardHeader>
-                    <div className="flex items-start justify-between">
-                      <div className="flex items-start space-x-3 flex-1">
-                        <TypeIcon className="h-5 w-5 mt-0.5 text-muted-foreground" />
-                        <div className="flex-1">
-                          <CardTitle className="text-lg">{notification.title}</CardTitle>
-                          {notification.content && (
-                            <CardDescription className="mt-1">
-                              {notification.content}
-                            </CardDescription>
-                          )}
-                          <div className="flex items-center space-x-2 mt-3">
-                            <Badge className={typeColors[notification.type]}>
-                              {notification.type}
-                            </Badge>
-                            <Badge className={priorityColors[notification.priority]}>
-                              {notification.priority}
-                            </Badge>
-                            <Badge variant="outline">
-                              <Users className="h-3 w-3 mr-1" />
-                              {notification.target_audience}
-                            </Badge>
-                            <span className="text-xs text-muted-foreground">
-                              {new Date(notification.created_at).toLocaleDateString()}
-                            </span>
+        <TabsContent value="notifications" className="space-y-4">
+          <Tabs defaultValue="all">
+            <TabsList>
+              <TabsTrigger value="all">All</TabsTrigger>
+              <TabsTrigger value="unread">Unread</TabsTrigger>
+              <TabsTrigger value="info">Info</TabsTrigger>
+              <TabsTrigger value="warning">Warning</TabsTrigger>
+              <TabsTrigger value="error">Error</TabsTrigger>
+              <TabsTrigger value="success">Success</TabsTrigger>
+              <TabsTrigger value="archived">Archived</TabsTrigger>
+            </TabsList>
+
+            <TabsContent value="all" className="space-y-4">
+              {filteredNotifications.length === 0 ? (
+                <Card>
+                  <CardContent className="flex items-center justify-center h-40">
+                    <p className="text-muted-foreground">No notifications found</p>
+                  </CardContent>
+                </Card>
+              ) : (
+                filteredNotifications.map((notification) => {
+                  const TypeIcon = typeIcons[notification.type];
+                  return (
+                    <Card key={notification.id}>
+                      <CardHeader>
+                        <div className="flex items-start justify-between">
+                          <div className="flex items-start space-x-3 flex-1">
+                            <TypeIcon className="h-5 w-5 mt-0.5 text-muted-foreground" />
+                            <div className="flex-1">
+                              <CardTitle className="text-lg">{notification.title}</CardTitle>
+                              {notification.content && (
+                                <CardDescription className="mt-1">
+                                  {notification.content}
+                                </CardDescription>
+                              )}
+                              <div className="flex items-center space-x-2 mt-3">
+                                <Badge className={typeColors[notification.type]}>
+                                  {notification.type}
+                                </Badge>
+                                <Badge className={priorityColors[notification.priority]}>
+                                  {notification.priority}
+                                </Badge>
+                                <Badge variant="outline">
+                                  <Users className="h-3 w-3 mr-1" />
+                                  {notification.target_audience}
+                                </Badge>
+                                <span className="text-xs text-muted-foreground">
+                                  {new Date(notification.created_at).toLocaleDateString()}
+                                </span>
+                              </div>
+                            </div>
+                          </div>
+                          <div className="flex items-center space-x-2">
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => handleEdit(notification)}
+                            >
+                              <Edit className="h-4 w-4" />
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => handleDelete(notification.id)}
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
                           </div>
                         </div>
-                      </div>
-                      <div className="flex items-center space-x-2">
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => handleEdit(notification)}
-                        >
-                          <Edit className="h-4 w-4" />
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => handleDelete(notification.id)}
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
-                      </div>
-                    </div>
-                  </CardHeader>
-                </Card>
-              );
-            })
-          )}
+                      </CardHeader>
+                    </Card>
+                  );
+                })
+              )}
+            </TabsContent>
+          </Tabs>
         </TabsContent>
+
+        <TabsContent value="analytics">
+          <NotificationAnalytics />
+        </TabsContent>
+
       </Tabs>
     </div>
   );
