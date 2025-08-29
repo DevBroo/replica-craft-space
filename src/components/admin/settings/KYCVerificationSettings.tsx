@@ -56,37 +56,47 @@ export const KYCVerificationSettings: React.FC = () => {
       
       let query = supabase
         .from('kyc_verifications')
-        .select(`
-          *,
-          profiles!inner(full_name, email, phone)
-        `)
+        .select('*')
         .order('submitted_at', { ascending: false });
 
       if (filter !== 'all') {
         query = query.eq('status', filter);
       }
 
-      const { data, error } = await query;
+      const { data: kycData, error: kycError } = await query;
 
-      if (error) throw error;
+      if (kycError) throw kycError;
 
-      const kycData = data?.map(item => ({
-        id: item.id,
-        user_id: item.user_id,
-        type: item.type,
-        status: item.status,
-        id_number_masked: item.id_number_masked || 'N/A',
-        documents: item.documents || [],
-        submitted_at: item.submitted_at,
-        verified_at: item.verified_at,
-        verified_by: item.verified_by,
-        rejection_reason: item.rejection_reason,
-        user_name: item.profiles?.full_name,
-        user_email: item.profiles?.email,
-        user_phone: item.profiles?.phone
-      })) || [];
+      // Now get profile data separately for each KYC record
+      const enrichedKycData: KYCVerification[] = [];
+      
+      if (kycData) {
+        for (const kyc of kycData) {
+          const { data: profileData } = await supabase
+            .from('profiles')
+            .select('full_name, email, phone')
+            .eq('id', kyc.user_id)
+            .single();
 
-      setKycVerifications(kycData);
+          enrichedKycData.push({
+            id: kyc.id,
+            user_id: kyc.user_id,
+            type: kyc.type as 'aadhaar' | 'pan' | 'gst' | 'business',
+            status: kyc.status as 'pending' | 'verified' | 'rejected',
+            id_number_masked: kyc.id_number_masked || 'N/A',
+            documents: Array.isArray(kyc.documents) ? kyc.documents as string[] : [],
+            submitted_at: kyc.submitted_at,
+            verified_at: kyc.verified_at,
+            verified_by: kyc.verified_by,
+            rejection_reason: kyc.rejection_reason,
+            user_name: profileData?.full_name || 'Unknown User',
+            user_email: profileData?.email || 'No email',
+            user_phone: profileData?.phone || 'No phone'
+          });
+        }
+      }
+
+      setKycVerifications(enrichedKycData);
     } catch (error) {
       console.error('Error loading KYC verifications:', error);
       toast.error('Failed to load KYC verifications');
@@ -97,26 +107,36 @@ export const KYCVerificationSettings: React.FC = () => {
 
   const loadUserSecuritySettings = async () => {
     try {
-      const { data, error } = await supabase
+      const { data: settingsData, error: settingsError } = await supabase
         .from('user_security_settings')
-        .select(`
-          *,
-          profiles!inner(full_name, email)
-        `)
+        .select('*')
         .order('updated_at', { ascending: false });
 
-      if (error) throw error;
+      if (settingsError) throw settingsError;
 
-      const settingsData = data?.map(item => ({
-        user_id: item.user_id,
-        phone_verified: item.phone_verified,
-        require_2fa: item.require_2fa,
-        preferred_mfa_method: item.preferred_mfa_method,
-        user_name: item.profiles?.full_name,
-        user_email: item.profiles?.email
-      })) || [];
+      // Enrich with profile data
+      const enrichedSettingsData: UserSecuritySettings[] = [];
+      
+      if (settingsData) {
+        for (const setting of settingsData) {
+          const { data: profileData } = await supabase
+            .from('profiles')
+            .select('full_name, email')
+            .eq('id', setting.user_id)
+            .single();
 
-      setUserSecuritySettings(settingsData);
+          enrichedSettingsData.push({
+            user_id: setting.user_id,
+            phone_verified: setting.phone_verified,
+            require_2fa: setting.require_2fa,
+            preferred_mfa_method: setting.preferred_mfa_method,
+            user_name: profileData?.full_name || 'Unknown User',
+            user_email: profileData?.email || 'No email'
+          });
+        }
+      }
+
+      setUserSecuritySettings(enrichedSettingsData);
     } catch (error) {
       console.error('Error loading user security settings:', error);
     }
