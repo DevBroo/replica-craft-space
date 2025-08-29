@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/admin/ui/card';
 import { Button } from '@/components/admin/ui/button';
@@ -322,6 +321,7 @@ export const PaymentBankSettings: React.FC = () => {
             </Alert>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              
               <div className="space-y-2">
                 <Label htmlFor="account_holder">Account Holder Name *</Label>
                 <Input
