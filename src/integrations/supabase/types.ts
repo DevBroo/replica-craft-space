@@ -14,6 +14,212 @@ export type Database = {
   }
   public: {
     Tables: {
+      admin_bank_details: {
+        Row: {
+          account_holder_name: string
+          account_number: string
+          account_type: string | null
+          bank_name: string
+          branch_name: string | null
+          created_at: string
+          created_by: string | null
+          id: string
+          ifsc_code: string
+          micr_code: string | null
+          pan_number: string | null
+          updated_at: string
+          upi_id: string | null
+        }
+        Insert: {
+          account_holder_name: string
+          account_number: string
+          account_type?: string | null
+          bank_name: string
+          branch_name?: string | null
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          ifsc_code: string
+          micr_code?: string | null
+          pan_number?: string | null
+          updated_at?: string
+          upi_id?: string | null
+        }
+        Update: {
+          account_holder_name?: string
+          account_number?: string
+          account_type?: string | null
+          bank_name?: string
+          branch_name?: string | null
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          ifsc_code?: string
+          micr_code?: string | null
+          pan_number?: string | null
+          updated_at?: string
+          upi_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "admin_bank_details_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      admin_bank_details_audit: {
+        Row: {
+          access_type: string
+          accessed_by: string
+          accessed_fields: string[] | null
+          created_at: string
+          id: string
+          ip_address: string | null
+          user_agent: string | null
+        }
+        Insert: {
+          access_type: string
+          accessed_by: string
+          accessed_fields?: string[] | null
+          created_at?: string
+          id?: string
+          ip_address?: string | null
+          user_agent?: string | null
+        }
+        Update: {
+          access_type?: string
+          accessed_by?: string
+          accessed_fields?: string[] | null
+          created_at?: string
+          id?: string
+          ip_address?: string | null
+          user_agent?: string | null
+        }
+        Relationships: []
+      }
+      admin_ip_whitelist: {
+        Row: {
+          cidr: string
+          created_at: string
+          created_by: string | null
+          description: string | null
+          id: string
+          is_active: boolean
+          updated_at: string
+        }
+        Insert: {
+          cidr: string
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          id?: string
+          is_active?: boolean
+          updated_at?: string
+        }
+        Update: {
+          cidr?: string
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          id?: string
+          is_active?: boolean
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "admin_ip_whitelist_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      api_integrations: {
+        Row: {
+          configured: boolean
+          created_at: string
+          created_by: string | null
+          id: string
+          key_name: string
+          last4: string | null
+          metadata: Json
+          provider: string
+          updated_at: string
+        }
+        Insert: {
+          configured?: boolean
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          key_name: string
+          last4?: string | null
+          metadata?: Json
+          provider: string
+          updated_at?: string
+        }
+        Update: {
+          configured?: boolean
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          key_name?: string
+          last4?: string | null
+          metadata?: Json
+          provider?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "api_integrations_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      app_settings: {
+        Row: {
+          category: string
+          created_at: string
+          is_secret: boolean
+          key: string
+          updated_at: string
+          updated_by: string | null
+          value: Json
+        }
+        Insert: {
+          category: string
+          created_at?: string
+          is_secret?: boolean
+          key: string
+          updated_at?: string
+          updated_by?: string | null
+          value?: Json
+        }
+        Update: {
+          category?: string
+          created_at?: string
+          is_secret?: boolean
+          key?: string
+          updated_at?: string
+          updated_by?: string | null
+          value?: Json
+        }
+        Relationships: [
+          {
+            foreignKeyName: "app_settings_updated_by_fkey"
+            columns: ["updated_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       bank_details_audit_log: {
         Row: {
           access_type: string
@@ -1813,6 +2019,73 @@ export type Database = {
           },
         ]
       }
+      system_audit_logs: {
+        Row: {
+          action: string
+          actor_id: string | null
+          created_at: string
+          details: Json
+          entity_id: string | null
+          entity_type: string | null
+          id: string
+        }
+        Insert: {
+          action: string
+          actor_id?: string | null
+          created_at?: string
+          details?: Json
+          entity_id?: string | null
+          entity_type?: string | null
+          id?: string
+        }
+        Update: {
+          action?: string
+          actor_id?: string | null
+          created_at?: string
+          details?: Json
+          entity_id?: string | null
+          entity_type?: string | null
+          id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "system_audit_logs_actor_id_fkey"
+            columns: ["actor_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      user_roles: {
+        Row: {
+          created_at: string
+          id: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          role?: Database["public"]["Enums"]["app_role"]
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_roles_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       user_saved_properties: {
         Row: {
           created_at: string
@@ -1848,6 +2121,44 @@ export type Database = {
             columns: ["property_id"]
             isOneToOne: false
             referencedRelation: "properties_public"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      web_push_subscriptions: {
+        Row: {
+          auth: string
+          created_at: string
+          endpoint: string
+          id: string
+          p256dh: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          auth: string
+          created_at?: string
+          endpoint: string
+          id?: string
+          p256dh: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          auth?: string
+          created_at?: string
+          endpoint?: string
+          id?: string
+          p256dh?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "web_push_subscriptions_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
         ]
@@ -2174,6 +2485,21 @@ export type Database = {
         Args: { p_booking_id: string }
         Returns: string
       }
+      get_admin_bank_details_safe: {
+        Args: Record<PropertyKey, never>
+        Returns: {
+          account_holder_name: string
+          account_number_masked: string
+          account_type: string
+          bank_name: string
+          branch_name: string
+          id: string
+          ifsc_code: string
+          micr_code: string
+          pan_number_masked: string
+          upi_id_masked: string
+        }[]
+      }
       get_bank_details_safe: {
         Args: { p_owner_id: string }
         Returns: {
@@ -2411,11 +2737,38 @@ export type Database = {
           revenue: number
         }[]
       }
+      has_role: {
+        Args: {
+          _role: Database["public"]["Enums"]["app_role"]
+          _user_id: string
+        }
+        Returns: boolean
+      }
       is_admin: {
         Args: Record<PropertyKey, never>
         Returns: boolean
       }
       is_agent: {
+        Args: Record<PropertyKey, never>
+        Returns: boolean
+      }
+      is_analytics_admin: {
+        Args: Record<PropertyKey, never>
+        Returns: boolean
+      }
+      is_finance_admin: {
+        Args: Record<PropertyKey, never>
+        Returns: boolean
+      }
+      is_notifications_admin: {
+        Args: Record<PropertyKey, never>
+        Returns: boolean
+      }
+      is_super_admin: {
+        Args: Record<PropertyKey, never>
+        Returns: boolean
+      }
+      is_support_admin: {
         Args: Record<PropertyKey, never>
         Returns: boolean
       }
@@ -2491,7 +2844,13 @@ export type Database = {
       }
     }
     Enums: {
-      [_ in never]: never
+      app_role:
+        | "super_admin"
+        | "admin"
+        | "support_admin"
+        | "notifications_admin"
+        | "finance_admin"
+        | "analytics_admin"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -2618,6 +2977,15 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      app_role: [
+        "super_admin",
+        "admin",
+        "support_admin",
+        "notifications_admin",
+        "finance_admin",
+        "analytics_admin",
+      ],
+    },
   },
 } as const
