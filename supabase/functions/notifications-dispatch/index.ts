@@ -22,6 +22,7 @@ interface NotificationRequest {
   type?: 'info' | 'warning' | 'error' | 'success';
   variables?: Record<string, string>;
   scheduled_for?: string;
+  scheduled_id?: string;
 }
 
 const supabase = createClient(
@@ -52,6 +53,18 @@ const handler = async (req: Request): Promise<Response> => {
       })
       .select()
       .single();
+
+    // Update scheduled notification status if this is from a schedule
+    if (body.scheduled_id) {
+      const { error: scheduleError } = await supabase
+        .from('notification_schedules')
+        .update({ status: 'processing' })
+        .eq('id', body.scheduled_id);
+      
+      if (scheduleError) {
+        console.error("Error updating schedule status:", scheduleError);
+      }
+    }
 
     if (notificationError) {
       console.error("Error creating notification:", notificationError);
@@ -102,11 +115,25 @@ const handler = async (req: Request): Promise<Response> => {
 
     console.log(`Delivery completed: ${successCount} successful, ${failureCount} failed`);
 
+    // Final status update for scheduled notification
+    if (body.scheduled_id) {
+      const finalStatus = failureCount > 0 ? 'failed' : 'sent';
+      await supabase
+        .from('notification_schedules')
+        .update({ 
+          status: finalStatus, 
+          sent_at: new Date().toISOString(),
+          error_message: failureCount > 0 ? `${failureCount} delivery failures` : null
+        })
+        .eq('id', body.scheduled_id);
+    }
+
     return new Response(
       JSON.stringify({
         notification_id: notification.id,
         success_count: successCount,
         failure_count: failureCount,
+        scheduled_id: body.scheduled_id,
         message: "Notification processing completed"
       }),
       {
@@ -194,6 +221,17 @@ async function createDeliveryRecord(
         external_id: deliveryResult.external_id
       })
       .eq('id', delivery.id);
+
+    // Create notification event for tracking
+    if (deliveryResult.success) {
+      await supabase
+        .from('notification_events')
+        .insert({
+          delivery_id: delivery.id,
+          event_type: 'sent',
+          event_data: { external_id: deliveryResult.external_id }
+        });
+    }
 
     console.log(`${method} delivery ${deliveryResult.success ? 'successful' : 'failed'} for recipient ${recipient.id}`);
     return deliveryResult;

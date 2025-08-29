@@ -6,9 +6,12 @@ import { Label } from '@/components/admin/ui/label';
 import { Switch } from '@/components/admin/ui/switch';
 import { Badge } from '@/components/admin/ui/badge';
 import { Alert, AlertDescription } from '@/components/admin/ui/alert';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/admin/ui/tabs';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
-import { Save, Mail, MessageSquare, Bell, CheckCircle, Settings, Send } from 'lucide-react';
+import { Save, Mail, MessageSquare, Bell, CheckCircle, Settings, Send, Users, Settings2 } from 'lucide-react';
+import { EnhancedNotificationSettings } from './EnhancedNotificationSettings';
+import { UserPreferencesManager } from './UserPreferencesManager';
 
 interface NotificationConfig {
   email_enabled: boolean;
@@ -176,8 +179,30 @@ export const NotificationSettings: React.FC = () => {
 
   return (
     <div className="space-y-6">
-      {/* Email Notifications */}
-      <Card>
+      <div className="flex items-center gap-2">
+        <Bell className="h-5 w-5" />
+        <h2 className="text-lg font-medium">Notification Management</h2>
+      </div>
+
+      <Tabs defaultValue="basic" className="w-full">
+        <TabsList className="grid w-full grid-cols-3">
+          <TabsTrigger value="basic" className="flex items-center gap-2">
+            <Settings2 className="h-4 w-4" />
+            Basic Settings
+          </TabsTrigger>
+          <TabsTrigger value="enhanced" className="flex items-center gap-2">
+            <Bell className="h-4 w-4" />
+            Advanced Features
+          </TabsTrigger>
+          <TabsTrigger value="users" className="flex items-center gap-2">
+            <Users className="h-4 w-4" />
+            User Preferences
+          </TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="basic" className="space-y-6">
+          {/* Email Notifications */}
+          <Card>
         <CardHeader>
           <CardTitle className="flex items-center">
             <Mail className="h-5 w-5 mr-2" />
@@ -399,12 +424,22 @@ export const NotificationSettings: React.FC = () => {
         </CardContent>
       </Card>
 
-      <div className="flex justify-end">
-        <Button onClick={saveSettings} disabled={saving} type="button">
-          <Save className="h-4 w-4 mr-2" />
-          {saving ? 'Saving...' : 'Save Notification Settings'}
-        </Button>
-      </div>
+          <div className="flex justify-end">
+            <Button onClick={saveSettings} disabled={saving} type="button">
+              <Save className="h-4 w-4 mr-2" />
+              {saving ? 'Saving...' : 'Save Notification Settings'}
+            </Button>
+          </div>
+        </TabsContent>
+
+        <TabsContent value="enhanced">
+          <EnhancedNotificationSettings />
+        </TabsContent>
+
+        <TabsContent value="users">
+          <UserPreferencesManager />
+        </TabsContent>
+      </Tabs>
     </div>
   );
 };
