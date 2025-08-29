@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+
+import React, { useState, useEffect } from 'react';
 import { 
   Plus,
   Check,
@@ -20,77 +21,130 @@ import {
   ChevronDown,
   Search,
   Home,
-  Edit
+  Edit,
+  AlertTriangle,
+  FileText
 } from 'lucide-react';
 import SharedSidebar from '../../components/admin/SharedSidebar';
 import SharedHeader from '../../components/admin/SharedHeader';
+import { commissionService, CommissionData } from '../../lib/commissionService';
+import { useAnalyticsExport } from '../../hooks/useAnalyticsExport';
+import ProcessPaymentModal from '../../components/admin/commission/ProcessPaymentModal';
+import ApproveRejectModal from '../../components/admin/commission/ApproveRejectModal';
+import EditCommissionModal from '../../components/admin/commission/EditCommissionModal';
+import RevenueSplitSummary from '../../components/admin/commission/RevenueSplitSummary';
 
 const CommissionDisbursement: React.FC = () => {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
-  const [activeTab, setActiveTab] = useState('commission');
   const [statusFilter, setStatusFilter] = useState('all');
   const [searchTerm, setSearchTerm] = useState('');
-  const [showProcessModal, setShowProcessModal] = useState(false);
-  const [showDetailsModal, setShowDetailsModal] = useState(false);
-  const [selectedCommissionDetails, setSelectedCommissionDetails] = useState<any>(null);
   const [currentPage, setCurrentPage] = useState(1);
   const [rowsPerPage, setRowsPerPage] = useState(10);
   const [selectedCommissions, setSelectedCommissions] = useState<string[]>([]);
   const [showBulkActions, setShowBulkActions] = useState(false);
   const [dateFrom, setDateFrom] = useState('');
   const [dateTo, setDateTo] = useState('');
-  const [activeSection, setActiveSection] = useState('pending');
+  const [sortBy, setSortBy] = useState('created_at');
+  const [sortDir, setSortDir] = useState('desc');
 
-  const pendingCommissionsData = [
-    {
-      id: 'CM001',
-      property: {
-        name: 'Shanti Villa Paradise',
-        thumbnail: 'https://example.com/property1.jpg'
-      },
-      recipient: {
-        name: 'Rajesh Kumar',
-        type: 'Property Owner',
-        email: 'rajesh.kumar@email.com'
-      },
-      bookingId: 'BK001',
-      commissionAmount: 4500,
-      commissionRate: 10,
-      totalBookingAmount: 45000,
-      dueDate: '2025-08-05',
-      status: 'Pending'
-    },
-    // ... additional commission data
-  ];
+  // Modal states
+  const [showProcessModal, setShowProcessModal] = useState(false);
+  const [showApproveRejectModal, setShowApproveRejectModal] = useState(false);
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [approveRejectAction, setApproveRejectAction] = useState<'approve' | 'reject'>('approve');
+  const [selectedCommission, setSelectedCommission] = useState<CommissionData | null>(null);
+
+  // Data states
+  const [commissions, setCommissions] = useState<CommissionData[]>([]);
+  const [totalCount, setTotalCount] = useState(0);
+  const [loading, setLoading] = useState(true);
+  const [revenueSummary, setRevenueSummary] = useState({
+    totalAdmin: 0,
+    totalOwner: 0,
+    totalAgent: 0,
+    totalAmount: 0
+  });
+
+  const { exportData } = useAnalyticsExport();
+
+  // Load commissions
+  const loadCommissions = async () => {
+    setLoading(true);
+    try {
+      const { data, count } = await commissionService.getCommissions({
+        search: searchTerm,
+        status: statusFilter,
+        limit: rowsPerPage,
+        offset: (currentPage - 1) * rowsPerPage,
+        sortBy,
+        sortDir
+      });
+      setCommissions(data);
+      setTotalCount(count);
+    } catch (error) {
+      console.error('Error loading commissions:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Load revenue summary
+  const loadRevenueSummary = async () => {
+    try {
+      const summary = await commissionService.getRevenueSplitSummary({
+        status: statusFilter,
+        dateFrom,
+        dateTo
+      });
+      setRevenueSummary(summary);
+    } catch (error) {
+      console.error('Error loading revenue summary:', error);
+    }
+  };
+
+  useEffect(() => {
+    loadCommissions();
+  }, [searchTerm, statusFilter, currentPage, rowsPerPage, sortBy, sortDir]);
+
+  useEffect(() => {
+    loadRevenueSummary();
+  }, [statusFilter, dateFrom, dateTo]);
+
+  const totalPages = Math.ceil(totalCount / rowsPerPage);
+  const failedCommissions = commissions.filter(c => c.disbursement_status === 'failed');
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case 'Completed': return 'bg-green-100 text-green-800';
-      case 'Pending': return 'bg-yellow-100 text-yellow-800';
-      case 'Processing': return 'bg-blue-100 text-blue-800';
-      case 'Failed': return 'bg-red-100 text-red-800';
-      case 'Overdue': return 'bg-red-100 text-red-800';
-      case 'Active': return 'bg-green-100 text-green-800';
+      case 'paid': return 'bg-green-100 text-green-800';
+      case 'pending': return 'bg-yellow-100 text-yellow-800';
+      case 'approved': return 'bg-blue-100 text-blue-800';
+      case 'processing': return 'bg-blue-100 text-blue-800';
+      case 'failed': return 'bg-red-100 text-red-800';
+      case 'rejected': return 'bg-red-100 text-red-800';
       default: return 'bg-gray-100 text-gray-800';
     }
   };
 
-  const filteredData = pendingCommissionsData.filter((item: any) => {
-    const searchFields = [item.id, item.property?.name, item.recipient?.name, item.recipient?.email];
-    const matchesSearch = searchFields.some(field =>
-      field?.toLowerCase().includes(searchTerm.toLowerCase())
-    );
-    const matchesStatus = statusFilter === 'all' || item.status.toLowerCase() === statusFilter.toLowerCase();
-    return matchesSearch && matchesStatus;
-  });
+  const formatCurrency = (amount: number) => {
+    return new Intl.NumberFormat('en-IN', {
+      style: 'currency',
+      currency: 'INR',
+      maximumFractionDigits: 0
+    }).format(amount);
+  };
 
-  const totalPages = Math.ceil(filteredData.length / rowsPerPage);
-  const startIndex = (currentPage - 1) * rowsPerPage;
-  const paginatedData = filteredData.slice(startIndex, startIndex + rowsPerPage);
+  const formatDate = (dateString: string | null) => {
+    if (!dateString) return '-';
+    return new Date(dateString).toLocaleDateString('en-US', {
+      month: 'short',
+      day: 'numeric',
+      year: 'numeric'
+    });
+  };
 
   const handleSelectAll = (checked: boolean) => {
     if (checked) {
-      setSelectedCommissions(paginatedData.map(item => item.id));
+      setSelectedCommissions(commissions.map(item => item.id));
     } else {
       setSelectedCommissions([]);
     }
@@ -104,131 +158,106 @@ const CommissionDisbursement: React.FC = () => {
     }
   };
 
-  const handleBulkAction = (action: string) => {
-    console.log(`Bulk ${action} for items:`, selectedCommissions);
-    setSelectedCommissions([]);
-    setShowBulkActions(false);
+  const handleSort = (column: string) => {
+    if (sortBy === column) {
+      setSortDir(sortDir === 'asc' ? 'desc' : 'asc');
+    } else {
+      setSortBy(column);
+      setSortDir('desc');
+    }
   };
 
-  const handleViewDetails = (item: any) => {
-    setSelectedCommissionDetails(item);
-    setShowDetailsModal(true);
+  // Action handlers
+  const handleProcessPayment = async (paymentMode: string, paymentReference: string, paymentDate: string) => {
+    if (!selectedCommission) return;
+    
+    try {
+      await commissionService.processPayment(selectedCommission.id, paymentMode, paymentReference, paymentDate);
+      await loadCommissions();
+      await loadRevenueSummary();
+    } catch (error) {
+      console.error('Error processing payment:', error);
+      throw error;
+    }
   };
 
-  const handleProcessPayment = (itemId: string) => {
-    console.log('Process payment for:', itemId);
-    setShowProcessModal(true);
+  const handleApprove = async (commissionId: string, notes?: string) => {
+    try {
+      await commissionService.approveCommission(commissionId, notes);
+      await loadCommissions();
+      await loadRevenueSummary();
+    } catch (error) {
+      console.error('Error approving commission:', error);
+      throw error;
+    }
   };
 
-  const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('en-IN', {
-      style: 'currency',
-      currency: 'INR',
-      maximumFractionDigits: 0
-    }).format(amount);
+  const handleReject = async (commissionId: string, reason: string) => {
+    try {
+      await commissionService.rejectCommission(commissionId, reason);
+      await loadCommissions();
+      await loadRevenueSummary();
+    } catch (error) {
+      console.error('Error rejecting commission:', error);
+      throw error;
+    }
   };
 
-  const renderPendingCommissionsTable = () => (
-    <div className="overflow-x-auto">
-      <table className="w-full">
-        <thead className="bg-gray-50">
-          <tr>
-            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-              <input
-                type="checkbox"
-                checked={selectedCommissions.length === paginatedData.length && paginatedData.length > 0}
-                onChange={(e) => handleSelectAll(e.target.checked)}
-                className="rounded border-gray-300 text-blue-600 focus:ring-blue-500 cursor-pointer"
-              />
-            </th>
-            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Commission ID</th>
-            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Property</th>
-            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Recipient</th>
-            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Commission Amount</th>
-            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Due Date</th>
-            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
-            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
-          </tr>
-        </thead>
-        <tbody className="bg-white divide-y divide-gray-200">
-          {paginatedData.map((commission: any) => (
-            <tr key={commission.id} className="hover:bg-gray-50">
-              <td className="px-6 py-4 whitespace-nowrap">
-                <input
-                  type="checkbox"
-                  checked={selectedCommissions.includes(commission.id)}
-                  onChange={(e) => handleSelectItem(commission.id, e.target.checked)}
-                  className="rounded border-gray-300 text-blue-600 focus:ring-blue-500 cursor-pointer"
-                />
-              </td>
-              <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                {commission.id}
-              </td>
-              <td className="px-6 py-4 whitespace-nowrap">
-                <div className="flex items-center">
-                  <div className="w-10 h-10 bg-orange-500 rounded-lg flex items-center justify-center mr-3">
-                    <Home className="w-5 h-5 text-white" />
-                  </div>
-                  <div>
-                    <div className="text-sm font-medium text-gray-900">{commission.property.name}</div>
-                    <div className="text-sm text-gray-500">Booking: {commission.bookingId}</div>
-                  </div>
-                </div>
-              </td>
-              <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                <div>
-                  <div className="font-medium">{commission.recipient.name}</div>
-                  <div className="text-gray-500">{commission.recipient.type}</div>
-                  <div className="text-gray-500">{commission.recipient.email}</div>
-                </div>
-              </td>
-              <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                <div>
-                  <div className="font-medium">{formatCurrency(commission.commissionAmount)}</div>
-                  <div className="text-gray-500">{commission.commissionRate}% of {formatCurrency(commission.totalBookingAmount)}</div>
-                </div>
-              </td>
-              <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                <div className={commission.status === 'Overdue' ? 'text-red-600' : ''}>
-                  {new Date(commission.dueDate).toLocaleDateString('en-US', {
-                    month: 'short',
-                    day: 'numeric',
-                    year: 'numeric'
-                  })}
-                </div>
-              </td>
-              <td className="px-6 py-4 whitespace-nowrap">
-                <span className={`px-2 py-1 text-xs font-medium rounded-full ${getStatusColor(commission.status)}`}>
-                  {commission.status}
-                </span>
-              </td>
-              <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                <div className="flex space-x-2">
-                  <button
-                    onClick={() => handleViewDetails(commission)}
-                    className="text-blue-600 hover:text-blue-800 cursor-pointer p-1"
-                    title="View Details"
-                  >
-                    <Eye className="w-4 h-4" />
-                  </button>
-                  <button
-                    onClick={() => handleProcessPayment(commission.id)}
-                    className="text-green-600 hover:text-green-800 cursor-pointer p-1"
-                    title="Process Payment"
-                  >
-                    <CreditCard className="w-4 h-4" />
-                  </button>
-                  <button className="text-gray-600 hover:text-gray-800 cursor-pointer p-1" title="Edit">
-                    <Edit className="w-4 h-4" />
-                  </button>
-                </div>
-              </td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
-    </div>
-  );
+  const handleEdit = async (commissionId: string, updates: Partial<CommissionData>) => {
+    try {
+      await commissionService.updateCommission(commissionId, updates);
+      await loadCommissions();
+      await loadRevenueSummary();
+    } catch (error) {
+      console.error('Error updating commission:', error);
+      throw error;
+    }
+  };
+
+  const handleBulkAction = async (action: string) => {
+    if (selectedCommissions.length === 0) return;
+
+    try {
+      switch (action) {
+        case 'approve':
+          await commissionService.bulkUpdateStatus(selectedCommissions, 'approved');
+          break;
+        case 'reject':
+          const reason = prompt('Enter rejection reason:');
+          if (!reason) return;
+          await commissionService.bulkUpdateStatus(selectedCommissions, 'rejected', reason);
+          break;
+        case 'process':
+          await commissionService.bulkUpdateStatus(selectedCommissions, 'processing');
+          break;
+        case 'export':
+          await exportData(
+            commissions.filter(c => selectedCommissions.includes(c.id)),
+            'selected-commissions',
+            'csv'
+          );
+          break;
+      }
+      
+      if (action !== 'export') {
+        await loadCommissions();
+        await loadRevenueSummary();
+      }
+      
+      setSelectedCommissions([]);
+      setShowBulkActions(false);
+    } catch (error) {
+      console.error(`Error executing bulk ${action}:`, error);
+    }
+  };
+
+  const handleExportAll = async (format: 'csv' | 'pdf') => {
+    try {
+      await exportData(commissions, 'commission-disbursements', format);
+    } catch (error) {
+      console.error('Error exporting data:', error);
+    }
+  };
 
   return (
     <div className="min-h-screen bg-gray-50 w-full">
@@ -244,6 +273,25 @@ const CommissionDisbursement: React.FC = () => {
           searchPlaceholder="Search commissions..."
         />
 
+        {/* Failed Payments Alert */}
+        {failedCommissions.length > 0 && (
+          <div className="bg-red-50 border-l-4 border-red-400 p-4 mx-6 mt-4">
+            <div className="flex">
+              <AlertTriangle className="w-5 h-5 text-red-400" />
+              <div className="ml-3">
+                <p className="text-sm text-red-700">
+                  <strong>{failedCommissions.length} failed payment{failedCommissions.length > 1 ? 's' : ''}</strong> need admin attention.
+                </p>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Revenue Split Summary */}
+        <div className="px-6 pt-6">
+          <RevenueSplitSummary summary={revenueSummary} />
+        </div>
+
         {/* Action Bar */}
         <div className="bg-white border-b px-6 py-4">
           <div className="flex flex-wrap items-center justify-between gap-4">
@@ -251,6 +299,7 @@ const CommissionDisbursement: React.FC = () => {
               <button
                 onClick={() => setShowProcessModal(true)}
                 className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors cursor-pointer flex items-center"
+                disabled={selectedCommissions.length !== 1}
               >
                 <Plus className="w-4 h-4 mr-2" />
                 Process Payments
@@ -264,8 +313,11 @@ const CommissionDisbursement: React.FC = () => {
                 >
                   <option value="all">All Status</option>
                   <option value="pending">Pending</option>
-                  <option value="completed">Completed</option>
-                  <option value="overdue">Overdue</option>
+                  <option value="approved">Approved</option>
+                  <option value="processing">Processing</option>
+                  <option value="paid">Paid</option>
+                  <option value="failed">Failed</option>
+                  <option value="rejected">Rejected</option>
                 </select>
                 <ChevronDown className="w-4 h-4 absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 pointer-events-none" />
               </div>
@@ -283,11 +335,25 @@ const CommissionDisbursement: React.FC = () => {
                   {showBulkActions && (
                     <div className="absolute top-full left-0 mt-1 bg-white border border-gray-200 rounded-lg shadow-lg z-10 min-w-48">
                       <button
-                        onClick={() => handleBulkAction('process')}
+                        onClick={() => handleBulkAction('approve')}
                         className="w-full text-left px-4 py-2 hover:bg-gray-50 cursor-pointer text-green-600 flex items-center"
                       >
                         <Check className="w-4 h-4 mr-2" />
-                        Process Selected
+                        Approve Selected
+                      </button>
+                      <button
+                        onClick={() => handleBulkAction('reject')}
+                        className="w-full text-left px-4 py-2 hover:bg-gray-50 cursor-pointer text-red-600 flex items-center"
+                      >
+                        <X className="w-4 h-4 mr-2" />
+                        Reject Selected
+                      </button>
+                      <button
+                        onClick={() => handleBulkAction('process')}
+                        className="w-full text-left px-4 py-2 hover:bg-gray-50 cursor-pointer text-blue-600 flex items-center"
+                      >
+                        <CreditCard className="w-4 h-4 mr-2" />
+                        Mark as Processing
                       </button>
                       <button
                         onClick={() => handleBulkAction('export')}
@@ -300,6 +366,25 @@ const CommissionDisbursement: React.FC = () => {
                   )}
                 </div>
               )}
+
+              <div className="flex items-center space-x-2">
+                <button
+                  onClick={() => handleExportAll('csv')}
+                  className="text-gray-600 hover:text-gray-800 cursor-pointer p-2 border border-gray-300 rounded-lg flex items-center"
+                  title="Export to CSV"
+                >
+                  <FileText className="w-4 h-4 mr-1" />
+                  CSV
+                </button>
+                <button
+                  onClick={() => handleExportAll('pdf')}
+                  className="text-gray-600 hover:text-gray-800 cursor-pointer p-2 border border-gray-300 rounded-lg flex items-center"
+                  title="Export to PDF"
+                >
+                  <Download className="w-4 h-4 mr-1" />
+                  PDF
+                </button>
+              </div>
             </div>
 
             <div className="relative">
@@ -318,7 +403,221 @@ const CommissionDisbursement: React.FC = () => {
         {/* Content Area */}
         <main className="p-6">
           <div className="bg-white rounded-lg shadow-sm border">
-            {renderPendingCommissionsTable()}
+            <div className="overflow-x-auto">
+              <table className="w-full">
+                <thead className="bg-gray-50">
+                  <tr>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      <input
+                        type="checkbox"
+                        checked={selectedCommissions.length === commissions.length && commissions.length > 0}
+                        onChange={(e) => handleSelectAll(e.target.checked)}
+                        className="rounded border-gray-300 text-blue-600 focus:ring-blue-500 cursor-pointer"
+                      />
+                    </th>
+                    <th 
+                      className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
+                      onClick={() => handleSort('id')}
+                    >
+                      <div className="flex items-center">
+                        Commission ID
+                        <ArrowUpDown className="w-3 h-3 ml-1" />
+                      </div>
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Property</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Stay Dates</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Owner</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Agent</th>
+                    <th 
+                      className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
+                      onClick={() => handleSort('total_booking_amount')}
+                    >
+                      <div className="flex items-center">
+                        Total Amount
+                        <ArrowUpDown className="w-3 h-3 ml-1" />
+                      </div>
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Admin Commission</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Owner Share</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Agent Commission</th>
+                    <th 
+                      className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
+                      onClick={() => handleSort('due_date')}
+                    >
+                      <div className="flex items-center">
+                        Due Date
+                        <ArrowUpDown className="w-3 h-3 ml-1" />
+                      </div>
+                    </th>
+                    <th 
+                      className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
+                      onClick={() => handleSort('disbursement_status')}
+                    >
+                      <div className="flex items-center">
+                        Status
+                        <ArrowUpDown className="w-3 h-3 ml-1" />
+                      </div>
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Payment Details</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                  </tr>
+                </thead>
+                <tbody className="bg-white divide-y divide-gray-200">
+                  {loading ? (
+                    <tr>
+                      <td colSpan={14} className="px-6 py-8 text-center text-gray-500">
+                        Loading commissions...
+                      </td>
+                    </tr>
+                  ) : commissions.length === 0 ? (
+                    <tr>
+                      <td colSpan={14} className="px-6 py-8 text-center text-gray-500">
+                        No commissions found
+                      </td>
+                    </tr>
+                  ) : (
+                    commissions.map((commission) => (
+                      <tr key={commission.id} className="hover:bg-gray-50">
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <input
+                            type="checkbox"
+                            checked={selectedCommissions.includes(commission.id)}
+                            onChange={(e) => handleSelectItem(commission.id, e.target.checked)}
+                            className="rounded border-gray-300 text-blue-600 focus:ring-blue-500 cursor-pointer"
+                          />
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                          {commission.id.slice(0, 8)}...
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <div className="flex items-center">
+                            <div className="w-10 h-10 bg-orange-500 rounded-lg flex items-center justify-center mr-3">
+                              <Home className="w-5 h-5 text-white" />
+                            </div>
+                            <div>
+                              <div className="text-sm font-medium text-gray-900">{commission.property_title}</div>
+                              <div className="text-sm text-gray-500">Booking: {commission.booking_id.slice(0, 8)}</div>
+                            </div>
+                          </div>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                          <div>
+                            <div className="font-medium">{formatDate(commission.check_in_date)}</div>
+                            <div className="text-gray-500">to {formatDate(commission.check_out_date)}</div>
+                          </div>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                          <div>
+                            <div className="font-medium">{commission.owner_name}</div>
+                            <div className="text-gray-500">{commission.owner_email}</div>
+                          </div>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                          {commission.agent_name ? (
+                            <div>
+                              <div className="font-medium">{commission.agent_name}</div>
+                              <div className="text-gray-500">{commission.agent_email}</div>
+                            </div>
+                          ) : (
+                            <span className="text-gray-400">-</span>
+                          )}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                          {formatCurrency(commission.total_booking_amount)}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-blue-600 font-medium">
+                          {formatCurrency(commission.admin_commission)}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-green-600 font-medium">
+                          {formatCurrency(commission.owner_share)}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-purple-600 font-medium">
+                          {formatCurrency(commission.agent_commission)}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                          <div className={commission.disbursement_status === 'failed' || 
+                            (commission.due_date && new Date(commission.due_date) < new Date()) ? 'text-red-600' : ''}>
+                            {formatDate(commission.due_date)}
+                          </div>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <span className={`px-2 py-1 text-xs font-medium rounded-full ${getStatusColor(commission.disbursement_status)}`}>
+                            {commission.disbursement_status}
+                          </span>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                          {commission.payment_mode ? (
+                            <div>
+                              <div className="font-medium">{commission.payment_mode}</div>
+                              {commission.payment_reference && (
+                                <div className="text-gray-500 text-xs">{commission.payment_reference}</div>
+                              )}
+                              {commission.payment_date && (
+                                <div className="text-gray-500 text-xs">{formatDate(commission.payment_date)}</div>
+                              )}
+                            </div>
+                          ) : (
+                            <span className="text-gray-400">-</span>
+                          )}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                          <div className="flex space-x-2">
+                            {commission.disbursement_status === 'pending' && (
+                              <>
+                                <button
+                                  onClick={() => {
+                                    setSelectedCommission(commission);
+                                    setApproveRejectAction('approve');
+                                    setShowApproveRejectModal(true);
+                                  }}
+                                  className="text-green-600 hover:text-green-800 cursor-pointer p-1"
+                                  title="Approve"
+                                >
+                                  <Check className="w-4 h-4" />
+                                </button>
+                                <button
+                                  onClick={() => {
+                                    setSelectedCommission(commission);
+                                    setApproveRejectAction('reject');
+                                    setShowApproveRejectModal(true);
+                                  }}
+                                  className="text-red-600 hover:text-red-800 cursor-pointer p-1"
+                                  title="Reject"
+                                >
+                                  <X className="w-4 h-4" />
+                                </button>
+                              </>
+                            )}
+                            {(commission.disbursement_status === 'approved' || commission.disbursement_status === 'processing') && (
+                              <button
+                                onClick={() => {
+                                  setSelectedCommission(commission);
+                                  setShowProcessModal(true);
+                                }}
+                                className="text-blue-600 hover:text-blue-800 cursor-pointer p-1"
+                                title="Process Payment"
+                              >
+                                <CreditCard className="w-4 h-4" />
+                              </button>
+                            )}
+                            <button
+                              onClick={() => {
+                                setSelectedCommission(commission);
+                                setShowEditModal(true);
+                              }}
+                              className="text-gray-600 hover:text-gray-800 cursor-pointer p-1"
+                              title="Edit"
+                            >
+                              <Edit className="w-4 h-4" />
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    ))
+                  )}
+                </tbody>
+              </table>
+            </div>
 
             {/* Pagination */}
             <div className="bg-white px-6 py-3 border-t border-gray-200 flex items-center justify-between">
@@ -340,7 +639,7 @@ const CommissionDisbursement: React.FC = () => {
               </div>
               <div className="flex items-center space-x-2">
                 <span className="text-sm text-gray-700">
-                  Showing {((currentPage - 1) * rowsPerPage) + 1} to {Math.min(currentPage * rowsPerPage, filteredData.length)} of {filteredData.length} entries
+                  Showing {((currentPage - 1) * rowsPerPage) + 1} to {Math.min(currentPage * rowsPerPage, totalCount)} of {totalCount} entries
                 </span>
                 <div className="flex space-x-1">
                   <button
@@ -350,19 +649,23 @@ const CommissionDisbursement: React.FC = () => {
                   >
                     Previous
                   </button>
-                  {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
-                    <button
-                      key={page}
-                      onClick={() => setCurrentPage(page)}
-                      className={`px-3 py-1 border rounded text-sm cursor-pointer ${
-                        currentPage === page
-                          ? 'bg-blue-600 text-white border-blue-600'
-                          : 'border-gray-300 hover:bg-gray-50'
-                      }`}
-                    >
-                      {page}
-                    </button>
-                  ))}
+                  {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+                    const page = currentPage <= 3 ? i + 1 : currentPage - 2 + i;
+                    if (page > totalPages) return null;
+                    return (
+                      <button
+                        key={page}
+                        onClick={() => setCurrentPage(page)}
+                        className={`px-3 py-1 border rounded text-sm cursor-pointer ${
+                          currentPage === page
+                            ? 'bg-blue-600 text-white border-blue-600'
+                            : 'border-gray-300 hover:bg-gray-50'
+                        }`}
+                      >
+                        {page}
+                      </button>
+                    );
+                  })}
                   <button
                     onClick={() => setCurrentPage(Math.min(totalPages, currentPage + 1))}
                     disabled={currentPage === totalPages}
@@ -376,6 +679,39 @@ const CommissionDisbursement: React.FC = () => {
           </div>
         </main>
       </div>
+
+      {/* Modals */}
+      <ProcessPaymentModal
+        isOpen={showProcessModal}
+        onClose={() => {
+          setShowProcessModal(false);
+          setSelectedCommission(null);
+        }}
+        commission={selectedCommission}
+        onProcess={handleProcessPayment}
+      />
+
+      <ApproveRejectModal
+        isOpen={showApproveRejectModal}
+        onClose={() => {
+          setShowApproveRejectModal(false);
+          setSelectedCommission(null);
+        }}
+        commission={selectedCommission}
+        action={approveRejectAction}
+        onApprove={handleApprove}
+        onReject={handleReject}
+      />
+
+      <EditCommissionModal
+        isOpen={showEditModal}
+        onClose={() => {
+          setShowEditModal(false);
+          setSelectedCommission(null);
+        }}
+        commission={selectedCommission}
+        onUpdate={handleEdit}
+      />
     </div>
   );
 };

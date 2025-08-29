@@ -213,6 +213,138 @@ export type Database = {
           },
         ]
       }
+      commission_disbursements: {
+        Row: {
+          admin_commission: number
+          agent_commission: number
+          agent_id: string | null
+          approved_at: string | null
+          approved_by: string | null
+          booking_id: string
+          created_at: string
+          disbursement_status: string
+          due_date: string | null
+          failure_reason: string | null
+          id: string
+          notes: string | null
+          owner_id: string
+          owner_share: number
+          payment_date: string | null
+          payment_mode: string | null
+          payment_reference: string | null
+          property_id: string
+          rejected_at: string | null
+          rejected_reason: string | null
+          total_booking_amount: number
+          updated_at: string
+        }
+        Insert: {
+          admin_commission?: number
+          agent_commission?: number
+          agent_id?: string | null
+          approved_at?: string | null
+          approved_by?: string | null
+          booking_id: string
+          created_at?: string
+          disbursement_status?: string
+          due_date?: string | null
+          failure_reason?: string | null
+          id?: string
+          notes?: string | null
+          owner_id: string
+          owner_share?: number
+          payment_date?: string | null
+          payment_mode?: string | null
+          payment_reference?: string | null
+          property_id: string
+          rejected_at?: string | null
+          rejected_reason?: string | null
+          total_booking_amount?: number
+          updated_at?: string
+        }
+        Update: {
+          admin_commission?: number
+          agent_commission?: number
+          agent_id?: string | null
+          approved_at?: string | null
+          approved_by?: string | null
+          booking_id?: string
+          created_at?: string
+          disbursement_status?: string
+          due_date?: string | null
+          failure_reason?: string | null
+          id?: string
+          notes?: string | null
+          owner_id?: string
+          owner_share?: number
+          payment_date?: string | null
+          payment_mode?: string | null
+          payment_reference?: string | null
+          property_id?: string
+          rejected_at?: string | null
+          rejected_reason?: string | null
+          total_booking_amount?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "commission_disbursements_agent_id_fkey"
+            columns: ["agent_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "commission_disbursements_approved_by_fkey"
+            columns: ["approved_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "commission_disbursements_booking_id_fkey"
+            columns: ["booking_id"]
+            isOneToOne: true
+            referencedRelation: "booking_admin_list"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "commission_disbursements_booking_id_fkey"
+            columns: ["booking_id"]
+            isOneToOne: true
+            referencedRelation: "booking_summary_for_owners"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "commission_disbursements_booking_id_fkey"
+            columns: ["booking_id"]
+            isOneToOne: true
+            referencedRelation: "bookings"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "commission_disbursements_owner_id_fkey"
+            columns: ["owner_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "commission_disbursements_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: false
+            referencedRelation: "properties"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "commission_disbursements_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: false
+            referencedRelation: "properties_public"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       coupons: {
         Row: {
           code: string
@@ -1440,6 +1572,97 @@ export type Database = {
           },
         ]
       }
+      commission_admin_list: {
+        Row: {
+          admin_commission: number | null
+          agent_commission: number | null
+          agent_email: string | null
+          agent_id: string | null
+          agent_name: string | null
+          approved_at: string | null
+          approved_by: string | null
+          booking_id: string | null
+          check_in_date: string | null
+          check_out_date: string | null
+          created_at: string | null
+          disbursement_status: string | null
+          due_date: string | null
+          failure_reason: string | null
+          id: string | null
+          notes: string | null
+          owner_email: string | null
+          owner_id: string | null
+          owner_name: string | null
+          owner_share: number | null
+          payment_date: string | null
+          payment_mode: string | null
+          payment_reference: string | null
+          property_id: string | null
+          property_title: string | null
+          rejected_at: string | null
+          rejected_reason: string | null
+          total_booking_amount: number | null
+          updated_at: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "commission_disbursements_agent_id_fkey"
+            columns: ["agent_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "commission_disbursements_approved_by_fkey"
+            columns: ["approved_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "commission_disbursements_booking_id_fkey"
+            columns: ["booking_id"]
+            isOneToOne: true
+            referencedRelation: "booking_admin_list"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "commission_disbursements_booking_id_fkey"
+            columns: ["booking_id"]
+            isOneToOne: true
+            referencedRelation: "booking_summary_for_owners"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "commission_disbursements_booking_id_fkey"
+            columns: ["booking_id"]
+            isOneToOne: true
+            referencedRelation: "bookings"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "commission_disbursements_owner_id_fkey"
+            columns: ["owner_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "commission_disbursements_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: false
+            referencedRelation: "properties"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "commission_disbursements_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: false
+            referencedRelation: "properties_public"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       properties_public: {
         Row: {
           amenities: string[] | null
@@ -1547,6 +1770,23 @@ export type Database = {
       }
     }
     Functions: {
+      approve_commission: {
+        Args: { p_commission_id: string; p_notes?: string }
+        Returns: boolean
+      }
+      bulk_update_commission_status: {
+        Args: {
+          p_failure_reason?: string
+          p_ids: string[]
+          p_new_status: string
+          p_notes?: string
+        }
+        Returns: number
+      }
+      generate_commission_for_booking: {
+        Args: { p_booking_id: string }
+        Returns: string
+      }
       get_bank_details_safe: {
         Args: { p_owner_id: string }
         Returns: {
@@ -1822,6 +2062,23 @@ export type Database = {
           p_reason?: string
           p_to_status: string
         }
+        Returns: boolean
+      }
+      mark_commission_failed: {
+        Args: { p_commission_id: string; p_reason: string }
+        Returns: boolean
+      }
+      process_commission_payment: {
+        Args: {
+          p_commission_id: string
+          p_payment_date?: string
+          p_payment_mode: string
+          p_payment_reference: string
+        }
+        Returns: boolean
+      }
+      reject_commission: {
+        Args: { p_commission_id: string; p_reason: string }
         Returns: boolean
       }
       update_owner_property_count_fn: {
