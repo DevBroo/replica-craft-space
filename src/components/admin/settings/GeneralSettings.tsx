@@ -70,6 +70,7 @@ export const GeneralSettings: React.FC = () => {
 
   const saveSettings = async () => {
     try {
+      console.log('Saving general settings...', settings);
       setSaving(true);
       
       const { data: { user } } = await supabase.auth.getUser();
@@ -87,26 +88,35 @@ export const GeneralSettings: React.FC = () => {
         .from('app_settings')
         .upsert(upsertData, { onConflict: 'key' });
 
-      if (error) throw error;
+      if (error) {
+        console.error('Supabase upsert error:', error);
+        throw error;
+      }
 
-      // Log audit
-      await supabase.from('system_audit_logs').insert({
-        actor_id: userId,
-        action: 'update_setting',
-        entity_type: 'app_settings',
-        details: { category: 'general', updated_keys: Object.keys(settings) }
-      });
+      // Log audit (with error handling)
+      try {
+        await supabase.from('system_audit_logs').insert({
+          actor_id: userId,
+          action: 'update_setting',
+          entity_type: 'app_settings',
+          details: { category: 'general', updated_keys: Object.keys(settings) }
+        });
+      } catch (auditError) {
+        console.warn('Failed to log audit entry:', auditError);
+      }
 
+      console.log('General settings saved successfully');
       toast.success('Settings saved successfully');
     } catch (error) {
-      console.error('Error saving settings:', error);
-      toast.error('Failed to save settings');
+      console.error('Error saving general settings:', error);
+      toast.error('Failed to save settings: ' + (error as Error).message);
     } finally {
       setSaving(false);
     }
   };
 
   const resetToDefaults = () => {
+    console.log('Resetting general settings to defaults');
     setSettings(defaultSettings);
     toast.success('Settings reset to defaults');
   };
@@ -258,11 +268,11 @@ export const GeneralSettings: React.FC = () => {
       </Card>
 
       <div className="flex justify-between">
-        <Button variant="outline" onClick={resetToDefaults}>
+        <Button variant="outline" onClick={resetToDefaults} type="button">
           <RotateCcw className="h-4 w-4 mr-2" />
           Reset to Defaults
         </Button>
-        <Button onClick={saveSettings} disabled={saving}>
+        <Button onClick={saveSettings} disabled={saving} type="button">
           <Save className="h-4 w-4 mr-2" />
           {saving ? 'Saving...' : 'Save Settings'}
         </Button>

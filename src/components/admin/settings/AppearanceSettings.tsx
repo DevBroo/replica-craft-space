@@ -68,6 +68,7 @@ export const AppearanceSettings: React.FC = () => {
 
   const saveSettings = async () => {
     try {
+      console.log('Saving appearance settings...', config);
       setSaving(true);
       
       const { data: { user } } = await supabase.auth.getUser();
@@ -84,12 +85,16 @@ export const AppearanceSettings: React.FC = () => {
         .from('app_settings')
         .upsert(upsertData, { onConflict: 'key' });
 
-      if (error) throw error;
+      if (error) {
+        console.error('Supabase upsert error:', error);
+        throw error;
+      }
 
+      console.log('Appearance settings saved successfully');
       toast.success('Appearance settings saved');
     } catch (error) {
       console.error('Error saving appearance settings:', error);
-      toast.error('Failed to save appearance settings');
+      toast.error('Failed to save appearance settings: ' + (error as Error).message);
     } finally {
       setSaving(false);
     }
@@ -265,9 +270,9 @@ export const AppearanceSettings: React.FC = () => {
       </Card>
 
       <div className="flex justify-end">
-        <Button onClick={saveSettings} disabled={saving}>
+        <Button onClick={saveSettings} disabled={saving} type="button">
           <Save className="h-4 w-4 mr-2" />
-          Save Appearance Settings
+          {saving ? 'Saving...' : 'Save Appearance Settings'}
         </Button>
       </div>
     </div>

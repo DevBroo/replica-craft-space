@@ -71,6 +71,7 @@ export const AdvancedSettings: React.FC = () => {
 
   const saveSettings = async () => {
     try {
+      console.log('Saving advanced settings...', config);
       setSaving(true);
       
       const { data: { user } } = await supabase.auth.getUser();
@@ -87,12 +88,16 @@ export const AdvancedSettings: React.FC = () => {
         .from('app_settings')
         .upsert(upsertData, { onConflict: 'key' });
 
-      if (error) throw error;
+      if (error) {
+        console.error('Supabase upsert error:', error);
+        throw error;
+      }
 
+      console.log('Advanced settings saved successfully');
       toast.success('Advanced settings saved');
     } catch (error) {
       console.error('Error saving advanced settings:', error);
-      toast.error('Failed to save advanced settings');
+      toast.error('Failed to save advanced settings: ' + (error as Error).message);
     } finally {
       setSaving(false);
     }
@@ -272,9 +277,9 @@ export const AdvancedSettings: React.FC = () => {
       </Card>
 
       <div className="flex justify-end">
-        <Button onClick={saveSettings} disabled={saving}>
+        <Button onClick={saveSettings} disabled={saving} type="button">
           <Save className="h-4 w-4 mr-2" />
-          Save Advanced Settings
+          {saving ? 'Saving...' : 'Save Advanced Settings'}
         </Button>
       </div>
     </div>

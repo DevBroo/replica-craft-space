@@ -100,6 +100,7 @@ export const NotificationSettings: React.FC = () => {
 
   const saveSettings = async () => {
     try {
+      console.log('Saving notification settings...', config);
       setSaving(true);
       
       const { data: { user } } = await supabase.auth.getUser();
@@ -116,20 +117,28 @@ export const NotificationSettings: React.FC = () => {
         .from('app_settings')
         .upsert(upsertData, { onConflict: 'key' });
 
-      if (error) throw error;
+      if (error) {
+        console.error('Supabase upsert error:', error);
+        throw error;
+      }
 
-      // Log audit
-      await supabase.from('system_audit_logs').insert({
-        actor_id: userId,
-        action: 'update_setting',
-        entity_type: 'app_settings',
-        details: { category: 'notifications', updated_keys: Object.keys(config) }
-      });
+      // Log audit (with error handling)
+      try {
+        await supabase.from('system_audit_logs').insert({
+          actor_id: userId,
+          action: 'update_setting',
+          entity_type: 'app_settings',
+          details: { category: 'notifications', updated_keys: Object.keys(config) }
+        });
+      } catch (auditError) {
+        console.warn('Failed to log audit entry:', auditError);
+      }
 
+      console.log('Notification settings saved successfully');
       toast.success('Notification settings saved');
     } catch (error) {
       console.error('Error saving notification settings:', error);
-      toast.error('Failed to save notification settings');
+      toast.error('Failed to save notification settings: ' + (error as Error).message);
     } finally {
       setSaving(false);
     }
@@ -137,16 +146,18 @@ export const NotificationSettings: React.FC = () => {
 
   const sendTestNotification = async (type: 'email' | 'sms' | 'push') => {
     try {
+      console.log(`Sending test ${type} notification...`);
       setTesting(type);
       
       // This would call an edge function to send test notifications
       // For now, we'll just simulate the test
       await new Promise(resolve => setTimeout(resolve, 2000));
       
+      console.log(`Test ${type} sent successfully`);
       toast.success(`Test ${type} sent successfully`);
     } catch (error) {
       console.error(`Error sending test ${type}:`, error);
-      toast.error(`Failed to send test ${type}`);
+      toast.error(`Failed to send test ${type}: ` + (error as Error).message);
     } finally {
       setTesting(null);
     }
@@ -266,6 +277,8 @@ export const NotificationSettings: React.FC = () => {
               variant="outline" 
               onClick={() => sendTestNotification('email')}
               disabled={testing === 'email' || !config.email_enabled}
+              type="button"
+              title={!config.email_enabled ? 'Enable email notifications first' : ''}
             >
               <Send className="h-4 w-4 mr-2" />
               {testing === 'email' ? 'Sending...' : 'Send Test Email'}
@@ -320,6 +333,8 @@ export const NotificationSettings: React.FC = () => {
               variant="outline" 
               onClick={() => sendTestNotification('sms')}
               disabled={testing === 'sms' || !config.sms_enabled}
+              type="button"
+              title={!config.sms_enabled ? 'Enable SMS notifications first' : ''}
             >
               <Send className="h-4 w-4 mr-2" />
               {testing === 'sms' ? 'Sending...' : 'Send Test SMS'}
@@ -374,6 +389,8 @@ export const NotificationSettings: React.FC = () => {
               variant="outline" 
               onClick={() => sendTestNotification('push')}
               disabled={testing === 'push' || !config.push_enabled}
+              type="button"
+              title={!config.push_enabled ? 'Enable push notifications first' : ''}
             >
               <Send className="h-4 w-4 mr-2" />
               {testing === 'push' ? 'Sending...' : 'Send Test Push'}
@@ -383,9 +400,9 @@ export const NotificationSettings: React.FC = () => {
       </Card>
 
       <div className="flex justify-end">
-        <Button onClick={saveSettings} disabled={saving}>
+        <Button onClick={saveSettings} disabled={saving} type="button">
           <Save className="h-4 w-4 mr-2" />
-          Save Notification Settings
+          {saving ? 'Saving...' : 'Save Notification Settings'}
         </Button>
       </div>
     </div>

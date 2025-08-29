@@ -11,6 +11,7 @@ import { AppearanceSettings } from '@/components/admin/settings/AppearanceSettin
 import { NotificationSettings } from '@/components/admin/settings/NotificationSettings';
 import { AdvancedSettings } from '@/components/admin/settings/AdvancedSettings';
 import { KYCVerificationSettings } from '@/components/admin/settings/KYCVerificationSettings';
+import { ErrorBoundary } from '@/components/admin/ErrorBoundary';
 import { useAdminRole } from '@/hooks/useAdminRole';
 import { Alert, AlertDescription } from '@/components/admin/ui/alert';
 import { AlertTriangle } from 'lucide-react';
@@ -118,7 +119,9 @@ const AdminSettings: React.FC = () => {
                   const Component = tab.component;
                   return (
                     <TabsContent key={tab.id} value={tab.id} className="mt-6">
-                      <Component />
+                      <ErrorBoundary fallbackMessage={`Failed to load ${tab.label} settings. This may be due to missing database configuration.`}>
+                        <Component />
+                      </ErrorBoundary>
                     </TabsContent>
                   );
                 })}

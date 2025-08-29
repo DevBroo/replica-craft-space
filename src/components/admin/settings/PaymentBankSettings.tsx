@@ -68,6 +68,7 @@ export const PaymentBankSettings: React.FC = () => {
 
   const saveSettings = async () => {
     try {
+      console.log('Saving payment & bank settings...', config);
       setSaving(true);
       
       const { data: { user } } = await supabase.auth.getUser();
@@ -84,12 +85,16 @@ export const PaymentBankSettings: React.FC = () => {
         .from('app_settings')
         .upsert(upsertData, { onConflict: 'key' });
 
-      if (error) throw error;
+      if (error) {
+        console.error('Supabase upsert error:', error);
+        throw error;
+      }
 
+      console.log('Payment & bank settings saved successfully');
       toast.success('Payment & bank settings saved');
     } catch (error) {
       console.error('Error saving payment settings:', error);
-      toast.error('Failed to save payment settings');
+      toast.error('Failed to save payment settings: ' + (error as Error).message);
     } finally {
       setSaving(false);
     }
@@ -237,9 +242,9 @@ export const PaymentBankSettings: React.FC = () => {
       </Card>
 
       <div className="flex justify-end">
-        <Button onClick={saveSettings} disabled={saving}>
+        <Button onClick={saveSettings} disabled={saving} type="button">
           <Save className="h-4 w-4 mr-2" />
-          Save Payment Settings
+          {saving ? 'Saving...' : 'Save Payment Settings'}
         </Button>
       </div>
     </div>

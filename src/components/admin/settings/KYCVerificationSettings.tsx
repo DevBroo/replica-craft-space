@@ -107,38 +107,55 @@ export const KYCVerificationSettings: React.FC = () => {
 
   const loadUserSecuritySettings = async () => {
     try {
+      console.log('Loading user security settings...');
       const { data: settingsData, error: settingsError } = await supabase
         .from('user_security_settings')
         .select('*')
         .order('updated_at', { ascending: false });
 
-      if (settingsError) throw settingsError;
+      if (settingsError) {
+        console.error('User security settings query error:', settingsError);
+        throw settingsError;
+      }
+
+      // Get unique user IDs for batch profile fetch
+      const userIds = settingsData ? [...new Set(settingsData.map(setting => setting.user_id))] : [];
+      
+      // Batch fetch profiles
+      const { data: profilesData } = await supabase
+        .from('profiles')
+        .select('id, full_name, email')
+        .in('id', userIds);
+
+      // Create lookup map for profiles
+      const profileLookup = new Map();
+      profilesData?.forEach(profile => {
+        profileLookup.set(profile.id, profile);
+      });
 
       // Enrich with profile data
       const enrichedSettingsData: UserSecuritySettings[] = [];
       
       if (settingsData) {
         for (const setting of settingsData) {
-          const { data: profileData } = await supabase
-            .from('profiles')
-            .select('full_name, email')
-            .eq('id', setting.user_id)
-            .single();
+          const profile = profileLookup.get(setting.user_id);
 
           enrichedSettingsData.push({
             user_id: setting.user_id,
             phone_verified: setting.phone_verified,
             require_2fa: setting.require_2fa,
             preferred_mfa_method: setting.preferred_mfa_method,
-            user_name: profileData?.full_name || 'Unknown User',
-            user_email: profileData?.email || 'No email'
+            user_name: profile?.full_name || 'Unknown User',
+            user_email: profile?.email || 'No email'
           });
         }
       }
 
+      console.log('User security settings loaded:', enrichedSettingsData.length);
       setUserSecuritySettings(enrichedSettingsData);
     } catch (error) {
       console.error('Error loading user security settings:', error);
+      toast.error('Failed to load user security settings: ' + (error as Error).message);
     }
   };
 
