@@ -4,57 +4,36 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/admin/ui/button';
 import { Input } from '@/components/admin/ui/input';
 import { Label } from '@/components/admin/ui/label';
-import { Textarea } from '@/components/admin/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/admin/ui/select';
-import { Alert, AlertDescription } from '@/components/admin/ui/alert';
+import { Switch } from '@/components/admin/ui/switch';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
-import { Save, Upload, Palette, Mail, Image, Eye } from 'lucide-react';
+import { Save, Palette, Eye, Monitor } from 'lucide-react';
 
-interface BrandingConfig {
-  app_name: string;
-  logo_url: string;
-  favicon_url: string;
+interface AppearanceConfig {
+  theme: 'light' | 'dark' | 'system';
   primary_color: string;
   secondary_color: string;
-  accent_color: string;
-  theme: string;
+  sidebar_style: 'compact' | 'expanded';
+  show_breadcrumbs: boolean;
+  compact_tables: boolean;
+  logo_url: string;
+  favicon_url: string;
 }
 
-interface EmailTemplateConfig {
-  header_logo: string;
-  header_color: string;
-  footer_text: string;
-  footer_color: string;
-  button_color: string;
-  link_color: string;
-}
-
-const defaultBranding: BrandingConfig = {
-  app_name: 'Picnify Admin',
+const defaultConfig: AppearanceConfig = {
+  theme: 'system',
+  primary_color: '#3B82F6',
+  secondary_color: '#10B981',
+  sidebar_style: 'expanded',
+  show_breadcrumbs: true,
+  compact_tables: false,
   logo_url: '',
-  favicon_url: '',
-  primary_color: '#2563eb',
-  secondary_color: '#64748b',
-  accent_color: '#0f172a',
-  theme: 'light'
-};
-
-const defaultEmailTemplate: EmailTemplateConfig = {
-  header_logo: '',
-  header_color: '#2563eb',
-  footer_text: '© 2024 Picnify. All rights reserved.',
-  footer_color: '#64748b',
-  button_color: '#2563eb',
-  link_color: '#2563eb'
+  favicon_url: ''
 };
 
 export const AppearanceSettings: React.FC = () => {
-  const [branding, setBranding] = useState<BrandingConfig>(defaultBranding);
-  const [emailTemplate, setEmailTemplate] = useState<EmailTemplateConfig>(defaultEmailTemplate);
-  const [logoFile, setLogoFile] = useState<File | null>(null);  
-  const [faviconFile, setFaviconFile] = useState<File | null>(null);
-  const [uploading, setUploading] = useState(false);
+  const [config, setConfig] = useState<AppearanceConfig>(defaultConfig);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
 
@@ -66,36 +45,19 @@ export const AppearanceSettings: React.FC = () => {
     try {
       setLoading(true);
       
-      // Load branding settings
-      const { data: brandingSettings } = await supabase
+      const { data: appearanceSettings } = await supabase
         .from('app_settings')
         .select('key, value')
-        .eq('category', 'branding');
+        .eq('category', 'appearance');
 
-      if (brandingSettings) {
-        const config = { ...defaultBranding };
-        brandingSettings.forEach(setting => {
-          if (setting.key in config) {
-            (config as any)[setting.key] = setting.value;
+      if (appearanceSettings) {
+        const loadedConfig = { ...defaultConfig };
+        appearanceSettings.forEach(setting => {
+          if (setting.key in loadedConfig) {
+            (loadedConfig as any)[setting.key] = setting.value;
           }
         });
-        setBranding(config);
-      }
-
-      // Load email template settings
-      const { data: emailSettings } = await supabase
-        .from('app_settings')
-        .select('key, value')
-        .eq('category', 'email_templates');
-
-      if (emailSettings) {
-        const config = { ...defaultEmailTemplate };
-        emailSettings.forEach(setting => {
-          if (setting.key in config) {
-            (config as any)[setting.key] = setting.value;
-          }
-        });
-        setEmailTemplate(config);
+        setConfig(loadedConfig);
       }
     } catch (error) {
       console.error('Error loading appearance settings:', error);
@@ -105,67 +67,13 @@ export const AppearanceSettings: React.FC = () => {
     }
   };
 
-  const uploadFile = async (file: File, path: string): Promise<string> => {
-    const fileExt = file.name.split('.').pop();
-    const fileName = `${Date.now()}.${fileExt}`;
-    const filePath = `${path}/${fileName}`;
-
-    const { error: uploadError } = await supabase.storage
-      .from('admin-assets')
-      .upload(filePath, file);
-
-    if (uploadError) {
-      throw uploadError;
-    }
-
-    const { data } = supabase.storage
-      .from('admin-assets')
-      .getPublicUrl(filePath);
-
-    return data.publicUrl;
-  };
-
-  const handleLogoUpload = async () => {
-    if (!logoFile) return;
-
-    try {
-      setUploading(true);
-      const logoUrl = await uploadFile(logoFile, 'logos');
-      setBranding({ ...branding, logo_url: logoUrl });
-      setLogoFile(null);
-      toast.success('Logo uploaded successfully');
-    } catch (error) {
-      console.error('Error uploading logo:', error);
-      toast.error('Failed to upload logo');
-    } finally {
-      setUploading(false);
-    }
-  };
-
-  const handleFaviconUpload = async () => {
-    if (!faviconFile) return;
-
-    try {
-      setUploading(true);
-      const faviconUrl = await uploadFile(faviconFile, 'favicons');
-      setBranding({ ...branding, favicon_url: faviconUrl });
-      setFaviconFile(null);
-      toast.success('Favicon uploaded successfully');
-    } catch (error) {
-      console.error('Error uploading favicon:', error);
-      toast.error('Failed to upload favicon');
-    } finally {
-      setUploading(false);
-    }
-  };
-
-  const saveBrandingSettings = async () => {
+  const saveSettings = async () => {
     try {
       setSaving(true);
       
-      const upsertData = Object.entries(branding).map(([key, value]) => ({
+      const upsertData = Object.entries(config).map(([key, value]) => ({
         key,
-        category: 'branding',
+        category: 'appearance',
         value: value,
         updated_by: (await supabase.auth.getUser()).data.user?.id
       }));
@@ -176,52 +84,10 @@ export const AppearanceSettings: React.FC = () => {
 
       if (error) throw error;
 
-      // Log audit
-      await supabase.from('system_audit_logs').insert({
-        actor_id: (await supabase.auth.getUser()).data.user?.id,
-        action: 'update_setting',
-        entity_type: 'app_settings',
-        details: { category: 'branding', updated_keys: Object.keys(branding) }
-      });
-
-      toast.success('Branding settings saved');
+      toast.success('Appearance settings saved');
     } catch (error) {
-      console.error('Error saving branding settings:', error);
-      toast.error('Failed to save branding settings');
-    } finally {
-      setSaving(false);
-    }
-  };
-
-  const saveEmailTemplateSettings = async () => {
-    try {
-      setSaving(true);
-      
-      const upsertData = Object.entries(emailTemplate).map(([key, value]) => ({
-        key,
-        category: 'email_templates',
-        value: value,
-        updated_by: (await supabase.auth.getUser()).data.user?.id
-      }));
-
-      const { error } = await supabase
-        .from('app_settings')
-        .upsert(upsertData, { onConflict: 'key' });
-
-      if (error) throw error;
-
-      // Log audit
-      await supabase.from('system_audit_logs').insert({
-        actor_id: (await supabase.auth.getUser()).data.user?.id,
-        action: 'update_setting',
-        entity_type: 'app_settings',
-        details: { category: 'email_templates', updated_keys: Object.keys(emailTemplate) }
-      });
-
-      toast.success('Email template settings saved');
-    } catch (error) {
-      console.error('Error saving email template settings:', error);
-      toast.error('Failed to save email template settings');
+      console.error('Error saving appearance settings:', error);
+      toast.error('Failed to save appearance settings');
     } finally {
       setSaving(false);
     }
@@ -240,109 +106,49 @@ export const AppearanceSettings: React.FC = () => {
 
   return (
     <div className="space-y-6">
-      {/* Branding */}
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center">
             <Palette className="h-5 w-5 mr-2" />
-            Branding & Logo
+            Theme & Colors
           </CardTitle>
           <CardDescription>
-            Customize your application's visual identity
+            Customize the visual appearance and color scheme
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label htmlFor="app_name">Application Name</Label>
-              <Input
-                id="app_name"
-                value={branding.app_name}
-                onChange={(e) => setBranding({ ...branding, app_name: e.target.value })}
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="theme">Theme</Label>
-              <Select value={branding.theme} onValueChange={(value) => setBranding({ ...branding, theme: value })}>
+              <Label htmlFor="theme">Theme Mode</Label>
+              <Select 
+                value={config.theme} 
+                onValueChange={(value: 'light' | 'dark' | 'system') => setConfig({ ...config, theme: value })}
+              >
                 <SelectTrigger>
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="light">Light</SelectItem>
                   <SelectItem value="dark">Dark</SelectItem>
-                  <SelectItem value="auto">Auto (System)</SelectItem>
+                  <SelectItem value="system">System</SelectItem>
                 </SelectContent>
               </Select>
             </div>
-          </div>
 
-          {/* Logo Upload */}
-          <div className="space-y-4">
-            <div className="flex items-center space-x-4">
-              <div className="flex-1">
-                <Label htmlFor="logo_upload">Logo Upload</Label>
-                <div className="flex items-center space-x-2 mt-2">
-                  <Input
-                    id="logo_upload"
-                    type="file"
-                    accept="image/*"
-                    onChange={(e) => setLogoFile(e.target.files?.[0] || null)}
-                  />
-                  <Button onClick={handleLogoUpload} disabled={!logoFile || uploading}>
-                    <Upload className="h-4 w-4 mr-2" />
-                    {uploading ? 'Uploading...' : 'Upload'}
-                  </Button>
-                </div>
-              </div>
-              {branding.logo_url && (
-                <div className="w-16 h-16 border rounded flex items-center justify-center">
-                  <img src={branding.logo_url} alt="Logo" className="max-w-full max-h-full" />
-                </div>
-              )}
-            </div>
-
-            {/* Favicon Upload */}
-            <div className="flex items-center space-x-4">
-              <div className="flex-1">
-                <Label htmlFor="favicon_upload">Favicon Upload</Label>
-                <div className="flex items-center space-x-2 mt-2">
-                  <Input
-                    id="favicon_upload"
-                    type="file"
-                    accept="image/x-icon,image/png"
-                    onChange={(e) => setFaviconFile(e.target.files?.[0] || null)}
-                  />
-                  <Button onClick={handleFaviconUpload} disabled={!faviconFile || uploading}>
-                    <Upload className="h-4 w-4 mr-2" />
-                    {uploading ? 'Uploading...' : 'Upload'}
-                  </Button>
-                </div>
-              </div>
-              {branding.favicon_url && (
-                <div className="w-8 h-8 border rounded flex items-center justify-center">
-                  <img src={branding.favicon_url} alt="Favicon" className="max-w-full max-h-full" />
-                </div>
-              )}
-            </div>
-          </div>
-
-          {/* Color Scheme */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div className="space-y-2">
               <Label htmlFor="primary_color">Primary Color</Label>
               <div className="flex space-x-2">
                 <Input
                   id="primary_color"
                   type="color"
-                  value={branding.primary_color}
-                  onChange={(e) => setBranding({ ...branding, primary_color: e.target.value })}
+                  value={config.primary_color}
+                  onChange={(e) => setConfig({ ...config, primary_color: e.target.value })}
                   className="w-16 h-10"
                 />
                 <Input
-                  value={branding.primary_color}
-                  onChange={(e) => setBranding({ ...branding, primary_color: e.target.value })}
-                  placeholder="#2563eb"
+                  value={config.primary_color}
+                  onChange={(e) => setConfig({ ...config, primary_color: e.target.value })}
+                  placeholder="#3B82F6"
                 />
               </div>
             </div>
@@ -353,168 +159,115 @@ export const AppearanceSettings: React.FC = () => {
                 <Input
                   id="secondary_color"
                   type="color"
-                  value={branding.secondary_color}
-                  onChange={(e) => setBranding({ ...branding, secondary_color: e.target.value })}
+                  value={config.secondary_color}
+                  onChange={(e) => setConfig({ ...config, secondary_color: e.target.value })}
                   className="w-16 h-10"
                 />
                 <Input
-                  value={branding.secondary_color}
-                  onChange={(e) => setBranding({ ...branding, secondary_color: e.target.value })}
-                  placeholder="#64748b"
+                  value={config.secondary_color}
+                  onChange={(e) => setConfig({ ...config, secondary_color: e.target.value })}
+                  placeholder="#10B981"
                 />
               </div>
             </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="accent_color">Accent Color</Label>
-              <div className="flex space-x-2">
-                <Input
-                  id="accent_color"
-                  type="color"
-                  value={branding.accent_color}
-                  onChange={(e) => setBranding({ ...branding, accent_color: e.target.value })}
-                  className="w-16 h-10"
-                />
-                <Input
-                  value={branding.accent_color}
-                  onChange={(e) => setBranding({ ...branding, accent_color: e.target.value })}
-                  placeholder="#0f172a"
-                />
-              </div>
-            </div>
-          </div>
-
-          <div className="flex justify-end">
-            <Button onClick={saveBrandingSettings} disabled={saving}>
-              <Save className="h-4 w-4 mr-2" />
-              Save Branding
-            </Button>
           </div>
         </CardContent>
       </Card>
 
-      {/* Email Templates */}
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center">
-            <Mail className="h-5 w-5 mr-2" />
-            Email Templates
+            <Eye className="h-5 w-5 mr-2" />
+            Layout & Display
           </CardTitle>
           <CardDescription>
-            Customize the appearance of system emails
+            Configure layout preferences and display options
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
-          <Alert className="border-blue-200 bg-blue-50">
-            <Image className="h-4 w-4 text-blue-600" />
-            <AlertDescription className="text-blue-800">
-              These settings control the styling of all system-generated emails including notifications, confirmations, and reports.
-            </AlertDescription>
-          </Alert>
-
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label htmlFor="header_logo">Header Logo URL</Label>
+              <Label htmlFor="sidebar_style">Sidebar Style</Label>
+              <Select 
+                value={config.sidebar_style} 
+                onValueChange={(value: 'compact' | 'expanded') => setConfig({ ...config, sidebar_style: value })}
+              >
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="compact">Compact</SelectItem>
+                  <SelectItem value="expanded">Expanded</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+
+          <div className="flex items-center justify-between">
+            <div className="space-y-0.5">
+              <Label>Show Breadcrumbs</Label>
+              <p className="text-sm text-gray-500">Display navigation breadcrumbs</p>
+            </div>
+            <Switch
+              checked={config.show_breadcrumbs}
+              onCheckedChange={(checked) => setConfig({ ...config, show_breadcrumbs: checked })}
+            />
+          </div>
+
+          <div className="flex items-center justify-between">
+            <div className="space-y-0.5">
+              <Label>Compact Tables</Label>
+              <p className="text-sm text-gray-500">Use smaller row height in tables</p>
+            </div>
+            <Switch
+              checked={config.compact_tables}
+              onCheckedChange={(checked) => setConfig({ ...config, compact_tables: checked })}
+            />
+          </div>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center">
+            <Monitor className="h-5 w-5 mr-2" />
+            Branding
+          </CardTitle>
+          <CardDescription>
+            Upload custom logos and branding assets
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="grid grid-cols-1 gap-4">
+            <div className="space-y-2">
+              <Label htmlFor="logo_url">Logo URL</Label>
               <Input
-                id="header_logo"
-                value={emailTemplate.header_logo}
-                onChange={(e) => setEmailTemplate({ ...emailTemplate, header_logo: e.target.value })}
+                id="logo_url"
+                value={config.logo_url}
+                onChange={(e) => setConfig({ ...config, logo_url: e.target.value })}
                 placeholder="https://example.com/logo.png"
               />
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="header_color">Header Background Color</Label>
-              <div className="flex space-x-2">
-                <Input
-                  type="color"
-                  value={emailTemplate.header_color}
-                  onChange={(e) => setEmailTemplate({ ...emailTemplate, header_color: e.target.value })}
-                  className="w-16 h-10"
-                />
-                <Input
-                  value={emailTemplate.header_color}
-                  onChange={(e) => setEmailTemplate({ ...emailTemplate, header_color: e.target.value })}
-                  placeholder="#2563eb"
-                />
-              </div>
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="button_color">Button Color</Label>
-              <div className="flex space-x-2">
-                <Input
-                  type="color"
-                  value={emailTemplate.button_color}
-                  onChange={(e) => setEmailTemplate({ ...emailTemplate, button_color: e.target.value })}
-                  className="w-16 h-10"
-                />
-                <Input
-                  value={emailTemplate.button_color}
-                  onChange={(e) => setEmailTemplate({ ...emailTemplate, button_color: e.target.value })}
-                  placeholder="#2563eb"
-                />
-              </div>
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="link_color">Link Color</Label>
-              <div className="flex space-x-2">
-                <Input
-                  type="color"
-                  value={emailTemplate.link_color}
-                  onChange={(e) => setEmailTemplate({ ...emailTemplate, link_color: e.target.value })}
-                  className="w-16 h-10"
-                />
-                <Input
-                  value={emailTemplate.link_color}
-                  onChange={(e) => setEmailTemplate({ ...emailTemplate, link_color: e.target.value })}
-                  placeholder="#2563eb"
-                />
-              </div>
-            </div>
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="footer_text">Footer Text</Label>
-            <Textarea
-              id="footer_text"
-              value={emailTemplate.footer_text}
-              onChange={(e) => setEmailTemplate({ ...emailTemplate, footer_text: e.target.value })}
-              placeholder="© 2024 Your Company. All rights reserved."
-              rows={2}
-            />
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="footer_color">Footer Text Color</Label>
-            <div className="flex space-x-2">
+              <Label htmlFor="favicon_url">Favicon URL</Label>
               <Input
-                type="color"
-                value={emailTemplate.footer_color}
-                onChange={(e) => setEmailTemplate({ ...emailTemplate, footer_color: e.target.value })}
-                className="w-16 h-10"
-              />
-              <Input
-                value={emailTemplate.footer_color}
-                onChange={(e) => setEmailTemplate({ ...emailTemplate, footer_color: e.target.value })}
-                placeholder="#64748b"
+                id="favicon_url"
+                value={config.favicon_url}
+                onChange={(e) => setConfig({ ...config, favicon_url: e.target.value })}
+                placeholder="https://example.com/favicon.ico"
               />
             </div>
-          </div>
-
-          <div className="flex justify-between">
-            <Button variant="outline">
-              <Eye className="h-4 w-4 mr-2" />
-              Preview Template
-            </Button>
-            <Button onClick={saveEmailTemplateSettings} disabled={saving}>
-              <Save className="h-4 w-4 mr-2" />
-              Save Template Settings
-            </Button>
           </div>
         </CardContent>
       </Card>
+
+      <div className="flex justify-end">
+        <Button onClick={saveSettings} disabled={saving}>
+          <Save className="h-4 w-4 mr-2" />
+          Save Appearance Settings
+        </Button>
+      </div>
     </div>
   );
 };

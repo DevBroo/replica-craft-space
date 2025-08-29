@@ -5,48 +5,33 @@ import { Button } from '@/components/admin/ui/button';
 import { Input } from '@/components/admin/ui/input';
 import { Label } from '@/components/admin/ui/label';
 import { Switch } from '@/components/admin/ui/switch';
-import { Separator } from '@/components/admin/ui/separator';
-import { Badge } from '@/components/admin/ui/badge';
-import { Alert, AlertDescription } from '@/components/admin/ui/alert';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/admin/ui/select';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
-import { Save, Shield, Users, Network, Key, Plus, Trash2, AlertTriangle } from 'lucide-react';
+import { Save, Shield, Key, Lock } from 'lucide-react';
 
 interface SecurityConfig {
-  two_factor_required: boolean;
+  two_factor_enabled: boolean;
+  session_timeout: number;
   password_min_length: number;
-  password_require_uppercase: boolean;
-  password_require_lowercase: boolean;
-  password_require_numbers: boolean;
-  password_require_symbols: boolean;
-  password_expiry_days: number;
-  session_timeout_minutes: number;
+  require_special_chars: boolean;
   max_login_attempts: number;
+  lockout_duration: number;
+  ip_whitelist_enabled: boolean;
 }
 
-interface IPWhitelistEntry {
-  id: string;
-  cidr: string;
-  description: string;
-  is_active: boolean;
-}
-
-const defaultSecurityConfig: SecurityConfig = {
-  two_factor_required: false,
+const defaultConfig: SecurityConfig = {
+  two_factor_enabled: false,
+  session_timeout: 24,
   password_min_length: 8,
-  password_require_uppercase: true,
-  password_require_lowercase: true,
-  password_require_numbers: true,
-  password_require_symbols: false,
-  password_expiry_days: 0, // 0 = never expire
-  session_timeout_minutes: 480, // 8 hours
-  max_login_attempts: 5
+  require_special_chars: true,
+  max_login_attempts: 5,
+  lockout_duration: 30,
+  ip_whitelist_enabled: false
 };
 
 export const SecuritySettings: React.FC = () => {
-  const [securityConfig, setSecurityConfig] = useState<SecurityConfig>(defaultSecurityConfig);
-  const [ipWhitelist, setIpWhitelist] = useState<IPWhitelistEntry[]>([]);
-  const [newIP, setNewIP] = useState({ cidr: '', description: '' });
+  const [config, setConfig] = useState<SecurityConfig>(defaultConfig);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
 
@@ -58,30 +43,19 @@ export const SecuritySettings: React.FC = () => {
     try {
       setLoading(true);
       
-      // Load security config
       const { data: securitySettings } = await supabase
         .from('app_settings')
         .select('key, value')
         .eq('category', 'security');
 
       if (securitySettings) {
-        const config = { ...defaultSecurityConfig };
+        const loadedConfig = { ...defaultConfig };
         securitySettings.forEach(setting => {
-          if (setting.key in config) {
-            (config as any)[setting.key] = setting.value;
+          if (setting.key in loadedConfig) {
+            (loadedConfig as any)[setting.key] = setting.value;
           }
         });
-        setSecurityConfig(config);
-      }
-
-      // Load IP whitelist
-      const { data: ipData } = await supabase
-        .from('admin_ip_whitelist')
-        .select('id, cidr, description, is_active')
-        .order('created_at', { ascending: false });
-
-      if (ipData) {
-        setIpWhitelist(ipData);
+        setConfig(loadedConfig);
       }
     } catch (error) {
       console.error('Error loading security settings:', error);
@@ -91,11 +65,11 @@ export const SecuritySettings: React.FC = () => {
     }
   };
 
-  const saveSecurityConfig = async () => {
+  const saveSettings = async () => {
     try {
       setSaving(true);
       
-      const upsertData = Object.entries(securityConfig).map(([key, value]) => ({
+      const upsertData = Object.entries(config).map(([key, value]) => ({
         key,
         category: 'security',
         value: value,
@@ -108,96 +82,12 @@ export const SecuritySettings: React.FC = () => {
 
       if (error) throw error;
 
-      // Log audit
-      await supabase.from('system_audit_logs').insert({
-        actor_id: (await supabase.auth.getUser()).data.user?.id,
-        action: 'update_setting',
-        entity_type: 'app_settings',
-        details: { category: 'security', updated_keys: Object.keys(securityConfig) }
-      });
-
       toast.success('Security settings saved');
     } catch (error) {
-      console.error('Error saving security config:', error);
+      console.error('Error saving security settings:', error);
       toast.error('Failed to save security settings');
     } finally {
       setSaving(false);
-    }
-  };
-
-  const addIPToWhitelist = async () => {
-    if (!newIP.cidr.trim()) {
-      toast.error('Please enter a valid IP address or CIDR');
-      return;
-    }
-
-    try {
-      const { error } = await supabase
-        .from('admin_ip_whitelist')
-        .insert({
-          cidr: newIP.cidr.trim(),
-          description: newIP.description.trim() || 'No description',
-          created_by: (await supabase.auth.getUser()).data.user?.id
-        });
-
-      if (error) throw error;
-
-      // Log audit
-      await supabase.from('system_audit_logs').insert({
-        actor_id: (await supabase.auth.getUser()).data.user?.id,
-        action: 'ip_whitelist_add',
-        entity_type: 'admin_ip_whitelist',
-        details: { cidr: newIP.cidr, description: newIP.description }
-      });
-
-      setNewIP({ cidr: '', description: '' });
-      loadSettings();
-      toast.success('IP address added to whitelist');
-    } catch (error) {
-      console.error('Error adding IP to whitelist:', error);
-      toast.error('Failed to add IP to whitelist');
-    }
-  };
-
-  const removeIPFromWhitelist = async (id: string, cidr: string) => {
-    try {
-      const { error } = await supabase
-        .from('admin_ip_whitelist')
-        .delete()
-        .eq('id', id);
-
-      if (error) throw error;
-
-      // Log audit
-      await supabase.from('system_audit_logs').insert({
-        actor_id: (await supabase.auth.getUser()).data.user?.id,
-        action: 'ip_whitelist_remove',
-        entity_type: 'admin_ip_whitelist',
-        details: { cidr }
-      });
-
-      loadSettings();
-      toast.success('IP address removed from whitelist');
-    } catch (error) {
-      console.error('Error removing IP from whitelist:', error);
-      toast.error('Failed to remove IP from whitelist');
-    }
-  };
-
-  const toggleIPStatus = async (id: string, currentStatus: boolean) => {
-    try {
-      const { error } = await supabase
-        .from('admin_ip_whitelist')
-        .update({ is_active: !currentStatus })
-        .eq('id', id);
-
-      if (error) throw error;
-
-      loadSettings();
-      toast.success(`IP ${!currentStatus ? 'activated' : 'deactivated'}`);
-    } catch (error) {
-      console.error('Error toggling IP status:', error);
-      toast.error('Failed to update IP status');
     }
   };
 
@@ -214,41 +104,38 @@ export const SecuritySettings: React.FC = () => {
 
   return (
     <div className="space-y-6">
-      {/* Authentication & Access Control */}
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center">
             <Shield className="h-5 w-5 mr-2" />
-            Authentication & Access Control
+            Authentication & Access
           </CardTitle>
           <CardDescription>
-            Configure user authentication and access policies
+            Configure user authentication and access controls
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="flex items-center justify-between">
             <div className="space-y-0.5">
-              <Label>Two-Factor Authentication (2FA)</Label>
-              <p className="text-sm text-gray-500">Require 2FA for all admin users</p>
+              <Label>Two-Factor Authentication</Label>
+              <p className="text-sm text-gray-500">Require 2FA for all admin accounts</p>
             </div>
             <Switch
-              checked={securityConfig.two_factor_required}
-              onCheckedChange={(checked) => setSecurityConfig({ ...securityConfig, two_factor_required: checked })}
+              checked={config.two_factor_enabled}
+              onCheckedChange={(checked) => setConfig({ ...config, two_factor_enabled: checked })}
             />
           </div>
 
-          <Separator />
-
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label htmlFor="session_timeout">Session Timeout (minutes)</Label>
+              <Label htmlFor="session_timeout">Session Timeout (hours)</Label>
               <Input
                 id="session_timeout"
                 type="number"
-                min="30"
-                max="1440"
-                value={securityConfig.session_timeout_minutes}
-                onChange={(e) => setSecurityConfig({ ...securityConfig, session_timeout_minutes: parseInt(e.target.value) || 480 })}
+                value={config.session_timeout}
+                onChange={(e) => setConfig({ ...config, session_timeout: parseInt(e.target.value) || 24 })}
+                min="1"
+                max="168"
               />
             </div>
 
@@ -257,171 +144,98 @@ export const SecuritySettings: React.FC = () => {
               <Input
                 id="max_attempts"
                 type="number"
+                value={config.max_login_attempts}
+                onChange={(e) => setConfig({ ...config, max_login_attempts: parseInt(e.target.value) || 5 })}
                 min="3"
-                max="10"
-                value={securityConfig.max_login_attempts}
-                onChange={(e) => setSecurityConfig({ ...securityConfig, max_login_attempts: parseInt(e.target.value) || 5 })}
+                max="20"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="lockout_duration">Account Lockout (minutes)</Label>
+              <Input
+                id="lockout_duration"
+                type="number"
+                value={config.lockout_duration}
+                onChange={(e) => setConfig({ ...config, lockout_duration: parseInt(e.target.value) || 30 })}
+                min="5"
+                max="1440"
               />
             </div>
           </div>
         </CardContent>
       </Card>
 
-      {/* Password Policies */}
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center">
             <Key className="h-5 w-5 mr-2" />
-            Password Policies
+            Password Policy
           </CardTitle>
           <CardDescription>
-            Define password complexity and expiration rules
+            Set password requirements and complexity rules
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label htmlFor="min_length">Minimum Length</Label>
-              <Input
-                id="min_length"
-                type="number"
-                min="6"
-                max="20"
-                value={securityConfig.password_min_length}
-                onChange={(e) => setSecurityConfig({ ...securityConfig, password_min_length: parseInt(e.target.value) || 8 })}
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="expiry_days">Password Expiry (days, 0 = never)</Label>
-              <Input
-                id="expiry_days"
-                type="number"
-                min="0"
-                max="365"
-                value={securityConfig.password_expiry_days}
-                onChange={(e) => setSecurityConfig({ ...securityConfig, password_expiry_days: parseInt(e.target.value) || 0 })}
-              />
+              <Label htmlFor="min_length">Minimum Password Length</Label>
+              <Select 
+                value={config.password_min_length.toString()} 
+                onValueChange={(value) => setConfig({ ...config, password_min_length: parseInt(value) })}
+              >
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="6">6 characters</SelectItem>
+                  <SelectItem value="8">8 characters</SelectItem>
+                  <SelectItem value="10">10 characters</SelectItem>
+                  <SelectItem value="12">12 characters</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
           </div>
 
-          <Separator />
-
-          <div className="space-y-3">
-            <Label>Required Character Types</Label>
-            
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-              <div className="flex items-center justify-between">
-                <span className="text-sm">Uppercase letters (A-Z)</span>
-                <Switch
-                  checked={securityConfig.password_require_uppercase}
-                  onCheckedChange={(checked) => setSecurityConfig({ ...securityConfig, password_require_uppercase: checked })}
-                />
-              </div>
-
-              <div className="flex items-center justify-between">
-                <span className="text-sm">Lowercase letters (a-z)</span>
-                <Switch
-                  checked={securityConfig.password_require_lowercase}
-                  onCheckedChange={(checked) => setSecurityConfig({ ...securityConfig, password_require_lowercase: checked })}
-                />
-              </div>
-
-              <div className="flex items-center justify-between">
-                <span className="text-sm">Numbers (0-9)</span>
-                <Switch
-                  checked={securityConfig.password_require_numbers}
-                  onCheckedChange={(checked) => setSecurityConfig({ ...securityConfig, password_require_numbers: checked })}
-                />
-              </div>
-
-              <div className="flex items-center justify-between">
-                <span className="text-sm">Symbols (!@#$%)</span>
-                <Switch
-                  checked={securityConfig.password_require_symbols}
-                  onCheckedChange={(checked) => setSecurityConfig({ ...securityConfig, password_require_symbols: checked })}
-                />
-              </div>
+          <div className="flex items-center justify-between">
+            <div className="space-y-0.5">
+              <Label>Require Special Characters</Label>
+              <p className="text-sm text-gray-500">Passwords must contain symbols (!@#$%^&*)</p>
             </div>
+            <Switch
+              checked={config.require_special_chars}
+              onCheckedChange={(checked) => setConfig({ ...config, require_special_chars: checked })}
+            />
           </div>
         </CardContent>
       </Card>
 
-      {/* IP Whitelisting */}
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center">
-            <Network className="h-5 w-5 mr-2" />
-            IP Whitelisting
+            <Lock className="h-5 w-5 mr-2" />
+            Network Security
           </CardTitle>
           <CardDescription>
-            Restrict admin access to specific IP addresses or ranges
+            Configure IP restrictions and network access controls
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
-          <Alert className="border-amber-200 bg-amber-50">
-            <AlertTriangle className="h-4 w-4 text-amber-600" />
-            <AlertDescription className="text-amber-800">
-              Be careful when adding IP restrictions. Ensure you have the correct IP address to avoid locking yourself out.
-            </AlertDescription>
-          </Alert>
-
-          {/* Add New IP */}
-          <div className="flex space-x-2">
-            <Input
-              placeholder="IP address or CIDR (e.g., 192.168.1.0/24)"
-              value={newIP.cidr}
-              onChange={(e) => setNewIP({ ...newIP, cidr: e.target.value })}
-            />
-            <Input
-              placeholder="Description"
-              value={newIP.description}
-              onChange={(e) => setNewIP({ ...newIP, description: e.target.value })}
-            />
-            <Button onClick={addIPToWhitelist}>
-              <Plus className="h-4 w-4 mr-2" />
-              Add
-            </Button>
-          </div>
-
-          {/* IP List */}
-          {ipWhitelist.length > 0 ? (
-            <div className="space-y-2">
-              {ipWhitelist.map((entry) => (
-                <div key={entry.id} className="flex items-center justify-between p-3 border rounded-lg">
-                  <div className="flex-1">
-                    <div className="flex items-center space-x-2">
-                      <code className="bg-gray-100 px-2 py-1 rounded text-sm">{entry.cidr}</code>
-                      <Badge variant={entry.is_active ? "default" : "secondary"}>
-                        {entry.is_active ? 'Active' : 'Inactive'}
-                      </Badge>
-                    </div>
-                    <p className="text-sm text-gray-500 mt-1">{entry.description}</p>
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    <Switch
-                      checked={entry.is_active}
-                      onCheckedChange={() => toggleIPStatus(entry.id, entry.is_active)}
-                    />
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => removeIPFromWhitelist(entry.id, entry.cidr)}
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
-                  </div>
-                </div>
-              ))}
+          <div className="flex items-center justify-between">
+            <div className="space-y-0.5">
+              <Label>IP Address Whitelist</Label>
+              <p className="text-sm text-gray-500">Restrict admin access to specific IP addresses</p>
             </div>
-          ) : (
-            <p className="text-gray-500 text-center py-4">No IP addresses in whitelist</p>
-          )}
+            <Switch
+              checked={config.ip_whitelist_enabled}
+              onCheckedChange={(checked) => setConfig({ ...config, ip_whitelist_enabled: checked })}
+            />
+          </div>
         </CardContent>
       </Card>
 
       <div className="flex justify-end">
-        <Button onClick={saveSecurityConfig} disabled={saving}>
+        <Button onClick={saveSettings} disabled={saving}>
           <Save className="h-4 w-4 mr-2" />
           Save Security Settings
         </Button>

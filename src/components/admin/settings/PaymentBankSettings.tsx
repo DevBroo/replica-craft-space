@@ -1,56 +1,39 @@
+
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/admin/ui/card';
 import { Button } from '@/components/admin/ui/button';
 import { Input } from '@/components/admin/ui/input';
 import { Label } from '@/components/admin/ui/label';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/admin/ui/select';
-import { Separator } from '@/components/admin/ui/separator';
-import { Badge } from '@/components/admin/ui/badge';
+import { Switch } from '@/components/admin/ui/switch';
 import { Alert, AlertDescription } from '@/components/admin/ui/alert';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
-import { Save, CreditCard, Building2, Shield, Eye, EyeOff, Settings, CheckCircle } from 'lucide-react';
+import { Save, CreditCard, Building2, AlertTriangle } from 'lucide-react';
 
-interface PaymentGatewayConfig {
+interface PaymentBankConfig {
   stripe_enabled: boolean;
   razorpay_enabled: boolean;
-  test_mode: boolean;
+  bank_account_number: string;
+  bank_name: string;
+  account_holder: string;
+  ifsc_code: string;
+  branch_name: string;
+  upi_id: string;
 }
 
-interface BankDetails {
-  account_holder_name: string;
-  bank_name: string;
-  branch_name: string;
-  account_number: string;
-  ifsc_code: string;
-  account_type: string;
-  pan_number: string;
-  upi_id: string;
-  micr_code: string;
-}
+const defaultConfig: PaymentBankConfig = {
+  stripe_enabled: false,
+  razorpay_enabled: false,
+  bank_account_number: '',
+  bank_name: '',
+  account_holder: '',
+  ifsc_code: '',
+  branch_name: '',
+  upi_id: ''
+};
 
 export const PaymentBankSettings: React.FC = () => {
-  const [paymentConfig, setPaymentConfig] = useState<PaymentGatewayConfig>({
-    stripe_enabled: false,
-    razorpay_enabled: false,
-    test_mode: true
-  });
-  const [bankDetails, setBankDetails] = useState<BankDetails>({
-    account_holder_name: '',
-    bank_name: '',
-    branch_name: '',
-    account_number: '',
-    ifsc_code: '',
-    account_type: 'Savings',
-    pan_number: '',
-    upi_id: '',
-    micr_code: ''
-  });
-  const [integrationStatus, setIntegrationStatus] = useState({
-    stripe: false,
-    razorpay: false
-  });
-  const [showBankDetails, setShowBankDetails] = useState(false);
+  const [config, setConfig] = useState<PaymentBankConfig>(defaultConfig);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
 
@@ -62,69 +45,35 @@ export const PaymentBankSettings: React.FC = () => {
     try {
       setLoading(true);
       
-      // Load payment gateway config
       const { data: paymentSettings } = await supabase
         .from('app_settings')
         .select('key, value')
-        .eq('category', 'payments');
+        .eq('category', 'payment_banking');
 
       if (paymentSettings) {
-        const config = { ...paymentConfig };
+        const loadedConfig = { ...defaultConfig };
         paymentSettings.forEach(setting => {
-          if (setting.key in config) {
-            (config as any)[setting.key] = setting.value;
+          if (setting.key in loadedConfig) {
+            (loadedConfig as any)[setting.key] = setting.value;
           }
         });
-        setPaymentConfig(config);
-      }
-
-      // Load integration status
-      const { data: integrations } = await supabase
-        .from('api_integrations')
-        .select('provider, configured')
-        .in('provider', ['stripe', 'razorpay']);
-
-      if (integrations) {
-        const status = { ...integrationStatus };
-        integrations.forEach(integration => {
-          if (integration.provider in status) {
-            (status as any)[integration.provider] = integration.configured;
-          }
-        });
-        setIntegrationStatus(status);
-      }
-
-      // Load bank details (masked)
-      const { data: bankData, error } = await supabase.rpc('get_admin_bank_details_safe');
-      if (bankData && bankData.length > 0) {
-        const details = bankData[0];
-        setBankDetails({
-          account_holder_name: details.account_holder_name || '',
-          bank_name: details.bank_name || '',
-          branch_name: details.branch_name || '',
-          account_number: details.account_number_masked || '',
-          ifsc_code: details.ifsc_code || '',
-          account_type: details.account_type || 'Savings',
-          pan_number: details.pan_number_masked || '',
-          upi_id: details.upi_id_masked || '',
-          micr_code: details.micr_code || ''
-        });
+        setConfig(loadedConfig);
       }
     } catch (error) {
-      console.error('Error loading payment/bank settings:', error);
-      toast.error('Failed to load settings');
+      console.error('Error loading payment settings:', error);
+      toast.error('Failed to load payment settings');
     } finally {
       setLoading(false);
     }
   };
 
-  const savePaymentConfig = async () => {
+  const saveSettings = async () => {
     try {
       setSaving(true);
       
-      const upsertData = Object.entries(paymentConfig).map(([key, value]) => ({
+      const upsertData = Object.entries(config).map(([key, value]) => ({
         key,
-        category: 'payments',
+        category: 'payment_banking',
         value: value,
         updated_by: (await supabase.auth.getUser()).data.user?.id
       }));
@@ -135,57 +84,10 @@ export const PaymentBankSettings: React.FC = () => {
 
       if (error) throw error;
 
-      // Log audit
-      await supabase.from('system_audit_logs').insert({
-        actor_id: (await supabase.auth.getUser()).data.user?.id,
-        action: 'update_setting',
-        entity_type: 'app_settings',
-        details: { category: 'payments', updated_keys: Object.keys(paymentConfig) }
-      });
-
-      toast.success('Payment configuration saved');
+      toast.success('Payment & bank settings saved');
     } catch (error) {
-      console.error('Error saving payment config:', error);
-      toast.error('Failed to save payment configuration');
-    } finally {
-      setSaving(false);
-    }
-  };
-
-  const saveBankDetails = async () => {
-    try {
-      setSaving(true);
-      
-      const { error } = await supabase
-        .from('admin_bank_details')
-        .upsert({
-          account_holder_name: bankDetails.account_holder_name,
-          bank_name: bankDetails.bank_name,
-          branch_name: bankDetails.branch_name || null,
-          account_number: bankDetails.account_number,
-          ifsc_code: bankDetails.ifsc_code.toUpperCase(),
-          account_type: bankDetails.account_type,
-          pan_number: bankDetails.pan_number?.toUpperCase() || null,
-          upi_id: bankDetails.upi_id?.toLowerCase() || null,
-          micr_code: bankDetails.micr_code || null,
-          created_by: (await supabase.auth.getUser()).data.user?.id
-        });
-
-      if (error) throw error;
-
-      // Log audit
-      await supabase.from('system_audit_logs').insert({
-        actor_id: (await supabase.auth.getUser()).data.user?.id,
-        action: 'update_bank_details',
-        entity_type: 'admin_bank_details',
-        details: { fields_updated: Object.keys(bankDetails) }
-      });
-
-      toast.success('Bank details saved successfully');
-      loadSettings(); // Reload to get masked data
-    } catch (error) {
-      console.error('Error saving bank details:', error);
-      toast.error('Failed to save bank details');
+      console.error('Error saving payment settings:', error);
+      toast.error('Failed to save payment settings');
     } finally {
       setSaving(false);
     }
@@ -204,229 +106,140 @@ export const PaymentBankSettings: React.FC = () => {
 
   return (
     <div className="space-y-6">
-      {/* Payment Gateway Configuration */}
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center">
             <CreditCard className="h-5 w-5 mr-2" />
-            Payment Gateway Configuration
+            Payment Gateway Settings
           </CardTitle>
           <CardDescription>
-            Configure payment processing settings and gateway credentials
+            Configure payment processing and gateway integrations
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
-          <Alert className="border-blue-200 bg-blue-50">
-            <Shield className="h-4 w-4 text-blue-600" />
-            <AlertDescription className="text-blue-800">
-              API credentials are stored securely via Supabase Vault. Only configuration flags are managed here.
-            </AlertDescription>
-          </Alert>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="space-y-4">
-              <div className="flex items-center justify-between p-3 border rounded-lg">
-                <div className="flex items-center space-x-3">
-                  <div className="w-8 h-8 bg-purple-100 rounded flex items-center justify-center">
-                    <CreditCard className="h-4 w-4 text-purple-600" />
-                  </div>
-                  <div>
-                    <h4 className="font-medium">Stripe</h4>
-                    <p className="text-sm text-gray-500">International payments</p>
-                  </div>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <Badge variant={integrationStatus.stripe ? "default" : "secondary"}>
-                    {integrationStatus.stripe ? <CheckCircle className="h-3 w-3 mr-1" /> : <Settings className="h-3 w-3 mr-1" />}
-                    {integrationStatus.stripe ? 'Configured' : 'Not Set'}
-                  </Badge>
-                </div>
+          <div className="flex items-center justify-between p-3 border rounded-lg">
+            <div className="flex items-center space-x-3">
+              <div className="w-8 h-8 bg-blue-100 rounded flex items-center justify-center">
+                <CreditCard className="h-4 w-4 text-blue-600" />
               </div>
-
-              <div className="flex items-center justify-between p-3 border rounded-lg">
-                <div className="flex items-center space-x-3">
-                  <div className="w-8 h-8 bg-blue-100 rounded flex items-center justify-center">
-                    <CreditCard className="h-4 w-4 text-blue-600" />
-                  </div>
-                  <div>
-                    <h4 className="font-medium">Razorpay</h4>
-                    <p className="text-sm text-gray-500">Indian payments</p>
-                  </div>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <Badge variant={integrationStatus.razorpay ? "default" : "secondary"}>
-                    {integrationStatus.razorpay ? <CheckCircle className="h-3 w-3 mr-1" /> : <Settings className="h-3 w-3 mr-1" />}
-                    {integrationStatus.razorpay ? 'Configured' : 'Not Set'}
-                  </Badge>
-                </div>
+              <div>
+                <h4 className="font-medium">Stripe Integration</h4>
+                <p className="text-sm text-gray-500">Global payment processing</p>
               </div>
             </div>
-
-            <div className="space-y-4">
-              <div className="space-y-2">
-                <Label>Payment Mode</Label>
-                <Select 
-                  value={paymentConfig.test_mode ? 'test' : 'live'} 
-                  onValueChange={(value) => setPaymentConfig({ ...paymentConfig, test_mode: value === 'test' })}
-                >
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="test">Test Mode</SelectItem>
-                    <SelectItem value="live">Live Mode</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
+            <Switch
+              checked={config.stripe_enabled}
+              onCheckedChange={(checked) => setConfig({ ...config, stripe_enabled: checked })}
+            />
           </div>
 
-          <div className="flex justify-end">
-            <Button onClick={savePaymentConfig} disabled={saving}>
-              <Save className="h-4 w-4 mr-2" />
-              Save Payment Config
-            </Button>
+          <div className="flex items-center justify-between p-3 border rounded-lg">
+            <div className="flex items-center space-x-3">
+              <div className="w-8 h-8 bg-orange-100 rounded flex items-center justify-center">
+                <CreditCard className="h-4 w-4 text-orange-600" />
+              </div>
+              <div>
+                <h4 className="font-medium">Razorpay Integration</h4>
+                <p className="text-sm text-gray-500">India-focused payment gateway</p>
+              </div>
+            </div>
+            <Switch
+              checked={config.razorpay_enabled}
+              onCheckedChange={(checked) => setConfig({ ...config, razorpay_enabled: checked })}
+            />
           </div>
         </CardContent>
       </Card>
 
-      {/* Admin Bank Details */}
       <Card>
         <CardHeader>
-          <CardTitle className="flex items-center justify-between">
-            <div className="flex items-center">
-              <Building2 className="h-5 w-5 mr-2" />
-              Admin Bank Details
-            </div>
-            <Button 
-              variant="outline" 
-              size="sm"
-              onClick={() => setShowBankDetails(!showBankDetails)}
-            >
-              {showBankDetails ? <EyeOff className="h-4 w-4 mr-2" /> : <Eye className="h-4 w-4 mr-2" />}
-              {showBankDetails ? 'Hide' : 'Show'} Details
-            </Button>
+          <CardTitle className="flex items-center">
+            <Building2 className="h-5 w-5 mr-2" />
+            Bank Account Details
           </CardTitle>
           <CardDescription>
-            Bank account information for commission disbursements and payouts
+            Configure banking information for settlements and payouts
           </CardDescription>
         </CardHeader>
-        {showBankDetails && (
-          <CardContent className="space-y-4">
-            <Alert className="border-amber-200 bg-amber-50">
-              <Shield className="h-4 w-4 text-amber-600" />
-              <AlertDescription className="text-amber-800">
-                Sensitive bank information is encrypted and audit-logged. Some fields are masked for security.
-              </AlertDescription>
-            </Alert>
+        <CardContent className="space-y-4">
+          <Alert className="border-amber-200 bg-amber-50">
+            <AlertTriangle className="h-4 w-4 text-amber-600" />
+            <AlertDescription className="text-amber-800">
+              Bank account information is sensitive. This data is encrypted and only accessible to authorized personnel.
+            </AlertDescription>
+          </Alert>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              
-              <div className="space-y-2">
-                <Label htmlFor="account_holder">Account Holder Name *</Label>
-                <Input
-                  id="account_holder"
-                  value={bankDetails.account_holder_name}
-                  onChange={(e) => setBankDetails({ ...bankDetails, account_holder_name: e.target.value })}
-                  required
-                />
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="bank_name">Bank Name *</Label>
-                <Input
-                  id="bank_name"
-                  value={bankDetails.bank_name}
-                  onChange={(e) => setBankDetails({ ...bankDetails, bank_name: e.target.value })}
-                  required
-                />
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="branch_name">Branch Name</Label>
-                <Input
-                  id="branch_name"
-                  value={bankDetails.branch_name}
-                  onChange={(e) => setBankDetails({ ...bankDetails, branch_name: e.target.value })}
-                />
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="account_type">Account Type</Label>
-                <Select value={bankDetails.account_type} onValueChange={(value) => setBankDetails({ ...bankDetails, account_type: value })}>
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="Savings">Savings</SelectItem>
-                    <SelectItem value="Current">Current</SelectItem>
-                    <SelectItem value="Business">Business</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="account_number">Account Number *</Label>
-                <Input
-                  id="account_number"
-                  value={bankDetails.account_number}
-                  onChange={(e) => setBankDetails({ ...bankDetails, account_number: e.target.value })}
-                  placeholder="Account number (will be masked)"
-                  required
-                />
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="ifsc_code">IFSC Code *</Label>
-                <Input
-                  id="ifsc_code"
-                  value={bankDetails.ifsc_code}
-                  onChange={(e) => setBankDetails({ ...bankDetails, ifsc_code: e.target.value.toUpperCase() })}
-                  placeholder="e.g., SBIN0000123"
-                  required
-                />
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="pan_number">PAN Number</Label>
-                <Input
-                  id="pan_number"
-                  value={bankDetails.pan_number}
-                  onChange={(e) => setBankDetails({ ...bankDetails, pan_number: e.target.value.toUpperCase() })}
-                  placeholder="e.g., ABCDE1234F (will be masked)"
-                />
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="upi_id">UPI ID (Optional)</Label>
-                <Input
-                  id="upi_id"
-                  value={bankDetails.upi_id}
-                  onChange={(e) => setBankDetails({ ...bankDetails, upi_id: e.target.value.toLowerCase() })}
-                  placeholder="e.g., admin@paytm (will be masked)"
-                />
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="micr_code">MICR Code (Optional)</Label>
-                <Input
-                  id="micr_code"
-                  value={bankDetails.micr_code}
-                  onChange={(e) => setBankDetails({ ...bankDetails, micr_code: e.target.value })}
-                  placeholder="9-digit MICR code"
-                />
-              </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label htmlFor="account_holder">Account Holder Name *</Label>
+              <Input
+                id="account_holder"
+                value={config.account_holder}
+                onChange={(e) => setConfig({ ...config, account_holder: e.target.value })}
+                placeholder="Account holder name"
+              />
             </div>
 
-            <div className="flex justify-end">
-              <Button onClick={saveBankDetails} disabled={saving}>
-                <Save className="h-4 w-4 mr-2" />
-                Save Bank Details
-              </Button>
+            <div className="space-y-2">
+              <Label htmlFor="bank_name">Bank Name *</Label>
+              <Input
+                id="bank_name"
+                value={config.bank_name}
+                onChange={(e) => setConfig({ ...config, bank_name: e.target.value })}
+                placeholder="Bank name"
+              />
             </div>
-          </CardContent>
-        )}
+
+            <div className="space-y-2">
+              <Label htmlFor="account_number">Account Number *</Label>
+              <Input
+                id="account_number"
+                value={config.bank_account_number}
+                onChange={(e) => setConfig({ ...config, bank_account_number: e.target.value })}
+                placeholder="Bank account number"
+                type="password"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="ifsc_code">IFSC Code *</Label>
+              <Input
+                id="ifsc_code"
+                value={config.ifsc_code}
+                onChange={(e) => setConfig({ ...config, ifsc_code: e.target.value.toUpperCase() })}
+                placeholder="IFSC code"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="branch_name">Branch Name</Label>
+              <Input
+                id="branch_name"
+                value={config.branch_name}
+                onChange={(e) => setConfig({ ...config, branch_name: e.target.value })}
+                placeholder="Branch name"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="upi_id">UPI ID</Label>
+              <Input
+                id="upi_id"
+                value={config.upi_id}
+                onChange={(e) => setConfig({ ...config, upi_id: e.target.value })}
+                placeholder="your-upi@provider"
+              />
+            </div>
+          </div>
+        </CardContent>
       </Card>
+
+      <div className="flex justify-end">
+        <Button onClick={saveSettings} disabled={saving}>
+          <Save className="h-4 w-4 mr-2" />
+          Save Payment Settings
+        </Button>
+      </div>
     </div>
   );
 };
