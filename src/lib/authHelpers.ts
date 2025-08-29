@@ -7,14 +7,34 @@ export const checkAdminAuth = async () => {
       return { isAuthenticated: false, error: 'No valid session' };
     }
 
-    // Verify admin role in database
+    // Check admin role in profiles table first
     const { data: profile, error: profileError } = await supabase
       .from('profiles')
       .select('role')
       .eq('id', session.user.id)
       .single();
 
-    if (profileError || !profile || profile.role !== 'admin') {
+    let hasAdminAccess = false;
+
+    // Check profiles table first
+    if (profile && profile.role === 'admin') {
+      hasAdminAccess = true;
+    }
+
+    // If not admin in profiles, check user_roles table
+    if (!hasAdminAccess) {
+      const { data: userRoles, error: rolesError } = await supabase
+        .from('user_roles')
+        .select('role')
+        .eq('user_id', session.user.id)
+        .in('role', ['admin', 'super_admin']);
+
+      if (!rolesError && userRoles && userRoles.length > 0) {
+        hasAdminAccess = true;
+      }
+    }
+
+    if (!hasAdminAccess) {
       return { isAuthenticated: false, error: 'Admin access required' };
     }
 

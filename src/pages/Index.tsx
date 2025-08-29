@@ -152,11 +152,9 @@ const Index: React.FC = () => {
                      // Check if user is owner or property_owner
                      if (user.role === 'property_owner' || user.role === 'owner') {
                        navigate('/owner/view');
-                     } else if (user.role === 'admin') {
-                       navigate('/admin/dashboard');
                      } else {
-                       // Non-owner authenticated user, redirect to owner login
-                       navigate('/owner/login');
+                       // Non-owner authenticated user, redirect to owner login with switch option
+                       navigate('/owner/login?switch=1');
                      }
                    } else {
                      console.log('❌ User not authenticated, navigating to owner login');
@@ -336,11 +334,9 @@ const Index: React.FC = () => {
                        // Check if user is owner or property_owner
                        if (user.role === 'property_owner' || user.role === 'owner') {
                          navigate('/owner/view');
-                       } else if (user.role === 'admin') {
-                         navigate('/admin/dashboard');
                        } else {
-                         // Non-owner authenticated user, redirect to owner login
-                         navigate('/owner/login');
+                         // Non-owner authenticated user, redirect to owner login with switch option
+                         navigate('/owner/login?switch=1');
                        }
                      } else {
                        console.log('❌ User not authenticated, navigating to owner login');
