@@ -47,55 +47,109 @@ export type Database = {
         }
         Relationships: []
       }
+      booking_action_logs: {
+        Row: {
+          action: string
+          actor_id: string
+          booking_id: string
+          created_at: string
+          id: string
+          metadata: Json | null
+          reason: string | null
+        }
+        Insert: {
+          action: string
+          actor_id: string
+          booking_id: string
+          created_at?: string
+          id?: string
+          metadata?: Json | null
+          reason?: string | null
+        }
+        Update: {
+          action?: string
+          actor_id?: string
+          booking_id?: string
+          created_at?: string
+          id?: string
+          metadata?: Json | null
+          reason?: string | null
+        }
+        Relationships: []
+      }
       bookings: {
         Row: {
           agent_id: string | null
           booking_details: Json | null
+          cancellation_reason: string | null
+          cancelled_at: string | null
           check_in_date: string
           check_out_date: string
           created_at: string
           guests: number
           id: string
+          last_modified_by: string | null
+          modification_reason: string | null
+          payment_mode: string | null
           payment_status: string
           property_id: string
           refund_amount: number
+          refund_processed_at: string | null
+          refund_requested_at: string | null
           refund_status: string
           status: string | null
           total_amount: number
+          transaction_id: string | null
           updated_at: string
           user_id: string
         }
         Insert: {
           agent_id?: string | null
           booking_details?: Json | null
+          cancellation_reason?: string | null
+          cancelled_at?: string | null
           check_in_date: string
           check_out_date: string
           created_at?: string
           guests?: number
           id?: string
+          last_modified_by?: string | null
+          modification_reason?: string | null
+          payment_mode?: string | null
           payment_status?: string
           property_id: string
           refund_amount?: number
+          refund_processed_at?: string | null
+          refund_requested_at?: string | null
           refund_status?: string
           status?: string | null
           total_amount: number
+          transaction_id?: string | null
           updated_at?: string
           user_id: string
         }
         Update: {
           agent_id?: string | null
           booking_details?: Json | null
+          cancellation_reason?: string | null
+          cancelled_at?: string | null
           check_in_date?: string
           check_out_date?: string
           created_at?: string
           guests?: number
           id?: string
+          last_modified_by?: string | null
+          modification_reason?: string | null
+          payment_mode?: string | null
           payment_status?: string
           property_id?: string
           refund_amount?: number
+          refund_processed_at?: string | null
+          refund_requested_at?: string | null
           refund_status?: string
           status?: string | null
           total_amount?: number
+          transaction_id?: string | null
           updated_at?: string
           user_id?: string
         }
@@ -1260,23 +1314,34 @@ export type Database = {
         Row: {
           agent_id: string | null
           agent_name: string | null
+          cancellation_reason: string | null
+          cancelled_at: string | null
           check_in_date: string | null
           check_out_date: string | null
           created_at: string | null
           guests: number | null
           id: string | null
+          last_modified_by: string | null
+          last_modified_by_name: string | null
+          modification_reason: string | null
           owner_id: string | null
           owner_name: string | null
+          payment_mode: string | null
           payment_status: string | null
           property_id: string | null
           property_title: string | null
           refund_amount: number | null
+          refund_processed_at: string | null
+          refund_requested_at: string | null
           refund_status: string | null
           status: string | null
           total_amount: number | null
+          transaction_id: string | null
           updated_at: string | null
+          user_email: string | null
           user_id: string | null
           user_name: string | null
+          user_phone: string | null
         }
         Relationships: [
           {
@@ -1489,6 +1554,28 @@ export type Database = {
           total_revenue: number
         }[]
       }
+      get_booking_analytics_enhanced: {
+        Args: {
+          agent_filter?: string
+          end_date?: string
+          owner_filter?: string
+          property_filter?: string
+          start_date?: string
+        }
+        Returns: {
+          average_booking_value: number
+          bookings_by_status: Json
+          cancellation_rate: number
+          payments_by_status: Json
+          refunds_by_status: Json
+          revenue_trend: Json
+          top_owners: Json
+          top_properties: Json
+          total_bookings: number
+          total_refunds: number
+          total_revenue: number
+        }[]
+      }
       get_highest_rated_properties: {
         Args: { limit_count?: number; min_reviews?: number }
         Returns: {
@@ -1664,6 +1751,15 @@ export type Database = {
           p_access_type: string
           p_accessed_fields?: string[]
           p_owner_id: string
+        }
+        Returns: boolean
+      }
+      log_booking_action: {
+        Args: {
+          p_action: string
+          p_booking_id: string
+          p_metadata?: Json
+          p_reason?: string
         }
         Returns: boolean
       }
