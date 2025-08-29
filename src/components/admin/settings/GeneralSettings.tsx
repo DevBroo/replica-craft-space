@@ -72,12 +72,15 @@ export const GeneralSettings: React.FC = () => {
     try {
       setSaving(true);
       
+      const { data: { user } } = await supabase.auth.getUser();
+      const userId = user?.id;
+      
       // Convert settings object to array of upsert operations
       const upsertData = Object.entries(settings).map(([key, value]) => ({
         key,
         category: 'general',
         value: value,
-        updated_by: (await supabase.auth.getUser()).data.user?.id
+        updated_by: userId
       }));
 
       const { error } = await supabase
@@ -88,7 +91,7 @@ export const GeneralSettings: React.FC = () => {
 
       // Log audit
       await supabase.from('system_audit_logs').insert({
-        actor_id: (await supabase.auth.getUser()).data.user?.id,
+        actor_id: userId,
         action: 'update_setting',
         entity_type: 'app_settings',
         details: { category: 'general', updated_keys: Object.keys(settings) }

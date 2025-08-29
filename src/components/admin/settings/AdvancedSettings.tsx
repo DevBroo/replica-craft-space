@@ -73,11 +73,14 @@ export const AdvancedSettings: React.FC = () => {
     try {
       setSaving(true);
       
+      const { data: { user } } = await supabase.auth.getUser();
+      const userId = user?.id;
+      
       const upsertData = Object.entries(config).map(([key, value]) => ({
         key,
         category: 'advanced',
         value: value,
-        updated_by: (await supabase.auth.getUser()).data.user?.id
+        updated_by: userId
       }));
 
       const { error } = await supabase
