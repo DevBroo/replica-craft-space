@@ -11,10 +11,10 @@ import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import GuestSelector, { GuestBreakdown } from '@/components/ui/GuestSelector';
 import { CouponService, Coupon } from '@/lib/couponService';
-import { 
-  Clock, 
-  MapPin, 
-  Users, 
+import {
+  Clock,
+  MapPin,
+  Users,
   Calendar,
   CheckCircle,
   XCircle,
@@ -40,7 +40,7 @@ const DayPicnicBooking: React.FC = () => {
   const [guests, setGuests] = useState<GuestBreakdown>({ adults: 2, children: [] });
   const [selectedAddOns, setSelectedAddOns] = useState<string[]>([]);
   const [durationPrices, setDurationPrices] = useState<{ duration_type: string; price: number }[]>([]);
-  
+
   // Coupon related state
   const [couponCode, setCouponCode] = useState('');
   const [appliedCoupon, setAppliedCoupon] = useState<Coupon | null>(null);
@@ -176,8 +176,8 @@ const DayPicnicBooking: React.FC = () => {
   };
 
   const handleAddOnChange = (addOnName: string, checked: boolean) => {
-    setSelectedAddOns(prev => 
-      checked 
+    setSelectedAddOns(prev =>
+      checked
         ? [...prev, addOnName]
         : prev.filter(name => name !== addOnName)
     );
@@ -194,7 +194,7 @@ const DayPicnicBooking: React.FC = () => {
 
     try {
       const coupon = await CouponService.validateCoupon(couponCode, propertyId);
-      
+
       if (!coupon) {
         setCouponError('Invalid or expired coupon code');
         return;
@@ -230,18 +230,18 @@ const DayPicnicBooking: React.FC = () => {
 
   const calculateSubtotal = () => {
     if (!package_) return 0;
-    
+
     let basePrice = 0;
-    
+
     // Check if owner has set explicit duration prices
     const durationPrice = durationPrices.find(dp => dp.duration_type === selectedDuration);
-    
+
     if (durationPrice) {
       // Use explicit duration price set by owner
       if (package_.pricing_type === 'per_person') {
         // Calculate price for adults
         basePrice += durationPrice.price * guests.adults;
-        
+
         // Calculate price for children based on age
         guests.children.forEach(child => {
           if (child.priceCategory === 'free') {
@@ -263,14 +263,14 @@ const DayPicnicBooking: React.FC = () => {
         'full_day': 1.0,
         'extended_day': 1.5
       };
-      
+
       const multiplier = durationMultipliers[selectedDuration as keyof typeof durationMultipliers] || 1.0;
       const adjustedBasePrice = package_.base_price * multiplier;
-      
+
       if (package_.pricing_type === 'per_person') {
         // Calculate price for adults
         basePrice += adjustedBasePrice * guests.adults;
-        
+
         // Calculate price for children based on age
         guests.children.forEach(child => {
           if (child.priceCategory === 'free') {
@@ -286,7 +286,7 @@ const DayPicnicBooking: React.FC = () => {
         basePrice = adjustedBasePrice;
       }
     }
-    
+
     const addOnPrice = selectedAddOns.reduce((total, addOnName) => {
       const addOn = package_.add_ons.find((ao: any) => ao.name === addOnName);
       return total + (addOn ? addOn.price : 0);
@@ -326,58 +326,44 @@ const DayPicnicBooking: React.FC = () => {
       return;
     }
 
-    setLoading(true);
-    try {
-      const bookingData = {
-        property_id: propertyId,
-        user_id: user?.id,
-        check_in_date: selectedDate,
-        check_out_date: selectedDate, // Same day for day picnics
-        guests: guests.adults + guests.children.length,
-        total_amount: calculateTotalPrice(),
-        booking_details: {
-          booking_type: 'day_picnic',
-          package_id: package_.id,
-          start_time: package_.start_time,
-          end_time: package_.end_time,
-          duration: selectedDuration,
-          meal_plan: package_.meal_plan,
-          selected_add_ons: selectedAddOns,
-          pricing_type: package_.pricing_type,
-          guest_breakdown: JSON.parse(JSON.stringify(guests)),
-          coupon_details: appliedCoupon ? {
-            code: appliedCoupon.code,
-            discount_type: appliedCoupon.discount_type,
-            discount_value: appliedCoupon.discount_value,
-            discount_amount: calculateDiscount()
-          } : null
-        }
-      };
+    // Redirect to payment flow for day picnic booking
+    const bookingData = {
+      propertyId: propertyId,
+      propertyTitle: property?.title || 'Day Picnic',
+      propertyImages: property?.images || [],
+      checkInDate: selectedDate,
+      checkOutDate: selectedDate, // Same day for day picnics
+      guests: guests.adults + guests.children.length,
+      totalAmount: calculateTotalPrice(),
+      bookingDetails: {
+        booking_type: 'day_picnic',
+        package_id: package_.id,
+        package_title: package_.meal_plan?.join(", ") || "Day Picnic Package",
+        start_time: package_.start_time,
+        end_time: package_.end_time,
+        duration: selectedDuration,
+        meal_plan: package_.meal_plan,
+        selected_add_ons: selectedAddOns,
+        pricing_type: package_.pricing_type,
+        guest_breakdown: JSON.parse(JSON.stringify(guests)),
+        coupon_details: appliedCoupon ? {
+          code: appliedCoupon.code,
+          discount_type: appliedCoupon.discount_type,
+          discount_value: appliedCoupon.discount_value,
+          discount_amount: calculateDiscount()
+        } : null
+      }
+    };
 
-      const { data, error } = await supabase
-        .from('bookings')
-        .insert(bookingData)
-        .select()
-        .single();
+    toast({
+      title: "Proceeding to Payment",
+      description: "You'll be redirected to complete your day picnic booking with payment.",
+    });
 
-      if (error) throw error;
-
-      toast({
-        title: "Booking Successful!",
-        description: "Your day picnic has been booked successfully",
-      });
-
-      // Navigate to booking confirmation page
-      navigate(`/booking/${data.id}`);
-    } catch (error: any) {
-      toast({
-        title: "Booking Failed",
-        description: error.message || "Failed to book day picnic",
-        variant: "destructive"
-      });
-    } finally {
-      setLoading(false);
-    }
+    // Navigate to payment flow
+    navigate(`/booking/${propertyId}/payment`, {
+      state: { bookingData }
+    });
   };
 
   const formatTime12Hour = (time24: string) => {
@@ -404,8 +390,8 @@ const DayPicnicBooking: React.FC = () => {
       {/* Header */}
       <div className="bg-white shadow-sm">
         <div className="container mx-auto px-4 py-4">
-          <Button 
-            variant="ghost" 
+          <Button
+            variant="ghost"
             onClick={() => navigate('/properties')}
             className="mb-2"
           >
@@ -586,16 +572,15 @@ const DayPicnicBooking: React.FC = () => {
                       };
                       const fallbackPrice = package_?.base_price * (fallbackMultipliers[option.value as keyof typeof fallbackMultipliers] || 1.0);
                       const displayPrice = durationPrice?.price || fallbackPrice;
-                      
+
                       return (
-                        <div 
+                        <div
                           key={option.value}
                           onClick={() => setSelectedDuration(option.value)}
-                          className={`p-4 border-2 rounded-lg cursor-pointer transition-all hover:border-primary/50 ${
-                            selectedDuration === option.value 
-                              ? 'border-primary bg-primary/5 ring-2 ring-primary/20' 
+                          className={`p-4 border-2 rounded-lg cursor-pointer transition-all hover:border-primary/50 ${selectedDuration === option.value
+                              ? 'border-primary bg-primary/5 ring-2 ring-primary/20'
                               : 'border-gray-200 hover:border-gray-300'
-                          }`}
+                            }`}
                         >
                           <div className="flex justify-between items-center">
                             <div>
@@ -721,7 +706,7 @@ const DayPicnicBooking: React.FC = () => {
                         </div>
                       );
                     })}
-                    
+
                     {appliedCoupon && (
                       <>
                         <div className="flex justify-between border-t pt-2">
@@ -734,7 +719,7 @@ const DayPicnicBooking: React.FC = () => {
                         </div>
                       </>
                     )}
-                    
+
                     <div className="flex justify-between font-bold text-lg border-t pt-2">
                       <span>Total</span>
                       <span className="text-green-600">₹{calculateTotalPrice().toLocaleString()}</span>
@@ -742,8 +727,8 @@ const DayPicnicBooking: React.FC = () => {
                   </div>
                 </div>
 
-                <Button 
-                  onClick={handleBooking} 
+                <Button
+                  onClick={handleBooking}
                   disabled={loading || !selectedDate}
                   className="w-full"
                 >
