@@ -339,7 +339,7 @@ const PropertyDetails = () => {
         variant: "destructive",
       });
 
-      navigate("/customer-login", {
+      navigate("/login", {
         state: {
           returnTo: `/property/${property.id}`,
           bookingData: {
@@ -716,7 +716,7 @@ const PropertyDetails = () => {
 
                   {/* Date Selection */}
                   {!isDayPicnic && (
-                    <div className="grid grid-cols-2 gap-2">
+                    <div className="grid grid-cols-1 gap-2">
                       <Popover>
                         <PopoverTrigger asChild>
                           <Button

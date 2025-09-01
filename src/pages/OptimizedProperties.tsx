@@ -1,7 +1,7 @@
 import React, { useState, useMemo, useCallback, useEffect } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Link, useNavigate } from 'react-router-dom';
-import { Search, MapPin, Users, Star, Calendar, Bed, Bath, Filter, Grid3X3, List } from 'lucide-react';
+import { Search, MapPin, Users, Star, Calendar, Bed, Bath, Filter } from 'lucide-react';
 import { useDebounce } from '@/hooks/useDebounce';
 import { PropertyService } from '@/lib/propertyService';
 import { getOptimizedImageUrl, getImageSizes } from '@/lib/imageOptimization';
@@ -9,7 +9,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Slider } from '@/components/ui/slider';
+
 import { Card, CardContent, CardFooter, CardHeader } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -60,11 +60,10 @@ const OptimizedProperties = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedLocation, setSelectedLocation] = useState('all');
   const [selectedType, setSelectedType] = useState('all');
-  const [priceRange, setPriceRange] = useState([0, 10000]);
+  const [priceRange, setPriceRange] = useState([0, 15000]);
   const [sortBy, setSortBy] = useState('newest');
   const [currentPage, setCurrentPage] = useState(1);
   const [activeTab, setActiveTab] = useState('properties');
-  const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
 
   // Debounced search
   const debouncedSearchTerm = useDebounce(searchTerm, 300);
@@ -142,18 +141,28 @@ const OptimizedProperties = () => {
   // Memoized filtered and sorted properties
   const filteredProperties = useMemo(() => {
     return properties.filter(property => {
-      const matchesSearch = !debouncedSearchTerm || 
-        property.title.toLowerCase().includes(debouncedSearchTerm.toLowerCase()) ||
-        property.general_location?.toLowerCase().includes(debouncedSearchTerm.toLowerCase());
+      // Search filter - check title and location
+      const searchLower = debouncedSearchTerm.toLowerCase().trim();
+      const matchesSearch = !searchLower || 
+        (property.title && property.title.toLowerCase().includes(searchLower)) ||
+        (property.general_location && property.general_location.toLowerCase().includes(searchLower)) ||
+        (property.location?.city && property.location.city.toLowerCase().includes(searchLower)) ||
+        (property.location?.state && property.location.state.toLowerCase().includes(searchLower));
       
+      // Location filter - check general_location, city, and state
+      const locationLower = selectedLocation.toLowerCase();
       const matchesLocation = selectedLocation === 'all' || 
-        property.general_location?.includes(selectedLocation);
+        (property.general_location && property.general_location.toLowerCase().includes(locationLower)) ||
+        (property.location?.city && property.location.city.toLowerCase().includes(locationLower)) ||
+        (property.location?.state && property.location.state.toLowerCase().includes(locationLower));
       
+      // Property type filter
       const matchesType = selectedType === 'all' || 
-        property.property_type === selectedType;
+        (property.property_type && property.property_type.toLowerCase() === selectedType.toLowerCase());
       
-      const matchesPrice = property.pricing?.daily_rate >= priceRange[0] && 
-        property.pricing?.daily_rate <= priceRange[1];
+      // Price filter - handle cases where pricing might be null
+      const propertyPrice = property.pricing?.daily_rate || 0;
+      const matchesPrice = propertyPrice >= priceRange[0] && propertyPrice <= priceRange[1];
 
       return matchesSearch && matchesLocation && matchesType && matchesPrice;
     });
@@ -252,7 +261,7 @@ const OptimizedProperties = () => {
         </CardContent>
 
         <CardFooter className="pt-0">
-          <div className="flex items-center justify-between w-full">
+          <div className="flex gap-2 items-center justify-between w-full">
             <div>
               <span className="text-2xl font-bold text-primary">
                 ₹{dayPicnic.base_price?.toLocaleString() || 'N/A'}
@@ -350,7 +359,7 @@ const OptimizedProperties = () => {
         </CardContent>
 
         <CardFooter className="pt-0">
-          <div className="flex items-center justify-between w-full">
+          <div className="flex gap-2 items-center justify-between w-full">
             <div>
               <span className="text-2xl font-bold text-primary">
                 ₹{property.pricing?.daily_rate?.toLocaleString() || 'N/A'}
@@ -429,6 +438,15 @@ const OptimizedProperties = () => {
                 <SelectItem value="Delhi">Delhi</SelectItem>
                 <SelectItem value="Bangalore">Bangalore</SelectItem>
                 <SelectItem value="Pune">Pune</SelectItem>
+                <SelectItem value="Goa">Goa</SelectItem>
+                <SelectItem value="Jaipur">Jaipur</SelectItem>
+                <SelectItem value="Udaipur">Udaipur</SelectItem>
+                <SelectItem value="Manali">Manali</SelectItem>
+                <SelectItem value="Shimla">Shimla</SelectItem>
+                <SelectItem value="Rishikesh">Rishikesh</SelectItem>
+                <SelectItem value="Kerala">Kerala</SelectItem>
+                <SelectItem value="Darjeeling">Darjeeling</SelectItem>
+                <SelectItem value="Andaman">Andaman</SelectItem>
               </SelectContent>
             </Select>
 
@@ -441,6 +459,13 @@ const OptimizedProperties = () => {
                 <SelectItem value="Villa">Villa</SelectItem>
                 <SelectItem value="Farmhouse">Farmhouse</SelectItem>
                 <SelectItem value="Resort">Resort</SelectItem>
+                <SelectItem value="Cottage">Cottage</SelectItem>
+                <SelectItem value="Bungalow">Bungalow</SelectItem>
+                <SelectItem value="Apartment">Apartment</SelectItem>
+                <SelectItem value="Guest House">Guest House</SelectItem>
+                <SelectItem value="Heritage">Heritage</SelectItem>
+                <SelectItem value="Beach House">Beach House</SelectItem>
+                <SelectItem value="Mountain Cabin">Mountain Cabin</SelectItem>
                 <SelectItem value="Day Picnic">Day Picnic</SelectItem>
               </SelectContent>
             </Select>
@@ -462,23 +487,44 @@ const OptimizedProperties = () => {
           <div className="flex items-center gap-4">
             <span className="text-sm font-medium min-w-[100px]">Price Range:</span>
             <div className="flex-1 max-w-md">
-              <Slider
-                value={priceRange}
-                onValueChange={setPriceRange}
-                max={10000}
-                min={0}
-                step={500}
-                className="w-full"
-              />
-              <div className="flex justify-between text-xs text-muted-foreground mt-1">
-                <span>₹{priceRange[0]}</span>
-                <span>₹{priceRange[1]}</span>
-              </div>
+              <Select 
+                value={`${priceRange[0]}-${priceRange[1]}`} 
+                onValueChange={(value) => {
+                  const [min, max] = value.split('-').map(Number);
+                  setPriceRange([min, max]);
+                }}
+              >
+                <SelectTrigger className="w-full">
+                  <SelectValue placeholder="Select price range" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="0-1000">Under ₹1,000</SelectItem>
+                  <SelectItem value="1000-2500">₹1,000 - ₹2,500</SelectItem>
+                  <SelectItem value="2500-5000">₹2,500 - ₹5,000</SelectItem>
+                  <SelectItem value="5000-7500">₹5,000 - ₹7,500</SelectItem>
+                  <SelectItem value="7500-10000">₹7,500 - ₹10,000</SelectItem>
+                  <SelectItem value="10000-15000">₹10,000+</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
+            <Button
+              variant="outline"
+              onClick={() => {
+                setSearchTerm('');
+                setSelectedLocation('all');
+                setSelectedType('all');
+                setPriceRange([0, 15000]);
+                setSortBy('newest');
+              }}
+              className="whitespace-nowrap"
+            >
+              <Filter className="h-4 w-4 mr-2" />
+              Clear All
+            </Button>
           </div>
         </div>
 
-        {/* Tabs and View Toggle */}
+        {/* Tabs */}
         <div className="flex justify-between items-center mb-6">
           <Tabs value={activeTab} onValueChange={setActiveTab} className="w-auto">
             <TabsList>
@@ -488,23 +534,6 @@ const OptimizedProperties = () => {
               </TabsTrigger>
             </TabsList>
           </Tabs>
-
-          <div className="flex items-center gap-2">
-            <Button
-              variant={viewMode === 'grid' ? 'default' : 'outline'}
-              size="sm"
-              onClick={() => setViewMode('grid')}
-            >
-              <Grid3X3 className="h-4 w-4" />
-            </Button>
-            <Button
-              variant={viewMode === 'list' ? 'default' : 'outline'}
-              size="sm"
-              onClick={() => setViewMode('list')}
-            >
-              <List className="h-4 w-4" />
-            </Button>
-          </div>
         </div>
 
         {/* Content */}
@@ -520,14 +549,14 @@ const OptimizedProperties = () => {
 
             {/* Properties Grid */}
             {isLoadingProperties ? (
-              <div className={`grid ${viewMode === 'grid' ? 'grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4' : 'grid-cols-1'} gap-6`}>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
                 {Array.from({ length: ITEMS_PER_PAGE }, (_, i) => (
                   <PropertySkeleton key={i} />
                 ))}
               </div>
             ) : sortedProperties.length > 0 ? (
               <>
-                <div className={`grid ${viewMode === 'grid' ? 'grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4' : 'grid-cols-1'} gap-6 mb-8`}>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 mb-8">
                   {sortedProperties.map((property) => (
                     <PropertyCard key={property.id} property={property} />
                   ))}
@@ -569,7 +598,7 @@ const OptimizedProperties = () => {
                   setSearchTerm('');
                   setSelectedLocation('all');
                   setSelectedType('all');
-                  setPriceRange([0, 10000]);
+                  setPriceRange([0, 15000]);
                 }}>
                   Clear Filters
                 </Button>
@@ -587,12 +616,12 @@ const OptimizedProperties = () => {
             ) : dayPicnics.length > 0 || ownerDayPicnics.length > 0 ? (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
                 {/* Approved day picnics */}
-                {dayPicnics.map((picnic: any) => (
+                {dayPicnics.map((picnic: DayPicnicPackage) => (
                   <DayPicnicCard key={`approved-${picnic.id}`} dayPicnic={picnic} />
                 ))}
                 
                 {/* Owner preview day picnics (only if no approved ones) */}
-                {dayPicnics.length === 0 && ownerDayPicnics.map((picnic: any) => (
+                {dayPicnics.length === 0 && ownerDayPicnics.map((picnic: DayPicnicPackage) => (
                   <DayPicnicCard key={`preview-${picnic.id}`} dayPicnic={picnic} isPreview={true} />
                 ))}
               </div>

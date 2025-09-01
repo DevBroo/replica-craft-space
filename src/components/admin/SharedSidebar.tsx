@@ -91,18 +91,6 @@ const SharedSidebar: React.FC<SharedSidebarProps> = ({ sidebarCollapsed, setSide
           );
         })}
       </nav>
-      
-      {/* Modern Footer */}
-      {!sidebarCollapsed && (
-        <div className="absolute bottom-4 left-4 right-4">
-          <div className="glass-card p-3 rounded-lg">
-            <div className="text-xs text-sidebar-foreground/70 text-center">
-              <div className="font-medium">Admin Panel v2.0</div>
-              <div className="opacity-60">Modern & Powerful</div>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 };

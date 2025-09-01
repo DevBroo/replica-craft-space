@@ -8,6 +8,7 @@ import { WishlistProvider } from "@/contexts/WishlistContext";
 import { OwnerRoute } from "@/components/auth/ProtectedRoute";
 import { Toaster } from "@/components/ui/toaster";
 import { Skeleton } from "@/components/ui/skeleton";
+import PublicLayout from "@/components/layout/PublicLayout";
 
 // Public Pages (immediate load)
 import Index from "@/pages/Index";
@@ -121,21 +122,81 @@ function App() {
                 <div className="min-h-screen bg-background">
                   <Routes>
                     {/* Public Routes */}
-                    <Route path="/" element={<Index />} />
-                    <Route path="/about" element={<About />} />
-                    <Route path="/contact" element={<Contact />} />
-                    <Route path="/properties" element={<OptimizedProperties />} />
-                    <Route path="/properties-legacy" element={<Properties />} />
-                    <Route path="/property/:id" element={<PropertyDetails />} />
-                    <Route path="/terms-of-service" element={<TermsOfService />} />
-                    <Route path="/privacy-policy" element={<PrivacyPolicy />} />
-                    <Route path="/how-it-works" element={<HowItWorks />} />
-                    <Route path="/safety-guidelines" element={<SafetyGuidelines />} />
-                    <Route path="/trust-safety" element={<TrustSafety />} />
-                    <Route path="/help-center" element={<HelpCenter />} />
-                    <Route path="/booking-assistance" element={<BookingAssistance />} />
-                    <Route path="/locations" element={<Locations />} />
-                    <Route path="*" element={<NotFound />} />
+                    <Route path="/" element={
+                      <PublicLayout>
+                        <Index />
+                      </PublicLayout>
+                    } />
+                    <Route path="/about" element={
+                      <PublicLayout>
+                        <About />
+                      </PublicLayout>
+                    } />
+                    <Route path="/contact" element={
+                      <PublicLayout>
+                        <Contact />
+                      </PublicLayout>
+                    } />
+                    <Route path="/properties" element={
+                      <PublicLayout>
+                        <OptimizedProperties />
+                      </PublicLayout>
+                    } />
+                    <Route path="/properties-legacy" element={
+                      <PublicLayout>
+                        <Properties />
+                      </PublicLayout>
+                    } />
+                    <Route path="/property/:id" element={
+                      <PublicLayout>
+                        <PropertyDetails />
+                      </PublicLayout>
+                    } />
+                    <Route path="/terms-of-service" element={
+                      <PublicLayout>
+                        <TermsOfService />
+                      </PublicLayout>
+                    } />
+                    <Route path="/privacy-policy" element={
+                      <PublicLayout>
+                        <PrivacyPolicy />
+                      </PublicLayout>
+                    } />
+                    <Route path="/how-it-works" element={
+                      <PublicLayout>
+                        <HowItWorks />
+                      </PublicLayout>
+                    } />
+                    <Route path="/safety-guidelines" element={
+                      <PublicLayout>
+                        <SafetyGuidelines />
+                      </PublicLayout>
+                    } />
+                    <Route path="/trust-safety" element={
+                      <PublicLayout>
+                        <TrustSafety />
+                      </PublicLayout>
+                    } />
+                    <Route path="/help-center" element={
+                      <PublicLayout>
+                        <HelpCenter />
+                      </PublicLayout>
+                    } />
+                    <Route path="/booking-assistance" element={
+                      <PublicLayout>
+                        <BookingAssistance />
+                      </PublicLayout>
+                    } />
+                    <Route path="/locations" element={
+                      <PublicLayout>
+                        <Locations />
+                      </PublicLayout>
+                    } />
+                    <Route path="*" element={
+                      <PublicLayout>
+                        <NotFound />
+                      </PublicLayout>
+                    } />
 
                     {/* Authentication Routes */}
                     <Route path="/login" element={<CustomerLogin />} />

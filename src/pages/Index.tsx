@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { useIsMobile } from '@/hooks/use-mobile';
 import { useAuth } from '@/contexts/AuthContext';
 
 // Enhanced scroll animation hook with fallback visibility
@@ -59,10 +58,8 @@ const Index: React.FC = () => {
   const [searchDate, setSearchDate] = useState('');
   const [groupSize, setGroupSize] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('day-picnic');
-  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-  const isMobile = useIsMobile();
   const navigate = useNavigate();
-  const { loading, user, isAuthenticated, logout } = useAuth();
+  const { loading, user, isAuthenticated } = useAuth();
 
   // Debug authentication state
   useEffect(() => {
@@ -76,10 +73,24 @@ const Index: React.FC = () => {
   useScrollAnimation();
 
   // No dummy data - will be replaced with database properties
-  const topPicks: any[] = [];
+  const topPicks: Array<{
+    id: string;
+    name: string;
+    image: string;
+    location: string;
+    rating: number;
+    price: number;
+  }> = [];
 
   // No dummy data - will be replaced with database properties
-  const featuredProperties: any[] = [];
+  const featuredProperties: Array<{
+    id: string;
+    name: string;
+    image: string;
+    location: string;
+    price: number;
+    amenities: string[];
+  }> = [];
 
   const categories = [
     { name: 'Farm Houses', icon: 'fas fa-tractor' },
@@ -90,7 +101,7 @@ const Index: React.FC = () => {
   ];
 
   return (
-    <div className="min-h-screen bg-background font-poppins">
+    <>
   {loading && (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-white">
       <div className="text-center">
@@ -99,317 +110,6 @@ const Index: React.FC = () => {
         </div>
         <h3 className="text-lg font-medium text-gray-800 mb-2">Loading Picnify...</h3>
         <p className="text-gray-600">Please wait while we set up your experience</p>
-      </div>
-    </div>
-  )}
-{/* Header */}
-<header className="sticky top-0 z-50 bg-background shadow-lg">
-  <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-    <div className="flex justify-between items-center h-20">
-      {/* Logo Section */}
-      <div className="flex items-center min-w-[200px] lg:min-w-[250px]">
-        <a href="/" className="flex items-center">
-          <img src={picnifyLogo} alt="Picnify.in Logo" className="h-10 sm:h-12 w-auto" />
-        </a>
-      </div>
-
-      {/* Navigation Section */}
-      <nav className="hidden lg:flex items-center space-x-8 xl:space-x-10 flex-1 justify-center">
-        <a href="/" className="text-foreground hover:text-brand-orange font-medium transition-colors duration-200 cursor-pointer px-2 py-1 rounded-md hover:bg-orange-50">Home</a>
-        <a href="/properties" className="text-foreground hover:text-brand-orange font-medium transition-colors duration-200 cursor-pointer px-2 py-1 rounded-md hover:bg-orange-50">Properties</a>
-        <a href="/locations" className="text-foreground hover:text-brand-orange font-medium transition-colors duration-200 cursor-pointer px-2 py-1 rounded-md hover:bg-orange-50">Locations</a>
-        <a href="/about" className="text-foreground hover:text-brand-orange font-medium transition-colors duration-200 cursor-pointer px-2 py-1 rounded-md hover:bg-orange-50">About</a>
-        <a href="/contact" className="text-foreground hover:text-brand-orange font-medium transition-colors duration-200 cursor-pointer px-2 py-1 rounded-md hover:bg-orange-50">Contact</a>
-        
-        {/* Portals Dropdown */}
-        <div className="relative group">
-          <button className="text-foreground hover:text-brand-orange font-medium transition-colors duration-200 cursor-pointer flex items-center px-2 py-1 rounded-md hover:bg-orange-50">
-            Portals
-            <i className="fas fa-chevron-down ml-1 text-xs transition-transform duration-200 group-hover:rotate-180"></i>
-          </button>
-          <div className="absolute top-full left-0 mt-2 w-56 bg-white rounded-lg shadow-xl border border-gray-200 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50">
-            <div className="py-2">
-              <button 
-                onClick={(e) => {
-                  e.preventDefault();
-                  e.stopPropagation();
-                  console.log('🚀 Property Owner Portal clicked');
-                  console.log('🔍 Current auth state:', { 
-                    loading,
-                    isAuthenticated, 
-                    user: user ? { email: user.email, role: user.role } : null 
-                  });
-                  
-                  if (loading) {
-                    console.log('⏳ Auth still loading, waiting...');
-                    return;
-                  }
-                  
-                   if (isAuthenticated && user) {
-                     console.log('✅ User is authenticated, checking role...');
-                     console.log('🔍 User role:', user.role);
-                     
-                     // Check if user is owner or property_owner
-                     if (user.role === 'property_owner' || user.role === 'owner') {
-                       navigate('/owner/view');
-                     } else {
-                       // Non-owner authenticated user, redirect to owner login with switch option
-                       navigate('/owner/login?switch=1');
-                     }
-                   } else {
-                     console.log('❌ User not authenticated, navigating to owner login');
-                     navigate('/owner/login');
-                   }
-                }}
-                className="w-full text-left px-4 py-3 text-sm text-gray-700 hover:bg-gray-50 hover:text-brand-orange transition-colors duration-200 border-b border-gray-100"
-              >
-                <i className="fas fa-home mr-3 text-brand-orange"></i>
-                Property Owner Portal
-              </button>
-              <button 
-                onClick={(e) => {
-                  e.preventDefault();
-                  e.stopPropagation();
-                  console.log('🚀 Travel Agent Portal clicked');
-                  console.log('🔍 Current user state:', { 
-                    isAuthenticated, 
-                    user: user ? { email: user.email, role: user.role } : null 
-                  });
-                  
-                  if (isAuthenticated && user) {
-                    if (user.role === 'agent') {
-                      console.log('✅ User is agent, navigating to dashboard');
-                      navigate('/agent/dashboard');
-                    } else {
-                      console.log('⚠️ User is not agent, navigating to login');
-                      navigate('/agent/login');
-                    }
-                  } else {
-                    console.log('❌ User not authenticated, navigating to login');
-                    navigate('/agent/login');
-                  }
-                }} 
-                className="w-full text-left px-4 py-3 text-sm text-gray-700 hover:bg-gray-50 hover:text-brand-orange transition-colors duration-200 border-b border-gray-100"
-              >
-                <i className="fas fa-handshake mr-3 text-brand-orange"></i>
-                Travel Agent Portal
-              </button>
-              <a href="/admin/login" className="block px-4 py-3 text-sm text-gray-700 hover:bg-gray-50 hover:text-brand-orange transition-colors duration-200">
-                <i className="fas fa-cog mr-3 text-brand-orange"></i>
-                Admin Panel
-              </a>
-            </div>
-          </div>
-        </div>
-      </nav>
-
-      {/* Mobile Menu Button */}
-      <button
-        className="lg:hidden flex items-center justify-center w-10 h-10 text-foreground hover:text-brand-orange transition-colors duration-200"
-        onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-        aria-label="Toggle mobile menu"
-      >
-        <div className="flex flex-col justify-center items-center w-6 h-6">
-          <span className={`block w-6 h-0.5 bg-current transition-all duration-300 ${isMobileMenuOpen ? 'rotate-45 translate-y-1.5' : 'mb-1'}`}></span>
-          <span className={`block w-6 h-0.5 bg-current transition-all duration-300 ${isMobileMenuOpen ? 'opacity-0' : 'mb-1'}`}></span>
-          <span className={`block w-6 h-0.5 bg-current transition-all duration-300 ${isMobileMenuOpen ? '-rotate-45 -translate-y-1.5' : ''}`}></span>
-        </div>
-      </button>
-
-      {/* Desktop Auth Section */}
-      <div className="hidden lg:flex items-center space-x-4 min-w-[200px] justify-end">
-        {isAuthenticated && user ? (
-          <div className="flex items-center space-x-4">
-            <div className="w-8 h-8 bg-gradient-to-r from-brand-orange to-brand-red rounded-full flex items-center justify-center text-white font-medium text-sm cursor-pointer hover:scale-110 transition-transform duration-200" title={user.email}>
-              {user.email.charAt(0).toUpperCase()}
-            </div>
-            <button
-              onClick={() => logout()}
-              className="bg-secondary text-secondary-foreground hover:bg-secondary/80 font-medium transition-all duration-200 cursor-pointer whitespace-nowrap rounded-button px-4 py-2 inline-flex items-center text-sm"
-            >
-              <i className="fas fa-sign-out-alt mr-2"></i>Logout
-            </button>
-          </div>
-        ) : (
-          <div className="flex items-center space-x-3">
-            <a href="/login" className="bg-secondary text-secondary-foreground hover:bg-secondary/80 font-medium transition-all duration-200 cursor-pointer whitespace-nowrap rounded-button px-4 py-2 inline-flex items-center text-sm">
-              <i className="fas fa-user mr-2"></i>Login
-            </a>
-            <Link
-              to="/signup"
-              className="bg-gradient-to-r from-brand-orange to-brand-red text-white px-4 py-2 hover:from-orange-600 hover:to-red-600 transition-all duration-300 cursor-pointer whitespace-nowrap rounded-button font-medium shadow-lg hover:shadow-xl transform hover:scale-105 inline-flex items-center text-sm"
-            >
-              <i className="fas fa-arrow-right-to-bracket mr-2"></i>Sign Up
-            </Link>
-          </div>
-        )}
-      </div>
-    </div>
-  </div>
-</header>
-
-    {/* Mobile Menu Overlay */}
-    {isMobileMenuOpen && (
-      <div className="fixed inset-0 z-50 lg:hidden">
-        <div 
-          className="fixed inset-0 bg-black/50 backdrop-blur-sm"
-          onClick={() => setIsMobileMenuOpen(false)}
-        ></div>
-        <div className="fixed top-0 left-0 right-0 bg-background shadow-xl transform transition-transform duration-300 ease-out max-h-screen overflow-y-auto">
-          <div className="flex justify-between items-center h-20 px-6 border-b border-border">
-            <img src={picnifyLogo} alt="Picnify.in Logo" className="h-10" />
-            <button
-              onClick={() => setIsMobileMenuOpen(false)}
-              className="flex items-center justify-center w-10 h-10 text-foreground hover:text-brand-orange transition-colors duration-200 rounded-full hover:bg-gray-100"
-              aria-label="Close mobile menu"
-            >
-              <i className="fas fa-times text-xl"></i>
-            </button>
-          </div>
-          
-          {/* Mobile Navigation */}
-          <div className="px-6 py-8 space-y-4">
-            <a 
-              href="/" 
-              className="flex items-center text-lg font-medium text-foreground hover:text-brand-orange transition-colors duration-200 py-4 px-3 rounded-lg hover:bg-orange-50"
-              onClick={() => setIsMobileMenuOpen(false)}
-            >
-              <i className="fas fa-home mr-4 text-brand-orange w-5 text-center"></i>
-              Home
-            </a>
-            <a 
-              href="/properties" 
-              className="flex items-center text-lg font-medium text-foreground hover:text-brand-orange transition-colors duration-200 py-4 px-3 rounded-lg hover:bg-orange-50"
-              onClick={() => setIsMobileMenuOpen(false)}
-            >
-              <i className="fas fa-building mr-4 text-brand-orange w-5 text-center"></i>
-              Properties
-            </a>
-            <a 
-              href="/locations" 
-              className="flex items-center text-lg font-medium text-foreground hover:text-brand-orange transition-colors duration-200 py-4 px-3 rounded-lg hover:bg-orange-50"
-              onClick={() => setIsMobileMenuOpen(false)}
-            >
-              <i className="fas fa-map-marker-alt mr-4 text-brand-orange w-5 text-center"></i>
-              Locations
-            </a>
-            <a 
-              href="/about" 
-              className="flex items-center text-lg font-medium text-foreground hover:text-brand-orange transition-colors duration-200 py-4 px-3 rounded-lg hover:bg-orange-50"
-              onClick={() => setIsMobileMenuOpen(false)}
-            >
-              <i className="fas fa-info-circle mr-4 text-brand-orange w-5 text-center"></i>
-              About
-            </a>
-            <a 
-              href="/contact" 
-              className="flex items-center text-lg font-medium text-foreground hover:text-brand-orange transition-colors duration-200 py-4 px-3 rounded-lg hover:bg-orange-50"
-              onClick={() => setIsMobileMenuOpen(false)}
-            >
-              <i className="fas fa-envelope mr-4 text-brand-orange w-5 text-center"></i>
-              Contact
-            </a>
-            
-            {/* Mobile Portals Section */}
-            <div className="pt-6 border-t border-border/50">
-              <div className="text-lg font-bold text-foreground mb-6 flex items-center">
-                <i className="fas fa-door-open mr-4 text-brand-orange w-5 text-center"></i>
-                Portals
-              </div>
-              <div className="space-y-4">
-                <button 
-                  onClick={(e) => {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    console.log('🚀 Mobile: Property Owner Portal clicked');
-                    console.log('🔍 Current user state:', { 
-                      isAuthenticated, 
-                      user: user ? { email: user.email, role: user.role } : null 
-                    });
-                    
-                     if (isAuthenticated && user) {
-                       console.log('✅ User is authenticated, checking role...');
-                       console.log('🔍 User role:', user.role);
-                       
-                       // Check if user is owner or property_owner
-                       if (user.role === 'property_owner' || user.role === 'owner') {
-                         navigate('/owner/view');
-                       } else {
-                         // Non-owner authenticated user, redirect to owner login with switch option
-                         navigate('/owner/login?switch=1');
-                       }
-                     } else {
-                       console.log('❌ User not authenticated, navigating to owner login');
-                       navigate('/owner/login');
-                     }
-                    setIsMobileMenuOpen(false);
-                  }}
-                  className="flex items-center w-full text-left text-base text-muted-foreground hover:text-brand-orange transition-colors duration-200 py-3 px-3 rounded-lg hover:bg-orange-50"
-                >
-                  <i className="fas fa-home mr-4 text-brand-orange w-5 text-center"></i>
-                  Property Owner Portal
-                </button>
-                <Link 
-                  to="/agent/login"
-                  className="block text-base text-muted-foreground hover:text-brand-orange transition-colors duration-200"
-                  onClick={() => setIsMobileMenuOpen(false)}
-                >
-                  <i className="fas fa-handshake mr-3 text-brand-orange w-4"></i>
-                  Travel Agent Portal
-                </Link>
-                <a 
-                  href="/admin/login" 
-                  className="block text-base text-muted-foreground hover:text-brand-orange transition-colors duration-200"
-                  onClick={() => setIsMobileMenuOpen(false)}
-                >
-                  <i className="fas fa-cog mr-3 text-brand-orange w-4"></i>
-                  Admin Panel
-                </a>
-              </div>
-            </div>
-
-            {/* Mobile Auth Buttons */}
-            <div className="space-y-4 pt-4">
-              {isAuthenticated && user ? (
-                <>
-                  <div className="flex items-center justify-center bg-gray-50 rounded-lg px-4 py-3">
-                    <div className="w-10 h-10 bg-gradient-to-r from-brand-orange to-brand-red rounded-full flex items-center justify-center text-white font-medium" title={user.email}>
-                      {user.email.charAt(0).toUpperCase()}
-                    </div>
-                  </div>
-                  <button
-                    onClick={() => {
-                      logout();
-                      setIsMobileMenuOpen(false);
-                    }}
-                    className="block w-full bg-secondary text-secondary-foreground hover:bg-secondary/80 font-medium transition-all duration-200 rounded-lg px-6 py-4 text-center"
-                  >
-                    <i className="fas fa-sign-out-alt mr-2"></i>
-                    Logout
-                  </button>
-                </>
-              ) : (
-                <>
-                  <a 
-                    href="/login" 
-                    className="block w-full bg-secondary text-secondary-foreground hover:bg-secondary/80 font-medium transition-all duration-200 rounded-lg px-6 py-4 text-center"
-                    onClick={() => setIsMobileMenuOpen(false)}
-                  >
-                    <i className="fas fa-user mr-2"></i>
-                    Login
-                  </a>
-                  <Link
-                    to="/signup"
-                    className="block w-full bg-gradient-to-r from-brand-orange to-brand-red text-white px-6 py-4 hover:from-orange-600 hover:to-red-600 transition-all duration-300 rounded-lg font-medium shadow-lg text-center"
-                    onClick={() => setIsMobileMenuOpen(false)}
-                  >
-                    <i className="fas fa-arrow-right-to-bracket mr-2"></i>
-                    Sign Up
-                  </Link>
-                </>
-              )}
-            </div>
-          </div>
         </div>
       </div>
     )}
@@ -912,85 +612,7 @@ className="w-full h-96 lg:h-[500px] object-cover object-top rounded-xl"
 
 {/* Footer Banner */}
 <FooterBanner />
-
-{/* Footer */}
-<footer className="bg-gray-900 text-white py-20 relative overflow-hidden">
-<div className="absolute inset-0 opacity-10">
-<div className="absolute top-0 left-0 w-64 h-64 bg-gradient-to-r from-brand-red to-brand-orange rounded-full filter blur-3xl"></div>
-<div className="absolute bottom-0 right-0 w-80 h-80 bg-gradient-to-r from-brand-orange to-yellow-500 rounded-full filter blur-3xl"></div>
-</div>
-<div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative">
-<div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-12 mb-16">
-<div className="lg:col-span-2">
-<div className="mb-6">
-<img src={picnifyLogo} alt="Picnify.in Logo" className="h-12" />
-</div>
-<p className="text-gray-300 text-lg mb-8 leading-relaxed max-w-md">
-Picnify is your one-stop platform to discover and book day picnic spots, villas, farmhouses, and unique getaways, making your time with loved ones hassle-free and memorable
-</p>
-<div className="flex flex-wrap gap-4">
-<a href="https://facebook.com/picnify" target="_blank" rel="noopener noreferrer" className="w-12 h-12 bg-gradient-to-r from-brand-red to-brand-orange rounded-full flex items-center justify-center hover:scale-110 transition-transform duration-300 group">
-<i className="fab fa-facebook-f text-xl group-hover:animate-bounce"></i>
-</a>
-<a href="https://instagram.com/picnify" target="_blank" rel="noopener noreferrer" className="w-12 h-12 bg-gradient-to-r from-brand-red to-brand-orange rounded-full flex items-center justify-center hover:scale-110 transition-transform duration-300 group">
-<i className="fab fa-instagram text-xl group-hover:animate-bounce"></i>
-</a>
-<a href="https://twitter.com/picnify" target="_blank" rel="noopener noreferrer" className="w-12 h-12 bg-gradient-to-r from-brand-red to-brand-orange rounded-full flex items-center justify-center hover:scale-110 transition-transform duration-300 group">
-<i className="fab fa-twitter text-xl group-hover:animate-bounce"></i>
-</a>
-<a href="https://youtube.com/picnify" target="_blank" rel="noopener noreferrer" className="w-12 h-12 bg-gradient-to-r from-brand-red to-brand-orange rounded-full flex items-center justify-center hover:scale-110 transition-transform duration-300 group">
-<i className="fab fa-youtube text-xl group-hover:animate-bounce"></i>
-</a>
-<a href="https://linkedin.com/company/picnify" target="_blank" rel="noopener noreferrer" className="w-12 h-12 bg-gradient-to-r from-brand-red to-brand-orange rounded-full flex items-center justify-center hover:scale-110 transition-transform duration-300 group">
-<i className="fab fa-linkedin-in text-xl group-hover:animate-bounce"></i>
-</a>
-<a href="https://wa.me/+919876543210" target="_blank" rel="noopener noreferrer" className="w-12 h-12 bg-gradient-to-r from-brand-red to-brand-orange rounded-full flex items-center justify-center hover:scale-110 transition-transform duration-300 group">
-<i className="fab fa-whatsapp text-xl group-hover:animate-bounce"></i>
-</a>
-</div>
-</div>
-<div>
-            <h3 className="text-xl font-bold mb-6 text-white">Quick Links</h3>
-            <ul className="space-y-4">
-              <li><Link to="/about" className="text-gray-300 hover:text-white transition-colors duration-200 cursor-pointer flex items-center gap-2"><i className="fas fa-chevron-right text-xs text-brand-red"></i>About Picknify</Link></li>
-              <li><Link to="/how-it-works" className="text-gray-300 hover:text-white transition-colors duration-200 cursor-pointer flex items-center gap-2"><i className="fas fa-chevron-right text-xs text-brand-red"></i>How It Works</Link></li>
-              <li><Link to="/safety-guidelines" className="text-gray-300 hover:text-white transition-colors duration-200 cursor-pointer flex items-center gap-2"><i className="fas fa-chevron-right text-xs text-brand-red"></i>Safety Guidelines</Link></li>
-              <li><Link to="/privacy-policy" className="text-gray-300 hover:text-white transition-colors duration-200 cursor-pointer flex items-center gap-2"><i className="fas fa-chevron-right text-xs text-brand-red"></i>Privacy Policy</Link></li>
-              <li><Link to="/terms-of-service" className="text-gray-300 hover:text-white transition-colors duration-200 cursor-pointer flex items-center gap-2"><i className="fas fa-chevron-right text-xs text-brand-red"></i>Terms of Service</Link></li>
-            </ul>
-</div>
-<div>
-            <h3 className="text-xl font-bold mb-6 text-white">Support & Help</h3>
-            <ul className="space-y-4">
-              <li><Link to="/help-center" className="text-gray-300 hover:text-white transition-colors duration-200 cursor-pointer flex items-center gap-2"><i className="fas fa-chevron-right text-xs text-brand-red"></i>24/7 Help Center</Link></li>
-              <li><Link to="/contact" className="text-gray-300 hover:text-white transition-colors duration-200 cursor-pointer flex items-center gap-2"><i className="fas fa-chevron-right text-xs text-brand-red"></i>Contact Support</Link></li>
-              <li><Link to="/booking-assistance" className="text-gray-300 hover:text-white transition-colors duration-200 cursor-pointer flex items-center gap-2"><i className="fas fa-chevron-right text-xs text-brand-red"></i>Booking Assistance</Link></li>
-              <li><Link to="/host-resources" className="text-gray-300 hover:text-white transition-colors duration-200 cursor-pointer flex items-center gap-2"><i className="fas fa-chevron-right text-xs text-brand-red"></i>Host Resources</Link></li>
-              <li><Link to="/trust-safety" className="text-gray-300 hover:text-white transition-colors duration-200 cursor-pointer flex items-center gap-2"><i className="fas fa-chevron-right text-xs text-brand-red"></i>Trust & Safety</Link></li>
-            </ul>
-</div>
-</div>
-<div className="border-t border-gray-700 pt-12">
-<div className="flex flex-col lg:flex-row justify-between items-center gap-8">
-<div className="text-center lg:text-left">
-<p className="text-gray-400 text-lg">
-© 2025 Picnify.in - Crafted with ❤️ in India. All rights reserved.
-</p>
-<p className="text-gray-500 text-sm mt-2">
-Connecting travelers with extraordinary experiences since 2024
-</p>
-</div>
-<div className="flex items-center gap-8">
-<div className="text-center">
-<div className="text-2xl font-bold text-white">4.9★</div>
-<div className="text-xs text-gray-400">App Rating</div>
-</div>
-</div>
-</div>
-</div>
-</div>
-</footer>
-</div>
+    </>
 );
 };
 
