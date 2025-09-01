@@ -12,6 +12,10 @@ import { Save, CreditCard, Building2, AlertTriangle } from 'lucide-react';
 interface PaymentBankConfig {
   stripe_enabled: boolean;
   razorpay_enabled: boolean;
+  phonepe_enabled: boolean;
+  phonepe_client_id: string;
+  phonepe_client_secret: string;
+  phonepe_environment: 'sandbox' | 'production';
   bank_account_number: string;
   bank_name: string;
   account_holder: string;
@@ -23,6 +27,10 @@ interface PaymentBankConfig {
 const defaultConfig: PaymentBankConfig = {
   stripe_enabled: false,
   razorpay_enabled: false,
+  phonepe_enabled: true,
+  phonepe_client_id: 'TEST-M23SH3F1QDQ88_25081',
+  phonepe_client_secret: 'YWEzMjcyYTMtNzI4Yy00YjMwLWE1YmMtYjYzNmIxMjFjMmMx',
+  phonepe_environment: 'sandbox',
   bank_account_number: '',
   bank_name: '',
   account_holder: '',
@@ -43,7 +51,7 @@ export const PaymentBankSettings: React.FC = () => {
   const loadSettings = async () => {
     try {
       setLoading(true);
-      
+
       const { data: paymentSettings } = await supabase
         .from('app_settings')
         .select('key, value')
@@ -70,10 +78,10 @@ export const PaymentBankSettings: React.FC = () => {
     try {
       console.log('Saving payment & bank settings...', config);
       setSaving(true);
-      
+
       const { data: { user } } = await supabase.auth.getUser();
       const userId = user?.id;
-      
+
       const upsertData = Object.entries(config).map(([key, value]) => ({
         key,
         category: 'payment_banking',
@@ -155,6 +163,60 @@ export const PaymentBankSettings: React.FC = () => {
               onCheckedChange={(checked) => setConfig({ ...config, razorpay_enabled: checked })}
             />
           </div>
+
+          <div className="flex items-center justify-between p-3 border rounded-lg bg-purple-50">
+            <div className="flex items-center space-x-3">
+              <div className="w-8 h-8 bg-purple-100 rounded flex items-center justify-center">
+                <CreditCard className="h-4 w-4 text-purple-600" />
+              </div>
+              <div>
+                <h4 className="font-medium">PhonePe Integration</h4>
+                <p className="text-sm text-gray-500">Leading Indian digital payments platform</p>
+              </div>
+            </div>
+            <Switch
+              checked={config.phonepe_enabled}
+              onCheckedChange={(checked) => setConfig({ ...config, phonepe_enabled: checked })}
+            />
+          </div>
+
+          {config.phonepe_enabled && (
+            <div className="ml-12 space-y-4 p-4 border rounded-lg bg-purple-50">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="phonepe_client_id">Client ID</Label>
+                  <Input
+                    id="phonepe_client_id"
+                    value={config.phonepe_client_id}
+                    onChange={(e) => setConfig({ ...config, phonepe_client_id: e.target.value })}
+                    placeholder="TEST-M23SH3F1QDQ88_25081"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="phonepe_client_secret">Client Secret</Label>
+                  <Input
+                    id="phonepe_client_secret"
+                    type="password"
+                    value={config.phonepe_client_secret}
+                    onChange={(e) => setConfig({ ...config, phonepe_client_secret: e.target.value })}
+                    placeholder="Enter client secret"
+                  />
+                </div>
+                <div className="space-y-2 md:col-span-2">
+                  <Label htmlFor="phonepe_environment">Environment</Label>
+                  <select
+                    id="phonepe_environment"
+                    value={config.phonepe_environment}
+                    onChange={(e) => setConfig({ ...config, phonepe_environment: e.target.value as 'sandbox' | 'production' })}
+                    className="w-full p-2 border rounded-md"
+                  >
+                    <option value="sandbox">Sandbox (Test)</option>
+                    <option value="production">Production (Live)</option>
+                  </select>
+                </div>
+              </div>
+            </div>
+          )}
         </CardContent>
       </Card>
 
