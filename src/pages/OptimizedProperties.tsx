@@ -185,7 +185,7 @@ const OptimizedProperties = () => {
 
   const handleViewDayPicnic = useCallback((propertyId: string, isPreview = false) => {
     if (isPreview) {
-      navigate(`/owner/dashboard?tab=properties&action=edit&id=${propertyId}`);
+      navigate(`/owner?tab=properties&action=edit&id=${propertyId}`);
     } else {
       navigate(`/day-picnic/${propertyId}`);
     }
@@ -357,7 +357,7 @@ const OptimizedProperties = () => {
               </span>
               <span className="text-sm text-muted-foreground">/night</span>
             </div>
-            <Button onClick={() => handleViewProperty(property.id)}>
+            <Button variant='destructive' onClick={() => handleViewProperty(property.id)}>
               View Details
             </Button>
           </div>
@@ -608,11 +608,11 @@ const OptimizedProperties = () => {
                 </p>
                 {user && (
                   <div className="flex gap-2 justify-center">
-                    <Button onClick={() => navigate('/owner/dashboard')}>
+                    <Button onClick={() => navigate('/owner')}>
                       Go to Owner Dashboard
                     </Button>
                     {ownerDayPicnics.length > 0 && (
-                      <Button variant="outline" onClick={() => navigate(`/owner/dashboard?tab=properties&action=edit&id=${ownerDayPicnics[0].property_id}`)}>
+                      <Button variant="outline" onClick={() => navigate(`/owner?tab=properties&action=edit&id=${ownerDayPicnics[0].property_id}`)}>
                         Setup Day Picnic
                       </Button>
                     )}

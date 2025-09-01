@@ -43,12 +43,12 @@ This guide tests the authentication system with different user types and various
 3. **Click**: "Sign In"
 4. **Expected Result**:
    - ✅ Login successful
-   - ✅ Redirected to `/owner/dashboard`
+   - ✅ Redirected to `/owner`
    - ✅ Owner menu items visible
 
 #### **Step 3: Owner Dashboard Access**
 1. **Verify Access**:
-   - ✅ `/owner/dashboard` - Should work
+   - ✅ `/owner` - Should work
    - ✅ `/owner/properties` - Should work
    - ✅ `/owner/bookings` - Should work
    - ✅ `/owner/earnings` - Should work
@@ -93,7 +93,7 @@ This guide tests the authentication system with different user types and various
    - ✅ `/agent/commissions` - Should work
    - ✅ `/agent/customers` - Should work
    - ❌ `/admin/dashboard` - Should redirect
-   - ❌ `/owner/dashboard` - Should redirect
+   - ❌ `/owner` - Should redirect
 
 ---
 

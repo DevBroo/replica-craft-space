@@ -1,7 +1,7 @@
 # Role Redirect Fix for Property Owner Signup
 
 ## Problem
-After property owner signup, users were being redirected to the main page (`/`) instead of the property owner dashboard (`/owner/dashboard`). This indicated that the user role wasn't being properly set or detected.
+After property owner signup, users were being redirected to the main page (`/`) instead of the property owner dashboard (`/owner`). This indicated that the user role wasn't being properly set or detected.
 
 ## Root Cause
 1. The redirect logic was using the form's `role` state instead of the authenticated user's role
@@ -56,7 +56,7 @@ After property owner signup, users were being redirected to the main page (`/`) 
 - `📊 User data from database: {userData}`
 - `👤 User object created: {user}`
 - `⚠️ Role mismatch detected, correcting from customer to owner`
-- `🚀 Redirecting to: /owner/dashboard for role: owner`
+- `🚀 Redirecting to: /owner for role: owner`
 
 ## Testing
 
@@ -65,7 +65,7 @@ After property owner signup, users were being redirected to the main page (`/`) 
 2. **Navigate to** `http://localhost:8081/owner/signup`
 3. **Fill out form** with test data
 4. **Submit form** and watch console logs
-5. **Verify redirect** goes to `/owner/dashboard` not `/`
+5. **Verify redirect** goes to `/owner` not `/`
 
 ### Expected Console Output
 ```
@@ -75,14 +75,14 @@ After property owner signup, users were being redirected to the main page (`/`) 
 📤 Signup data being sent: {email: "test@example.com", password: "***", userData: {role: "owner"}}
 📊 User data from database: {id: "123", email: "test@example.com", role: "owner"}
 👤 User object created: {id: "123", email: "test@example.com", role: "owner"}
-🚀 Redirecting to: /owner/dashboard for role: owner
+🚀 Redirecting to: /owner for role: owner
 ```
 
 ### Expected Results
 - ✅ Role properly set from URL path
 - ✅ Registration sends correct role to Supabase
 - ✅ User data fetched with correct role from database
-- ✅ Redirect goes to `/owner/dashboard` for property owners
+- ✅ Redirect goes to `/owner` for property owners
 - ✅ Dashboard shows real user data
 
 ## Files Modified

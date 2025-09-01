@@ -306,7 +306,7 @@
             addConsoleLog('🏠 Testing dashboard access with auth fixes...');
             
             try {
-                const response = await fetch('http://localhost:8080/owner/dashboard');
+                const response = await fetch('http://localhost:8080/owner');
                 
                 if (response.ok) {
                     addConsoleLog('✅ Dashboard accessible');

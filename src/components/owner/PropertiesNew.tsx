@@ -330,7 +330,7 @@ const Properties: React.FC<PropertiesProps> = ({
       <Card>
         <CardHeader className="flex flex-row items-center justify-between">
           <CardTitle>Your Properties</CardTitle>
-          <Button onClick={handleAddProperty}>
+          <Button variant='destructive' onClick={handleAddProperty}>
             <Plus className="w-4 h-4 mr-2" />
             Add Property
           </Button>

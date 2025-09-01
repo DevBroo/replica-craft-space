@@ -56,7 +56,7 @@ const AgentDashboard: React.FC = () => {
       if (user.role === 'admin') {
         navigate('/admin/dashboard');
       } else if (user.role === 'owner') {
-        navigate('/owner/dashboard');
+        navigate('/owner');
       } else {
         navigate('/'); // Customer goes to main page
       }

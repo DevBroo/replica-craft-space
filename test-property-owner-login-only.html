@@ -76,7 +76,7 @@
     <div class="test-section">
         <h2>🔗 Direct Test Links</h2>
         <a href="http://localhost:8081/owner/login" class="button" target="_blank">Property Owner Login</a>
-        <a href="http://localhost:8081/owner/dashboard" class="button" target="_blank">Owner Dashboard (will redirect to login)</a>
+        <a href="http://localhost:8081/owner" class="button" target="_blank">Owner Dashboard (will redirect to login)</a>
         <a href="http://localhost:8081/login" class="button" target="_blank">General Login (now owner login)</a>
         <a href="http://localhost:8081/" class="button" target="_blank">Homepage</a>
     </div>
@@ -101,7 +101,7 @@
             <ol>
                 <li>Go to <code>/owner/login</code></li>
                 <li>Login with existing owner credentials</li>
-                <li>Should redirect to <code>/owner/dashboard</code></li>
+                <li>Should redirect to <code>/owner</code></li>
                 <li>Dashboard should show real user data (not dummy)</li>
                 <li>Try accessing other tabs (Properties, Bookings, etc.)</li>
             </ol>
@@ -110,7 +110,7 @@
         <div class="step">
             <h3>Test 3: Authentication Protection</h3>
             <ol>
-                <li>Go directly to <code>/owner/dashboard</code> without login</li>
+                <li>Go directly to <code>/owner</code> without login</li>
                 <li>Should redirect to <code>/owner/login</code></li>
                 <li>Try accessing <code>/login</code> (should show owner login)</li>
                 <li>Verify that non-owner users are redirected appropriately</li>
@@ -123,7 +123,7 @@
                 <li>Go to homepage <code>/</code></li>
                 <li>Click "Property Owner Portal" in header</li>
                 <li>If not logged in: should go to <code>/owner/login</code></li>
-                <li>If logged in as owner: should go to <code>/owner/dashboard</code></li>
+                <li>If logged in as owner: should go to <code>/owner</code></li>
                 <li>If logged in as different role: should redirect appropriately</li>
             </ol>
         </div>

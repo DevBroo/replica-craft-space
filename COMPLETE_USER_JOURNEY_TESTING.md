@@ -93,7 +93,7 @@ This guide provides step-by-step instructions for testing the complete user jour
 #### **Step 3: Owner Dashboard Access**
 1. **After Email Verification**
 2. **Expected Result**:
-   - ✅ Redirected to `/owner/dashboard`
+   - ✅ Redirected to `/owner`
    - ✅ Owner-specific features available
    - ✅ Property management options
 
@@ -165,7 +165,7 @@ This guide provides step-by-step instructions for testing the complete user jour
    - ✅ `/properties` - Property listings
    - ✅ `/bookings` - Booking management
    - ❌ `/admin/dashboard` - Access denied
-   - ❌ `/owner/dashboard` - Access denied
+   - ❌ `/owner` - Access denied
 
 ### **Journey 5: OTP Login**
 

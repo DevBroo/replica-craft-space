@@ -65,7 +65,7 @@
         <a href="http://localhost:8081/owner/signup" class="test-button" target="_blank">
             🏠 Property Owner Signup
         </a>
-        <a href="http://localhost:8081/owner/dashboard" class="test-button" target="_blank">
+        <a href="http://localhost:8081/owner" class="test-button" target="_blank">
             📊 Owner Dashboard
         </a>
         <a href="http://localhost:8081/signup?role=owner" class="test-button" target="_blank">
@@ -81,14 +81,14 @@
             <li>Click "Property Owner Signup" link</li>
             <li>Fill out the form with new email</li>
             <li>Submit and verify redirect to dashboard</li>
-            <li><strong>Expected:</strong> Immediate redirect to `/owner/dashboard`</li>
+            <li><strong>Expected:</strong> Immediate redirect to `/owner`</li>
         </ol>
 
         <h3>Scenario 2: Already Authenticated Owner</h3>
         <ol>
             <li>Login as an owner user</li>
             <li>Navigate to `/owner/signup`</li>
-            <li><strong>Expected:</strong> Immediate redirect to `/owner/dashboard`</li>
+            <li><strong>Expected:</strong> Immediate redirect to `/owner`</li>
         </ol>
 
         <h3>Scenario 3: Role Change</h3>

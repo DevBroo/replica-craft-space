@@ -51,7 +51,7 @@ After entering signup details, the form was not redirecting users to their dashb
 - `✅ Registration successful and user authenticated, setting success state`
 - `🔄 Success effect triggered: {signupSuccess, loading, error}`
 - `✅ All conditions met, starting redirect timer`
-- `🚀 Redirecting to: /owner/dashboard`
+- `🚀 Redirecting to: /owner`
 
 ## Testing
 
@@ -69,7 +69,7 @@ After entering signup details, the form was not redirecting users to their dashb
    - ✅ Accept Terms
 4. **Click "Create Account"**
 5. **Watch console logs** to track the process
-6. **Verify redirect** to `/owner/dashboard` after 3 seconds
+6. **Verify redirect** to `/owner` after 3 seconds
 
 ### Expected Console Output
 ```
@@ -81,7 +81,7 @@ After entering signup details, the form was not redirecting users to their dashb
 ✅ Registration successful and user authenticated, setting success state
 🔄 Success effect triggered: {signupSuccess: true, loading: false, error: null}
 ✅ All conditions met, starting redirect timer
-🚀 Redirecting to: /owner/dashboard
+🚀 Redirecting to: /owner
 ```
 
 ### Expected Results

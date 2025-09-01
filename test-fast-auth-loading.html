@@ -311,7 +311,7 @@
             startTime = Date.now();
             
             try {
-                const response = await fetch('http://localhost:8080/owner/dashboard');
+                const response = await fetch('http://localhost:8080/owner');
                 
                 if (response.ok) {
                     const loadTime = Date.now() - startTime;

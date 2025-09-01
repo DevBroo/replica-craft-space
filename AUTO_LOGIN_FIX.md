@@ -20,7 +20,7 @@ After property owner signup, users were being redirected to the login page inste
 **File:** `src/pages/Signup.tsx`
 - Changed redirect destination from login pages to dashboard pages
 - Updated success message to reflect automatic login
-- Property owners now go directly to `/owner/dashboard` instead of `/owner/login`
+- Property owners now go directly to `/owner` instead of `/owner/login`
 
 ### 3. Added Debugging
 **Files:** `src/pages/Signup.tsx`, `src/pages/owner/OwnerDashboard.tsx`
@@ -40,7 +40,7 @@ After property owner signup, users were being redirected to the login page inste
 2. **Form submission** → Registration API call
 3. **Successful registration** → Automatic login with same credentials
 4. **Success message** → Shows for 3 seconds with updated messaging
-5. **Automatic redirect** → Goes directly to `/owner/dashboard`
+5. **Automatic redirect** → Goes directly to `/owner`
 
 ### Authentication Flow
 1. **Dashboard loads** → Checks authentication state
@@ -61,7 +61,7 @@ After property owner signup, users were being redirected to the login page inste
    - ✅ Role automatically set to "Property Owner"
    - ✅ Registration completes successfully
    - ✅ User automatically logged in
-   - ✅ Redirected to `/owner/dashboard`
+   - ✅ Redirected to `/owner`
    - ✅ Shows real user email and empty states
 
 2. **General Signup with Owner Role**: `/signup?role=owner`

@@ -56,7 +56,7 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
         unauthorizedRedirect = '/admin/dashboard';
         break;
       case 'owner':
-        unauthorizedRedirect = '/owner/dashboard';
+        unauthorizedRedirect = '/owner';
         break;
       case 'agent':
         unauthorizedRedirect = '/agent/dashboard';
@@ -82,7 +82,7 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
         unauthorizedRedirect = '/admin/dashboard';
         break;
       case 'owner':
-        unauthorizedRedirect = '/owner/dashboard';
+        unauthorizedRedirect = '/owner';
         break;
       case 'agent':
         unauthorizedRedirect = '/agent/dashboard';

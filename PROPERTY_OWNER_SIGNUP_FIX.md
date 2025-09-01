@@ -110,5 +110,5 @@ Terms: ✅ Accept Terms of Service
 ## Notes
 - The existing general signup functionality remains unchanged
 - All user types (customer, owner, agent) can still use the general `/signup` route
-- The property owner dashboard (`/owner/dashboard`) already exists and handles the login flow
+- The property owner dashboard (`/owner`) already exists and handles the login flow
 - Email verification is required before users can access their dashboards

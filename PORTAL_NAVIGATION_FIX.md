@@ -18,7 +18,7 @@
 **File:** `src/pages/Index.tsx`
 - **Smart Navigation**: Now checks user authentication state and role
 - **Conditional Routing**: 
-  - If user is authenticated and is owner → `/owner/dashboard`
+  - If user is authenticated and is owner → `/owner`
   - If user is authenticated but not owner → `/owner/signup`
   - If user is not authenticated → `/owner/signup`
 - **Event Handling**: Added `preventDefault()` and `stopPropagation()` to prevent interference
@@ -39,7 +39,7 @@
 
 ### Navigation Flow
 1. **User clicks Property Owner Portal** → Checks authentication state
-2. **If authenticated owner** → Navigates to `/owner/dashboard`
+2. **If authenticated owner** → Navigates to `/owner`
 3. **If authenticated non-owner** → Navigates to `/owner/signup`
 4. **If not authenticated** → Navigates to `/owner/signup`
 5. **OwnerDashboard loads** → Shows dashboard or redirects based on role
@@ -116,7 +116,7 @@ If navigation still doesn't work:
 2. **Check Network Tab**: Look for any failed requests
 3. **Test in Incognito**: Try in private/incognito mode
 4. **Check User Role**: Verify the current user's role in the database
-5. **Test Manual Navigation**: Try typing `/owner/dashboard` directly in URL
+5. **Test Manual Navigation**: Try typing `/owner` directly in URL
 
 ## Next Steps
 1. Test with the current logged-in user (`mshimavarsha07@gmail.com`)

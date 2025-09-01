@@ -53,7 +53,7 @@
         <h2>✅ Current Status</h2>
         <p>The Property Owner Portal button should now be working correctly with smart navigation logic:</p>
         <ul>
-            <li class="success">✅ <strong>If user is owner</strong> → Navigates to `/owner/dashboard`</li>
+            <li class="success">✅ <strong>If user is owner</strong> → Navigates to `/owner`</li>
             <li class="success">✅ <strong>If user is not owner</strong> → Navigates to `/owner/signup`</li>
             <li class="success">✅ <strong>If user is not authenticated</strong> → Navigates to `/owner/signup`</li>
         </ul>
@@ -101,7 +101,7 @@
             <h3>Step 5: Verify Navigation</h3>
             <p>Check if you were redirected to the correct page:</p>
             <ul>
-                <li><strong>If owner:</strong> Should go to `/owner/dashboard`</li>
+                <li><strong>If owner:</strong> Should go to `/owner`</li>
                 <li><strong>If not owner:</strong> Should go to `/owner/signup`</li>
             </ul>
         </div>
@@ -142,7 +142,7 @@
 
         <h3>If Navigation Fails:</h3>
         <ol>
-            <li><strong>Check Routes:</strong> Verify `/owner/dashboard` route exists</li>
+            <li><strong>Check Routes:</strong> Verify `/owner` route exists</li>
             <li><strong>Check Authentication:</strong> Ensure user is properly authenticated</li>
             <li><strong>Check Role:</strong> Verify user role is correctly set</li>
         </ol>

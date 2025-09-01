@@ -75,7 +75,7 @@ After property owner signup, users were being redirected to a dashboard with dum
 ## Testing
 
 ### Test Scenarios
-1. **Unauthenticated Access**: `/owner/dashboard`
+1. **Unauthenticated Access**: `/owner`
    - ✅ Should show login form
    - ✅ Should not show dummy data
 

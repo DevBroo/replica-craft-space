@@ -2,7 +2,7 @@
 
 ## ✅ Dashboard Overview
 
-Yes, we have a fully functional Property Owner Dashboard! The dashboard is accessible at `/owner/dashboard` and provides comprehensive property management features.
+Yes, we have a fully functional Property Owner Dashboard! The dashboard is accessible at `/owner` and provides comprehensive property management features.
 
 ## 🏠 Dashboard Features
 
@@ -38,10 +38,10 @@ The dashboard includes a collapsible sidebar with the following sections:
 1. Navigate to `/owner/signup`
 2. Fill out registration form
 3. Auto-login after successful registration
-4. Redirect to `/owner/dashboard`
+4. Redirect to `/owner`
 
 ### **For Existing Users**
-1. Navigate to `/owner/signup` or `/owner/dashboard`
+1. Navigate to `/owner/signup` or `/owner`
 2. If already authenticated as owner → Direct access to dashboard
 3. If authenticated as different role → Redirect to appropriate page
 
@@ -117,7 +117,7 @@ The dashboard includes a collapsible sidebar with the following sections:
 
 ### **For New Property Owners**
 1. **Sign up** as a property owner
-2. **Access dashboard** at `/owner/dashboard`
+2. **Access dashboard** at `/owner`
 3. **Add your first property** using the "Add Your First Property" button
 4. **Complete your profile** in the Profile section
 5. **Set up notifications** in Settings
@@ -132,7 +132,7 @@ The dashboard includes a collapsible sidebar with the following sections:
 
 ### **Route Configuration**
 ```typescript
-<Route path="/owner/dashboard" element={<OwnerDashboard />} />
+<Route path="/owner" element={<OwnerDashboard />} />
 <Route path="/owner/signup" element={<Signup />} />
 ```
 
@@ -174,7 +174,7 @@ The dashboard includes a collapsible sidebar with the following sections:
 
 ## 🔗 Quick Access
 
-- **Dashboard**: `http://localhost:8081/owner/dashboard`
+- **Dashboard**: `http://localhost:8081/owner`
 - **Signup**: `http://localhost:8081/owner/signup`
 - **Main Site**: `http://localhost:8081/`
 

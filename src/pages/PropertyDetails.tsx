@@ -1,11 +1,25 @@
 import { useParams, useNavigate } from "react-router-dom";
-import { ArrowLeft, Star, MapPin, Heart, Share2, Calendar, Users, Phone, MessageCircle } from "lucide-react";
+import {
+  ArrowLeft,
+  Star,
+  MapPin,
+  Heart,
+  Share2,
+  Calendar,
+  Users,
+  Phone,
+  MessageCircle,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Calendar as CalendarComponent } from "@/components/ui/calendar";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
 import { useState, useEffect } from "react";
 import { PropertyService } from "@/lib/propertyService";
 import { BookingService } from "@/lib/bookingService";
@@ -13,7 +27,7 @@ import { CouponService, Coupon } from "@/lib/couponService";
 import { useAuth } from "@/contexts/AuthContext";
 import { useWishlist } from "@/contexts/WishlistContext";
 import { useToast } from "@/hooks/use-toast";
-import GuestSelector, { GuestBreakdown } from '@/components/ui/GuestSelector';
+import GuestSelector, { GuestBreakdown } from "@/components/ui/GuestSelector";
 import { Input } from "@/components/ui/input";
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
@@ -30,13 +44,16 @@ import { ReviewsSection } from "@/components/property/ReviewsSection";
 const PropertyDetails = () => {
   const { id } = useParams();
   const navigate = useNavigate();
-  const [guests, setGuests] = useState<GuestBreakdown>({ adults: 2, children: [] });
+  const [guests, setGuests] = useState<GuestBreakdown>({
+    adults: 2,
+    children: [],
+  });
   const [property, setProperty] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [checkInDate, setCheckInDate] = useState<Date>();
   const [checkOutDate, setCheckOutDate] = useState<Date>();
   const [isBooking, setIsBooking] = useState(false);
-  const [couponCode, setCouponCode] = useState('');
+  const [couponCode, setCouponCode] = useState("");
   const [appliedCoupon, setAppliedCoupon] = useState<Coupon | null>(null);
   const [isCouponLoading, setIsCouponLoading] = useState(false);
   const [lightboxOpen, setLightboxOpen] = useState(false);
@@ -45,36 +62,40 @@ const PropertyDetails = () => {
   const [selectedRoom, setSelectedRoom] = useState<any>(null);
   const [dayPicnicPackages, setDayPicnicPackages] = useState<any[]>([]);
   const [activeTab, setActiveTab] = useState("description");
-  
+
   const { user, isAuthenticated } = useAuth();
   const { toast } = useToast();
   const { isPropertySaved, addToWishlist, removeFromWishlist } = useWishlist();
 
   // Check if this is a day picnic property
-  const isDayPicnic = property?.type?.toLowerCase() === 'day picnic' || 
-                     property?.property_type?.toLowerCase() === 'day picnic' ||
-                     property?.property_type === 'day_picnic';
-  
+  const isDayPicnic =
+    property?.type?.toLowerCase() === "day picnic" ||
+    property?.property_type?.toLowerCase() === "day picnic" ||
+    property?.property_type === "day_picnic";
+
   // Restore booking data if returning from login
   useEffect(() => {
-    const pendingBookingData = sessionStorage.getItem('pendingBookingData');
+    const pendingBookingData = sessionStorage.getItem("pendingBookingData");
     if (pendingBookingData) {
       try {
         const bookingData = JSON.parse(pendingBookingData);
-        if (bookingData.checkInDate) setCheckInDate(new Date(bookingData.checkInDate));
-        if (bookingData.checkOutDate) setCheckOutDate(new Date(bookingData.checkOutDate));
+        if (bookingData.checkInDate)
+          setCheckInDate(new Date(bookingData.checkInDate));
+        if (bookingData.checkOutDate)
+          setCheckOutDate(new Date(bookingData.checkOutDate));
         setGuests(bookingData.guests || { adults: 2, children: [] });
-        
-        sessionStorage.removeItem('pendingBookingData');
-        
+
+        sessionStorage.removeItem("pendingBookingData");
+
         if (isAuthenticated) {
           toast({
             title: "Welcome back!",
-            description: "Your booking details have been restored. You can now complete your reservation.",
+            description:
+              "Your booking details have been restored. You can now complete your reservation.",
           });
         }
       } catch (error) {
-        console.error('Error restoring booking data:', error);
+        console.error("Error restoring booking data:", error);
       }
     }
   }, [isAuthenticated, toast]);
@@ -82,21 +103,23 @@ const PropertyDetails = () => {
   useEffect(() => {
     const loadProperty = async () => {
       if (!id) return;
-      
+
       try {
-        console.log('🔍 Loading property details for ID:', id);
+        console.log("🔍 Loading property details for ID:", id);
         const propertyData = await PropertyService.getPropertyById(id);
-        
+
         if (propertyData) {
           const formattedProperty = {
             id: propertyData.id,
             title: propertyData.title,
             type: propertyData.property_type,
             property_type: propertyData.property_type,
-            location: `${(propertyData.location as any)?.city || ''}, ${(propertyData.location as any)?.state || ''}`,
-            city: (propertyData.location as any)?.city || '',
-            state: (propertyData.location as any)?.state || '',
-            address: propertyData.address || '',
+            location: `${(propertyData.location as any)?.city || ""}, ${
+              (propertyData.location as any)?.state || ""
+            }`,
+            city: (propertyData.location as any)?.city || "",
+            state: (propertyData.location as any)?.state || "",
+            address: propertyData.address || "",
             price: (propertyData.pricing as any)?.daily_rate || 0,
             rating: propertyData.rating || 0,
             reviews: propertyData.review_count || 0,
@@ -105,52 +128,66 @@ const PropertyDetails = () => {
             capacity_per_room: propertyData.capacity_per_room,
             day_picnic_capacity: propertyData.day_picnic_capacity,
             contact_phone: propertyData.contact_phone,
-            images: propertyData.images && propertyData.images.length > 0 
-              ? propertyData.images 
-              : ['/placeholder.svg'],
-            description: propertyData.description || 'No description available.',
-            amenities: propertyData.amenities?.map((a: string) => ({ 
-              icon: null, 
-              name: a.charAt(0).toUpperCase() + a.slice(1) 
-            })) || [],
+            images:
+              propertyData.images && propertyData.images.length > 0
+                ? propertyData.images
+                : ["/placeholder.svg"],
+            description:
+              propertyData.description || "No description available.",
+            amenities:
+              propertyData.amenities?.map((a: string) => ({
+                icon: null,
+                name: a.charAt(0).toUpperCase() + a.slice(1),
+              })) || [],
             roomTypes: [
               {
-                id: 'default',
-                name: `${propertyData.property_type.charAt(0).toUpperCase() + propertyData.property_type.slice(1)} Room`,
+                id: "default",
+                name: `${
+                  propertyData.property_type.charAt(0).toUpperCase() +
+                  propertyData.property_type.slice(1)
+                } Room`,
                 price: (propertyData.pricing as any)?.daily_rate || 0,
                 max_guests: propertyData.max_guests,
                 features: [
-                  `${propertyData.bedrooms || 0} Bedrooms`, 
-                  `${propertyData.bathrooms || 0} Bathrooms`, 
-                  `Capacity: ${propertyData.max_guests || 0} guests`
+                  `${propertyData.bedrooms || 0} Bedrooms`,
+                  `${propertyData.bathrooms || 0} Bathrooms`,
+                  `Capacity: ${propertyData.max_guests || 0} guests`,
                 ],
-                images: propertyData.images?.slice(0, 3) || ['/placeholder.svg']
-              }
+                images: propertyData.images?.slice(0, 3) || [
+                  "/placeholder.svg",
+                ],
+              },
             ],
             highlights: [
               `${propertyData.bedrooms || 0} Bedrooms`,
               `${propertyData.bathrooms || 0} Bathrooms`,
               `Capacity: ${propertyData.max_guests || 0} guests`,
-              `${propertyData.property_type.charAt(0).toUpperCase() + propertyData.property_type.slice(1)} Type`,
-              `Status: ${propertyData.status}`
-            ]
+              `${
+                propertyData.property_type.charAt(0).toUpperCase() +
+                propertyData.property_type.slice(1)
+              } Type`,
+              `Status: ${propertyData.status}`,
+            ],
           };
           setProperty(formattedProperty);
-          
+
           // Load day picnic packages if this is a day picnic property
-          if (formattedProperty.property_type?.toLowerCase() === 'day picnic' || 
-              formattedProperty.property_type === 'day_picnic') {
-            const packages = await PropertyService.getDayPicnicPackagesForProperty(id);
+          if (
+            formattedProperty.property_type?.toLowerCase() === "day picnic" ||
+            formattedProperty.property_type === "day_picnic"
+          ) {
+            const packages =
+              await PropertyService.getDayPicnicPackagesForProperty(id);
             setDayPicnicPackages(packages);
           }
-          
-          console.log('✅ Property details loaded successfully');
+
+          console.log("✅ Property details loaded successfully");
         } else {
-          console.log('ℹ️ Property not found or not approved');
+          console.log("ℹ️ Property not found or not approved");
           setProperty(null);
         }
       } catch (error) {
-        console.error('❌ Error loading property details:', error);
+        console.error("❌ Error loading property details:", error);
       } finally {
         setLoading(false);
       }
@@ -163,23 +200,31 @@ const PropertyDetails = () => {
   useEffect(() => {
     if (property) {
       document.title = `${property.title} — ${property.location} | Picnify`;
-      
+
       // Update meta description
-      const metaDescription = document.querySelector('meta[name="description"]');
+      const metaDescription = document.querySelector(
+        'meta[name="description"]'
+      );
       if (metaDescription) {
-        metaDescription.setAttribute('content', 
+        metaDescription.setAttribute(
+          "content",
           `Book ${property.title} in ${property.location}. Rated ${property.rating}/5 with ${property.reviews} reviews. Perfect for ${property.max_guests} guests.`
         );
       }
-      
+
       // Update Open Graph tags
       const ogTitle = document.querySelector('meta[property="og:title"]');
-      const ogDescription = document.querySelector('meta[property="og:description"]');
+      const ogDescription = document.querySelector(
+        'meta[property="og:description"]'
+      );
       const ogImage = document.querySelector('meta[property="og:image"]');
-      
-      if (ogTitle) ogTitle.setAttribute('content', `${property.title} | Picnify`);
-      if (ogDescription) ogDescription.setAttribute('content', property.description);
-      if (ogImage && property.images[0]) ogImage.setAttribute('content', property.images[0]);
+
+      if (ogTitle)
+        ogTitle.setAttribute("content", `${property.title} | Picnify`);
+      if (ogDescription)
+        ogDescription.setAttribute("content", property.description);
+      if (ogImage && property.images[0])
+        ogImage.setAttribute("content", property.images[0]);
     }
   }, [property]);
 
@@ -192,29 +237,33 @@ const PropertyDetails = () => {
   const calculateTotal = () => {
     if (isDayPicnic && selectedPackage) {
       const totalGuests = guests.adults + guests.children.length;
-      const basePrice = selectedPackage.pricing_type === 'per_person' 
-        ? selectedPackage.base_price * totalGuests 
-        : selectedPackage.base_price;
-      
+      const basePrice =
+        selectedPackage.pricing_type === "per_person"
+          ? selectedPackage.base_price * totalGuests
+          : selectedPackage.base_price;
+
       if (appliedCoupon) {
-        const discount = CouponService.calculateDiscount(appliedCoupon, basePrice);
+        const discount = CouponService.calculateDiscount(
+          appliedCoupon,
+          basePrice
+        );
         return basePrice - discount;
       }
       return basePrice;
     }
-    
+
     // Regular stay calculation
     const nights = calculateNights();
     const roomPrice = selectedRoom?.price || property?.price || 0;
     const basePrice = roomPrice * nights;
     const serviceFee = Math.round(basePrice * 0.1);
     const subtotal = basePrice + serviceFee;
-    
+
     if (appliedCoupon) {
       const discount = CouponService.calculateDiscount(appliedCoupon, subtotal);
       return subtotal - discount;
     }
-    
+
     return subtotal;
   };
 
@@ -223,44 +272,50 @@ const PropertyDetails = () => {
       toast({
         title: "Enter Coupon Code",
         description: "Please enter a coupon code to apply.",
-        variant: "destructive"
+        variant: "destructive",
       });
       return;
     }
 
     setIsCouponLoading(true);
     try {
-      const coupon = await CouponService.validateCoupon(couponCode, property.id);
-      
+      const coupon = await CouponService.validateCoupon(
+        couponCode,
+        property.id
+      );
+
       if (coupon) {
         const total = calculateTotal();
-        
+
         if (total < coupon.min_order_amount) {
           toast({
             title: "Minimum Order Not Met",
             description: `This coupon requires a minimum order of ₹${coupon.min_order_amount}. Your current total is ₹${total}.`,
-            variant: "destructive"
+            variant: "destructive",
           });
           return;
         }
-        
+
         setAppliedCoupon(coupon);
         toast({
           title: "Coupon Applied! 🎉",
-          description: `${coupon.description || 'Discount applied successfully'}`,
+          description: `${
+            coupon.description || "Discount applied successfully"
+          }`,
         });
       } else {
         toast({
           title: "Invalid Coupon",
-          description: "This coupon code is invalid, expired, or not applicable to this property.",
-          variant: "destructive"
+          description:
+            "This coupon code is invalid, expired, or not applicable to this property.",
+          variant: "destructive",
         });
       }
     } catch (error) {
       toast({
         title: "Error",
         description: "Failed to validate coupon code. Please try again.",
-        variant: "destructive"
+        variant: "destructive",
       });
     } finally {
       setIsCouponLoading(false);
@@ -269,10 +324,10 @@ const PropertyDetails = () => {
 
   const handleCouponRemove = () => {
     setAppliedCoupon(null);
-    setCouponCode('');
+    setCouponCode("");
     toast({
       title: "Coupon Removed",
-      description: "The coupon discount has been removed from your booking."
+      description: "The coupon discount has been removed from your booking.",
     });
   };
 
@@ -281,24 +336,24 @@ const PropertyDetails = () => {
       toast({
         title: "Sign In Required",
         description: "Please sign in to your account to book this property.",
-        variant: "destructive"
+        variant: "destructive",
       });
-      
-      navigate('/customer-login', { 
-        state: { 
+
+      navigate("/customer-login", {
+        state: {
           returnTo: `/property/${property.id}`,
-          bookingData: { 
+          bookingData: {
             checkInDate: checkInDate?.toISOString(),
             checkOutDate: checkOutDate?.toISOString(),
-            guests 
+            guests,
           },
-          message: "Please sign in to complete your booking"
-        }
+          message: "Please sign in to complete your booking",
+        },
       });
       return;
     }
 
-    if (user.role !== 'customer') {
+    if (user.role !== "customer") {
       toast({
         title: "Booking Restricted",
         description: "Only customers can book properties.",
@@ -313,8 +368,8 @@ const PropertyDetails = () => {
         state: {
           selectedPackage,
           guests,
-          selectedDate: checkInDate
-        }
+          selectedDate: checkInDate,
+        },
       });
       return;
     }
@@ -324,7 +379,7 @@ const PropertyDetails = () => {
       toast({
         title: "Select Your Dates",
         description: "Please choose your check-in and check-out dates.",
-        variant: "destructive"
+        variant: "destructive",
       });
       return;
     }
@@ -334,19 +389,19 @@ const PropertyDetails = () => {
       toast({
         title: "Guest Limit Exceeded",
         description: `This property accommodates up to ${property.max_guests} guests.`,
-        variant: "destructive"
+        variant: "destructive",
       });
       return;
     }
 
     setIsBooking(true);
-    
+
     try {
       const booking = await BookingService.createBooking({
         property_id: property.id,
         user_id: user.id,
-        check_in_date: checkInDate.toISOString().split('T')[0],
-        check_out_date: checkOutDate.toISOString().split('T')[0],
+        check_in_date: checkInDate.toISOString().split("T")[0],
+        check_out_date: checkOutDate.toISOString().split("T")[0],
         guests: totalGuests,
         total_amount: calculateTotal(),
         booking_details: {
@@ -355,23 +410,22 @@ const PropertyDetails = () => {
           nights: calculateNights(),
           guest_breakdown: guests,
           room_selection: selectedRoom,
-          coupon_applied: appliedCoupon
-        }
+          coupon_applied: appliedCoupon,
+        },
       });
 
       toast({
         title: "Booking Confirmed! 🎉",
         description: `Your reservation for ${property.title} has been confirmed.`,
       });
-      
-      navigate('/dashboard');
-      
+
+      navigate("/dashboard");
     } catch (error: any) {
-      console.error('❌ Error creating booking:', error);
+      console.error("❌ Error creating booking:", error);
       toast({
         title: "Booking Failed",
         description: "We couldn't complete your booking. Please try again.",
-        variant: "destructive"
+        variant: "destructive",
       });
     } finally {
       setIsBooking(false);
@@ -381,12 +435,16 @@ const PropertyDetails = () => {
   const handlePackageSelect = (pkg: any) => {
     setSelectedPackage(pkg);
     // Scroll to booking box
-    document.getElementById('booking-box')?.scrollIntoView({ behavior: 'smooth' });
+    document
+      .getElementById("booking-box")
+      ?.scrollIntoView({ behavior: "smooth" });
   };
 
   const handleRoomSelect = (room: any) => {
     setSelectedRoom(room);
-    document.getElementById('booking-box')?.scrollIntoView({ behavior: 'smooth' });
+    document
+      .getElementById("booking-box")
+      ?.scrollIntoView({ behavior: "smooth" });
   };
 
   const openLightbox = (index: number) => {
@@ -404,13 +462,16 @@ const PropertyDetails = () => {
       </div>
     );
   }
-  
+
   if (!property) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
           <h1 className="text-2xl font-bold mb-4">Property Not Found</h1>
-          <p className="text-muted-foreground mb-6">This property may not exist or is not yet approved for public viewing.</p>
+          <p className="text-muted-foreground mb-6">
+            This property may not exist or is not yet approved for public
+            viewing.
+          </p>
           <div className="flex gap-3">
             <Button onClick={() => navigate(-1)} variant="outline">
               <ArrowLeft className="mr-2 h-4 w-4" />
@@ -431,20 +492,17 @@ const PropertyDetails = () => {
       <div className="bg-background border-b sticky top-0 z-40">
         <div className="container mx-auto px-4 py-4">
           <div className="flex justify-between items-center">
-            <Button 
-              variant="ghost" 
-              onClick={() => navigate("/")}
-            >
+            <Button variant="ghost" onClick={() => navigate("/properties")}>
               <ArrowLeft className="w-4 h-4 mr-2" />
               Back to Properties
             </Button>
-            
+
             <div className="flex gap-2">
               <Button variant="outline" size="icon">
                 <Share2 className="w-4 h-4" />
               </Button>
-              <Button 
-                variant="outline" 
+              <Button
+                variant="outline"
                 size="icon"
                 onClick={() => {
                   if (isPropertySaved(property.id)) {
@@ -454,12 +512,12 @@ const PropertyDetails = () => {
                   }
                 }}
               >
-                <Heart 
+                <Heart
                   className={`w-4 h-4 transition-colors ${
-                    isPropertySaved(property.id) 
-                      ? 'fill-red-500 text-red-500' 
-                      : 'text-gray-600'
-                  }`} 
+                    isPropertySaved(property.id)
+                      ? "fill-red-500 text-red-500"
+                      : "text-gray-600"
+                  }`}
                 />
               </Button>
             </div>
@@ -494,17 +552,21 @@ const PropertyDetails = () => {
                 </div>
                 <div className="flex items-center">
                   <Users className="w-4 h-4 mr-1" />
-                  {isDayPicnic ? (
-                    `${property.day_picnic_capacity || property.max_guests} guests max`
-                  ) : (
-                    `${property.max_guests} guests max`
-                  )}
+                  {isDayPicnic
+                    ? `${
+                        property.day_picnic_capacity || property.max_guests
+                      } guests max`
+                    : `${property.max_guests} guests max`}
                 </div>
               </div>
             </div>
 
             {/* Tabs */}
-            <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+            <Tabs
+              value={activeTab}
+              onValueChange={setActiveTab}
+              className="w-full"
+            >
               <TabsList className="grid w-full grid-cols-3 lg:grid-cols-4">
                 <TabsTrigger value="description">Description</TabsTrigger>
                 {isDayPicnic && (
@@ -512,15 +574,17 @@ const PropertyDetails = () => {
                 )}
                 <TabsTrigger value="location">Location</TabsTrigger>
                 <TabsTrigger value="rooms">
-                  {isDayPicnic ? 'Packages' : 'Rooms'}
+                  {isDayPicnic ? "Packages" : "Rooms"}
                 </TabsTrigger>
               </TabsList>
-              
+
               <TabsContent value="description" className="mt-6">
                 <div className="space-y-6">
                   {/* Description */}
                   <div>
-                    <h3 className="text-xl font-semibold mb-3">About this place</h3>
+                    <h3 className="text-xl font-semibold mb-3">
+                      About this place
+                    </h3>
                     <p className="text-muted-foreground leading-relaxed">
                       {property.description}
                     </p>
@@ -528,7 +592,9 @@ const PropertyDetails = () => {
 
                   {/* Amenities */}
                   <div>
-                    <h3 className="text-xl font-semibold mb-3">What this place offers</h3>
+                    <h3 className="text-xl font-semibold mb-3">
+                      What this place offers
+                    </h3>
                     <div className="grid grid-cols-2 gap-3">
                       {property.amenities.map((amenity: any, index: number) => (
                         <div key={index} className="flex items-center gap-2">
@@ -553,7 +619,7 @@ const PropertyDetails = () => {
 
               {isDayPicnic && (
                 <TabsContent value="itinerary" className="mt-6">
-                  <ItineraryTimeline 
+                  <ItineraryTimeline
                     propertyType={property.property_type}
                     packages={dayPicnicPackages}
                   />
@@ -561,7 +627,7 @@ const PropertyDetails = () => {
               )}
 
               <TabsContent value="location" className="mt-6">
-                <MapEmbed 
+                <MapEmbed
                   city={property.city}
                   state={property.state}
                   address={property.address}
@@ -572,12 +638,15 @@ const PropertyDetails = () => {
                 {isDayPicnic ? (
                   <div className="space-y-6">
                     <div>
-                      <h3 className="text-xl font-semibold mb-3">Available Packages</h3>
+                      <h3 className="text-xl font-semibold mb-3">
+                        Available Packages
+                      </h3>
                       <p className="text-muted-foreground">
-                        Choose the perfect package for your day picnic experience
+                        Choose the perfect package for your day picnic
+                        experience
                       </p>
                     </div>
-                    
+
                     {dayPicnicPackages.length > 0 ? (
                       <div className="grid gap-6 md:grid-cols-2">
                         {dayPicnicPackages.map((pkg) => (
@@ -591,19 +660,23 @@ const PropertyDetails = () => {
                       </div>
                     ) : (
                       <div className="text-center py-8">
-                        <p className="text-muted-foreground">No packages available at the moment.</p>
+                        <p className="text-muted-foreground">
+                          No packages available at the moment.
+                        </p>
                       </div>
                     )}
                   </div>
                 ) : (
                   <div className="space-y-6">
                     <div>
-                      <h3 className="text-xl font-semibold mb-3">Available Rooms</h3>
+                      <h3 className="text-xl font-semibold mb-3">
+                        Available Rooms
+                      </h3>
                       <p className="text-muted-foreground">
                         Choose your preferred room type for your stay
                       </p>
                     </div>
-                    
+
                     <div className="space-y-4">
                       {property.roomTypes.map((room: any) => (
                         <RoomCard
@@ -620,7 +693,7 @@ const PropertyDetails = () => {
             </Tabs>
 
             {/* Reviews Section */}
-            <ReviewsSection 
+            <ReviewsSection
               propertyId={property.id}
               rating={property.rating}
               reviewCount={property.reviews}
@@ -633,9 +706,11 @@ const PropertyDetails = () => {
               <Card id="booking-box" className="shadow-lg">
                 <CardContent className="p-6 space-y-4">
                   <div className="flex items-baseline gap-2 mb-4">
-                    <span className="text-2xl font-bold">₹{property.price}</span>
+                    <span className="text-2xl font-bold">
+                      ₹{property.price}
+                    </span>
                     <span className="text-muted-foreground">
-                      {isDayPicnic ? 'starting price' : 'per night'}
+                      {isDayPicnic ? "starting price" : "per night"}
                     </span>
                   </div>
 
@@ -652,7 +727,9 @@ const PropertyDetails = () => {
                             )}
                           >
                             <Calendar className="mr-2 h-4 w-4" />
-                            {checkInDate ? format(checkInDate, "PPP") : "Check-in"}
+                            {checkInDate
+                              ? format(checkInDate, "PPP")
+                              : "Check-in"}
                           </Button>
                         </PopoverTrigger>
                         <PopoverContent className="w-auto p-0" align="start">
@@ -677,7 +754,9 @@ const PropertyDetails = () => {
                             )}
                           >
                             <Calendar className="mr-2 h-4 w-4" />
-                            {checkOutDate ? format(checkOutDate, "PPP") : "Check-out"}
+                            {checkOutDate
+                              ? format(checkOutDate, "PPP")
+                              : "Check-out"}
                           </Button>
                         </PopoverTrigger>
                         <PopoverContent className="w-auto p-0" align="start">
@@ -685,7 +764,9 @@ const PropertyDetails = () => {
                             mode="single"
                             selected={checkOutDate}
                             onSelect={setCheckOutDate}
-                            disabled={(date) => date < (checkInDate || new Date())}
+                            disabled={(date) =>
+                              date < (checkInDate || new Date())
+                            }
                             initialFocus
                             className="p-3 pointer-events-auto"
                           />
@@ -706,7 +787,9 @@ const PropertyDetails = () => {
                           )}
                         >
                           <Calendar className="mr-2 h-4 w-4" />
-                          {checkInDate ? format(checkInDate, "PPP") : "Select Date"}
+                          {checkInDate
+                            ? format(checkInDate, "PPP")
+                            : "Select Date"}
                         </Button>
                       </PopoverTrigger>
                       <PopoverContent className="w-auto p-0" align="start">
@@ -723,7 +806,7 @@ const PropertyDetails = () => {
                   )}
 
                   {/* Guest Selection */}
-                  <GuestSelector 
+                  <GuestSelector
                     maxGuests={property.max_guests}
                     onGuestsChange={setGuests}
                     initialGuests={guests}
@@ -734,22 +817,24 @@ const PropertyDetails = () => {
                     <div className="p-3 bg-muted/50 rounded-lg">
                       <div className="text-sm font-medium mb-1">Package</div>
                       <div className="text-sm text-muted-foreground">
-                        {selectedPackage ? (
-                          `${selectedPackage.meal_plan?.join(', ') || 'Package'} - ₹${selectedPackage.base_price} ${selectedPackage.pricing_type === 'per_person' ? 'per person' : 'per package'}`
-                        ) : (
-                          'Select a package from the packages tab'
-                        )}
+                        {selectedPackage
+                          ? `${
+                              selectedPackage.meal_plan?.join(", ") || "Package"
+                            } - ₹${selectedPackage.base_price} ${
+                              selectedPackage.pricing_type === "per_person"
+                                ? "per person"
+                                : "per package"
+                            }`
+                          : "Select a package from the packages tab"}
                       </div>
                     </div>
                   ) : (
                     <div className="p-3 bg-muted/50 rounded-lg">
                       <div className="text-sm font-medium mb-1">Room</div>
                       <div className="text-sm text-muted-foreground">
-                        {selectedRoom ? (
-                          `${selectedRoom.name} - ₹${selectedRoom.price} per night`
-                        ) : (
-                          property.roomTypes[0]?.name || 'Standard Room'
-                        )}
+                        {selectedRoom
+                          ? `${selectedRoom.name} - ₹${selectedRoom.price} per night`
+                          : property.roomTypes[0]?.name || "Standard Room"}
                       </div>
                     </div>
                   )}
@@ -768,8 +853,8 @@ const PropertyDetails = () => {
                           Remove
                         </Button>
                       ) : (
-                        <Button 
-                          variant="outline" 
+                        <Button
+                          variant="outline"
                           onClick={handleCouponApply}
                           disabled={isCouponLoading}
                         >
@@ -779,7 +864,7 @@ const PropertyDetails = () => {
                     </div>
                     {appliedCoupon && (
                       <p className="text-sm text-green-600">
-                        ✅ {appliedCoupon.description || 'Coupon applied'}
+                        ✅ {appliedCoupon.description || "Coupon applied"}
                       </p>
                     )}
                   </div>
@@ -796,13 +881,21 @@ const PropertyDetails = () => {
                   </div>
 
                   {/* Book Button */}
-                  <Button 
+                  <Button
                     onClick={handleBooking}
-                    disabled={isBooking || (isDayPicnic && !selectedPackage) || (!isDayPicnic && (!checkInDate || !checkOutDate))}
+                    disabled={
+                      isBooking ||
+                      (isDayPicnic && !selectedPackage) ||
+                      (!isDayPicnic && (!checkInDate || !checkOutDate))
+                    }
                     className="w-full"
                     size="lg"
                   >
-                    {isBooking ? 'Processing...' : (isDayPicnic ? 'Book Day Picnic' : 'Reserve Now')}
+                    {isBooking
+                      ? "Processing..."
+                      : isDayPicnic
+                      ? "Book Day Picnic"
+                      : "Reserve Now"}
                   </Button>
 
                   {/* Quick Contact */}
@@ -831,14 +924,18 @@ const PropertyDetails = () => {
           <div>
             <div className="font-semibold">₹{calculateTotal()}</div>
             <div className="text-xs text-muted-foreground">
-              {isDayPicnic ? 'total price' : `${calculateNights()} nights`}
+              {isDayPicnic ? "total price" : `${calculateNights()} nights`}
             </div>
           </div>
-          <Button 
-            onClick={() => document.getElementById('booking-box')?.scrollIntoView({ behavior: 'smooth' })}
+          <Button
+            onClick={() =>
+              document
+                .getElementById("booking-box")
+                ?.scrollIntoView({ behavior: "smooth" })
+            }
             size="lg"
           >
-            {isDayPicnic ? 'Book Day Picnic' : 'Reserve Now'}
+            {isDayPicnic ? "Book Day Picnic" : "Reserve Now"}
           </Button>
         </div>
       </div>

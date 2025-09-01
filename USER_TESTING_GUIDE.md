@@ -100,7 +100,7 @@ This guide simulates a real user's journey through the Picnify authentication sy
    - ✅ `/` (Home) - Should work
    - ✅ `/properties` - Should work
    - ❌ `/admin/dashboard` - Should redirect to login
-   - ❌ `/owner/dashboard` - Should redirect to login
+   - ❌ `/owner` - Should redirect to login
    - ❌ `/agent/dashboard` - Should redirect to login
 
 #### **Test 2: Admin Access**
@@ -114,7 +114,7 @@ This guide simulates a real user's journey through the Picnify authentication sy
 #### **Test 3: Property Owner Access**
 1. **Login as**: Property Owner
 2. **Try to Access**:
-   - ✅ `/owner/dashboard` - Should work
+   - ✅ `/owner` - Should work
    - ✅ `/owner/properties` - Should work
    - ✅ `/owner/bookings` - Should work
    - ❌ `/admin/dashboard` - Should redirect
@@ -135,7 +135,7 @@ This guide simulates a real user's journey through the Picnify authentication sy
 1. **Clear Browser Storage** (localStorage, sessionStorage)
 2. **Try Direct Access**:
    - `http://localhost:8080/admin/dashboard`
-   - `http://localhost:8080/owner/dashboard`
+   - `http://localhost:8080/owner`
    - `http://localhost:8080/agent/dashboard`
 3. **Expected Result**:
    - ✅ Redirected to appropriate login page

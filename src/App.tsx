@@ -1,73 +1,93 @@
-import React, { Suspense } from 'react';
-import { BrowserRouter, Routes, Route } from 'react-router-dom';
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { AuthProvider } from '@/contexts/AuthContext';
-import { AdminAuthProvider } from '@/contexts/AdminAuthContext';
-import { PropertyCacheProvider } from '@/contexts/PropertyCacheContext';
-import { WishlistProvider } from '@/contexts/WishlistContext';
-import { OwnerRoute } from '@/components/auth/ProtectedRoute';
-import { Toaster } from '@/components/ui/toaster';
-import { Skeleton } from '@/components/ui/skeleton';
+import React, { Suspense } from "react";
+import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { AuthProvider } from "@/contexts/AuthContext";
+import { AdminAuthProvider } from "@/contexts/AdminAuthContext";
+import { PropertyCacheProvider } from "@/contexts/PropertyCacheContext";
+import { WishlistProvider } from "@/contexts/WishlistContext";
+import { OwnerRoute } from "@/components/auth/ProtectedRoute";
+import { Toaster } from "@/components/ui/toaster";
+import { Skeleton } from "@/components/ui/skeleton";
 
 // Public Pages (immediate load)
-import Index from '@/pages/Index';
-import About from '@/pages/About';
-import Contact from '@/pages/Contact';
-import Properties from '@/pages/Properties';
-import OptimizedProperties from '@/pages/OptimizedProperties';
-import PropertyDetails from '@/pages/PropertyDetails';
-import NotFound from '@/pages/NotFound';
-import TermsOfService from '@/pages/TermsOfService';
-import PrivacyPolicy from '@/pages/PrivacyPolicy';
-import HowItWorks from '@/pages/HowItWorks';
-import SafetyGuidelines from '@/pages/SafetyGuidelines';
-import TrustSafety from '@/pages/TrustSafety';
-import HelpCenter from '@/pages/HelpCenter';
-import BookingAssistance from '@/pages/BookingAssistance';
-import Locations from '@/pages/Locations';
+import Index from "@/pages/Index";
+import About from "@/pages/About";
+import Contact from "@/pages/Contact";
+import Properties from "@/pages/Properties";
+import OptimizedProperties from "@/pages/OptimizedProperties";
+import PropertyDetails from "@/pages/PropertyDetails";
+import NotFound from "@/pages/NotFound";
+import TermsOfService from "@/pages/TermsOfService";
+import PrivacyPolicy from "@/pages/PrivacyPolicy";
+import HowItWorks from "@/pages/HowItWorks";
+import SafetyGuidelines from "@/pages/SafetyGuidelines";
+import TrustSafety from "@/pages/TrustSafety";
+import HelpCenter from "@/pages/HelpCenter";
+import BookingAssistance from "@/pages/BookingAssistance";
+import Locations from "@/pages/Locations";
 
 // Authentication Pages (immediate load)
-import CustomerLogin from '@/pages/CustomerLogin';
-import Signup from '@/pages/Signup';
-import ForgotPassword from '@/pages/ForgotPassword';
-import ResetPassword from '@/pages/ResetPassword';
-import ResendVerification from '@/pages/ResendVerification';
+import CustomerLogin from "@/pages/CustomerLogin";
+import Signup from "@/pages/Signup";
+import ForgotPassword from "@/pages/ForgotPassword";
+import ResetPassword from "@/pages/ResetPassword";
+import ResendVerification from "@/pages/ResendVerification";
 
 // Customer Pages (immediate load)
-import CustomerDashboard from '@/pages/CustomerDashboard';
-import BookingDetails from '@/pages/BookingDetails';
-import DayPicnicBooking from '@/pages/DayPicnicBooking';
+import CustomerDashboard from "@/pages/CustomerDashboard";
+import BookingDetails from "@/pages/BookingDetails";
+import DayPicnicBooking from "@/pages/DayPicnicBooking";
 
 // Lazy-loaded Admin Pages
-const AdminIndex = React.lazy(() => import('@/pages/admin/Index'));
-const ModernAdminDashboard = React.lazy(() => import('@/pages/admin/ModernAdminDashboard'));
-const AdminLoginPage = React.lazy(() => import('@/pages/admin/LoginPage'));
-const Settings = React.lazy(() => import('@/pages/admin/Settings'));
-const OwnerManagement = React.lazy(() => import('@/pages/admin/OwnerManagement'));
-const AgentManagement = React.lazy(() => import('@/pages/admin/AgentManagement'));
-const PropertyApproval = React.lazy(() => import('@/pages/admin/PropertyApproval'));
-const BookingManagement = React.lazy(() => import('@/pages/admin/BookingManagement'));
-const CommissionDisbursement = React.lazy(() => import('@/pages/admin/CommissionDisbursement'));
-const CMSManagement = React.lazy(() => import('@/pages/admin/CMSManagement'));
-const NotificationsManagement = React.lazy(() => import('@/pages/admin/NotificationsManagement'));
-const Analytics = React.lazy(() => import('@/pages/admin/Analytics'));
-const SupportTickets = React.lazy(() => import('@/pages/admin/SupportTickets'));
-const ProtectedRoute = React.lazy(() => import('@/components/admin/ProtectedRoute'));
+const AdminIndex = React.lazy(() => import("@/pages/admin/Index"));
+const ModernAdminDashboard = React.lazy(
+  () => import("@/pages/admin/ModernAdminDashboard")
+);
+const AdminLoginPage = React.lazy(() => import("@/pages/admin/LoginPage"));
+const Settings = React.lazy(() => import("@/pages/admin/Settings"));
+const OwnerManagement = React.lazy(
+  () => import("@/pages/admin/OwnerManagement")
+);
+const AgentManagement = React.lazy(
+  () => import("@/pages/admin/AgentManagement")
+);
+const PropertyApproval = React.lazy(
+  () => import("@/pages/admin/PropertyApproval")
+);
+const BookingManagement = React.lazy(
+  () => import("@/pages/admin/BookingManagement")
+);
+const CommissionDisbursement = React.lazy(
+  () => import("@/pages/admin/CommissionDisbursement")
+);
+const CMSManagement = React.lazy(() => import("@/pages/admin/CMSManagement"));
+const NotificationsManagement = React.lazy(
+  () => import("@/pages/admin/NotificationsManagement")
+);
+const Analytics = React.lazy(() => import("@/pages/admin/Analytics"));
+const SupportTickets = React.lazy(() => import("@/pages/admin/SupportTickets"));
+const ProtectedRoute = React.lazy(
+  () => import("@/components/admin/ProtectedRoute")
+);
 
 // Lazy-loaded Host/Owner Pages
-const HostLogin = React.lazy(() => import('@/pages/HostLogin'));
-const HostSignup = React.lazy(() => import('@/pages/HostSignup'));
-const HostDashboard = React.lazy(() => import('@/pages/HostDashboard'));
-const OwnerLogin = React.lazy(() => import('@/pages/owner/OwnerLogin'));
-const OwnerDashboard = React.lazy(() => import('@/pages/owner/OwnerDashboard'));
-const OwnerDashboardView = React.lazy(() => import('@/pages/owner/OwnerDashboardView'));
-const DayPicnicSetup = React.lazy(() => import('@/components/owner/DayPicnicSetup'));
+const HostLogin = React.lazy(() => import("@/pages/HostLogin"));
+const HostSignup = React.lazy(() => import("@/pages/HostSignup"));
+const HostDashboard = React.lazy(() => import("@/pages/HostDashboard"));
+const OwnerLogin = React.lazy(() => import("@/pages/owner/OwnerLogin"));
+const OwnerDashboard = React.lazy(() => import("@/pages/owner/OwnerDashboard"));
+const OwnerDashboardView = React.lazy(
+  () => import("@/pages/owner/OwnerDashboardView")
+);
+const DayPicnicSetup = React.lazy(
+  () => import("@/components/owner/DayPicnicSetup")
+);
 
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
       staleTime: 5 * 60 * 1000, // 5 minutes
-      gcTime: 10 * 60 * 1000,   // 10 minutes (was cacheTime)
+      gcTime: 10 * 60 * 1000, // 10 minutes (was cacheTime)
       refetchOnWindowFocus: false,
     },
   },
@@ -85,168 +105,281 @@ const LoadingSpinner = () => (
 );
 
 function App() {
-  console.log('🚀 App component initializing');
+  console.log("🚀 App component initializing");
   return (
     <QueryClientProvider client={queryClient}>
       <AuthProvider>
         <AdminAuthProvider>
           <PropertyCacheProvider>
             <WishlistProvider>
-            <BrowserRouter>
-              <div className="min-h-screen bg-background">
-                <Routes>
-                  {/* Public Routes */}
-                  <Route path="/" element={<Index />} />
-                  <Route path="/about" element={<About />} />
-                  <Route path="/contact" element={<Contact />} />
-                  <Route path="/properties" element={<OptimizedProperties />} />
-                  <Route path="/properties-legacy" element={<Properties />} />
-                  <Route path="/property/:id" element={<PropertyDetails />} />
-                  <Route path="/terms-of-service" element={<TermsOfService />} />
-                  <Route path="/privacy-policy" element={<PrivacyPolicy />} />
-                  <Route path="/how-it-works" element={<HowItWorks />} />
-                  <Route path="/safety-guidelines" element={<SafetyGuidelines />} />
-                  <Route path="/trust-safety" element={<TrustSafety />} />
-                  <Route path="/help-center" element={<HelpCenter />} />
-                  <Route path="/booking-assistance" element={<BookingAssistance />} />
-                  <Route path="/locations" element={<Locations />} />
-                  <Route path="*" element={<NotFound />} />
+              <BrowserRouter>
+                <div className="min-h-screen bg-background">
+                  <Routes>
+                    {/* Public Routes */}
+                    <Route path="/" element={<Index />} />
+                    <Route path="/about" element={<About />} />
+                    <Route path="/contact" element={<Contact />} />
+                    <Route
+                      path="/properties"
+                      element={<OptimizedProperties />}
+                    />
+                    <Route path="/properties-legacy" element={<Properties />} />
+                    <Route path="/property/:id" element={<PropertyDetails />} />
+                    <Route
+                      path="/terms-of-service"
+                      element={<TermsOfService />}
+                    />
+                    <Route path="/privacy-policy" element={<PrivacyPolicy />} />
+                    <Route path="/how-it-works" element={<HowItWorks />} />
+                    <Route
+                      path="/safety-guidelines"
+                      element={<SafetyGuidelines />}
+                    />
+                    <Route path="/trust-safety" element={<TrustSafety />} />
+                    <Route path="/help-center" element={<HelpCenter />} />
+                    <Route
+                      path="/booking-assistance"
+                      element={<BookingAssistance />}
+                    />
+                    <Route path="/locations" element={<Locations />} />
+                    <Route path="*" element={<NotFound />} />
 
-                  {/* Authentication Routes */}
-                  <Route path="/login" element={<CustomerLogin />} />
-                  <Route path="/signup" element={<Signup />} />
-                  <Route path="/forgot-password" element={<ForgotPassword />} />
-                  <Route path="/reset-password" element={<ResetPassword />} />
-                  <Route path="/resend-verification" element={<ResendVerification />} />
+                    {/* Authentication Routes */}
+                    <Route path="/login" element={<CustomerLogin />} />
+                    <Route path="/signup" element={<Signup />} />
+                    <Route
+                      path="/forgot-password"
+                      element={<ForgotPassword />}
+                    />
+                    <Route path="/reset-password" element={<ResetPassword />} />
+                    <Route
+                      path="/resend-verification"
+                      element={<ResendVerification />}
+                    />
 
-                  {/* Customer Routes */}
-                  <Route path="/dashboard" element={<CustomerDashboard />} />
-                  <Route path="/customer/dashboard" element={<CustomerDashboard />} />
-                  <Route path="/booking/:id" element={<BookingDetails />} />
+                    {/* Customer Routes */}
+                    <Route path="/dashboard" element={<CustomerDashboard />} />
+                    <Route
+                      path="/customer/dashboard"
+                      element={<CustomerDashboard />}
+                    />
+                    <Route path="/booking/:id" element={<BookingDetails />} />
 
-                  {/* Admin Routes - Lazy Loaded */}
-                  <Route path="/admin" element={
-                    <Suspense fallback={<LoadingSpinner />}>
-                      <AdminIndex />
-                    </Suspense>
-                  } />
-                  <Route path="/admin/login" element={
-                    <Suspense fallback={<LoadingSpinner />}>
-                      <AdminLoginPage />
-                    </Suspense>
-                  } />
-                  <Route path="/admin/dashboard" element={
-                    <Suspense fallback={<LoadingSpinner />}>
-                      <ProtectedRoute><ModernAdminDashboard /></ProtectedRoute>
-                    </Suspense>
-                  } />
-                  <Route path="/admin/owner-management" element={
-                    <Suspense fallback={<LoadingSpinner />}>
-                      <ProtectedRoute><OwnerManagement /></ProtectedRoute>
-                    </Suspense>
-                  } />
-                  <Route path="/admin/agent-management" element={
-                    <Suspense fallback={<LoadingSpinner />}>
-                      <ProtectedRoute><AgentManagement /></ProtectedRoute>
-                    </Suspense>
-                  } />
-                  <Route path="/admin/property-approval" element={
-                    <Suspense fallback={<LoadingSpinner />}>
-                      <ProtectedRoute><PropertyApproval /></ProtectedRoute>
-                    </Suspense>
-                  } />
-                  <Route path="/admin/booking-management" element={
-                    <Suspense fallback={<LoadingSpinner />}>
-                      <ProtectedRoute><BookingManagement /></ProtectedRoute>
-                    </Suspense>
-                  } />
-                  <Route path="/admin/commission-disbursement" element={
-                    <Suspense fallback={<LoadingSpinner />}>
-                      <ProtectedRoute><CommissionDisbursement /></ProtectedRoute>
-                    </Suspense>
-                  } />
-                  <Route path="/admin/cms-management" element={
-                    <Suspense fallback={<LoadingSpinner />}>
-                      <ProtectedRoute><CMSManagement /></ProtectedRoute>
-                    </Suspense>
-                  } />
-                  <Route path="/admin/notifications-management" element={
-                    <Suspense fallback={<LoadingSpinner />}>
-                      <ProtectedRoute><NotificationsManagement /></ProtectedRoute>
-                    </Suspense>
-                  } />
-                  <Route path="/admin/analytics" element={
-                    <Suspense fallback={<LoadingSpinner />}>
-                      <ProtectedRoute><Analytics /></ProtectedRoute>
-                    </Suspense>
-                  } />
-                  <Route path="/admin/support-tickets" element={
-                    <Suspense fallback={<LoadingSpinner />}>
-                      <ProtectedRoute><SupportTickets /></ProtectedRoute>
-                    </Suspense>
-                  } />
-                  <Route path="/admin/settings" element={
-                    <Suspense fallback={<LoadingSpinner />}>
-                      <ProtectedRoute><Settings /></ProtectedRoute>
-                    </Suspense>
-                  } />
-                  
-                  {/* Host/Owner Routes - Lazy Loaded */}
-                  <Route path="/host/login" element={
-                    <Suspense fallback={<LoadingSpinner />}>
-                      <HostLogin />
-                    </Suspense>
-                  } />
-                  <Route path="/host/signup" element={
-                    <Suspense fallback={<LoadingSpinner />}>
-                      <HostSignup />
-                    </Suspense>
-                  } />
-                  <Route path="/host/dashboard" element={
-                    <Suspense fallback={<LoadingSpinner />}>
-                      <HostDashboard />
-                    </Suspense>
-                  } />
-                  <Route path="/host/day-picnic-setup/:propertyId" element={
-                    <Suspense fallback={<LoadingSpinner />}>
-                      <DayPicnicSetup />
-                    </Suspense>
-                  } />
-                  
-                  {/* Owner Portal Routes - Lazy Loaded */}
-                  <Route path="/owner/login" element={
-                    <Suspense fallback={<LoadingSpinner />}>
-                      <OwnerLogin />
-                    </Suspense>
-                  } />
-                  <Route path="/owner/signup" element={
-                    <Suspense fallback={<LoadingSpinner />}>
-                      <HostSignup />
-                    </Suspense>
-                  } />
-                  <Route path="/owner/dashboard" element={
-                    <Suspense fallback={<LoadingSpinner />}>
-                      <OwnerDashboard />
-                    </Suspense>
-                  } />
-                  <Route path="/owner/view" element={
-                    <Suspense fallback={<LoadingSpinner />}>
-                      <OwnerRoute><OwnerDashboardView /></OwnerRoute>
-                    </Suspense>
-                  } />
-                  <Route path="/owner/day-picnic-setup/:propertyId" element={
-                    <Suspense fallback={<LoadingSpinner />}>
-                      <DayPicnicSetup />
-                    </Suspense>
-                  } />
-                  
-                  {/* Day Picnic Routes */}
-                  <Route path="/day-picnic/:propertyId" element={<DayPicnicBooking />} />
-                  
-                </Routes>
-                <Toaster />
-              </div>
-            </BrowserRouter>
+                    {/* Admin Routes - Lazy Loaded */}
+                    <Route
+                      path="/admin"
+                      element={
+                        <Suspense fallback={<LoadingSpinner />}>
+                          <AdminIndex />
+                        </Suspense>
+                      }
+                    />
+                    <Route
+                      path="/admin/login"
+                      element={
+                        <Suspense fallback={<LoadingSpinner />}>
+                          <AdminLoginPage />
+                        </Suspense>
+                      }
+                    />
+                    <Route
+                      path="/admin/dashboard"
+                      element={
+                        <Suspense fallback={<LoadingSpinner />}>
+                          <ProtectedRoute>
+                            <ModernAdminDashboard />
+                          </ProtectedRoute>
+                        </Suspense>
+                      }
+                    />
+                    <Route
+                      path="/admin/owner-management"
+                      element={
+                        <Suspense fallback={<LoadingSpinner />}>
+                          <ProtectedRoute>
+                            <OwnerManagement />
+                          </ProtectedRoute>
+                        </Suspense>
+                      }
+                    />
+                    <Route
+                      path="/admin/agent-management"
+                      element={
+                        <Suspense fallback={<LoadingSpinner />}>
+                          <ProtectedRoute>
+                            <AgentManagement />
+                          </ProtectedRoute>
+                        </Suspense>
+                      }
+                    />
+                    <Route
+                      path="/admin/property-approval"
+                      element={
+                        <Suspense fallback={<LoadingSpinner />}>
+                          <ProtectedRoute>
+                            <PropertyApproval />
+                          </ProtectedRoute>
+                        </Suspense>
+                      }
+                    />
+                    <Route
+                      path="/admin/booking-management"
+                      element={
+                        <Suspense fallback={<LoadingSpinner />}>
+                          <ProtectedRoute>
+                            <BookingManagement />
+                          </ProtectedRoute>
+                        </Suspense>
+                      }
+                    />
+                    <Route
+                      path="/admin/commission-disbursement"
+                      element={
+                        <Suspense fallback={<LoadingSpinner />}>
+                          <ProtectedRoute>
+                            <CommissionDisbursement />
+                          </ProtectedRoute>
+                        </Suspense>
+                      }
+                    />
+                    <Route
+                      path="/admin/cms-management"
+                      element={
+                        <Suspense fallback={<LoadingSpinner />}>
+                          <ProtectedRoute>
+                            <CMSManagement />
+                          </ProtectedRoute>
+                        </Suspense>
+                      }
+                    />
+                    <Route
+                      path="/admin/notifications-management"
+                      element={
+                        <Suspense fallback={<LoadingSpinner />}>
+                          <ProtectedRoute>
+                            <NotificationsManagement />
+                          </ProtectedRoute>
+                        </Suspense>
+                      }
+                    />
+                    <Route
+                      path="/admin/analytics"
+                      element={
+                        <Suspense fallback={<LoadingSpinner />}>
+                          <ProtectedRoute>
+                            <Analytics />
+                          </ProtectedRoute>
+                        </Suspense>
+                      }
+                    />
+                    <Route
+                      path="/admin/support-tickets"
+                      element={
+                        <Suspense fallback={<LoadingSpinner />}>
+                          <ProtectedRoute>
+                            <SupportTickets />
+                          </ProtectedRoute>
+                        </Suspense>
+                      }
+                    />
+                    <Route
+                      path="/admin/settings"
+                      element={
+                        <Suspense fallback={<LoadingSpinner />}>
+                          <ProtectedRoute>
+                            <Settings />
+                          </ProtectedRoute>
+                        </Suspense>
+                      }
+                    />
+
+                    {/* Host/Owner Routes - Lazy Loaded */}
+                    <Route
+                      path="/host/login"
+                      element={
+                        <Suspense fallback={<LoadingSpinner />}>
+                          <HostLogin />
+                        </Suspense>
+                      }
+                    />
+                    <Route
+                      path="/host/signup"
+                      element={
+                        <Suspense fallback={<LoadingSpinner />}>
+                          <HostSignup />
+                        </Suspense>
+                      }
+                    />
+                    <Route
+                      path="/host/dashboard"
+                      element={
+                        <Suspense fallback={<LoadingSpinner />}>
+                          <HostDashboard />
+                        </Suspense>
+                      }
+                    />
+                    <Route
+                      path="/host/day-picnic-setup/:propertyId"
+                      element={
+                        <Suspense fallback={<LoadingSpinner />}>
+                          <DayPicnicSetup />
+                        </Suspense>
+                      }
+                    />
+
+                    {/* Owner Portal Routes - Lazy Loaded */}
+                    <Route
+                      path="/owner/login"
+                      element={
+                        <Suspense fallback={<LoadingSpinner />}>
+                          <OwnerLogin />
+                        </Suspense>
+                      }
+                    />
+                    <Route
+                      path="/owner/signup"
+                      element={
+                        <Suspense fallback={<LoadingSpinner />}>
+                          <HostSignup />
+                        </Suspense>
+                      }
+                    />
+                    <Route
+                      path="/owner"
+                      element={
+                        <Suspense fallback={<LoadingSpinner />}>
+                          <OwnerDashboard />
+                        </Suspense>
+                      }
+                    />
+                    <Route
+                      path="/owner/view"
+                      element={
+                        <Suspense fallback={<LoadingSpinner />}>
+                          <OwnerRoute>
+                            <OwnerDashboardView />
+                          </OwnerRoute>
+                        </Suspense>
+                      }
+                    />
+                    <Route
+                      path="/owner/day-picnic-setup/:propertyId"
+                      element={
+                        <Suspense fallback={<LoadingSpinner />}>
+                          <DayPicnicSetup />
+                        </Suspense>
+                      }
+                    />
+
+                    {/* Day Picnic Routes */}
+                    <Route
+                      path="/day-picnic/:propertyId"
+                      element={<DayPicnicBooking />}
+                    />
+                  </Routes>
+                  <Toaster />
+                </div>
+              </BrowserRouter>
             </WishlistProvider>
           </PropertyCacheProvider>
         </AdminAuthProvider>

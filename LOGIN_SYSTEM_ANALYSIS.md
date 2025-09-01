@@ -15,7 +15,7 @@ You're absolutely right to question this! Let me break down the current login sy
   - Role-based redirects after login
   - Universal authentication
 
-### **2. Property Owner Login** (`/owner/dashboard` - embedded)
+### **2. Property Owner Login** (`/owner` - embedded)
 **File:** `src/pages/owner/OwnerDashboard.tsx`
 - **Purpose**: Embedded login within OwnerDashboard
 - **Features**:
@@ -32,15 +32,15 @@ You're absolutely right to question this! Let me break down the current login sy
 2. Enters email + password OR phone + OTP
 3. System authenticates user
 4. Redirects based on role:
-   - Owner → /owner/dashboard
+   - Owner → /owner
    - Agent → /agent/dashboard
    - Admin → /admin/dashboard
    - Customer → /
 ```
 
-### **Property Owner Login Flow** (`/owner/dashboard`)
+### **Property Owner Login Flow** (`/owner`)
 ```
-1. User visits /owner/dashboard
+1. User visits /owner
 2. If not authenticated → Shows embedded login
 3. Enters email/phone + OTP
 4. Direct access to owner dashboard
@@ -99,7 +99,7 @@ We should consolidate to a single, robust login system:
 
 | Feature | General Login | Owner Login |
 |---------|---------------|-------------|
-| **URL** | `/login` | `/owner/dashboard` |
+| **URL** | `/login` | `/owner` |
 | **Authentication** | Email+Password OR Phone+OTP | Email+OTP OR Phone+OTP |
 | **Password Required** | ✅ Yes | ❌ No |
 | **Role Validation** | ✅ Yes | ❌ No |
