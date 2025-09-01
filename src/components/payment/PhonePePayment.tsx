@@ -113,7 +113,7 @@ export const PhonePePayment: React.FC<PhonePePaymentProps> = ({
 
                 // Store transaction ID for later reference
                 sessionStorage.setItem('phonepe_transaction_id', result.transactionId);
-                sessionStorage.setItem('booking_id', bookingData.id);
+                // Note: Don't store booking_id here as it's temporary - real booking created after payment
 
                 // Redirect to PhonePe payment page
                 window.location.href = result.paymentUrl;

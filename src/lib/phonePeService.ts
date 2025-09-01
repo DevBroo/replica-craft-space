@@ -314,58 +314,63 @@ export class PhonePeService {
                 return false;
             }
 
-            // Update booking status if payment is successful
+            // Create booking and confirm if payment is successful
             if (paymentStatus.success && paymentStatus.data?.state === 'COMPLETED') {
-                console.log('✅ Payment successful, updating booking...');
+                console.log('✅ Payment successful, creating and confirming booking...');
 
-                // Try to get booking ID from session storage or payment record
-                const bookingId = sessionStorage.getItem('booking_id');
+                // Get pending booking data from session storage
+                const pendingBookingData = sessionStorage.getItem('pending_booking_data');
 
-                if (bookingId) {
-                    // Update booking status to confirmed using session storage booking ID
+                if (pendingBookingData) {
                     try {
-                        await supabase
+                        const bookingRequest = JSON.parse(pendingBookingData);
+
+                        // Create the actual booking with confirmed status
+                        const { data: newBooking, error: bookingError } = await supabase
                             .from('bookings')
-                            .update({
+                            .insert({
+                                ...bookingRequest,
                                 status: 'confirmed',
-                                payment_status: 'paid'
+                                payment_status: 'paid',
+                                booking_details: {
+                                    ...bookingRequest.booking_details,
+                                    payment_transaction_id: transactionId,
+                                    payment_completed_at: new Date().toISOString()
+                                }
                             })
-                            .eq('id', bookingId);
-
-                        console.log('✅ Booking status updated to confirmed');
-                    } catch (error) {
-                        console.error('❌ Error updating booking status:', error);
-                    }
-                } else {
-                    // Fallback: Try to get payment record to find booking ID
-                    try {
-                        const { data: paymentRecord } = await (supabase as any)
-                            .from('payments')
-                            .select('booking_id')
-                            .eq('transaction_id', transactionId)
+                            .select()
                             .single();
 
-                        if (paymentRecord?.booking_id) {
-                            await supabase
-                                .from('bookings')
-                                .update({
-                                    status: 'confirmed',
-                                    payment_status: 'paid'
-                                })
-                                .eq('id', paymentRecord.booking_id);
-
-                            console.log('✅ Booking status updated to confirmed via payment record');
-                        } else {
-                            console.warn('⚠️ No booking ID found, cannot update booking status');
+                        if (bookingError) {
+                            console.error('❌ Error creating booking after payment:', bookingError);
+                            throw bookingError;
                         }
+
+                        // Store the real booking ID
+                        sessionStorage.setItem('booking_id', newBooking.id);
+
+                        // Clean up temporary data
+                        sessionStorage.removeItem('pending_booking_data');
+                        sessionStorage.removeItem('temp_booking_id');
+
+                        console.log('✅ Booking created and confirmed after successful payment:', newBooking.id);
                     } catch (error) {
-                        console.warn('⚠️ Could not fetch payment record:', error);
+                        console.error('❌ Error creating booking after payment:', error);
+                        // Even if booking creation fails, payment was successful
+                        // This would need manual reconciliation
                     }
+                } else {
+                    console.warn('⚠️ No pending booking data found in session storage');
                 }
 
                 return true;
             } else {
                 console.log('❌ Payment failed or pending');
+
+                // Clean up session data on payment failure
+                sessionStorage.removeItem('pending_booking_data');
+                sessionStorage.removeItem('temp_booking_id');
+
                 return false;
             }
         } catch (error) {

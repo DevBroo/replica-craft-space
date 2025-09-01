@@ -96,52 +96,44 @@ const BookingPayment: React.FC = () => {
         }
     };
 
-    const createBookingAndProceedToPayment = async () => {
+    const proceedToPayment = () => {
         if (!user || !bookingData) return;
 
-        try {
-            setCreatingBooking(true);
+        // Store booking data in session for post-payment creation
+        const bookingRequest = {
+            property_id: propertyId!,
+            user_id: user.id,
+            check_in_date: bookingData.checkInDate,
+            check_out_date: bookingData.checkOutDate,
+            guests: bookingData.guests,
+            total_amount: bookingData.totalAmount,
+            payment_method: 'phonepe' as const,
+            customer_details: {
+                name: user.user_metadata?.full_name || user.email?.split('@')[0],
+                email: user.email!,
+                phone: user.phone || user.user_metadata?.phone
+            },
+            booking_details: {
+                property_title: bookingData.propertyTitle,
+                property_images: bookingData.propertyImages,
+                booking_type: 'standard'
+            }
+        };
 
-            const bookingRequest = {
-                property_id: propertyId!,
-                user_id: user.id,
-                check_in_date: bookingData.checkInDate,
-                check_out_date: bookingData.checkOutDate,
-                guests: bookingData.guests,
-                total_amount: bookingData.totalAmount,
-                payment_method: 'phonepe' as const,
-                customer_details: {
-                    name: user.user_metadata?.full_name || user.email?.split('@')[0],
-                    email: user.email!,
-                    phone: user.phone || user.user_metadata?.phone
-                },
-                booking_details: {
-                    property_title: bookingData.propertyTitle,
-                    property_images: bookingData.propertyImages,
-                    booking_type: 'standard'
-                }
-            };
+        // Store booking data for post-payment creation
+        sessionStorage.setItem('pending_booking_data', JSON.stringify(bookingRequest));
 
-            const result = await BookingService.createBookingWithPayment(bookingRequest);
+        // Generate a temporary booking ID for payment tracking
+        const tempBookingId = `temp_${Date.now()}_${Math.random().toString(36).substring(2, 8)}`;
+        sessionStorage.setItem('temp_booking_id', tempBookingId);
 
-            setBooking(result.booking);
-            setShowPayment(true);
+        setBooking({ id: tempBookingId });
+        setShowPayment(true);
 
-            toast({
-                title: "Booking Created",
-                description: "Your booking has been created. Complete payment to confirm.",
-            });
-
-        } catch (error) {
-            console.error('Error creating booking:', error);
-            toast({
-                title: "Booking Failed",
-                description: "Unable to create booking. Please try again.",
-                variant: "destructive"
-            });
-        } finally {
-            setCreatingBooking(false);
-        }
+        toast({
+            title: "Proceeding to Payment",
+            description: "Complete payment to confirm your booking.",
+        });
     };
 
     const handlePaymentSuccess = (transactionId: string) => {
@@ -382,19 +374,11 @@ const BookingPayment: React.FC = () => {
                         </Alert>
 
                         <Button
-                            onClick={createBookingAndProceedToPayment}
-                            disabled={creatingBooking}
+                            onClick={proceedToPayment}
                             className="w-full bg-purple-600 hover:bg-purple-700 text-white"
                             size="lg"
                         >
-                            {creatingBooking ? (
-                                <>
-                                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                                    Creating Booking...
-                                </>
-                            ) : (
-                                'Proceed to Payment'
-                            )}
+                            Proceed to Payment
                         </Button>
                     </div>
                 </div>

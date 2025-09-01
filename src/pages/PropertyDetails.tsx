@@ -24,6 +24,7 @@ import { useState, useEffect } from "react";
 import { PropertyService } from "@/lib/propertyService";
 import { BookingService } from "@/lib/bookingService";
 import { CouponService, Coupon } from "@/lib/couponService";
+import { AvailabilityService, PropertyAvailability } from "@/lib/availabilityService";
 import { useAuth } from "@/contexts/AuthContext";
 import { useWishlist } from "@/contexts/WishlistContext";
 import { useToast } from "@/hooks/use-toast";
@@ -62,6 +63,8 @@ const PropertyDetails = () => {
   const [selectedRoom, setSelectedRoom] = useState<any>(null);
   const [dayPicnicPackages, setDayPicnicPackages] = useState<any[]>([]);
   const [activeTab, setActiveTab] = useState("description");
+  const [propertyAvailability, setPropertyAvailability] = useState<PropertyAvailability | null>(null);
+  const [availabilityLoading, setAvailabilityLoading] = useState(false);
 
   const { user, isAuthenticated } = useAuth();
   const { toast } = useToast();
@@ -191,7 +194,24 @@ const PropertyDetails = () => {
     };
 
     loadProperty();
+    fetchPropertyAvailability();
   }, [id]);
+
+  const fetchPropertyAvailability = async () => {
+    if (!id) return;
+
+    try {
+      setAvailabilityLoading(true);
+      const availability = await AvailabilityService.getPropertyAvailability(id);
+      setPropertyAvailability(availability);
+      console.log('✅ Property availability loaded:', availability);
+    } catch (error) {
+      console.error('❌ Error loading property availability:', error);
+      // Continue without availability data
+    } finally {
+      setAvailabilityLoading(false);
+    }
+  };
 
   // Update page title and meta tags for SEO
   useEffect(() => {
@@ -390,33 +410,72 @@ const PropertyDetails = () => {
       return;
     }
 
-    // Redirect to payment flow instead of creating booking directly
-    const bookingData = {
-      propertyId: property.id,
-      propertyTitle: property.title,
-      propertyImages: property.images || [],
-      checkInDate: checkInDate.toISOString().split("T")[0],
-      checkOutDate: checkOutDate.toISOString().split("T")[0],
-      guests: totalGuests,
-      totalAmount: calculateTotal(),
-      bookingDetails: {
-        property_location: property.location,
-        nights: calculateNights(),
-        guest_breakdown: guests,
-        room_selection: selectedRoom,
-        coupon_applied: appliedCoupon,
+    // Check date availability before proceeding to payment
+    const checkInStr = checkInDate.toISOString().split("T")[0];
+    const checkOutStr = checkOutDate.toISOString().split("T")[0];
+
+    try {
+      const availabilityCheck = await AvailabilityService.checkDateRangeAvailability(
+        property.id,
+        checkInStr,
+        checkOutStr
+      );
+
+      if (!availabilityCheck.available) {
+        toast({
+          title: "Dates Not Available",
+          description: `Selected dates are not available. ${availabilityCheck.conflictingBookings?.length || 0} conflicting booking(s) found.`,
+          variant: "destructive",
+        });
+        return;
       }
-    };
 
-    toast({
-      title: "Proceeding to Payment",
-      description: "You'll be redirected to complete your booking with payment.",
-    });
+      // Validate booking dates
+      const dateValidation = AvailabilityService.validateBookingDates(checkInDate, checkOutDate);
+      if (!dateValidation.valid) {
+        toast({
+          title: "Invalid Dates",
+          description: dateValidation.error,
+          variant: "destructive",
+        });
+        return;
+      }
 
-    // Navigate to payment flow
-    navigate(`/booking/${property.id}/payment`, {
-      state: { bookingData }
-    });
+      // Proceed with booking if dates are available
+      const bookingData = {
+        propertyId: property.id,
+        propertyTitle: property.title,
+        propertyImages: property.images || [],
+        checkInDate: checkInStr,
+        checkOutDate: checkOutStr,
+        guests: totalGuests,
+        totalAmount: calculateTotal(),
+        bookingDetails: {
+          property_location: property.location,
+          nights: calculateNights(),
+          guest_breakdown: guests,
+          room_selection: selectedRoom,
+          coupon_applied: appliedCoupon,
+        }
+      };
+
+      toast({
+        title: "Proceeding to Payment",
+        description: "You'll be redirected to complete your booking with payment.",
+      });
+
+      // Navigate to payment flow
+      navigate(`/booking/${property.id}/payment`, {
+        state: { bookingData }
+      });
+    } catch (error) {
+      console.error('❌ Error checking availability:', error);
+      toast({
+        title: "Availability Check Failed",
+        description: "Unable to verify date availability. Please try again.",
+        variant: "destructive",
+      });
+    }
   };
 
   const handlePackageSelect = (pkg: any) => {
@@ -722,7 +781,18 @@ const PropertyDetails = () => {
                             mode="single"
                             selected={checkInDate}
                             onSelect={setCheckInDate}
-                            disabled={(date) => date < new Date()}
+                            disabled={(date) => {
+                              // Disable past dates
+                              if (date < new Date()) return true;
+
+                              // Disable unavailable dates
+                              const dateStr = date.toISOString().split('T')[0];
+                              if (propertyAvailability?.unavailableDates.includes(dateStr)) {
+                                return true;
+                              }
+
+                              return false;
+                            }}
                             initialFocus
                             className="p-3 pointer-events-auto"
                           />
@@ -749,9 +819,18 @@ const PropertyDetails = () => {
                             mode="single"
                             selected={checkOutDate}
                             onSelect={setCheckOutDate}
-                            disabled={(date) =>
-                              date < (checkInDate || new Date())
-                            }
+                            disabled={(date) => {
+                              // Disable dates before check-in
+                              if (date < (checkInDate || new Date())) return true;
+
+                              // Disable unavailable dates
+                              const dateStr = date.toISOString().split('T')[0];
+                              if (propertyAvailability?.unavailableDates.includes(dateStr)) {
+                                return true;
+                              }
+
+                              return false;
+                            }}
                             initialFocus
                             className="p-3 pointer-events-auto"
                           />
@@ -782,7 +861,18 @@ const PropertyDetails = () => {
                           mode="single"
                           selected={checkInDate}
                           onSelect={setCheckInDate}
-                          disabled={(date) => date < new Date()}
+                          disabled={(date) => {
+                            // Disable past dates
+                            if (date < new Date()) return true;
+
+                            // Disable unavailable dates for day picnics too
+                            const dateStr = date.toISOString().split('T')[0];
+                            if (propertyAvailability?.unavailableDates.includes(dateStr)) {
+                              return true;
+                            }
+
+                            return false;
+                          }}
                           initialFocus
                           className="p-3 pointer-events-auto"
                         />
