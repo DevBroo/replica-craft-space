@@ -9,6 +9,12 @@ export interface BookingData {
   total_amount: number;
   booking_details?: Record<string, any>;
   status?: string;
+  payment_method?: 'phonepe' | 'razorpay' | 'stripe' | 'cash';
+  customer_details?: {
+    name?: string;
+    email: string;
+    phone?: string;
+  };
 }
 
 export class BookingService {
@@ -23,8 +29,13 @@ export class BookingService {
           check_out_date: bookingData.check_out_date,
           guests: bookingData.guests,
           total_amount: bookingData.total_amount,
-          booking_details: bookingData.booking_details,
-          status: bookingData.status || 'pending'
+          booking_details: {
+            ...bookingData.booking_details,
+            payment_method: bookingData.payment_method || 'phonepe',
+            customer_details: bookingData.customer_details
+          },
+          status: bookingData.status || 'pending',
+          payment_status: 'pending'
         }])
         .select()
         .single();
@@ -37,6 +48,32 @@ export class BookingService {
       return data;
     } catch (error) {
       console.error('BookingService.createBooking error:', error);
+      throw error;
+    }
+  }
+
+  static async createBookingWithPayment(bookingData: BookingData) {
+    try {
+      // Create booking first
+      const booking = await this.createBooking(bookingData);
+
+      // Return booking data for payment processing
+      return {
+        booking,
+        paymentData: {
+          bookingId: booking.id,
+          propertyId: bookingData.property_id,
+          userId: bookingData.user_id,
+          amount: bookingData.total_amount,
+          currency: 'INR',
+          description: `Booking for property ${bookingData.property_id}`,
+          customerEmail: bookingData.customer_details?.email || '',
+          customerPhone: bookingData.customer_details?.phone,
+          customerName: bookingData.customer_details?.name
+        }
+      };
+    } catch (error) {
+      console.error('BookingService.createBookingWithPayment error:', error);
       throw error;
     }
   }
