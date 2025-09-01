@@ -114,9 +114,8 @@ const PropertyDetails = () => {
             title: propertyData.title,
             type: propertyData.property_type,
             property_type: propertyData.property_type,
-            location: `${(propertyData.location as any)?.city || ""}, ${
-              (propertyData.location as any)?.state || ""
-            }`,
+            location: `${(propertyData.location as any)?.city || ""}, ${(propertyData.location as any)?.state || ""
+              }`,
             city: (propertyData.location as any)?.city || "",
             state: (propertyData.location as any)?.state || "",
             address: propertyData.address || "",
@@ -142,10 +141,9 @@ const PropertyDetails = () => {
             roomTypes: [
               {
                 id: "default",
-                name: `${
-                  propertyData.property_type.charAt(0).toUpperCase() +
+                name: `${propertyData.property_type.charAt(0).toUpperCase() +
                   propertyData.property_type.slice(1)
-                } Room`,
+                  } Room`,
                 price: (propertyData.pricing as any)?.daily_rate || 0,
                 max_guests: propertyData.max_guests,
                 features: [
@@ -162,9 +160,8 @@ const PropertyDetails = () => {
               `${propertyData.bedrooms || 0} Bedrooms`,
               `${propertyData.bathrooms || 0} Bathrooms`,
               `Capacity: ${propertyData.max_guests || 0} guests`,
-              `${
-                propertyData.property_type.charAt(0).toUpperCase() +
-                propertyData.property_type.slice(1)
+              `${propertyData.property_type.charAt(0).toUpperCase() +
+              propertyData.property_type.slice(1)
               } Type`,
               `Status: ${propertyData.status}`,
             ],
@@ -299,9 +296,8 @@ const PropertyDetails = () => {
         setAppliedCoupon(coupon);
         toast({
           title: "Coupon Applied! 🎉",
-          description: `${
-            coupon.description || "Discount applied successfully"
-          }`,
+          description: `${coupon.description || "Discount applied successfully"
+            }`,
         });
       } else {
         toast({
@@ -394,42 +390,33 @@ const PropertyDetails = () => {
       return;
     }
 
-    setIsBooking(true);
+    // Redirect to payment flow instead of creating booking directly
+    const bookingData = {
+      propertyId: property.id,
+      propertyTitle: property.title,
+      propertyImages: property.images || [],
+      checkInDate: checkInDate.toISOString().split("T")[0],
+      checkOutDate: checkOutDate.toISOString().split("T")[0],
+      guests: totalGuests,
+      totalAmount: calculateTotal(),
+      bookingDetails: {
+        property_location: property.location,
+        nights: calculateNights(),
+        guest_breakdown: guests,
+        room_selection: selectedRoom,
+        coupon_applied: appliedCoupon,
+      }
+    };
 
-    try {
-      const booking = await BookingService.createBooking({
-        property_id: property.id,
-        user_id: user.id,
-        check_in_date: checkInDate.toISOString().split("T")[0],
-        check_out_date: checkOutDate.toISOString().split("T")[0],
-        guests: totalGuests,
-        total_amount: calculateTotal(),
-        booking_details: {
-          property_title: property.title,
-          property_location: property.location,
-          nights: calculateNights(),
-          guest_breakdown: guests,
-          room_selection: selectedRoom,
-          coupon_applied: appliedCoupon,
-        },
-      });
+    toast({
+      title: "Proceeding to Payment",
+      description: "You'll be redirected to complete your booking with payment.",
+    });
 
-      toast({
-        title: "Booking Confirmed! 🎉",
-        description: `Your reservation for ${property.title} has been confirmed.`,
-      });
-
-      navigate("/dashboard");
-    } catch (error: any) {
-      console.error("❌ Error creating booking:", error);
-      toast({
-        title: "Booking Failed",
-        description: "We couldn't complete your booking. Please try again.",
-        variant: "destructive",
-      });
-    } finally {
-      setIsBooking(false);
-    }
+    // Navigate to payment flow
+    navigate(`/booking/${property.id}/payment`, {
+      state: { bookingData }
+    });
   };
 
   const handlePackageSelect = (pkg: any) => {
@@ -513,11 +500,10 @@ const PropertyDetails = () => {
                 }}
               >
                 <Heart
-                  className={`w-4 h-4 transition-colors ${
-                    isPropertySaved(property.id)
-                      ? "fill-red-500 text-red-500"
-                      : "text-gray-600"
-                  }`}
+                  className={`w-4 h-4 transition-colors ${isPropertySaved(property.id)
+                    ? "fill-red-500 text-red-500"
+                    : "text-gray-600"
+                    }`}
                 />
               </Button>
             </div>
@@ -553,9 +539,8 @@ const PropertyDetails = () => {
                 <div className="flex items-center">
                   <Users className="w-4 h-4 mr-1" />
                   {isDayPicnic
-                    ? `${
-                        property.day_picnic_capacity || property.max_guests
-                      } guests max`
+                    ? `${property.day_picnic_capacity || property.max_guests
+                    } guests max`
                     : `${property.max_guests} guests max`}
                 </div>
               </div>
@@ -818,13 +803,11 @@ const PropertyDetails = () => {
                       <div className="text-sm font-medium mb-1">Package</div>
                       <div className="text-sm text-muted-foreground">
                         {selectedPackage
-                          ? `${
-                              selectedPackage.meal_plan?.join(", ") || "Package"
-                            } - ₹${selectedPackage.base_price} ${
-                              selectedPackage.pricing_type === "per_person"
-                                ? "per person"
-                                : "per package"
-                            }`
+                          ? `${selectedPackage.meal_plan?.join(", ") || "Package"
+                          } - ₹${selectedPackage.base_price} ${selectedPackage.pricing_type === "per_person"
+                            ? "per person"
+                            : "per package"
+                          }`
                           : "Select a package from the packages tab"}
                       </div>
                     </div>
@@ -888,15 +871,28 @@ const PropertyDetails = () => {
                       (isDayPicnic && !selectedPackage) ||
                       (!isDayPicnic && (!checkInDate || !checkOutDate))
                     }
-                    className="w-full"
+                    className="w-full bg-purple-600 hover:bg-purple-700 disabled:bg-gray-300 disabled:cursor-not-allowed"
                     size="lg"
                   >
                     {isBooking
                       ? "Processing..."
                       : isDayPicnic
-                      ? "Book Day Picnic"
-                      : "Reserve Now"}
+                        ? (selectedPackage ? "Book Day Picnic" : "Select Package First")
+                        : (checkInDate && checkOutDate ? "Reserve Now" : "Select Dates First")}
                   </Button>
+
+                  {/* Helper text for disabled state */}
+                  {!isDayPicnic && (!checkInDate || !checkOutDate) && (
+                    <p className="text-sm text-orange-600 text-center">
+                      Please select check-in and check-out dates to continue booking
+                    </p>
+                  )}
+
+                  {isDayPicnic && !selectedPackage && (
+                    <p className="text-sm text-orange-600 text-center">
+                      Please select a package from the packages tab to continue booking
+                    </p>
+                  )}
 
                   {/* Quick Contact */}
                   {property.contact_phone && (
@@ -928,14 +924,24 @@ const PropertyDetails = () => {
             </div>
           </div>
           <Button
-            onClick={() =>
-              document
-                .getElementById("booking-box")
-                ?.scrollIntoView({ behavior: "smooth" })
+            onClick={
+              (checkInDate && checkOutDate) || (isDayPicnic && selectedPackage)
+                ? handleBooking
+                : () => document.getElementById("booking-box")?.scrollIntoView({ behavior: "smooth" })
             }
+            disabled={
+              isBooking ||
+              (isDayPicnic && !selectedPackage) ||
+              (!isDayPicnic && (!checkInDate || !checkOutDate))
+            }
+            className="bg-purple-600 hover:bg-purple-700 disabled:bg-gray-300"
             size="lg"
           >
-            {isDayPicnic ? "Book Day Picnic" : "Reserve Now"}
+            {isBooking
+              ? "Processing..."
+              : isDayPicnic
+                ? (selectedPackage ? "Book Day Picnic" : "Select Package")
+                : (checkInDate && checkOutDate ? "Reserve Now" : "Select Dates")}
           </Button>
         </div>
       </div>
