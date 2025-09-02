@@ -12,6 +12,7 @@ import EnhancedAnalyticsChart from '@/components/admin/EnhancedAnalyticsChart';
 import RevenueTable from '@/components/admin/RevenueTable';
 import { useAnalyticsExport } from '@/hooks/useAnalyticsExport';
 import { format, subDays, startOfMonth, endOfMonth } from 'date-fns';
+import AdminLayout from '@/components/admin/AdminLayout';
 
 interface AnalyticsData {
   properties: {
@@ -381,13 +382,17 @@ export default function Analytics() {
   ];
 
   return (
-    <div className="container mx-auto p-6 space-y-8">
-      <div className="flex items-center justify-between">
-        <h1 className="text-3xl font-bold">Analytics Dashboard</h1>
-        <div className="flex items-center gap-4">
-          {getStatusBadge()}
-          <div className="text-sm text-muted-foreground">
-            Last updated: {format(lastUpdated, 'HH:mm:ss')}
+    <AdminLayout 
+      title="Analytics Dashboard" 
+      breadcrumb="Analytics"
+      searchPlaceholder="Search analytics data..."
+    >
+      <div className="space-y-8">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-4">
+            {getStatusBadge()}
+            <div className="text-sm text-muted-foreground">
+              Last updated: {format(lastUpdated, 'HH:mm:ss')}
           </div>
         </div>
       </div>
@@ -694,6 +699,7 @@ export default function Analytics() {
           )}
         </TabsContent>
       </Tabs>
-    </div>
+      </div>
+    </AdminLayout>
   );
 }

@@ -33,6 +33,7 @@ export interface OwnerFilters {
   startDate?: string;
   endDate?: string;
   createdBy?: string;
+  propertiesCount?: string;
 }
 
 export const adminService = {

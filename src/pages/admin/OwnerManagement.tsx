@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
 import { 
-  Plus,
   Check,
   Eye,
   Trash2,
@@ -10,7 +9,6 @@ import {
   X,
   Search,
   ChevronDown,
-  Edit,
   Loader2,
   RefreshCw,
   TrendingUp,
@@ -19,17 +17,14 @@ import {
   MoreVertical
 } from 'lucide-react';
 import IconButton from '../../components/admin/ui/IconButton';
-import SharedSidebar from '../../components/admin/SharedSidebar';
-import SharedHeader from '../../components/admin/SharedHeader';
+import AdminLayout from '../../components/admin/AdminLayout';
 import OwnerDetailsModal from '../../components/admin/OwnerDetailsModal';
 import OwnerFilters from '../../components/admin/OwnerFilters';
-import OwnerFormModal from '../../components/admin/OwnerFormModal';
 import OwnerInsightsModal from '../../components/admin/OwnerInsightsModal';
 import SendNotificationModal from '../../components/admin/SendNotificationModal';
 import { adminService, PropertyOwner, OwnerFilters as FilterType } from '../../lib/adminService';
 
 const OwnerManagement: React.FC = () => {
-  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
   const [rowsPerPage, setRowsPerPage] = useState(10);
   const [owners, setOwners] = useState<PropertyOwner[]>([]);
@@ -38,18 +33,15 @@ const OwnerManagement: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   
   // Modal states
-  const [showAddModal, setShowAddModal] = useState(false);
   const [showOwnerDetails, setShowOwnerDetails] = useState<PropertyOwner | null>(null);
-  const [showOwnerForm, setShowOwnerForm] = useState<{ owner: PropertyOwner | null; mode: 'add' | 'edit' | 'view' } | null>(null);
   const [showOwnerInsights, setShowOwnerInsights] = useState<PropertyOwner | null>(null);
   const [showSendNotification, setShowSendNotification] = useState<PropertyOwner | null>(null);
   
-  // Form and filter states
-  const [formData, setFormData] = useState({ full_name: '', email: '', phone: '' });
-  const [submitting, setSubmitting] = useState(false);
+  // Filter states
   const [adminUsers, setAdminUsers] = useState<Array<{ id: string; full_name: string }>>([]);
   const [currentFilters, setCurrentFilters] = useState<FilterType>({});
   const [activeDropdown, setActiveDropdown] = useState<string | null>(null);
+  const [debouncedSearchTerm, setDebouncedSearchTerm] = useState('');
 
   // Fetch property owners on component mount
   useEffect(() => {
@@ -58,10 +50,19 @@ const OwnerManagement: React.FC = () => {
     fetchAdminUsers();
   }, []);
 
+  // Debounce search term for better performance
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearchTerm(currentFilters.search || '');
+    }, 300);
+
+    return () => clearTimeout(timer);
+  }, [currentFilters.search]);
+
   // Apply filters to owners list
   useEffect(() => {
     applyFilters();
-  }, [owners, currentFilters]);
+  }, [owners, debouncedSearchTerm, currentFilters.status, currentFilters.startDate, currentFilters.endDate, currentFilters.createdBy, currentFilters.propertiesCount, adminUsers]);
 
   const fetchPropertyOwners = async (filters?: FilterType) => {
     try {
@@ -93,8 +94,8 @@ const OwnerManagement: React.FC = () => {
     let filtered = [...owners];
 
     // Apply client-side filters for better UX (server-side filtering is also applied)
-    if (currentFilters.search) {
-      const searchTerm = currentFilters.search.toLowerCase();
+    if (debouncedSearchTerm) {
+      const searchTerm = debouncedSearchTerm.toLowerCase();
       filtered = filtered.filter(owner => 
         (owner.full_name || '').toLowerCase().includes(searchTerm) ||
         (owner.email || '').toLowerCase().includes(searchTerm) ||
@@ -105,6 +106,49 @@ const OwnerManagement: React.FC = () => {
     if (currentFilters.status && currentFilters.status !== 'all') {
       const isActive = currentFilters.status === 'active';
       filtered = filtered.filter(owner => owner.is_active === isActive);
+    }
+
+    // Apply date range filters
+    if (currentFilters.startDate) {
+      const startDate = new Date(currentFilters.startDate);
+      filtered = filtered.filter(owner => new Date(owner.created_at) >= startDate);
+    }
+
+    if (currentFilters.endDate) {
+      const endDate = new Date(currentFilters.endDate);
+      endDate.setHours(23, 59, 59, 999); // End of day
+      filtered = filtered.filter(owner => new Date(owner.created_at) <= endDate);
+    }
+
+    // Apply created by filter
+    if (currentFilters.createdBy) {
+      filtered = filtered.filter(owner => 
+        owner.created_by === currentFilters.createdBy
+      );
+    }
+
+    // Apply properties count filter
+    if (currentFilters.propertiesCount) {
+      switch (currentFilters.propertiesCount) {
+        case '0':
+          filtered = filtered.filter(owner => (owner.properties_count || 0) === 0);
+          break;
+        case '1-5':
+          filtered = filtered.filter(owner => {
+            const count = owner.properties_count || 0;
+            return count >= 1 && count <= 5;
+          });
+          break;
+        case '6-10':
+          filtered = filtered.filter(owner => {
+            const count = owner.properties_count || 0;
+            return count >= 6 && count <= 10;
+          });
+          break;
+        case '10+':
+          filtered = filtered.filter(owner => (owner.properties_count || 0) > 10);
+          break;
+      }
     }
 
     setFilteredOwners(filtered);
@@ -157,32 +201,16 @@ const OwnerManagement: React.FC = () => {
   console.log('🎨 OwnerManagement rendering, owners count:', owners.length, 'loading:', loading);
   
   return (
-    <div className="min-h-screen bg-gray-50">
-      <SharedSidebar 
-        sidebarCollapsed={sidebarCollapsed} 
-        setSidebarCollapsed={setSidebarCollapsed} 
-      />
-      
-      <div className={`transition-all duration-300 ${sidebarCollapsed ? 'ml-16' : 'ml-64'}`}>
-        <SharedHeader 
-          title="Owner Management" 
-          breadcrumb="Owner Management"
-        />
-
-        {/* Action Bar */}
-        <div className="bg-white border-b px-6 py-4">
+    <AdminLayout 
+      title="Owner Management" 
+      breadcrumb="Owner Management"
+      searchPlaceholder="Search owners..."
+    >
+      {/* Action Bar */}
+      <div className="bg-white border-b px-6 py-4">
           <div className="flex flex-wrap items-center justify-between gap-4">
             <div className="flex items-center space-x-4">
-              <IconButton
-                icon={Plus}
-                variant="primary"
-                onClick={() => setShowOwnerForm({ owner: null, mode: 'add' })}
-                tooltip="Add new property owner"
-                aria-label="Add new property owner"
-                className="px-4 py-2"
-              >
-                Add New Owner
-              </IconButton>
+
               <IconButton
                 icon={RefreshCw}
                 variant="secondary"
@@ -370,7 +398,7 @@ const OwnerManagement: React.FC = () => {
                                 size="sm"
                                 tooltip="View Details"
                                 aria-label="View owner details"
-                                onClick={() => setShowOwnerForm({ owner, mode: 'view' })}
+                                onClick={() => setShowOwnerDetails(owner)}
                                 className="text-blue-600 hover:text-blue-800 hover:bg-blue-50"
                               />
                               <IconButton
@@ -382,15 +410,7 @@ const OwnerManagement: React.FC = () => {
                                 onClick={() => setShowOwnerInsights(owner)}
                                 className="text-purple-600 hover:text-purple-800 hover:bg-purple-50"
                               />
-                              <IconButton
-                                icon={Edit}
-                                variant="ghost"
-                                size="sm"
-                                tooltip="Edit Owner"
-                                aria-label="Edit owner information"
-                                onClick={() => setShowOwnerForm({ owner, mode: 'edit' })}
-                                className="text-green-600 hover:text-green-800 hover:bg-green-50"
-                              />
+
                               <IconButton
                                 icon={Bell}
                                 variant="ghost"
@@ -546,7 +566,6 @@ const OwnerManagement: React.FC = () => {
             </div>
           )}
         </main>
-      </div>
 
       {/* Click outside to close dropdown */}
       {activeDropdown && (
@@ -557,15 +576,6 @@ const OwnerManagement: React.FC = () => {
       )}
 
       {/* Modals */}
-      {showOwnerForm && (
-        <OwnerFormModal
-          isOpen={!!showOwnerForm}
-          onClose={() => setShowOwnerForm(null)}
-          owner={showOwnerForm.owner}
-          mode={showOwnerForm.mode}
-          onSave={() => fetchPropertyOwners(currentFilters)}
-        />
-      )}
 
       {showOwnerInsights && (
         <OwnerInsightsModal
@@ -599,114 +609,7 @@ const OwnerManagement: React.FC = () => {
           onRefresh={() => fetchPropertyOwners(currentFilters)}
         />
       )}
-
-      {/* Legacy Add New Owner Modal - now replaced by OwnerFormModal */}
-      {showAddModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-6 w-full max-w-md mx-4">
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="text-lg font-semibold text-gray-800">Add New Owner</h3>
-              <button
-                onClick={() => setShowAddModal(false)}
-                className="text-gray-400 hover:text-gray-600 cursor-pointer"
-              >
-                <X className="w-5 h-5" />
-              </button>
-            </div>
-            <form 
-              className="space-y-4"
-              onSubmit={async (e) => {
-                e.preventDefault();
-                if (!formData.full_name || !formData.email) {
-                  alert('Please fill in all required fields');
-                  return;
-                }
-                
-                setSubmitting(true);
-                try {
-                  await adminService.addPropertyOwner(formData);
-                  alert('Property owner invited successfully! They will receive an email invitation.');
-                  setShowAddModal(false);
-                  setFormData({ full_name: '', email: '', phone: '' });
-                  fetchPropertyOwners(currentFilters); // Refresh the list
-                } catch (err) {
-                  alert('Failed to add property owner: ' + (err instanceof Error ? err.message : 'Unknown error'));
-                } finally {
-                  setSubmitting(false);
-                }
-              }}
-            >
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Full Name <span className="text-red-500">*</span>
-                </label>
-                <input
-                  type="text"
-                  required
-                  value={formData.full_name}
-                  onChange={(e) => setFormData(prev => ({ ...prev, full_name: e.target.value }))}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
-                  placeholder="Enter owner's full name"
-                  disabled={submitting}
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Email Address <span className="text-red-500">*</span>
-                </label>
-                <input
-                  type="email"
-                  required
-                  value={formData.email}
-                  onChange={(e) => setFormData(prev => ({ ...prev, email: e.target.value }))}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
-                  placeholder="Enter email address"
-                  disabled={submitting}
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Phone Number</label>
-                <input
-                  type="tel"
-                  value={formData.phone}
-                  onChange={(e) => setFormData(prev => ({ ...prev, phone: e.target.value }))}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
-                  placeholder="Enter phone number"
-                  disabled={submitting}
-                />
-              </div>
-              <div className="flex space-x-3 pt-4">
-                <button
-                  type="button"
-                  onClick={() => {
-                    setShowAddModal(false);
-                    setFormData({ full_name: '', email: '', phone: '' });
-                  }}
-                  disabled={submitting}
-                  className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 cursor-pointer disabled:opacity-50"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  disabled={submitting}
-                  className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 cursor-pointer disabled:opacity-50 flex items-center justify-center"
-                >
-                  {submitting ? (
-                    <>
-                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                      Adding...
-                    </>
-                  ) : (
-                    'Add Owner'
-                  )}
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
-    </div>
+    </AdminLayout>
   );
 };
 

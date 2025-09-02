@@ -14,7 +14,8 @@ const OwnerFilters: React.FC<OwnerFiltersProps> = ({ onFiltersChange, adminUsers
     status: 'all',
     startDate: '',
     endDate: '',
-    createdBy: ''
+    createdBy: '',
+    propertiesCount: ''
   });
 
   const [showAdvanced, setShowAdvanced] = useState(false);
@@ -31,13 +32,14 @@ const OwnerFilters: React.FC<OwnerFiltersProps> = ({ onFiltersChange, adminUsers
       status: 'all',
       startDate: '',
       endDate: '',
-      createdBy: ''
+      createdBy: '',
+      propertiesCount: ''
     };
     setFilters(clearedFilters);
     onFiltersChange(clearedFilters);
   };
 
-  const hasActiveFilters = filters.search || filters.status !== 'all' || filters.startDate || filters.endDate || filters.createdBy;
+  const hasActiveFilters = filters.search || filters.status !== 'all' || filters.startDate || filters.endDate || filters.createdBy || filters.propertiesCount;
 
   return (
     <div className="bg-white border rounded-lg p-4 mb-6">
@@ -135,18 +137,22 @@ const OwnerFilters: React.FC<OwnerFiltersProps> = ({ onFiltersChange, adminUsers
                 <option value="">All Admins</option>
                 {adminUsers.map((admin) => (
                   <option key={admin.id} value={admin.id}>
-                    {admin.full_name || admin.id}
+                    {admin.full_name || 'Unknown Admin'}
                   </option>
                 ))}
               </select>
             </div>
 
-            {/* Additional filters can be added here */}
+            {/* Properties Count Filter */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
                 Properties Count
               </label>
-              <select className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm cursor-pointer">
+              <select 
+                value={filters.propertiesCount || ''}
+                onChange={(e) => handleFilterChange('propertiesCount', e.target.value)}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm cursor-pointer"
+              >
                 <option value="">Any</option>
                 <option value="0">No Properties</option>
                 <option value="1-5">1-5 Properties</option>
