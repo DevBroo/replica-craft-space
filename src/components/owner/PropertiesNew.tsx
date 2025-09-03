@@ -12,6 +12,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { Home, Calendar, DollarSign, Star, MessageSquare, User, Settings as SettingsIcon, BarChart3, Bell, Menu, LogOut } from 'lucide-react';
 import PropertyWizard from './PropertyWizard';
 import { PropertyQuickView } from './PropertyQuickView';
+import DayPicnicWizard from './DayPicnicWizard';
 
 interface PropertiesProps {
   sidebarCollapsed?: boolean;
@@ -47,16 +48,21 @@ const Properties: React.FC<PropertiesProps> = ({
   const [selectedPropertyForView, setSelectedPropertyForView] = useState<any>(null);
   const [showQuickView, setShowQuickView] = useState(false);
   const [quickViewInitialTab, setQuickViewInitialTab] = useState<'overview' | 'itinerary' | 'location'>('overview');
+  const [activePropertyTab, setActivePropertyTab] = useState<'properties' | 'day-picnic'>('properties');
+  const [showDayPicnicForm, setShowDayPicnicForm] = useState(false);
 
   const propertyTypes = [
     'Hotels',
-    'Apartments', 
+    'Villas', 
     'Resorts',
-    'Villas',
-    'Homestays',
-    'Farm Houses',
-    'Day Picnic',  // Added Day Picnic type
-    'Other'
+    'Farmhouse',
+    'Homestay',
+    'Apartments',
+    'Guesthouse',
+    'Hostel',
+    'Heritage Palace',
+    'Banquet Hall',
+    'Wedding Venue'
   ];
 
   useEffect(() => {
@@ -70,7 +76,7 @@ const Properties: React.FC<PropertiesProps> = ({
       const newUrl = window.location.pathname + window.location.search.replace(/[?&]add=1/, '').replace(/^&/, '?');
       window.history.replaceState({}, '', newUrl);
     }
-  }, []);
+  }, [user?.id]);
 
   const fetchProperties = async () => {
     setLoading(true);
@@ -150,6 +156,10 @@ const Properties: React.FC<PropertiesProps> = ({
     setSelectedPropertyType('');
     setShowTypeSelector(false);
     setShowAddForm(true);
+  };
+
+  const handleAddDayPicnic = () => {
+    setShowDayPicnicForm(true);
   };
 
   const handleEditProperty = (property: any) => {
@@ -252,6 +262,11 @@ const Properties: React.FC<PropertiesProps> = ({
     fetchProperties(); // Refresh properties list
   };
 
+  const handleCloseDayPicnicForm = () => {
+    setShowDayPicnicForm(false);
+    fetchProperties(); // Refresh the list
+  };
+
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -329,18 +344,57 @@ const Properties: React.FC<PropertiesProps> = ({
       {/* Properties List */}
       <Card>
         <CardHeader className="flex flex-row items-center justify-between">
-          <CardTitle>Your Properties</CardTitle>
-          <Button variant='destructive' onClick={handleAddProperty}>
-            <Plus className="w-4 h-4 mr-2" />
-            Add Property
-          </Button>
+          <div className="flex items-center space-x-6">
+            <div className="flex space-x-1 bg-gray-100 rounded-lg p-1">
+              <button
+                onClick={() => setActivePropertyTab('properties')}
+                className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
+                  activePropertyTab === 'properties'
+                    ? 'bg-white text-gray-900 shadow-sm'
+                    : 'text-gray-600 hover:text-gray-900'
+                }`}
+              >
+                Properties
+              </button>
+              <button
+                onClick={() => setActivePropertyTab('day-picnic')}
+                className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
+                  activePropertyTab === 'day-picnic'
+                    ? 'bg-white text-gray-900 shadow-sm'
+                    : 'text-gray-600 hover:text-gray-900'
+                }`}
+              >
+                Day Picnic
+              </button>
+            </div>
+          </div>
+          <div className="flex gap-2">
+            <Button variant='destructive' onClick={handleAddProperty}>
+              <Plus className="w-4 h-4 mr-2" />
+              Add Property
+            </Button>
+            <Button variant='outline' onClick={handleAddDayPicnic} className="border-orange-500 text-orange-600 hover:bg-orange-50">
+              <Plus className="w-4 h-4 mr-2" />
+              Add Day Picnic
+            </Button>
+          </div>
         </CardHeader>
         <CardContent>
           {loading ? (
             <div className="text-center py-4 text-muted-foreground">Loading properties...</div>
-          ) : properties.length > 0 ? (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {properties.map((property) => (
+          ) : (() => {
+            // Filter properties based on active tab
+            const filteredProperties = properties.filter(property => {
+              if (activePropertyTab === 'day-picnic') {
+                return property.property_type === 'Day Picnic' || property.property_type === 'day-picnic';
+              } else {
+                return property.property_type !== 'Day Picnic' && property.property_type !== 'day-picnic';
+              }
+            });
+
+            return filteredProperties.length > 0 ? (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {filteredProperties.map((property) => (
                 <div key={property.id} className="flex items-center space-x-3 p-3 bg-gray-50 rounded">
                   <div className="w-12 h-12 bg-gray-200 rounded-lg overflow-hidden">
                     {property.images && property.images.length > 0 ? (
@@ -495,10 +549,18 @@ const Properties: React.FC<PropertiesProps> = ({
                   </Badge> */}
                 </div>
               ))}
-            </div>
-          ) : (
-            <div className="text-center py-4 text-muted-foreground">No properties yet</div>
-          )}
+              </div>
+            ) : (
+              <div className="text-center py-8">
+                <p className="text-muted-foreground">
+                  {activePropertyTab === 'day-picnic' 
+                    ? 'No day picnic properties found. Add your first day picnic property to get started!'
+                    : 'No properties found. Add your first property to get started!'
+                  }
+                </p>
+              </div>
+            );
+          })()}
         </CardContent>
       </Card>
 
@@ -580,6 +642,17 @@ const Properties: React.FC<PropertiesProps> = ({
               propertyId={editingProperty?.id}
               initialTitle={propertyName}
               initialPropertyType={selectedPropertyType}
+            />
+          </div>
+        </div>
+      )}
+
+      {/* Day Picnic Wizard Modal */}
+      {showDayPicnicForm && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-lg w-full max-w-6xl h-[95vh] overflow-y-auto">
+            <DayPicnicWizard 
+              onBack={handleCloseDayPicnicForm}
             />
           </div>
         </div>

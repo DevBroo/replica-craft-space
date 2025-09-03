@@ -1,32 +1,20 @@
 import React, { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
+import { useQuery } from '@tanstack/react-query';
+import { LocationService, type Location } from '@/lib/locationService';
 
 // Scroll animation hook
 const useScrollAnimation = () => {
   useEffect(() => {
-    const observerOptions = {
-      threshold: 0.1,
-      rootMargin: '0px 0px -50px 0px'
-    };
-
-    const observer = new IntersectionObserver((entries) => {
-      entries.forEach(entry => {
-        if (entry.isIntersecting) {
-          entry.target.classList.add('animate');
-        }
-      });
-    }, observerOptions);
-
-    const elements = document.querySelectorAll('.fade-in-up, .fade-in');
-    elements.forEach(el => observer.observe(el));
-
-    return () => observer.disconnect();
+    // Simplified animation hook - removed for now to fix syntax issue
+    return () => {};
   }, []);
 };
 
 const Locations: React.FC = () => {
   // Initialize scroll animations
   useScrollAnimation();
+  const navigate = useNavigate();
   const [searchLocation, setSearchLocation] = useState('');
   const [selectedRegion, setSelectedRegion] = useState('');
   const [selectedState, setSelectedState] = useState('');
@@ -34,125 +22,55 @@ const Locations: React.FC = () => {
   const [showRegionDropdown, setShowRegionDropdown] = useState(false);
   const [showStateDropdown, setShowStateDropdown] = useState(false);
 
-  const destinations = [
-    {
-      id: 1,
-      name: 'Goa',
-      state: 'Goa',
-      region: 'West',
-      category: 'beach',
-      properties: 245,
-      startingPrice: 1500,
-      image: 'https://readdy.ai/api/search-image?query=beautiful%20goa%20beach%20destination%20with%20golden%20sand%20palm%20trees%20and%20turquoise%20ocean%20waves%20tropical%20paradise%20vacation%20spot%20with%20clear%20blue%20sky%20and%20peaceful%20atmosphere&width=400&height=300&seq=goa1&orientation=landscape',
-      description: 'Experience pristine beaches, vibrant nightlife, and Portuguese heritage in India\'s premier beach destination.',
-      featured: true,
-      trending: true
-    },
-    {
-      id: 2,
-      name: 'Manali',
-      state: 'Himachal Pradesh',
-      region: 'North',
-      category: 'hill',
-      properties: 189,
-      startingPrice: 1200,
-      image: 'https://readdy.ai/api/search-image?query=scenic%20manali%20hill%20station%20with%20snow%20capped%20mountains%20pine%20forests%20and%20valley%20views%20beautiful%20himalayan%20landscape%20with%20clear%20mountain%20air%20and%20peaceful%20environment&width=400&height=300&seq=manali1&orientation=landscape',
-      description: 'Discover snow-capped peaks, adventure sports, and serene valleys in this popular Himalayan hill station.',
-      featured: true,
-      trending: false
-    },
-    {
-      id: 3,
-      name: 'Jaipur',
-      state: 'Rajasthan',
-      region: 'North',
-      category: 'heritage',
-      properties: 156,
-      startingPrice: 1800,
-      image: 'https://readdy.ai/api/search-image?query=magnificent%20jaipur%20pink%20city%20with%20traditional%20rajasthani%20architecture%20royal%20palaces%20and%20historic%20forts%20beautiful%20heritage%20destination%20with%20ornate%20details%20and%20cultural%20richness&width=400&height=300&seq=jaipur1&orientation=landscape',
-      description: 'Explore royal palaces, magnificent forts, and vibrant bazaars in the enchanting Pink City of India.',
-      featured: false,
-      trending: true
-    },
-    {
-      id: 4,
-      name: 'Kerala Backwaters',
-      state: 'Kerala',
-      region: 'South',
-      category: 'nature',
-      properties: 198,
-      startingPrice: 2200,
-      image: 'https://readdy.ai/api/search-image?query=serene%20kerala%20backwaters%20with%20traditional%20houseboat%20floating%20on%20calm%20green%20waters%20surrounded%20by%20coconut%20palm%20trees%20and%20lush%20tropical%20vegetation%20peaceful%20nature%20destination&width=400&height=300&seq=kerala1&orientation=landscape',
-      description: 'Cruise through tranquil backwaters, stay in houseboats, and experience God\'s Own Country.',
-      featured: true,
-      trending: false
-    },
-    {
-      id: 5,
-      name: 'Rishikesh',
-      state: 'Uttarakhand',
-      region: 'North',
-      category: 'spiritual',
-      properties: 134,
-      startingPrice: 1000,
-      image: 'https://readdy.ai/api/search-image?query=spiritual%20rishikesh%20with%20ganges%20river%20flowing%20through%20mountains%20ancient%20temples%20and%20yoga%20ashrams%20peaceful%20spiritual%20destination%20with%20sacred%20atmosphere%20and%20natural%20beauty&width=400&height=300&seq=rishikesh1&orientation=landscape',
-      description: 'Find spiritual peace, practice yoga, and enjoy adventure sports in the Yoga Capital of the World.',
-      featured: false,
-      trending: true
-    },
-    {
-      id: 6,
-      name: 'Shimla',
-      state: 'Himachal Pradesh',
-      region: 'North',
-      category: 'hill',
-      properties: 167,
-      startingPrice: 1400,
-      image: 'https://readdy.ai/api/search-image?query=charming%20shimla%20hill%20station%20with%20colonial%20architecture%20surrounded%20by%20dense%20green%20forests%20and%20mountain%20peaks%20beautiful%20himalayan%20destination%20with%20pleasant%20weather&width=400&height=300&seq=shimla1&orientation=landscape',
-      description: 'Experience colonial charm, toy train rides, and pleasant weather in the Queen of Hills.',
-      featured: false,
-      trending: false
-    },
-    {
-      id: 7,
-      name: 'Udaipur',
-      state: 'Rajasthan',
-      region: 'North',
-      category: 'heritage',
-      properties: 123,
-      startingPrice: 2500,
-      image: 'https://readdy.ai/api/search-image?query=romantic%20udaipur%20city%20of%20lakes%20with%20beautiful%20palace%20architecture%20reflecting%20in%20calm%20lake%20waters%20surrounded%20by%20hills%20magnificent%20heritage%20destination%20with%20royal%20grandeur&width=400&height=300&seq=udaipur1&orientation=landscape',
-      description: 'Discover the City of Lakes with stunning palaces, romantic boat rides, and royal heritage.',
-      featured: true,
-      trending: false
-    },
-    {
-      id: 8,
-      name: 'Darjeeling',
-      state: 'West Bengal',
-      region: 'East',
-      category: 'hill',
-      properties: 145,
-      startingPrice: 1300,
-      image: 'https://readdy.ai/api/search-image?query=picturesque%20darjeeling%20hill%20station%20with%20tea%20plantations%20covering%20rolling%20hills%20and%20himalayan%20mountain%20views%20beautiful%20green%20landscape%20with%20peaceful%20atmosphere%20and%20colonial%20charm&width=400&height=300&seq=darjeeling1&orientation=landscape',
-      description: 'Enjoy tea gardens, mountain railways, and breathtaking views of Kanchenjunga peak.',
-      featured: false,
-      trending: true
-    },
-    {
-      id: 9,
-      name: 'Andaman Islands',
-      state: 'Andaman & Nicobar',
-      region: 'South',
-      category: 'beach',
-      properties: 89,
-      startingPrice: 3500,
-      image: 'https://readdy.ai/api/search-image?query=pristine%20andaman%20islands%20with%20crystal%20clear%20turquoise%20water%20white%20sand%20beaches%20and%20tropical%20palm%20trees%20untouched%20paradise%20destination%20with%20coral%20reefs%20and%20marine%20life&width=400&height=300&seq=andaman1&orientation=landscape',
-      description: 'Explore pristine beaches, coral reefs, and crystal-clear waters in this tropical paradise.',
-      featured: true,
-      trending: false
-    }
-  ];
+  // Function to navigate to properties with location filter
+  const handleViewProperties = (locationName: string, stateName: string) => {
+    const searchParams = new URLSearchParams();
+    searchParams.set('location', `${locationName}, ${stateName}`);
+    navigate(`/properties?${searchParams.toString()}`);
+  };
+
+  // Fetch locations from database
+  const { data: destinations = [], isLoading, error } = useQuery({
+    queryKey: ['locations'],
+    queryFn: LocationService.getLocations,
+    staleTime: 5 * 60 * 1000, // 5 minutes
+  });
+
+  // Handle loading and error states
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-background font-poppins">
+        <div className="flex items-center justify-center py-20">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-red-600 mx-auto mb-4"></div>
+            <p className="text-gray-600">Loading amazing destinations...</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    console.error('Error loading locations:', error);
+  }
+
+  // Transform database locations to match expected format
+  const transformedDestinations = destinations.map(location => ({
+    id: location.id,
+    name: location.name,
+    state: location.state,
+    region: location.region,
+    category: location.category,
+    properties: location.properties || 0,
+    startingPrice: location.startingPrice || 0,
+    image: location.cover_image_url || `https://readdy.ai/api/search-image?query=${encodeURIComponent(location.name + ' destination beautiful scenic view')}&width=400&height=300&seq=${location.name.toLowerCase()}1&orientation=landscape`,
+    description: location.description || `Discover the beauty and charm of ${location.name}, ${location.state}.`,
+    featured: location.featured,
+    trending: location.trending
+  }));
+
+  // Use only database destinations - no static fallback
+  const allDestinations = transformedDestinations;
 
   const categories = [
     { id: 'all', name: 'All Destinations', icon: 'fas fa-globe-asia' },
@@ -163,10 +81,26 @@ const Locations: React.FC = () => {
     { id: 'nature', name: 'Nature & Wildlife', icon: 'fas fa-leaf' }
   ];
 
-  const regions = ['North', 'South', 'East', 'West'];
-  const states = ['Goa', 'Himachal Pradesh', 'Rajasthan', 'Kerala', 'Uttarakhand', 'West Bengal', 'Andaman & Nicobar'];
+  // If no destinations from database, show empty state
+  if (allDestinations.length === 0) {
+    return (
+      <div className="min-h-screen bg-background font-poppins">
+        <div className="flex items-center justify-center py-20">
+          <div className="text-center">
+            <div className="text-6xl mb-4">🏝️</div>
+            <h2 className="text-2xl font-bold text-gray-900 mb-2">No Destinations Available</h2>
+            <p className="text-gray-600">Destinations are being added. Please check back soon!</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
-  const filteredDestinations = destinations.filter(destination => {
+  // Extract unique regions and states from data
+  const regions = [...new Set(allDestinations.map(dest => dest.region))].sort();
+  const states = [...new Set(allDestinations.map(dest => dest.state))].sort();
+
+  const filteredDestinations = allDestinations.filter(destination => {
     const matchesCategory = activeCategory === 'all' || destination.category === activeCategory;
     const matchesRegion = !selectedRegion || destination.region === selectedRegion;
     const matchesState = !selectedState || destination.state === selectedState;
@@ -174,8 +108,8 @@ const Locations: React.FC = () => {
     return matchesCategory && matchesRegion && matchesState && matchesSearch;
   });
 
-  const featuredDestinations = destinations.filter(dest => dest.featured);
-  const trendingDestinations = destinations.filter(dest => dest.trending);
+  const featuredDestinations = allDestinations.filter(dest => dest.featured);
+  const trendingDestinations = allDestinations.filter(dest => dest.trending);
 
   return (
     <div className="min-h-screen bg-background font-poppins">
@@ -332,14 +266,23 @@ const Locations: React.FC = () => {
       </section>
 
       {/* Featured Destinations */}
-      <section className="py-16 bg-gray-50 fade-in-up">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-12">
-            <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold text-gray-900 font-poppins mb-4">Featured Destinations</h2>
-            <p className="text-xl text-gray-600">Handpicked locations for unforgettable experiences</p>
-          </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-            {featuredDestinations.slice(0, 6).map((destination, index) => (
+      {(isLoading || featuredDestinations.length > 0) && (
+        <section className="py-16 bg-gray-50">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="text-center mb-12">
+              <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold text-gray-900 font-poppins mb-4">Featured Destinations</h2>
+              <p className="text-xl text-gray-600">Handpicked locations for unforgettable experiences</p>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+              {isLoading ? (
+                // Loading skeleton for featured destinations
+                Array.from({ length: 3 }).map((_, index) => (
+                  <div key={`featured-skeleton-${index}`} className="animate-pulse">
+                    <div className="bg-gray-300 rounded-3xl h-80"></div>
+                  </div>
+                ))
+              ) : (
+                featuredDestinations.slice(0, 6).map((destination, index) => (
               <div key={destination.id} className="group cursor-pointer fade-in" style={{animationDelay: `${index * 0.1}s`}}>
                 <div className="gradient-border hover-lift">
                   <div className="gradient-border-inner overflow-hidden">
@@ -386,29 +329,33 @@ const Locations: React.FC = () => {
                           <div className="text-sm text-gray-500">per night</div>
                         </div>
                       </div>
-                      <a href="/properties" className="block">
-                        <button className="w-full bg-gradient-to-r from-red-600 to-orange-500 text-white py-3 rounded-xl hover:from-red-700 hover:to-orange-600 transition-all duration-300 cursor-pointer whitespace-nowrap !rounded-button font-bold shadow-lg hover:shadow-xl transform hover:scale-105">
-                          View Properties
-                          <i className="fas fa-arrow-right ml-2"></i>
-                        </button>
-                      </a>
+                      <button 
+                        onClick={() => handleViewProperties(destination.name, destination.state)}
+                        className="w-full bg-gradient-to-r from-red-600 to-orange-500 text-white py-3 rounded-xl hover:from-red-700 hover:to-orange-600 transition-all duration-300 cursor-pointer whitespace-nowrap !rounded-button font-bold shadow-lg hover:shadow-xl transform hover:scale-105"
+                      >
+                        View Properties
+                        <i className="fas fa-arrow-right ml-2"></i>
+                      </button>
                     </div>
                   </div>
                 </div>
               </div>
-            ))}
+                ))
+              )}
+            </div>
           </div>
-        </div>
-      </section>
+        </section>
+      )}
 
       {/* Trending Destinations */}
-      <section className="py-16 bg-white fade-in-up">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between mb-12">
-            <div>
-              <h2 className="text-4xl font-bold text-gray-900 font-poppins mb-4">Trending Now</h2>
-              <p className="text-xl text-gray-600">Popular destinations this season</p>
-            </div>
+      {(isLoading || trendingDestinations.length > 0) && (
+        <section className="py-16 bg-white">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="flex items-center justify-between mb-12">
+              <div>
+                <h2 className="text-4xl font-bold text-gray-900 font-poppins mb-4">Trending Now</h2>
+                <p className="text-xl text-gray-600">Popular destinations this season</p>
+              </div>
             <div className="flex items-center gap-2">
               <button className="w-12 h-12 bg-gray-100 rounded-full flex items-center justify-center hover:bg-gray-200 transition-colors duration-200 cursor-pointer">
                 <i className="fas fa-chevron-left text-gray-600"></i>
@@ -419,7 +366,15 @@ const Locations: React.FC = () => {
             </div>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-            {trendingDestinations.map((destination) => (
+            {isLoading ? (
+              // Loading skeleton for trending destinations
+              Array.from({ length: 4 }).map((_, index) => (
+                <div key={`trending-skeleton-${index}`} className="animate-pulse">
+                  <div className="bg-gray-300 rounded-2xl h-64"></div>
+                </div>
+              ))
+            ) : (
+              trendingDestinations.map((destination) => (
               <div key={destination.id} className="group cursor-pointer">
                 <div className="bg-white rounded-2xl shadow-lg hover:shadow-2xl transition-all duration-500 overflow-hidden transform hover:scale-105 border border-gray-100 hover-lift">
                   <div className="relative overflow-hidden">
@@ -453,10 +408,12 @@ const Locations: React.FC = () => {
                   </div>
                 </div>
               </div>
-            ))}
+              ))
+            )}
           </div>
         </div>
       </section>
+      )}
 
       {/* All Destinations Grid */}
       <section className="py-16 bg-gray-50">
@@ -495,7 +452,10 @@ const Locations: React.FC = () => {
                     />
                     <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
                     <div className="absolute bottom-4 left-4 right-4 transform translate-y-8 group-hover:translate-y-0 opacity-0 group-hover:opacity-100 transition-all duration-500">
-                      <button className="w-full bg-white text-gray-900 py-3 rounded-lg font-bold hover:bg-gray-100 transition-colors duration-200 !rounded-button cursor-pointer whitespace-nowrap">
+                      <button 
+                        onClick={() => handleViewProperties(destination.name, destination.state)}
+                        className="w-full bg-white text-gray-900 py-3 rounded-lg font-bold hover:bg-gray-100 transition-colors duration-200 !rounded-button cursor-pointer whitespace-nowrap"
+                      >
                         Explore Now
                       </button>
                     </div>
@@ -528,12 +488,13 @@ const Locations: React.FC = () => {
                         <div className="text-sm text-gray-500">per night</div>
                       </div>
                     </div>
-                    <a href="/properties" className="block">
-                      <button className="w-full bg-gradient-to-r from-red-600 to-orange-500 text-white py-3 rounded-xl hover:from-red-700 hover:to-orange-600 transition-all duration-300 cursor-pointer whitespace-nowrap !rounded-button font-bold shadow-lg hover:shadow-xl transform hover:scale-105">
-                        View Properties
-                        <i className="fas fa-arrow-right ml-2"></i>
-                      </button>
-                    </a>
+                    <button 
+                      onClick={() => handleViewProperties(destination.name, destination.state)}
+                      className="w-full bg-gradient-to-r from-red-600 to-orange-500 text-white py-3 rounded-xl hover:from-red-700 hover:to-orange-600 transition-all duration-300 cursor-pointer whitespace-nowrap !rounded-button font-bold shadow-lg hover:shadow-xl transform hover:scale-105"
+                    >
+                      View Properties
+                      <i className="fas fa-arrow-right ml-2"></i>
+                    </button>
                   </div>
                 </div>
               </div>

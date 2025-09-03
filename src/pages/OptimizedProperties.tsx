@@ -1,9 +1,10 @@
 import React, { useState, useMemo, useCallback, useEffect } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { Search, MapPin, Users, Star, Calendar, Bed, Bath, Filter } from 'lucide-react';
 import { useDebounce } from '@/hooks/useDebounce';
 import { PropertyService } from '@/lib/propertyService';
+import { SearchService, PROPERTY_CATEGORIES, type SearchFilters } from '@/lib/searchService';
 import { getOptimizedImageUrl, getImageSizes } from '@/lib/imageOptimization';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
@@ -55,29 +56,50 @@ const OptimizedProperties = () => {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const { user } = useAuth();
+  const [searchParams, setSearchParams] = useSearchParams();
   
-  // State management
-  const [searchTerm, setSearchTerm] = useState('');
-  const [selectedLocation, setSelectedLocation] = useState('all');
-  const [selectedType, setSelectedType] = useState('all');
+  // Initialize state from URL parameters
+  const [searchTerm, setSearchTerm] = useState(searchParams.get('search') || '');
+  const [selectedLocation, setSelectedLocation] = useState(searchParams.get('location') || 'all');
+  const [selectedType, setSelectedType] = useState(searchParams.get('category') || searchParams.get('type') || 'all');
   const [priceRange, setPriceRange] = useState([0, 15000]);
   const [sortBy, setSortBy] = useState('newest');
   const [currentPage, setCurrentPage] = useState(1);
-  const [activeTab, setActiveTab] = useState('properties');
+  const [activeTab, setActiveTab] = useState(searchParams.get('tab') || (searchParams.get('category') === 'day-picnic' ? 'day-picnics' : 'properties'));
+  const [searchFilters, setSearchFilters] = useState<SearchFilters>({
+    location: searchParams.get('location') || 'all',
+    category: (searchParams.get('category') || searchParams.get('type') || 'all') as any,
+    date: searchParams.get('date') || '',
+    guests: parseInt(searchParams.get('guests') || '0') || undefined
+  });
 
   // Debounced search
   const debouncedSearchTerm = useDebounce(searchTerm, 300);
 
-  // Fetch properties with React Query and pagination
+  // Fetch properties with search filters
   const { 
-    data: propertiesData, 
+    data: searchedProperties = [], 
     isLoading: isLoadingProperties,
     error: propertiesError 
   } = useQuery({
-    queryKey: ['properties_public', 'paginated', currentPage, ITEMS_PER_PAGE],
-    queryFn: () => PropertyService.getPaginatedProperties(currentPage, ITEMS_PER_PAGE),
+    queryKey: ['properties_search', searchFilters, currentPage],
+    queryFn: () => SearchService.searchProperties(searchFilters),
+    staleTime: 2 * 60 * 1000,
+    gcTime: 5 * 60 * 1000,
+  });
+
+  // Fetch available locations
+  const { data: availableLocations = [] } = useQuery({
+    queryKey: ['available-locations'],
+    queryFn: SearchService.getAvailableLocations,
     staleTime: 5 * 60 * 1000,
-    gcTime: 10 * 60 * 1000,
+  });
+
+  // Fetch categories with counts
+  const { data: categoriesWithCounts = [] } = useQuery({
+    queryKey: ['categories-with-counts'],
+    queryFn: SearchService.getCategoriesWithCounts,
+    staleTime: 5 * 60 * 1000,
   });
 
   // Fetch day picnic packages only when tab is active
@@ -104,9 +126,45 @@ const OptimizedProperties = () => {
     gcTime: 5 * 60 * 1000,
   });
 
-  const properties = propertiesData?.properties || [];
-  const totalCount = propertiesData?.totalCount || 0;
+  const properties = searchedProperties || [];
+  const totalCount = properties.length;
   const totalPages = Math.ceil(totalCount / ITEMS_PER_PAGE);
+
+  // Handle search filter changes
+  const handleFilterChange = useCallback((newFilters: Partial<SearchFilters>) => {
+    const updatedFilters = { ...searchFilters, ...newFilters };
+    setSearchFilters(updatedFilters);
+    setCurrentPage(1);
+
+    // Update URL params
+    const newParams = new URLSearchParams();
+    if (updatedFilters.location && updatedFilters.location !== 'all') {
+      newParams.set('location', updatedFilters.location);
+    }
+    if (updatedFilters.category && updatedFilters.category !== 'all') {
+      newParams.set('category', updatedFilters.category);
+    }
+    if (updatedFilters.date) {
+      newParams.set('date', updatedFilters.date);
+    }
+    if (updatedFilters.guests && updatedFilters.guests > 0) {
+      newParams.set('guests', updatedFilters.guests.toString());
+    }
+    
+    setSearchParams(newParams);
+  }, [searchFilters, setSearchParams]);
+
+  // Handle location filter change
+  const handleLocationChange = useCallback((location: string) => {
+    setSelectedLocation(location);
+    handleFilterChange({ location });
+  }, [handleFilterChange]);
+
+  // Handle category filter change
+  const handleCategoryChange = useCallback((category: string) => {
+    setSelectedType(category);
+    handleFilterChange({ category: category as any });
+  }, [handleFilterChange]);
 
   // Prefetch next page for instant pagination
   useEffect(() => {
@@ -140,6 +198,13 @@ const OptimizedProperties = () => {
 
   // Memoized filtered and sorted properties
   const filteredProperties = useMemo(() => {
+    // If we have search filters active (especially location), use the search results directly
+    // since SearchService already handles the filtering correctly
+    if (searchFilters.location && searchFilters.location !== 'all') {
+      return properties; // searchedProperties are already filtered
+    }
+    
+    // Otherwise, apply client-side filtering for manual filter interactions
     return properties.filter(property => {
       // Search filter - check title and location
       const searchLower = debouncedSearchTerm.toLowerCase().trim();
@@ -166,7 +231,7 @@ const OptimizedProperties = () => {
 
       return matchesSearch && matchesLocation && matchesType && matchesPrice;
     });
-  }, [properties, debouncedSearchTerm, selectedLocation, selectedType, priceRange]);
+  }, [properties, debouncedSearchTerm, selectedLocation, selectedType, priceRange, searchFilters.location]);
 
   // Memoized sorted properties
   const sortedProperties = useMemo(() => {
@@ -428,45 +493,31 @@ const OptimizedProperties = () => {
               />
             </div>
 
-            <Select value={selectedLocation} onValueChange={setSelectedLocation}>
+            <Select value={selectedLocation} onValueChange={handleLocationChange}>
               <SelectTrigger>
                 <SelectValue placeholder="Select location" />
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">All Locations</SelectItem>
-                <SelectItem value="Mumbai">Mumbai</SelectItem>
-                <SelectItem value="Delhi">Delhi</SelectItem>
-                <SelectItem value="Bangalore">Bangalore</SelectItem>
-                <SelectItem value="Pune">Pune</SelectItem>
-                <SelectItem value="Goa">Goa</SelectItem>
-                <SelectItem value="Jaipur">Jaipur</SelectItem>
-                <SelectItem value="Udaipur">Udaipur</SelectItem>
-                <SelectItem value="Manali">Manali</SelectItem>
-                <SelectItem value="Shimla">Shimla</SelectItem>
-                <SelectItem value="Rishikesh">Rishikesh</SelectItem>
-                <SelectItem value="Kerala">Kerala</SelectItem>
-                <SelectItem value="Darjeeling">Darjeeling</SelectItem>
-                <SelectItem value="Andaman">Andaman</SelectItem>
+                {availableLocations.map((location) => (
+                  <SelectItem key={`${location.city}-${location.state}`} value={location.city}>
+                    {location.city}, {location.state} ({location.property_count})
+                  </SelectItem>
+                ))}
               </SelectContent>
             </Select>
 
-            <Select value={selectedType} onValueChange={setSelectedType}>
+            <Select value={selectedType} onValueChange={handleCategoryChange}>
               <SelectTrigger>
                 <SelectValue placeholder="Property type" />
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">All Types</SelectItem>
-                <SelectItem value="Villa">Villa</SelectItem>
-                <SelectItem value="Farmhouse">Farmhouse</SelectItem>
-                <SelectItem value="Resort">Resort</SelectItem>
-                <SelectItem value="Cottage">Cottage</SelectItem>
-                <SelectItem value="Bungalow">Bungalow</SelectItem>
-                <SelectItem value="Apartment">Apartment</SelectItem>
-                <SelectItem value="Guest House">Guest House</SelectItem>
-                <SelectItem value="Heritage">Heritage</SelectItem>
-                <SelectItem value="Beach House">Beach House</SelectItem>
-                <SelectItem value="Mountain Cabin">Mountain Cabin</SelectItem>
-                <SelectItem value="Day Picnic">Day Picnic</SelectItem>
+                {categoriesWithCounts.map((category) => (
+                  <SelectItem key={category.category} value={category.category}>
+                    {category.label} ({category.count})
+                  </SelectItem>
+                ))}
               </SelectContent>
             </Select>
 
@@ -515,6 +566,13 @@ const OptimizedProperties = () => {
                 setSelectedType('all');
                 setPriceRange([0, 15000]);
                 setSortBy('newest');
+                setSearchFilters({
+                  location: 'all',
+                  category: 'all' as any,
+                  date: '',
+                  guests: undefined
+                });
+                setSearchParams(new URLSearchParams());
               }}
               className="whitespace-nowrap"
             >

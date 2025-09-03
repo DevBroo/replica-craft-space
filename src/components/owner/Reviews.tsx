@@ -1,5 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import * as echarts from 'echarts';
+import { useAuth } from '@/contexts/AuthContext';
+import { OwnerService, type OwnerReview } from '@/lib/ownerService';
+import { supabase } from '@/integrations/supabase/client';
 
 interface ReviewsProps {
   sidebarCollapsed: boolean;
@@ -9,6 +12,7 @@ interface ReviewsProps {
 }
 
 const Reviews: React.FC<ReviewsProps> = ({ sidebarCollapsed, toggleSidebar, activeTab, setActiveTab }) => {
+  const { user } = useAuth();
   const [dateRange, setDateRange] = useState('last30days');
   const [propertyFilter, setPropertyFilter] = useState('all');
   const [ratingFilter, setRatingFilter] = useState('all');
@@ -16,6 +20,8 @@ const Reviews: React.FC<ReviewsProps> = ({ sidebarCollapsed, toggleSidebar, acti
   const [searchQuery, setSearchQuery] = useState('');
   const [chartView, setChartView] = useState('weekly');
   const [expandedReviews, setExpandedReviews] = useState<Set<number>>(new Set());
+  const [reviews, setReviews] = useState<OwnerReview[]>([]);
+  const [loading, setLoading] = useState(true);
 
   const toggleReviewExpansion = (reviewId: number) => {
     const newExpanded = new Set(expandedReviews);
@@ -37,122 +43,83 @@ const Reviews: React.FC<ReviewsProps> = ({ sidebarCollapsed, toggleSidebar, acti
     { id: 'settings', label: 'Settings', icon: 'fas fa-cog' },
   ];
 
-  const reviewsOverview = {
-    averageRating: '4.6',
-    averageRatingChange: '+0.2',
-    totalReviews: '342',
-    totalReviewsChange: '+18',
-    recentReviews: '28',
-    recentReviewsChange: '+12',
-    responseRate: '94%',
-    responseRateChange: '+3%'
+  // Load reviews data
+  useEffect(() => {
+    if (user?.id) {
+      loadReviews();
+    }
+  }, [user?.id]);
+
+  // Real-time updates for reviews
+  useEffect(() => {
+    if (!user?.id) return;
+
+    const channel = supabase
+      .channel('owner-reviews-realtime')
+      .on('postgres_changes', {
+        event: '*',
+        schema: 'public',
+        table: 'reviews'
+      }, (payload) => {
+        console.log('⭐ Review updated:', payload);
+        loadReviews();
+      })
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [user?.id]);
+
+  const loadReviews = async () => {
+    if (!user?.id) return;
+    
+    try {
+      setLoading(true);
+      const ownerReviews = await OwnerService.getOwnerReviews(user.id);
+      setReviews(ownerReviews);
+    } catch (error) {
+      console.error('❌ Error loading reviews:', error);
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const propertiesData = [
-    { id: 1, name: 'Oceanview Villa' },
-    { id: 2, name: 'Goa Beach House' },
-    { id: 3, name: 'Jaipur Heritage' },
-    { id: 4, name: 'Pune Penthouse' },
-    { id: 5, name: 'Chennai Marina' },
-    { id: 6, name: 'Delhi Apartment' }
-  ];
+  const averageRating = reviews.length > 0 ? reviews.reduce((sum, r) => sum + r.rating, 0) / reviews.length : 0;
+  const responseRate = reviews.length > 0 ? (reviews.filter(r => r.response).length / reviews.length) * 100 : 0;
 
-  const reviewsData = [
-    {
-      id: 1,
-      guestName: 'Priya Sharma',
-      guestAvatar: 'https://readdy.ai/api/search-image?query=professional%20Indian%20woman%20guest%20avatar%20headshot%20with%20friendly%20expression%20clean%20background%20modern%20style&width=40&height=40&seq=guest-001&orientation=squarish',
-      propertyName: 'Oceanview Villa',
-      propertyImage: 'https://readdy.ai/api/search-image?query=luxury%20oceanview%20villa%20property%20exterior%20modern%20architecture%20with%20clean%20minimalist%20background%20bright%20natural%20lighting&width=60&height=60&seq=property-001&orientation=squarish',
-      rating: 5,
-      reviewText: 'Absolutely stunning property with breathtaking ocean views! The villa was immaculately clean and well-maintained. The host was incredibly responsive and provided excellent recommendations for local attractions. The infinity pool overlooking the ocean was the highlight of our stay.',
-      date: '2024-01-15',
-      status: 'responded',
-      responseText: 'Thank you so much for your wonderful review, Priya! We are delighted that you enjoyed your stay.'
-    },
-    {
-      id: 2,
-      guestName: 'Amit Kumar',
-      guestAvatar: 'https://readdy.ai/api/search-image?query=professional%20Indian%20man%20guest%20avatar%20headshot%20with%20friendly%20expression%20clean%20background%20modern%20style&width=40&height=40&seq=guest-002&orientation=squarish',
-      propertyName: 'Goa Beach House',
-      propertyImage: 'https://readdy.ai/api/search-image?query=beautiful%20beach%20house%20property%20coastal%20architecture%20with%20clean%20minimalist%20background%20bright%20natural%20lighting&width=60&height=60&seq=property-002&orientation=squarish',
-      rating: 4,
-      reviewText: 'Great location right on the beach with easy access to water sports and local restaurants. The house was comfortable and had all necessary amenities. Only minor issue was the WiFi connectivity in some rooms.',
-      date: '2024-01-12',
-      status: 'pending',
-      responseText: null
-    },
-    {
-      id: 3,
-      guestName: 'Sarah Johnson',
-      guestAvatar: 'https://readdy.ai/api/search-image?query=professional%20western%20woman%20guest%20avatar%20headshot%20with%20friendly%20expression%20clean%20background%20modern%20style&width=40&height=40&seq=guest-003&orientation=squarish',
-      propertyName: 'Jaipur Heritage',
-      propertyImage: 'https://readdy.ai/api/search-image?query=traditional%20heritage%20property%20rajasthani%20architecture%20with%20clean%20minimalist%20background%20bright%20natural%20lighting&width=60&height=60&seq=property-003&orientation=squarish',
-      rating: 5,
-      reviewText: 'An authentic Rajasthani experience! The heritage property beautifully captures the essence of Jaipur with traditional architecture and modern comforts. The rooftop terrace offers spectacular views of the city.',
-      date: '2024-01-10',
-      status: 'responded',
-      responseText: 'Thank you Sarah! We are thrilled you enjoyed the authentic Rajasthani experience.'
-    },
-    {
-      id: 4,
-      guestName: 'Ravi Patel',
-      guestAvatar: 'https://readdy.ai/api/search-image?query=professional%20Indian%20businessman%20guest%20avatar%20headshot%20with%20confident%20expression%20clean%20background%20modern%20style&width=40&height=40&seq=guest-004&orientation=squarish',
-      propertyName: 'Pune Penthouse',
-      propertyImage: 'https://readdy.ai/api/search-image?query=modern%20penthouse%20property%20contemporary%20architecture%20with%20clean%20minimalist%20background%20bright%20natural%20lighting&width=60&height=60&seq=property-004&orientation=squarish',
-      rating: 3,
-      reviewText: 'The penthouse has great potential with amazing city views, but there were some maintenance issues during our stay. The elevator was out of service for two days which was inconvenient.',
-      date: '2024-01-08',
-      status: 'pending',
-      responseText: null
-    },
-    {
-      id: 5,
-      guestName: 'Lisa Chen',
-      guestAvatar: 'https://readdy.ai/api/search-image?query=professional%20asian%20woman%20guest%20avatar%20headshot%20with%20friendly%20expression%20clean%20background%20modern%20style&width=40&height=40&seq=guest-005&orientation=squarish',
-      propertyName: 'Chennai Marina',
-      propertyImage: 'https://readdy.ai/api/search-image?query=marina%20waterfront%20property%20coastal%20modern%20architecture%20with%20clean%20minimalist%20background%20bright%20natural%20lighting&width=60&height=60&seq=property-005&orientation=squarish',
-      rating: 4,
-      reviewText: 'Perfect location near Marina Beach with excellent connectivity to the city center. The apartment was clean and well-furnished. Would definitely recommend for business travelers.',
-      date: '2024-01-05',
-      status: 'responded',
-      responseText: 'Thank you Lisa! We appreciate your recommendation and look forward to hosting you again.'
-    },
-    {
-      id: 6,
-      guestName: 'Vikram Singh',
-      guestAvatar: 'https://readdy.ai/api/search-image?query=professional%20Indian%20young%20man%20guest%20avatar%20headshot%20with%20friendly%20expression%20clean%20background%20modern%20style&width=40&height=40&seq=guest-006&orientation=squarish',
-      propertyName: 'Delhi Apartment',
-      propertyImage: 'https://readdy.ai/api/search-image?query=urban%20apartment%20property%20modern%20city%20architecture%20with%20clean%20minimalist%20background%20bright%20natural%20lighting&width=60&height=60&seq=property-006&orientation=squarish',
-      rating: 2,
-      reviewText: 'The location is convenient but the apartment needs significant improvements. The air conditioning was not working properly and there were cleanliness issues upon arrival.',
-      date: '2024-01-03',
-      status: 'pending',
-      responseText: null
-    }
-  ];
+  const reviewsOverview = {
+    averageRating: averageRating.toFixed(1),
+    averageRatingChange: '0%',
+    totalReviews: reviews.length.toString(),
+    totalReviewsChange: '0',
+    recentReviews: reviews.filter(r => new Date(r.created_at) > new Date(Date.now() - 7 * 24 * 60 * 60 * 1000)).length.toString(),
+    recentReviewsChange: '0',
+    responseRate: `${responseRate.toFixed(1)}%`,
+    responseRateChange: '0%'
+  };
 
-  const ratingDistribution = [
-    { rating: '5 Star', count: 156, percentage: 45.6 },
-    { rating: '4 Star', count: 98, percentage: 28.7 },
-    { rating: '3 Star', count: 52, percentage: 15.2 },
-    { rating: '2 Star', count: 24, percentage: 7.0 },
-    { rating: '1 Star', count: 12, percentage: 3.5 }
-  ];
+  const propertiesData: any[] = [];
+
+  // Filter reviews based on current filters
+  const filteredReviews = reviews.filter(review => {
+    const matchesRating = ratingFilter === 'all' || review.rating.toString() === ratingFilter;
+    const matchesStatus = statusFilter === 'all' || 
+      (statusFilter === 'responded' && review.response) ||
+      (statusFilter === 'pending' && !review.response);
+    const matchesSearch = !searchQuery || 
+      review.reviewer_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      review.comment.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      review.property_title.toLowerCase().includes(searchQuery.toLowerCase());
+    
+    return matchesRating && matchesStatus && matchesSearch;
+  });
+
+  const ratingDistribution: any[] = [];
 
   const reviewTrendsData = {
-    weekly: [
-      { period: 'Week 1', reviews: 8 },
-      { period: 'Week 2', reviews: 12 },
-      { period: 'Week 3', reviews: 15 },
-      { period: 'Week 4', reviews: 18 }
-    ],
-    monthly: [
-      { period: 'Oct', reviews: 45 },
-      { period: 'Nov', reviews: 52 },
-      { period: 'Dec', reviews: 48 },
-      { period: 'Jan', reviews: 38 }
-    ]
+    weekly: [],
+    monthly: []
   };
 
   const renderStars = (rating: number) => {
@@ -164,15 +131,7 @@ const Reviews: React.FC<ReviewsProps> = ({ sidebarCollapsed, toggleSidebar, acti
     ));
   };
 
-  const filteredReviews = reviewsData.filter(review => {
-    const matchesSearch = review.guestName.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      review.reviewText.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      review.propertyName.toLowerCase().includes(searchQuery.toLowerCase());
-    const matchesRating = ratingFilter === 'all' || review.rating.toString() === ratingFilter;
-    const matchesProperty = propertyFilter === 'all' || review.propertyName === propertyFilter;
-    const matchesStatus = statusFilter === 'all' || review.status === statusFilter;
-    return matchesSearch && matchesRating && matchesProperty && matchesStatus;
-  });
+
 
   useEffect(() => {
     // Rating Distribution Chart
@@ -571,7 +530,7 @@ const Reviews: React.FC<ReviewsProps> = ({ sidebarCollapsed, toggleSidebar, acti
               <div className="flex items-center justify-between mb-4">
                 <h3 className="text-lg font-semibold text-gray-800">Customer Reviews</h3>
                 <div className="text-sm text-gray-500">
-                  Showing {filteredReviews.length} of {reviewsData.length} reviews
+                  Showing {filteredReviews.length} of {reviews.length} reviews
                 </div>
               </div>
               {/* Filters */}
@@ -687,99 +646,111 @@ const Reviews: React.FC<ReviewsProps> = ({ sidebarCollapsed, toggleSidebar, acti
                   </tr>
                 </thead>
                 <tbody>
-                  {filteredReviews.map((review) => (
-                    <tr key={review.id} className="border-b hover:bg-gray-50">
-                      <td className="py-4 px-6">
-                        <div className="flex items-center space-x-3">
-                          <img
-                            src={review.guestAvatar}
-                            alt={review.guestName}
-                            className="w-10 h-10 rounded-full object-cover"
-                          />
-                          <span className="text-sm font-medium text-gray-900">{review.guestName}</span>
-                        </div>
-                      </td>
-                      <td className="py-4 px-6">
-                        <div className="flex items-center space-x-3">
-                          <img
-                            src={review.propertyImage}
-                            alt={review.propertyName}
-                            className="w-10 h-10 rounded-lg object-cover"
-                          />
-                          <span className="text-sm font-medium text-gray-900">{review.propertyName}</span>
-                        </div>
-                      </td>
-                      <td className="py-4 px-6">
-                        <div className="flex items-center space-x-1">
-                          {renderStars(review.rating)}
-                          <span className="text-sm text-gray-600 ml-2">{review.rating}.0</span>
-                        </div>
-                      </td>
-                      <td className="py-4 px-6 max-w-xs">
-                        <div className="text-sm text-gray-900">
-                          {expandedReviews.has(review.id) ? (
-                            <div>
-                              <p>{review.reviewText}</p>
-                              <button
-                                onClick={() => toggleReviewExpansion(review.id)}
-                                className="text-blue-600 hover:text-blue-800 mt-1 text-xs cursor-pointer"
-                              >
-                                Show less
-                              </button>
+                  {filteredReviews.length > 0 ? (
+                    filteredReviews.map((review) => (
+                      <tr key={review.id} className="border-b hover:bg-gray-50">
+                        <td className="py-4 px-6">
+                          <div className="flex items-center space-x-3">
+                            <div className="w-10 h-10 rounded-full bg-gray-200 flex items-center justify-center">
+                              <i className="fas fa-user text-gray-500"></i>
                             </div>
-                          ) : (
-                            <div>
-                              <p>{review.reviewText.substring(0, 100)}...</p>
-                              <button
-                                onClick={() => toggleReviewExpansion(review.id)}
-                                className="text-blue-600 hover:text-blue-800 mt-1 text-xs cursor-pointer"
-                              >
-                                Read more
-                              </button>
+                            <span className="text-sm font-medium text-gray-900">{review.reviewer_name}</span>
+                          </div>
+                        </td>
+                        <td className="py-4 px-6">
+                          <div className="flex items-center space-x-3">
+                            <div className="w-10 h-10 rounded-lg bg-gray-200 flex items-center justify-center">
+                              <i className="fas fa-home text-gray-500"></i>
+                            </div>
+                            <span className="text-sm font-medium text-gray-900">{review.property_title}</span>
+                          </div>
+                        </td>
+                        <td className="py-4 px-6">
+                          <div className="flex items-center space-x-1">
+                            {renderStars(review.rating)}
+                            <span className="text-sm text-gray-600 ml-2">{review.rating}.0</span>
+                          </div>
+                        </td>
+                        <td className="py-4 px-6 max-w-xs">
+                          <div className="text-sm text-gray-900">
+                            {expandedReviews.has(review.id) ? (
+                              <div>
+                                <p>{review.comment}</p>
+                                <button
+                                  onClick={() => toggleReviewExpansion(review.id)}
+                                  className="text-blue-600 hover:text-blue-800 mt-1 text-xs cursor-pointer"
+                                >
+                                  Show less
+                                </button>
+                              </div>
+                            ) : (
+                              <div>
+                                <p>{review.comment.substring(0, 100)}...</p>
+                                <button
+                                  onClick={() => toggleReviewExpansion(review.id)}
+                                  className="text-blue-600 hover:text-blue-800 mt-1 text-xs cursor-pointer"
+                                >
+                                  Read more
+                                </button>
+                              </div>
+                            )}
+                          </div>
+                          {review.response && (
+                            <div className="mt-2 p-2 bg-blue-50 rounded text-xs text-gray-700">
+                              <strong>Your response:</strong> {review.response}
                             </div>
                           )}
-                        </div>
-                        {review.status === 'responded' && review.responseText && (
-                          <div className="mt-2 p-2 bg-blue-50 rounded text-xs text-gray-700">
-                            <strong>Your response:</strong> {review.responseText}
+                        </td>
+                        <td className="py-4 px-6">
+                          <span className="text-sm text-gray-900">{new Date(review.created_at).toLocaleDateString()}</span>
+                        </td>
+                        <td className="py-4 px-6">
+                          <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                            review.response
+                              ? 'bg-green-100 text-green-800'
+                              : 'bg-yellow-100 text-yellow-800'
+                          }`}>
+                            {review.response ? 'Responded' : 'Pending'}
+                          </span>
+                        </td>
+                        <td className="py-4 px-6">
+                          <div className="flex items-center space-x-2">
+                            <button className="bg-blue-600 text-white px-3 py-1 rounded text-xs hover:bg-blue-700 cursor-pointer !rounded-button whitespace-nowrap">
+                              <i className="fas fa-reply mr-1"></i>
+                              Reply
+                            </button>
+                            <button className="bg-gray-600 text-white px-3 py-1 rounded text-xs hover:bg-gray-700 cursor-pointer !rounded-button whitespace-nowrap">
+                              <i className="fas fa-check mr-1"></i>
+                              Mark Read
+                            </button>
                           </div>
-                        )}
-                      </td>
-                      <td className="py-4 px-6">
-                        <span className="text-sm text-gray-900">{new Date(review.date).toLocaleDateString()}</span>
-                      </td>
-                      <td className="py-4 px-6">
-                        <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                          review.status === 'responded'
-                            ? 'bg-green-100 text-green-800'
-                            : 'bg-yellow-100 text-yellow-800'
-                        }`}>
-                          {review.status === 'responded' ? 'Responded' : 'Pending'}
-                        </span>
-                      </td>
-                      <td className="py-4 px-6">
-                        <div className="flex items-center space-x-2">
-                          <button className="bg-blue-600 text-white px-3 py-1 rounded text-xs hover:bg-blue-700 cursor-pointer !rounded-button whitespace-nowrap">
-                            <i className="fas fa-reply mr-1"></i>
-                            Reply
-                          </button>
-                          <button className="bg-gray-600 text-white px-3 py-1 rounded text-xs hover:bg-gray-700 cursor-pointer !rounded-button whitespace-nowrap">
-                            <i className="fas fa-check mr-1"></i>
-                            Mark Read
-                          </button>
+                        </td>
+                      </tr>
+                    ))
+                  ) : (
+                    <tr>
+                      <td colSpan={7} className="py-16 text-center">
+                        <div className="flex flex-col items-center justify-center space-y-4">
+                          <i className="fas fa-star text-gray-400 text-5xl"></i>
+                          <div>
+                            <h3 className="text-lg font-medium text-gray-900 mb-2">No reviews yet</h3>
+                            <p className="text-gray-500 mb-4">Start getting reviews by adding properties and hosting guests.</p>
+                            <button 
+                              onClick={() => setActiveTab('properties')}
+                              className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors cursor-pointer"
+                            >
+                              <i className="fas fa-plus mr-2"></i>
+                              Add Your First Property
+                            </button>
+                          </div>
                         </div>
                       </td>
                     </tr>
-                  ))}
+                  )}
                 </tbody>
               </table>
             </div>
-            {filteredReviews.length === 0 && (
-              <div className="text-center py-12">
-                <i className="fas fa-search text-gray-400 text-4xl mb-4"></i>
-                <p className="text-gray-500">No reviews found matching your criteria.</p>
-              </div>
-            )}
+
           </div>
         </main>
       </div>

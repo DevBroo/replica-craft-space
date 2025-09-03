@@ -9,17 +9,18 @@ interface ProfileProps {
 
 const Profile: React.FC<ProfileProps> = ({ sidebarCollapsed, toggleSidebar, activeTab, setActiveTab }) => {
   const [isEditing, setIsEditing] = useState(false);
+  // TODO: Replace with actual data from API/database and user context
   const [profileData, setProfileData] = useState({
-    name: 'Rajesh Patel',
-    email: 'rajesh.patel@picnify.com',
-    phone: '+91 98765 43210',
-    location: 'Mumbai, India',
-    about: 'Experienced property owner and host with a passion for providing exceptional guest experiences. I own and manage multiple properties across India, ensuring each guest has a memorable stay.',
-    languages: ['Hindi', 'English', 'Gujarati'],
-    joinDate: '2022-03-15',
-    totalProperties: 6,
-    totalBookings: 284,
-    averageRating: 4.6
+    name: '',
+    email: '',
+    phone: '',
+    location: '',
+    about: '',
+    languages: [],
+    joinDate: '',
+    totalProperties: 0,
+    totalBookings: 0,
+    averageRating: 0
   });
 
   const menuItems = [
@@ -127,11 +128,13 @@ const Profile: React.FC<ProfileProps> = ({ sidebarCollapsed, toggleSidebar, acti
                   </button>
                 </div>
                 <div>
-                  <h2 className="text-2xl font-bold text-gray-900">{profileData.name}</h2>
-                  <p className="text-gray-600">{profileData.email}</p>
-                  <p className="text-gray-600">{profileData.location}</p>
+                  <h2 className="text-2xl font-bold text-gray-900">{profileData.name || 'Complete Your Profile'}</h2>
+                  <p className="text-gray-600">{profileData.email || 'No email provided'}</p>
+                  <p className="text-gray-600">{profileData.location || 'Location not set'}</p>
                   <div className="flex items-center space-x-4 mt-2">
-                    <span className="text-sm text-gray-500">Member since {new Date(profileData.joinDate).toLocaleDateString()}</span>
+                    <span className="text-sm text-gray-500">
+                      {profileData.joinDate ? `Member since ${new Date(profileData.joinDate).toLocaleDateString()}` : 'Join date not available'}
+                    </span>
                   </div>
                 </div>
               </div>
@@ -230,7 +233,7 @@ const Profile: React.FC<ProfileProps> = ({ sidebarCollapsed, toggleSidebar, acti
                       className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                     />
                   ) : (
-                    <p className="text-gray-900">{profileData.name}</p>
+                    <p className="text-gray-900">{profileData.name || 'Not provided'}</p>
                   )}
                 </div>
                 <div>
@@ -241,9 +244,10 @@ const Profile: React.FC<ProfileProps> = ({ sidebarCollapsed, toggleSidebar, acti
                       value={profileData.email}
                       onChange={(e) => setProfileData({...profileData, email: e.target.value})}
                       className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      placeholder="Enter your email"
                     />
                   ) : (
-                    <p className="text-gray-900">{profileData.email}</p>
+                    <p className="text-gray-900">{profileData.email || 'Not provided'}</p>
                   )}
                 </div>
                 <div>
@@ -254,9 +258,10 @@ const Profile: React.FC<ProfileProps> = ({ sidebarCollapsed, toggleSidebar, acti
                       value={profileData.phone}
                       onChange={(e) => setProfileData({...profileData, phone: e.target.value})}
                       className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      placeholder="Enter your phone number"
                     />
                   ) : (
-                    <p className="text-gray-900">{profileData.phone}</p>
+                    <p className="text-gray-900">{profileData.phone || 'Not provided'}</p>
                   )}
                 </div>
                 <div>
@@ -267,22 +272,27 @@ const Profile: React.FC<ProfileProps> = ({ sidebarCollapsed, toggleSidebar, acti
                       value={profileData.location}
                       onChange={(e) => setProfileData({...profileData, location: e.target.value})}
                       className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      placeholder="Enter your location"
                     />
                   ) : (
-                    <p className="text-gray-900">{profileData.location}</p>
+                    <p className="text-gray-900">{profileData.location || 'Not provided'}</p>
                   )}
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Languages</label>
                   <div className="flex flex-wrap gap-2">
-                    {profileData.languages.map((lang, index) => (
-                      <span
-                        key={index}
-                        className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800"
-                      >
-                        {lang}
-                      </span>
-                    ))}
+                    {profileData.languages.length > 0 ? (
+                      profileData.languages.map((lang, index) => (
+                        <span
+                          key={index}
+                          className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800"
+                        >
+                          {lang}
+                        </span>
+                      ))
+                    ) : (
+                      <p className="text-gray-500 text-sm">No languages specified</p>
+                    )}
                   </div>
                 </div>
               </div>
@@ -300,9 +310,12 @@ const Profile: React.FC<ProfileProps> = ({ sidebarCollapsed, toggleSidebar, acti
                     onChange={(e) => setProfileData({...profileData, about: e.target.value})}
                     rows={8}
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    placeholder="Tell guests about yourself, your hosting style, and what makes your properties special..."
                   />
                 ) : (
-                  <p className="text-gray-900 leading-relaxed">{profileData.about}</p>
+                  <p className="text-gray-900 leading-relaxed">
+                    {profileData.about || 'No bio provided. Click "Edit Profile" to add information about yourself.'}
+                  </p>
                 )}
               </div>
             </div>

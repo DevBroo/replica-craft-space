@@ -1,3 +1,5 @@
+// COMMENTED OUT: Agent functionality not needed - owner and agent are same
+/*
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
@@ -579,3 +581,4 @@ const AgentDashboard: React.FC = () => {
 };
 
 export default AgentDashboard;
+*/

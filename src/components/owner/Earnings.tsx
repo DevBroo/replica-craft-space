@@ -1,5 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import * as echarts from 'echarts';
+import { useAuth } from '@/contexts/AuthContext';
+import { OwnerService, type OwnerEarnings } from '@/lib/ownerService';
+import { supabase } from '@/integrations/supabase/client';
 
 interface EarningsProps {
   sidebarCollapsed: boolean;
@@ -9,9 +12,12 @@ interface EarningsProps {
 }
 
 const Earnings: React.FC<EarningsProps> = ({ sidebarCollapsed, toggleSidebar, activeTab, setActiveTab }) => {
+  const { user } = useAuth();
   const [dateRange, setDateRange] = useState('last30days');
   const [propertyFilter, setPropertyFilter] = useState('all');
   const [chartType, setChartType] = useState('monthly');
+  const [earnings, setEarnings] = useState<OwnerEarnings | null>(null);
+  const [loading, setLoading] = useState(true);
 
   const menuItems = [
     { id: 'dashboard', label: 'Dashboard', icon: 'fas fa-tachometer-alt' },
@@ -24,103 +30,73 @@ const Earnings: React.FC<EarningsProps> = ({ sidebarCollapsed, toggleSidebar, ac
     { id: 'settings', label: 'Settings', icon: 'fas fa-cog' },
   ];
 
-  const earningsData = {
-    totalRevenue: '₹2,45,000',
-    totalRevenueChange: '+12.5%',
-    monthlyEarnings: '₹85,000',
-    monthlyEarningsChange: '+8.2%',
-    pendingPayments: '₹15,000',
-    pendingPaymentsChange: '-5.3%',
-    completedTransactions: '156',
-    completedTransactionsChange: '+18.7%'
+  // Load earnings data
+  useEffect(() => {
+    if (user?.id) {
+      loadEarnings();
+    }
+  }, [user?.id]);
+
+  // Real-time updates for earnings
+  useEffect(() => {
+    if (!user?.id) return;
+
+    const channel = supabase
+      .channel('owner-earnings-realtime')
+      .on('postgres_changes', {
+        event: '*',
+        schema: 'public',
+        table: 'commission_disbursements'
+      }, (payload) => {
+        console.log('💰 Commission updated:', payload);
+        loadEarnings();
+      })
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [user?.id]);
+
+  const loadEarnings = async () => {
+    if (!user?.id) return;
+    
+    try {
+      setLoading(true);
+      const ownerEarnings = await OwnerService.getOwnerEarnings(user.id);
+      setEarnings(ownerEarnings);
+    } catch (error) {
+      console.error('❌ Error loading earnings:', error);
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const propertiesData = [
-    {
-      id: 1,
-      name: 'Oceanview Villa',
-      image: 'https://readdy.ai/api/search-image?query=luxury%20oceanview%20villa%20property%20exterior%20modern%20architecture%20with%20clean%20minimalist%20background%20bright%20natural%20lighting%20professional%20real%20estate%20photography&width=60&height=60&seq=property-001&orientation=squarish',
-      totalEarnings: '₹65,000',
-      bookings: 12,
-      averageRate: '₹5,400',
-      occupancyRate: '85%'
-    },
-    {
-      id: 2,
-      name: 'Goa Beach House',
-      image: 'https://readdy.ai/api/search-image?query=beautiful%20beach%20house%20property%20coastal%20architecture%20with%20clean%20minimalist%20background%20bright%20natural%20lighting%20professional%20real%20estate%20photography&width=60&height=60&seq=property-002&orientation=squarish',
-      totalEarnings: '₹58,000',
-      bookings: 15,
-      averageRate: '₹3,900',
-      occupancyRate: '92%'
-    },
-    {
-      id: 3,
-      name: 'Jaipur Heritage',
-      image: 'https://readdy.ai/api/search-image?query=traditional%20heritage%20property%20rajasthani%20architecture%20with%20clean%20minimalist%20background%20bright%20natural%20lighting%20professional%20real%20estate%20photography&width=60&height=60&seq=property-003&orientation=squarish',
-      totalEarnings: '₹42,000',
-      bookings: 8,
-      averageRate: '₹5,250',
-      occupancyRate: '78%'
-    },
-    {
-      id: 4,
-      name: 'Pune Penthouse',
-      image: 'https://readdy.ai/api/search-image?query=modern%20penthouse%20property%20contemporary%20architecture%20with%20clean%20minimalist%20background%20bright%20natural%20lighting%20professional%20real%20estate%20photography&width=60&height=60&seq=property-004&orientation=squarish',
-      totalEarnings: '₹38,000',
-      bookings: 6,
-      averageRate: '₹6,300',
-      occupancyRate: '65%'
-    },
-    {
-      id: 5,
-      name: 'Chennai Marina',
-      image: 'https://readdy.ai/api/search-image?query=marina%20waterfront%20property%20coastal%20modern%20architecture%20with%20clean%20minimalist%20background%20bright%20natural%20lighting%20professional%20real%20estate%20photography&width=60&height=60&seq=property-005&orientation=squarish',
-      totalEarnings: '₹32,000',
-      bookings: 9,
-      averageRate: '₹3,600',
-      occupancyRate: '88%'
-    },
-    {
-      id: 6,
-      name: 'Delhi Apartment',
-      image: 'https://readdy.ai/api/search-image?query=urban%20apartment%20property%20modern%20city%20architecture%20with%20clean%20minimalist%20background%20bright%20natural%20lighting%20professional%20real%20estate%20photography&width=60&height=60&seq=property-006&orientation=squarish',
-      totalEarnings: '₹28,000',
-      bookings: 7,
-      averageRate: '₹4,000',
-      occupancyRate: '72%'
-    }
-  ];
+  const earningsData = {
+    totalRevenue: `₹${earnings?.total_revenue?.toLocaleString() || '0'}`,
+    totalRevenueChange: '0%',
+    monthlyEarnings: `₹${earnings?.monthly_earnings?.toLocaleString() || '0'}`,
+    monthlyEarningsChange: '0%',
+    pendingPayments: `₹${earnings?.pending_payments?.toLocaleString() || '0'}`,
+    pendingPaymentsChange: '0%',
+    completedTransactions: `${earnings?.completed_transactions || '0'}`,
+    completedTransactionsChange: '0%'
+  };
 
-  const monthlyRevenueData = [
-    { month: 'Jan', revenue: 45000 },
-    { month: 'Feb', revenue: 52000 },
-    { month: 'Mar', revenue: 48000 },
-    { month: 'Apr', revenue: 65000 },
-    { month: 'May', revenue: 58000 },
-    { month: 'Jun', revenue: 72000 },
-    { month: 'Jul', revenue: 68000 },
-    { month: 'Aug', revenue: 75000 },
-    { month: 'Sep', revenue: 82000 },
-    { month: 'Oct', revenue: 78000 },
-    { month: 'Nov', revenue: 85000 },
-    { month: 'Dec', revenue: 92000 }
-  ];
+  const propertiesData: any[] = [];
 
-  const weeklyEarningsData = [
-    { week: 'Week 1', earnings: 18000 },
-    { week: 'Week 2', earnings: 22000 },
-    { week: 'Week 3', earnings: 25000 },
-    { week: 'Week 4', earnings: 20000 }
-  ];
+  const monthlyRevenueData: any[] = [];
 
-  const paymentStatusData = [
-    { name: 'Paid', value: 78, color: '#10B981' },
-    { name: 'Pending', value: 15, color: '#F59E0B' },
-    { name: 'Refunded', value: 7, color: '#6B7280' }
-  ];
+  const weeklyEarningsData: any[] = [];
+
+  const paymentStatusData: any[] = [];
 
   useEffect(() => {
+    // Only render charts if there's data
+    if (monthlyRevenueData.length === 0 && weeklyEarningsData.length === 0 && paymentStatusData.length === 0) {
+      return;
+    }
+
     // Monthly Revenue Chart
     const monthlyChart = echarts.init(document.getElementById('monthly-chart'));
     const monthlyOption = {
@@ -573,40 +549,61 @@ const Earnings: React.FC<EarningsProps> = ({ sidebarCollapsed, toggleSidebar, ac
                     </tr>
                   </thead>
                   <tbody>
-                    {propertiesData.map((property) => (
-                      <tr key={property.id} className="border-b hover:bg-gray-50">
-                        <td className="py-4 px-6">
-                          <div className="flex items-center space-x-3">
-                            <img
-                              src={property.image}
-                              alt={property.name}
-                              className="w-10 h-10 rounded-lg object-cover"
-                            />
-                            <span className="text-sm font-medium text-gray-900">{property.name}</span>
-                          </div>
-                        </td>
-                        <td className="py-4 px-6">
-                          <span className="text-sm font-semibold text-gray-900">{property.totalEarnings}</span>
-                        </td>
-                        <td className="py-4 px-6">
-                          <span className="text-sm text-gray-900">{property.bookings}</span>
-                        </td>
-                        <td className="py-4 px-6">
-                          <span className="text-sm text-gray-900">{property.averageRate}</span>
-                        </td>
-                        <td className="py-4 px-6">
-                          <div className="flex items-center space-x-2">
-                            <div className="w-16 bg-gray-200 rounded-full h-2">
-                              <div
-                                className="bg-green-500 h-2 rounded-full"
-                                style={{ width: property.occupancyRate }}
-                              ></div>
+                    {propertiesData.length > 0 ? (
+                      propertiesData.map((property) => (
+                        <tr key={property.id} className="border-b hover:bg-gray-50">
+                          <td className="py-4 px-6">
+                            <div className="flex items-center space-x-3">
+                              <img
+                                src={property.image}
+                                alt={property.name}
+                                className="w-10 h-10 rounded-lg object-cover"
+                              />
+                              <span className="text-sm font-medium text-gray-900">{property.name}</span>
                             </div>
-                            <span className="text-sm text-gray-900">{property.occupancyRate}</span>
+                          </td>
+                          <td className="py-4 px-6">
+                            <span className="text-sm font-semibold text-gray-900">{property.totalEarnings}</span>
+                          </td>
+                          <td className="py-4 px-6">
+                            <span className="text-sm text-gray-900">{property.bookings}</span>
+                          </td>
+                          <td className="py-4 px-6">
+                            <span className="text-sm text-gray-900">{property.averageRate}</span>
+                          </td>
+                          <td className="py-4 px-6">
+                            <div className="flex items-center space-x-2">
+                              <div className="w-16 bg-gray-200 rounded-full h-2">
+                                <div
+                                  className="bg-green-500 h-2 rounded-full"
+                                  style={{ width: property.occupancyRate }}
+                                ></div>
+                              </div>
+                              <span className="text-sm text-gray-900">{property.occupancyRate}</span>
+                            </div>
+                          </td>
+                        </tr>
+                      ))
+                    ) : (
+                      <tr>
+                        <td colSpan={5} className="py-16 text-center">
+                          <div className="flex flex-col items-center justify-center space-y-4">
+                            <i className="fas fa-chart-line text-gray-400 text-5xl"></i>
+                            <div>
+                              <h3 className="text-lg font-medium text-gray-900 mb-2">No earnings data</h3>
+                              <p className="text-gray-500 mb-4">Start earning by adding properties and getting bookings.</p>
+                              <button 
+                                onClick={() => setActiveTab('properties')}
+                                className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors cursor-pointer"
+                              >
+                                <i className="fas fa-plus mr-2"></i>
+                                Add Your First Property
+                              </button>
+                            </div>
                           </div>
                         </td>
                       </tr>
-                    ))}
+                    )}
                   </tbody>
                 </table>
               </div>

@@ -12,7 +12,8 @@ import {
   Bell, 
   BarChart3,
   Headphones, 
-  Settings
+  Settings,
+  MapPin
 } from 'lucide-react';
 import IconButton from './ui/IconButton';
 
@@ -33,7 +34,9 @@ const SharedSidebar: React.FC<SharedSidebarProps> = ({ sidebarCollapsed, setSide
     { id: 'dashboard', label: 'Dashboard', icon: Gauge, path: '/admin/dashboard' },
     { id: 'analytics', label: 'Analytics', icon: BarChart3, path: '/admin/analytics' },
     { id: 'owners', label: 'Owner Management', icon: Users, path: '/admin/owner-management' },
-    { id: 'agents', label: 'Agent Management', icon: User, path: '/admin/agent-management' },
+    // COMMENTED OUT: Agent functionality not needed - owner and agent are same
+    // { id: 'agents', label: 'Agent Management', icon: User, path: '/admin/agent-management' },
+    { id: 'locations', label: 'Location Management', icon: MapPin, path: '/admin/location-management' },
     { id: 'properties', label: 'Property Approval', icon: Home, path: '/admin/property-approval' },
     { id: 'bookings', label: 'Booking Management', icon: Calendar, path: '/admin/booking-management' },
     { id: 'commission', label: 'Commission & Disbursement', icon: DollarSign, path: '/admin/commission-disbursement' },

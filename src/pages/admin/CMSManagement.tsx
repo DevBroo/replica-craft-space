@@ -41,6 +41,7 @@ import { useToast } from '../../hooks/use-toast';
 import SharedSidebar from '../../components/admin/SharedSidebar';
 import SharedHeader from '../../components/admin/SharedHeader';
 import { bannerService } from "../../lib/bannerService";
+import { supabase } from '@/integrations/supabase/client';
 
 const homepageBannersData = [
   {
@@ -191,6 +192,38 @@ const CMSManagement: React.FC = () => {
   // Load data on component mount
   useEffect(() => {
     loadData();
+  }, []);
+
+  // Real-time updates for CMS content changes
+  useEffect(() => {
+    const bannersChannel = supabase
+      .channel('homepage-banners-realtime')
+      .on('postgres_changes', {
+        event: '*',
+        schema: 'public',
+        table: 'homepage_banners'
+      }, (payload) => {
+        console.log('🎨 Homepage banner updated:', payload);
+        loadData();
+      })
+      .subscribe();
+
+    const documentsChannel = supabase
+      .channel('legal-documents-realtime')
+      .on('postgres_changes', {
+        event: '*',
+        schema: 'public',
+        table: 'legal_documents'
+      }, (payload) => {
+        console.log('📄 Legal document updated:', payload);
+        loadData();
+      })
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(bannersChannel);
+      supabase.removeChannel(documentsChannel);
+    };
   }, []);
 
   const loadData = async () => {

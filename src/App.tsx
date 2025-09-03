@@ -57,6 +57,9 @@ const OwnerManagement = React.lazy(
 const AgentManagement = React.lazy(
   () => import("@/pages/admin/AgentManagement")
 );
+const LocationManagement = React.lazy(
+  () => import("@/pages/admin/LocationManagement")
+);
 const PropertyApproval = React.lazy(
   () => import("@/pages/admin/PropertyApproval")
 );
@@ -82,9 +85,6 @@ const HostSignup = React.lazy(() => import("@/pages/HostSignup"));
 const HostDashboard = React.lazy(() => import("@/pages/HostDashboard"));
 const OwnerLogin = React.lazy(() => import("@/pages/owner/OwnerLogin"));
 const OwnerDashboard = React.lazy(() => import("@/pages/owner/OwnerDashboard"));
-const OwnerDashboardView = React.lazy(
-  () => import("@/pages/owner/OwnerDashboardView")
-);
 const DayPicnicSetup = React.lazy(
   () => import("@/components/owner/DayPicnicSetup")
 );
@@ -236,6 +236,11 @@ function App() {
                         <ProtectedRoute><AgentManagement /></ProtectedRoute>
                       </Suspense>
                     } />
+                    <Route path="/admin/location-management" element={
+                      <Suspense fallback={<LoadingSpinner />}>
+                        <ProtectedRoute><LocationManagement /></ProtectedRoute>
+                      </Suspense>
+                    } />
                     <Route path="/admin/property-approval" element={
                       <Suspense fallback={<LoadingSpinner />}>
                         <ProtectedRoute><PropertyApproval /></ProtectedRoute>
@@ -317,7 +322,7 @@ function App() {
                     } />
                     <Route path="/owner/view" element={
                       <Suspense fallback={<LoadingSpinner />}>
-                        <OwnerRoute><OwnerDashboardView /></OwnerRoute>
+                        <OwnerRoute><OwnerDashboard /></OwnerRoute>
                       </Suspense>
                     } />
                     <Route path="/owner/day-picnic-setup/:propertyId" element={

@@ -51,13 +51,10 @@ import picnifyLogo from "/lovable-uploads/f7960b1f-407a-4738-b8f6-067ea4600889.p
 import HeroBanner from "@/components/banners/HeroBanner";
 import SecondaryBanner from "@/components/banners/SecondaryBanner";
 import FooterBanner from "@/components/banners/FooterBanner";
-import LocationAutocomplete from "@/components/ui/LocationAutocomplete";
+import SearchForm from "@/components/ui/SearchForm";
+import { SearchService, type SearchFilters } from "@/lib/searchService";
 
 const Index: React.FC = () => {
-  const [searchLocation, setSearchLocation] = useState("");
-  const [searchDate, setSearchDate] = useState("");
-  const [groupSize, setGroupSize] = useState("");
-  const [selectedCategory, setSelectedCategory] = useState("day-picnic");
   const navigate = useNavigate();
   const { loading, user, isAuthenticated } = useAuth();
 
@@ -92,13 +89,29 @@ const Index: React.FC = () => {
     amenities: string[];
   }> = [];
 
-  const categories = [
-    { name: "Farm Houses", icon: "fas fa-tractor" },
-    { name: "Beach Properties", icon: "fas fa-umbrella-beach" },
-    { name: "Mountain Retreats", icon: "fas fa-mountain" },
-    { name: "Garden Venues", icon: "fas fa-leaf" },
-    { name: "Pool Villas", icon: "fas fa-swimming-pool" },
-  ];
+  // Handle search from homepage
+  const handleSearch = (filters: SearchFilters) => {
+    console.log('🔍 Homepage search triggered:', filters);
+    
+    // Navigate to properties page with search params
+    const searchParams = new URLSearchParams();
+    
+    if (filters.location && filters.location !== 'all') {
+      searchParams.set('location', filters.location);
+    }
+    if (filters.category && filters.category !== 'all') {
+      searchParams.set('category', filters.category);
+    }
+    if (filters.date) {
+      searchParams.set('date', filters.date);
+    }
+    if (filters.guests && filters.guests > 0) {
+      searchParams.set('guests', filters.guests.toString());
+    }
+
+    const queryString = searchParams.toString();
+    navigate(`/properties${queryString ? `?${queryString}` : ''}`);
+  };
 
   return (
     <>
@@ -130,115 +143,8 @@ const Index: React.FC = () => {
             </div>
 
             {/* Search Bar */}
-            <div className="bg-white/95 backdrop-blur-md rounded-3xl p-6 shadow-2xl max-w-6xl mx-auto border transform hover:scale-[1.02] transition-all duration-500">
-              <div className="flex flex-wrap gap-4 mb-6 border-b border-gray-200 pb-4">
-                {[
-                  {
-                    icon: "fas fa-sun",
-                    label: "Day Picnic",
-                    value: "day-picnic",
-                  },
-                  { icon: "fas fa-hotel", label: "Resorts", value: "resort" },
-                  { icon: "fas fa-home", label: "Villas", value: "villa" },
-                  {
-                    icon: "fas fa-warehouse",
-                    label: "Farmhouse",
-                    value: "farmhouse",
-                  },
-                  {
-                    icon: "fas fa-house-user",
-                    label: "Homestay",
-                    value: "homestay",
-                  },
-                  {
-                    icon: "fas fa-landmark",
-                    label: "Heritage Palace",
-                    value: "heritage",
-                  },
-                ].map((category, index) => (
-                  <button
-                    key={index}
-                    onClick={() => setSelectedCategory(category.value)}
-                    className={`flex items-center gap-2 px-4 py-2 md:px-6 md:py-3 rounded-xl transition-all duration-300 ${
-                      selectedCategory === category.value
-                        ? "bg-gradient-to-r from-brand-red to-brand-orange text-white shadow-lg"
-                        : "bg-gray-50 text-gray-600 hover:bg-gray-100"
-                    }`}
-                  >
-                    <i className={`${category.icon} text-sm md:text-lg`}></i>
-                    <span className="font-medium whitespace-nowrap text-sm md:text-base">
-                      {category.label}
-                    </span>
-                  </button>
-                ))}
-              </div>
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-7 gap-4 md:gap-6 items-center">
-                <div className="lg:col-span-2">
-                  <LocationAutocomplete
-                    value={searchLocation}
-                    onChange={setSearchLocation}
-                    placeholder="Where would you like to go?"
-                  />
-                </div>
-                <div className="lg:col-span-1">
-                  <div className="relative">
-                    <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                      <i className="fas fa-calendar-alt text-brand-orange text-lg"></i>
-                    </div>
-                    <input
-                      type="date"
-                      value={searchDate}
-                      onChange={(e) => setSearchDate(e.target.value)}
-                      className="w-full pl-12 pr-4 py-4 text-gray-800 border-2 border-gray-200 rounded-xl outline-none focus:border-brand-orange focus:ring-4 focus:ring-brand-orange/20 transition-all duration-300 text-base"
-                    />
-                  </div>
-                </div>
-                <div className="lg:col-span-2">
-                  <div className="relative">
-                    <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                      <i className="fas fa-users text-blue-500 text-lg"></i>
-                    </div>
-                    <select
-                      className="w-full pl-12 pr-12 py-4 text-gray-800 border-2 border-gray-200 rounded-xl outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-500/20 transition-all duration-300 text-base appearance-none cursor-pointer"
-                      onChange={(e) => setGroupSize(e.target.value)}
-                    >
-                      <option value="">Select group size</option>
-                      {[...Array(15)].map((_, i) => (
-                        <option key={i + 1} value={i + 1}>
-                          {i + 1} Guest{i !== 0 ? "s" : ""}
-                        </option>
-                      ))}
-                    </select>
-                    <div className="absolute inset-y-0 right-0 pr-4 flex items-center pointer-events-none">
-                      <i className="fas fa-chevron-down text-gray-400"></i>
-                    </div>
-                  </div>
-                </div>
-                <div className="lg:col-span-2">
-                  <button
-                    onClick={() => {
-                      const searchParams = new URLSearchParams();
-                      if (searchLocation)
-                        searchParams.set("location", searchLocation);
-                      if (searchDate) searchParams.set("date", searchDate);
-                      if (groupSize) searchParams.set("guests", groupSize);
-
-                      // Add category-specific parameters
-                      if (selectedCategory === "day-picnic") {
-                        searchParams.set("tab", "day_picnics");
-                      } else {
-                        searchParams.set("type", selectedCategory);
-                      }
-
-                      navigate(`/properties?${searchParams.toString()}`);
-                    }}
-                    className="w-full bg-gradient-to-r from-red-600 to-orange-600 text-white px-8 py-4 rounded-xl hover:from-red-700 hover:to-orange-700 transition-all duration-300 cursor-pointer font-bold text-lg shadow-xl hover:shadow-2xl transform hover:scale-105 flex items-center justify-center gap-3"
-                  >
-                    <i className="fas fa-search text-xl"></i>
-                    <span>Search</span>
-                  </button>
-                </div>
-              </div>
+            <div className="max-w-6xl mx-auto">
+              <SearchForm onSearch={handleSearch} />
             </div>
           </div>
         }
@@ -406,62 +312,6 @@ const Index: React.FC = () => {
             >
               Explore All Properties
               <i className="fas fa-arrow-right ml-3"></i>
-            </button>
-          </div>
-        </div>
-      </section>
-
-      {/* Categories Section */}
-      <section className="py-32 relative overflow-hidden bg-secondary/10">
-        <div className="absolute inset-0 opacity-30">
-          <div className="absolute top-20 left-20 w-40 h-40 bg-gradient-to-r from-brand-red/30 to-brand-orange/30 rounded-full mix-blend-multiply filter blur-3xl animate-blob"></div>
-          <div className="absolute bottom-20 right-20 w-48 h-48 bg-gradient-to-r from-brand-orange/30 to-yellow-300/30 rounded-full mix-blend-multiply filter blur-3xl animate-blob animation-delay-2000"></div>
-          <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-56 h-56 bg-gradient-to-r from-pink-300/30 to-brand-red/30 rounded-full mix-blend-multiply filter blur-3xl animate-blob animation-delay-4000"></div>
-        </div>
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative">
-          <div className="text-center max-w-4xl mx-auto mb-20 fade-in-up">
-            <span className="bg-gradient-to-r from-brand-red to-brand-orange bg-clip-text text-transparent font-bold text-lg mb-4 block uppercase tracking-wider">
-              Find Your Perfect Match
-            </span>
-            <h2 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-black text-gray-900 font-poppins mb-6 text-shadow">
-              Explore by Category
-            </h2>
-            <div className="w-24 h-1 bg-gradient-to-r from-brand-red to-brand-orange mx-auto rounded-full mb-6"></div>
-            <p className="text-lg text-muted-foreground leading-relaxed">
-              Choose from our meticulously curated categories to discover
-              destinations that match your dream getaway perfectly
-            </p>
-          </div>
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-8">
-            {categories.map((category, index) => (
-              <div
-                key={index}
-                className="group cursor-pointer text-center fade-in-up"
-                style={{ animationDelay: `${index * 0.1}s` }}
-              >
-                <div className="relative mb-6">
-                  <div className="w-32 h-32 mx-auto bg-gradient-to-br from-background via-brand-orange/10 to-brand-red/10 rounded-3xl flex items-center justify-center shadow-xl group-hover:shadow-2xl transition-all duration-500 transform group-hover:scale-110 group-hover:-rotate-3 border-2 border-background">
-                    <div className="absolute inset-0 bg-gradient-to-br from-brand-red to-brand-orange rounded-3xl opacity-0 group-hover:opacity-90 transition-opacity duration-500"></div>
-                    <i
-                      className={`${category.icon} text-4xl text-brand-red group-hover:text-white transition-colors duration-500 relative z-10`}
-                    ></i>
-                    <div className="absolute inset-0 bg-gradient-to-br from-transparent to-black/10 rounded-3xl"></div>
-                  </div>
-                  <div className="absolute -top-2 -right-2 w-8 h-8 bg-gradient-to-r from-yellow-400 to-brand-orange rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all duration-500 transform scale-0 group-hover:scale-100">
-                    <i className="fas fa-plus text-white text-xs"></i>
-                  </div>
-                </div>
-                <h3 className="text-lg font-bold text-foreground group-hover:text-brand-red transition-colors duration-300 whitespace-nowrap">
-                  {category.name}
-                </h3>
-                <div className="w-0 group-hover:w-16 h-0.5 bg-gradient-to-r from-brand-red to-brand-orange mx-auto mt-2 transition-all duration-500 rounded-full"></div>
-              </div>
-            ))}
-          </div>
-          <div className="text-center mt-16">
-            <button className="bg-background text-foreground px-10 py-4 rounded-xl hover:bg-secondary/20 transition-all duration-300 cursor-pointer whitespace-nowrap font-bold text-lg shadow-xl hover:shadow-2xl transform hover:scale-105 border-2 border-border">
-              View All Categories
-              <i className="fas fa-grid-3x3 ml-3"></i>
             </button>
           </div>
         </div>

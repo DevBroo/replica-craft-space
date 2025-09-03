@@ -1,3 +1,5 @@
+// COMMENTED OUT: Agent functionality not needed - owner and agent are same
+/*
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
@@ -196,3 +198,4 @@ const AgentLogin: React.FC = () => {
 };
 
 export default AgentLogin;
+*/

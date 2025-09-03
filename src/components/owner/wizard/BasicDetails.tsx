@@ -17,20 +17,30 @@ interface BasicDetailsProps {
   onPrevious: () => void;
 }
 
-const PROPERTY_TYPES = [
-  'Hotel', 'Villa', 'Apartment', 'Guesthouse', 'Resort', 'Hostel', 'Homestay',
-  'Boutique Hotel', 'Heritage Property', 'Farm Stay', 'Tree House', 'Houseboat',
-  'Glamping', 'Day Picnic', 'Banquet Hall', 'Wedding Venue'
-];
+import { PROPERTY_CATEGORIES } from '@/lib/searchService';
+
+// Exclude Day Picnic from regular property wizard since it has its own dedicated wizard
+const PROPERTY_TYPES = PROPERTY_CATEGORIES
+  .filter(cat => cat.value !== 'day-picnic')
+  .map(cat => ({
+    value: cat.value,
+    label: cat.label,
+    icon: cat.icon
+  }));
 
 const PROPERTY_SUBTYPES = {
-  'Hotel': ['Luxury Hotel', 'Business Hotel', 'Budget Hotel', 'Boutique Hotel', 'Airport Hotel'],
-  'Villa': ['Luxury Villa', 'Beach Villa', 'Hill Station Villa', 'Private Villa', 'Shared Villa'],
-  'Apartment': ['Studio', '1 BHK', '2 BHK', '3 BHK', '4+ BHK', 'Penthouse'],
-  'Guesthouse': ['Traditional Guesthouse', 'Modern Guesthouse', 'Family Guesthouse'],
-  'Resort': ['Beach Resort', 'Hill Resort', 'Wellness Resort', 'Adventure Resort'],
-  'Hostel': ['Backpacker Hostel', 'Luxury Hostel', 'Female Only', 'Mixed Dorm'],
-  'Day Picnic': ['Family Picnic', 'Corporate Outing', 'Birthday Party', 'Group Gathering'],
+  'hotel': ['Luxury Hotel', 'Business Hotel', 'Budget Hotel', 'Boutique Hotel', 'Airport Hotel'],
+  'villa': ['Luxury Villa', 'Beach Villa', 'Hill Station Villa', 'Private Villa', 'Shared Villa'],
+  'apartment': ['Studio', '1 BHK', '2 BHK', '3 BHK', '4+ BHK', 'Penthouse'],
+  'guesthouse': ['Traditional Guesthouse', 'Modern Guesthouse', 'Family Guesthouse'],
+  'resort': ['Beach Resort', 'Hill Resort', 'Wellness Resort', 'Adventure Resort'],
+  'hostel': ['Backpacker Hostel', 'Luxury Hostel', 'Female Only', 'Mixed Dorm'],
+  'day-picnic': ['Family Picnic', 'Corporate Outing', 'Birthday Party', 'Group Gathering'],
+  'farmhouse': ['Traditional Farmhouse', 'Modern Farmhouse', 'Heritage Farmhouse'],
+  'homestay': ['Family Homestay', 'Budget Homestay', 'Luxury Homestay'],
+  'heritage-palace': ['Royal Palace', 'Heritage Hotel', 'Historic Mansion'],
+  'banquet-hall': ['Wedding Hall', 'Conference Hall', 'Event Space'],
+  'wedding-venue': ['Garden Wedding', 'Beach Wedding', 'Palace Wedding']
 };
 
 const LANGUAGES = [
@@ -104,7 +114,12 @@ const BasicDetails: React.FC<BasicDetailsProps> = ({
                 </SelectTrigger>
                 <SelectContent>
                   {PROPERTY_TYPES.map(type => (
-                    <SelectItem key={type} value={type}>{type}</SelectItem>
+                    <SelectItem key={type.value} value={type.value}>
+                      <div className="flex items-center">
+                        <i className={`${type.icon} mr-2`}></i>
+                        {type.label}
+                      </div>
+                    </SelectItem>
                   ))}
                 </SelectContent>
               </Select>

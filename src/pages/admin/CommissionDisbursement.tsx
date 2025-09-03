@@ -155,6 +155,26 @@ const CommissionDisbursement: React.FC = () => {
     loadRevenueSummary();
   }, [statusFilter, dateFrom, dateTo]);
 
+  // Real-time updates for commission changes
+  useEffect(() => {
+    const channel = supabase
+      .channel('commission-disbursements-realtime')
+      .on('postgres_changes', {
+        event: '*',
+        schema: 'public',
+        table: 'commission_disbursements'
+      }, (payload) => {
+        console.log('💰 Commission disbursement updated:', payload);
+        loadCommissions();
+        loadRevenueSummary();
+      })
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, []);
+
   const totalPages = Math.ceil(totalCount / rowsPerPage);
   const failedCommissions = commissions.filter(c => c.disbursement_status === 'failed');
 

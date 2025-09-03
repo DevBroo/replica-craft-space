@@ -1,4 +1,7 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
+import { useAuth } from '@/contexts/AuthContext';
+import { OwnerService, type OwnerBooking } from '@/lib/ownerService';
+import { supabase } from '@/integrations/supabase/client';
 
 interface BookingsProps {
   sidebarCollapsed: boolean;
@@ -8,12 +11,15 @@ interface BookingsProps {
 }
 
 const Bookings: React.FC<BookingsProps> = ({ sidebarCollapsed, toggleSidebar, activeTab, setActiveTab }) => {
+  const { user } = useAuth();
   const [statusFilter, setStatusFilter] = useState('all');
   const [searchQuery, setSearchQuery] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(10);
   const [sortBy, setSortBy] = useState('checkin');
   const [dateRange, setDateRange] = useState('all');
+  const [bookings, setBookings] = useState<OwnerBooking[]>([]);
+  const [loading, setLoading] = useState(true);
 
   const menuItems = [
     { id: 'dashboard', label: 'Dashboard', icon: 'fas fa-tachometer-alt' },
@@ -26,131 +32,64 @@ const Bookings: React.FC<BookingsProps> = ({ sidebarCollapsed, toggleSidebar, ac
     { id: 'settings', label: 'Settings', icon: 'fas fa-cog' },
   ];
 
-  const bookings = [
-    {
-      id: 'BK001',
-      guestName: 'Priya Sharma',
-      guestPhoto: 'https://readdy.ai/api/search-image?query=professional%20Indian%20woman%20guest%20avatar%20headshot%20with%20friendly%20smile%20modern%20style%20bright%20natural%20lighting%20clean%20background&width=40&height=40&seq=guest-001&orientation=squarish',
-      propertyName: 'Oceanview Villa',
-      checkIn: '2024-01-15',
-      checkOut: '2024-01-20',
-      status: 'upcoming',
-      paymentStatus: 'paid',
-      totalAmount: '₹25,000',
-      guests: 4,
-      nights: 5
-    },
-    {
-      id: 'BK002',
-      guestName: 'Amit Patel',
-      guestPhoto: 'https://readdy.ai/api/search-image?query=professional%20Indian%20man%20guest%20avatar%20headshot%20with%20confident%20expression%20modern%20style%20bright%20natural%20lighting%20clean%20background&width=40&height=40&seq=guest-002&orientation=squarish',
-      propertyName: 'Goa Beach House',
-      checkIn: '2024-01-10',
-      checkOut: '2024-01-18',
-      status: 'ongoing',
-      paymentStatus: 'paid',
-      totalAmount: '₹42,000',
-      guests: 6,
-      nights: 8
-    },
-    {
-      id: 'BK003',
-      guestName: 'Sneha Reddy',
-      guestPhoto: 'https://readdy.ai/api/search-image?query=professional%20Indian%20woman%20guest%20avatar%20headshot%20with%20warm%20smile%20traditional%20modern%20fusion%20style%20bright%20natural%20lighting%20clean%20background&width=40&height=40&seq=guest-003&orientation=squarish',
-      propertyName: 'Jaipur Heritage',
-      checkIn: '2023-12-20',
-      checkOut: '2023-12-25',
-      status: 'completed',
-      paymentStatus: 'paid',
-      totalAmount: '₹35,000',
-      guests: 2,
-      nights: 5
-    },
-    {
-      id: 'BK004',
-      guestName: 'Rahul Kumar',
-      guestPhoto: 'https://readdy.ai/api/search-image?query=professional%20Indian%20man%20guest%20avatar%20headshot%20with%20friendly%20expression%20contemporary%20style%20bright%20natural%20lighting%20clean%20background&width=40&height=40&seq=guest-004&orientation=squarish',
-      propertyName: 'Pune Penthouse',
-      checkIn: '2024-01-25',
-      checkOut: '2024-01-28',
-      status: 'cancelled',
-      paymentStatus: 'refunded',
-      totalAmount: '₹18,000',
-      guests: 3,
-      nights: 3
-    },
-    {
-      id: 'BK005',
-      guestName: 'Meera Gupta',
-      guestPhoto: 'https://readdy.ai/api/search-image?query=professional%20Indian%20woman%20guest%20avatar%20headshot%20with%20elegant%20style%20modern%20Indian%20fashion%20bright%20natural%20lighting%20clean%20background&width=40&height=40&seq=guest-005&orientation=squarish',
-      propertyName: 'Chennai Marina',
-      checkIn: '2024-01-12',
-      checkOut: '2024-01-16',
-      status: 'ongoing',
-      paymentStatus: 'paid',
-      totalAmount: '₹28,000',
-      guests: 2,
-      nights: 4
-    },
-    {
-      id: 'BK006',
-      guestName: 'Vikram Singh',
-      guestPhoto: 'https://readdy.ai/api/search-image?query=professional%20Indian%20man%20guest%20avatar%20headshot%20with%20business%20style%20confident%20expression%20bright%20natural%20lighting%20clean%20background&width=40&height=40&seq=guest-006&orientation=squarish',
-      propertyName: 'Delhi Apartment',
-      checkIn: '2024-01-22',
-      checkOut: '2024-01-26',
-      status: 'upcoming',
-      paymentStatus: 'pending',
-      totalAmount: '₹32,000',
-      guests: 4,
-      nights: 4
-    },
-    {
-      id: 'BK007',
-      guestName: 'Anita Joshi',
-      guestPhoto: 'https://readdy.ai/api/search-image?query=professional%20Indian%20woman%20guest%20avatar%20headshot%20with%20traditional%20style%20warm%20expression%20bright%20natural%20lighting%20clean%20background&width=40&height=40&seq=guest-007&orientation=squarish',
-      propertyName: 'Kolkata Heritage',
-      checkIn: '2023-12-15',
-      checkOut: '2023-12-20',
-      status: 'completed',
-      paymentStatus: 'paid',
-      totalAmount: '₹22,000',
-      guests: 2,
-      nights: 5
-    },
-    {
-      id: 'BK008',
-      guestName: 'Suresh Nair',
-      guestPhoto: 'https://readdy.ai/api/search-image?query=professional%20Indian%20man%20guest%20avatar%20headshot%20with%20casual%20style%20friendly%20smile%20bright%20natural%20lighting%20clean%20background&width=40&height=40&seq=guest-008&orientation=squarish',
-      propertyName: 'Kochi Waterfront',
-      checkIn: '2024-01-30',
-      checkOut: '2024-02-05',
-      status: 'upcoming',
-      paymentStatus: 'paid',
-      totalAmount: '₹38,000',
-      guests: 5,
-      nights: 6
+  const loadBookings = useCallback(async () => {
+    if (!user?.id) return;
+    
+    try {
+      setLoading(true);
+      const ownerBookings = await OwnerService.getOwnerBookings(user.id);
+      setBookings(ownerBookings);
+    } catch (error) {
+      console.error('❌ Error loading bookings:', error);
+    } finally {
+      setLoading(false);
     }
-  ];
+  }, [user?.id]);
+
+  // Load bookings data
+  useEffect(() => {
+    loadBookings();
+  }, [loadBookings]);
+
+  // Real-time updates for bookings
+  useEffect(() => {
+    if (!user?.id) return;
+
+    const channel = supabase
+      .channel('owner-bookings-realtime')
+      .on('postgres_changes', {
+        event: '*',
+        schema: 'public',
+        table: 'bookings'
+      }, () => {
+        console.log('📅 Booking updated - refreshing data');
+        loadBookings();
+      })
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [user?.id, loadBookings]);
 
   const filteredBookings = bookings.filter(booking => {
     const matchesStatus = statusFilter === 'all' || booking.status === statusFilter;
-    const matchesSearch = booking.guestName.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    const matchesSearch = booking.guest_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
       booking.id.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      booking.propertyName.toLowerCase().includes(searchQuery.toLowerCase());
+      booking.property_title.toLowerCase().includes(searchQuery.toLowerCase());
     return matchesStatus && matchesSearch;
   });
 
   const sortedBookings = [...filteredBookings].sort((a, b) => {
     switch (sortBy) {
       case 'checkin':
-        return new Date(a.checkIn).getTime() - new Date(b.checkIn).getTime();
+        return new Date(a.check_in_date).getTime() - new Date(b.check_in_date).getTime();
       case 'guest':
-        return a.guestName.localeCompare(b.guestName);
+        return a.guest_name.localeCompare(b.guest_name);
       case 'property':
-        return a.propertyName.localeCompare(b.propertyName);
+        return a.property_title.localeCompare(b.property_title);
       case 'amount':
-        return parseInt(b.totalAmount.replace(/[₹,]/g, '')) - parseInt(a.totalAmount.replace(/[₹,]/g, ''));
+        return b.total_amount - a.total_amount;
       default:
         return 0;
     }
@@ -378,10 +317,11 @@ const Bookings: React.FC<BookingsProps> = ({ sidebarCollapsed, toggleSidebar, ac
                 </div>
               </div>
             </div>
-            <button className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors cursor-pointer !rounded-button whitespace-nowrap">
+            {/* Create Booking Button - Commented out as requested */}
+            {/* <button className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors cursor-pointer !rounded-button whitespace-nowrap">
               <i className="fas fa-plus mr-2"></i>
               Add New Booking
-            </button>
+            </button> */}
           </div>
         </div>
 
@@ -404,90 +344,118 @@ const Bookings: React.FC<BookingsProps> = ({ sidebarCollapsed, toggleSidebar, ac
                   </tr>
                 </thead>
                 <tbody>
-                  {currentBookings.map((booking) => (
-                    <tr key={booking.id} className="border-b hover:bg-gray-50">
-                      <td className="py-4 px-6">
-                        <span className="text-sm font-medium text-gray-900">{booking.id}</span>
-                      </td>
-                      <td className="py-4 px-6">
-                        <div className="flex items-center space-x-3">
-                          <img
-                            src={booking.guestPhoto}
-                            alt={booking.guestName}
-                            className="w-8 h-8 rounded-full object-cover"
-                          />
-                          <div>
-                            <p className="text-sm font-medium text-gray-900">{booking.guestName}</p>
-                            <p className="text-xs text-gray-500">{booking.guests} guests</p>
-                          </div>
+                  {loading ? (
+                    <tr>
+                      <td colSpan={9} className="py-12 text-center">
+                        <div className="flex items-center justify-center">
+                          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+                          <span className="ml-2 text-gray-600">Loading bookings...</span>
                         </div>
                       </td>
-                      <td className="py-4 px-6">
-                        <div>
-                          <p className="text-sm font-medium text-gray-900">{booking.propertyName}</p>
-                          <p className="text-xs text-gray-500">{booking.nights} nights</p>
-                        </div>
-                      </td>
-                      <td className="py-4 px-6">
-                        <span className="text-sm text-gray-900">{new Date(booking.checkIn).toLocaleDateString()}</span>
-                      </td>
-                      <td className="py-4 px-6">
-                        <span className="text-sm text-gray-900">{new Date(booking.checkOut).toLocaleDateString()}</span>
-                      </td>
-                      <td className="py-4 px-6">
-                        <span className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(booking.status)}`}>
-                          {booking.status.charAt(0).toUpperCase() + booking.status.slice(1)}
-                        </span>
-                      </td>
-                      <td className="py-4 px-6">
-                        <span className={`px-2 py-1 rounded-full text-xs font-medium ${getPaymentStatusColor(booking.paymentStatus)}`}>
-                          {booking.paymentStatus.charAt(0).toUpperCase() + booking.paymentStatus.slice(1)}
-                        </span>
-                      </td>
-                      <td className="py-4 px-6">
-                        <span className="text-sm font-medium text-gray-900">{booking.totalAmount}</span>
-                      </td>
-                      <td className="py-4 px-6">
-                        <div className="flex items-center space-x-2">
-                          <button className="text-blue-600 hover:text-blue-800 cursor-pointer">
-                            <i className="fas fa-eye text-sm"></i>
-                          </button>
-                          <button className="text-green-600 hover:text-green-800 cursor-pointer">
-                            <i className="fas fa-edit text-sm"></i>
-                          </button>
-                          {booking.status !== 'completed' && booking.status !== 'cancelled' && (
-                            <button className="text-red-600 hover:text-red-800 cursor-pointer">
-                              <i className="fas fa-times text-sm"></i>
-                            </button>
-                          )}
-                          <div className="relative">
-                            <button
-                              onClick={() => {
-                                const dropdown = document.getElementById(`action-${booking.id}`);
-                                if (dropdown) {
-                                  dropdown.classList.toggle('hidden');
-                                }
-                              }}
-                              className="text-gray-600 hover:text-gray-800 cursor-pointer"
-                            >
-                              <i className="fas fa-ellipsis-v text-sm"></i>
-                            </button>
-                            <div id={`action-${booking.id}`} className="hidden absolute right-0 top-full mt-1 bg-white border border-gray-200 rounded-lg shadow-lg z-10 min-w-32">
-                              <button className="w-full px-4 py-2 text-left hover:bg-gray-50 cursor-pointer text-sm">
-                                View Details
-                              </button>
-                              <button className="w-full px-4 py-2 text-left hover:bg-gray-50 cursor-pointer text-sm">
-                                Send Message
-                              </button>
-                              <button className="w-full px-4 py-2 text-left hover:bg-gray-50 cursor-pointer text-sm">
-                                Download Invoice
-                              </button>
+                    </tr>
+                  ) : currentBookings.length > 0 ? (
+                    currentBookings.map((booking) => (
+                      <tr key={booking.id} className="border-b hover:bg-gray-50">
+                        <td className="py-4 px-6">
+                          <span className="text-sm font-medium text-gray-900">{booking.id}</span>
+                        </td>
+                        <td className="py-4 px-6">
+                          <div className="flex items-center space-x-3">
+                            <div className="w-8 h-8 rounded-full bg-gray-300 flex items-center justify-center">
+                              <i className="fas fa-user text-gray-600 text-sm"></i>
                             </div>
+                            <div>
+                              <p className="text-sm font-medium text-gray-900">{booking.guest_name}</p>
+                              <p className="text-xs text-gray-500">{booking.guests_count} guests</p>
+                            </div>
+                          </div>
+                        </td>
+                        <td className="py-4 px-6">
+                          <div>
+                            <p className="text-sm font-medium text-gray-900">{booking.property_title}</p>
+                            <p className="text-xs text-gray-500">{booking.nights} nights</p>
+                          </div>
+                        </td>
+                        <td className="py-4 px-6">
+                          <span className="text-sm text-gray-900">{new Date(booking.check_in_date).toLocaleDateString()}</span>
+                        </td>
+                        <td className="py-4 px-6">
+                          <span className="text-sm text-gray-900">{new Date(booking.check_out_date).toLocaleDateString()}</span>
+                        </td>
+                        <td className="py-4 px-6">
+                          <span className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(booking.status)}`}>
+                            {booking.status.charAt(0).toUpperCase() + booking.status.slice(1)}
+                          </span>
+                        </td>
+                        <td className="py-4 px-6">
+                          <span className={`px-2 py-1 rounded-full text-xs font-medium ${getPaymentStatusColor('paid')}`}>
+                            Paid
+                          </span>
+                        </td>
+                        <td className="py-4 px-6">
+                          <span className="text-sm font-medium text-gray-900">₹{booking.total_amount.toLocaleString()}</span>
+                        </td>
+                        <td className="py-4 px-6">
+                          <div className="flex items-center space-x-2">
+                            <button className="text-blue-600 hover:text-blue-800 cursor-pointer">
+                              <i className="fas fa-eye text-sm"></i>
+                            </button>
+                            <button className="text-green-600 hover:text-green-800 cursor-pointer">
+                              <i className="fas fa-edit text-sm"></i>
+                            </button>
+                            {booking.status !== 'completed' && booking.status !== 'cancelled' && (
+                              <button className="text-red-600 hover:text-red-800 cursor-pointer">
+                                <i className="fas fa-times text-sm"></i>
+                              </button>
+                            )}
+                            <div className="relative">
+                              <button
+                                onClick={() => {
+                                  const dropdown = document.getElementById(`action-${booking.id}`);
+                                  if (dropdown) {
+                                    dropdown.classList.toggle('hidden');
+                                  }
+                                }}
+                                className="text-gray-600 hover:text-gray-800 cursor-pointer"
+                              >
+                                <i className="fas fa-ellipsis-v text-sm"></i>
+                              </button>
+                              <div id={`action-${booking.id}`} className="hidden absolute right-0 top-full mt-1 bg-white border border-gray-200 rounded-lg shadow-lg z-10 min-w-32">
+                                <button className="w-full px-4 py-2 text-left hover:bg-gray-50 cursor-pointer text-sm">
+                                  View Details
+                                </button>
+                                <button className="w-full px-4 py-2 text-left hover:bg-gray-50 cursor-pointer text-sm">
+                                  Send Message
+                                </button>
+                                <button className="w-full px-4 py-2 text-left hover:bg-gray-50 cursor-pointer text-sm">
+                                  Download Invoice
+                                </button>
+                              </div>
+                            </div>
+                          </div>
+                        </td>
+                      </tr>
+                    ))
+                  ) : (
+                    <tr>
+                      <td colSpan={9} className="py-16 text-center">
+                        <div className="flex flex-col items-center justify-center space-y-4">
+                          <i className="fas fa-calendar-times text-gray-400 text-5xl"></i>
+                          <div>
+                            <h3 className="text-lg font-medium text-gray-900 mb-2">No bookings found</h3>
+                            <p className="text-gray-500 mb-4">You don't have any bookings yet. Start by adding properties to get bookings.</p>
+                            <button 
+                              onClick={() => setActiveTab('properties')}
+                              className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors cursor-pointer"
+                            >
+                              <i className="fas fa-plus mr-2"></i>
+                              Add Your First Property
+                            </button>
                           </div>
                         </div>
                       </td>
                     </tr>
-                  ))}
+                  )}
                 </tbody>
               </table>
             </div>

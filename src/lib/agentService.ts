@@ -1,5 +1,8 @@
-import { supabase } from '../integrations/supabase/client';
+// COMMENTED OUT: Agent functionality not needed - owner and agent are same
+// import { supabase } from '../integrations/supabase/client';
 
+/*
+// COMMENTED OUT: Agent functionality not needed - owner and agent are same
 export interface Agent {
   id: string;
   email: string | null;
@@ -440,3 +443,4 @@ export const agentService = {
     }
   }
 };
+*/

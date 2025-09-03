@@ -188,8 +188,8 @@ const SupportTickets = () => {
             <SupportTicketReports />
           ) : (
             <>
-              {/* Create Ticket Button */}
-              <div className="flex justify-end mb-6">
+              {/* Create Ticket Button - Commented out as requested */}
+              {/* <div className="flex justify-end mb-6">
                 <button
                   onClick={() => setShowCreateModal(true)}
                   className="flex items-center space-x-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
@@ -197,7 +197,7 @@ const SupportTickets = () => {
                   <Plus className="w-4 h-4" />
                   <span>Create Ticket</span>
                 </button>
-              </div>
+              </div> */}
           {/* Stats Cards */}
           <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-6">
             <div className="bg-white p-6 rounded-lg shadow">

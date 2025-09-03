@@ -10,8 +10,9 @@ import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Calendar, Home, User, Heart, CreditCard, Bell, LogOut, MapPin } from 'lucide-react';
+import { Calendar, Home, User, Heart, CreditCard, Bell, LogOut, MapPin, Star } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
+import { ReviewYourStay } from '@/components/reviews/ReviewYourStay';
 
 interface Booking {
   id: string;
@@ -227,8 +228,9 @@ export default function CustomerDashboard() {
 
         {/* Main Dashboard Content */}
         <Tabs defaultValue="bookings" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-4 glass-card-light h-12 p-1">
+          <TabsList className="grid w-full grid-cols-5 glass-card-light h-12 p-1">
             <TabsTrigger value="bookings" className="data-[state=active]:bg-white/40 data-[state=active]:shadow-sm transition-all">My Bookings</TabsTrigger>
+            <TabsTrigger value="reviews" className="data-[state=active]:bg-white/40 data-[state=active]:shadow-sm transition-all">Reviews</TabsTrigger>
             <TabsTrigger value="saved" className="data-[state=active]:bg-white/40 data-[state=active]:shadow-sm transition-all">Saved Properties</TabsTrigger>
             <TabsTrigger value="profile" className="data-[state=active]:bg-white/40 data-[state=active]:shadow-sm transition-all">Profile</TabsTrigger>
             <TabsTrigger value="settings" className="data-[state=active]:bg-white/40 data-[state=active]:shadow-sm transition-all">Settings</TabsTrigger>
@@ -283,6 +285,11 @@ export default function CustomerDashboard() {
                 )}
               </CardContent>
             </Card>
+          </TabsContent>
+
+          {/* Reviews Tab */}
+          <TabsContent value="reviews" className="space-y-4">
+            <ReviewYourStay />
           </TabsContent>
 
           {/* Saved Properties Tab */}

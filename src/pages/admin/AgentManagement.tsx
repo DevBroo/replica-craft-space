@@ -1,3 +1,5 @@
+// COMMENTED OUT: Agent functionality not needed - owner and agent are same
+/*
 import React, { useState, useEffect } from 'react';
 import { 
   Plus,
@@ -593,3 +595,4 @@ const AgentManagement: React.FC = () => {
 };
 
 export default AgentManagement;
+*/

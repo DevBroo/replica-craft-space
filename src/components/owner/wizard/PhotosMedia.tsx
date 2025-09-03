@@ -7,7 +7,10 @@ import { Textarea } from '@/components/owner/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/owner/ui/select';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/owner/ui/card';
 import { Badge } from '@/components/owner/ui/badge';
+import { Progress } from '@/components/owner/ui/progress';
 import { ArrowLeft, ArrowRight, Upload, X, Star, Eye, Camera, Image } from 'lucide-react';
+import { supabase } from '@/integrations/supabase/client';
+import { useToast } from '@/hooks/use-toast';
 
 interface PhotosMediaProps {
   formData: PropertyFormData;
@@ -42,10 +45,85 @@ const PhotosMedia: React.FC<PhotosMediaProps> = ({
   onNext,
   onPrevious
 }) => {
+  const { toast } = useToast();
   const [dragOver, setDragOver] = useState(false);
   const [newPhotoUrl, setNewPhotoUrl] = useState('');
   const [newPhotoCaption, setNewPhotoCaption] = useState('');
   const [newPhotoCategory, setNewPhotoCategory] = useState('exterior');
+  const [uploading, setUploading] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState(0);
+
+  // Image upload function using the same storage as day picnic and location images
+  const uploadImage = async (file: File): Promise<string> => {
+    try {
+      const fileExt = file.name.split('.').pop();
+      const fileName = `property-${Date.now()}-${Math.random().toString(36).substring(7)}.${fileExt}`;
+      const filePath = `properties/${fileName}`;
+
+      const { error: uploadError } = await supabase.storage
+        .from('public-images')
+        .upload(filePath, file);
+
+      if (uploadError) throw uploadError;
+
+      const { data } = supabase.storage
+        .from('public-images')
+        .getPublicUrl(filePath);
+
+      return data.publicUrl;
+    } catch (error) {
+      console.error('❌ Error uploading image:', error);
+      throw error;
+    }
+  };
+
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (!files || files.length === 0) return;
+
+    setUploading(true);
+    setUploadProgress(0);
+
+    try {
+      const uploadPromises = Array.from(files).map(async (file, index) => {
+        const imageUrl = await uploadImage(file);
+        setUploadProgress(((index + 1) / files.length) * 100);
+        
+        return {
+          image_url: imageUrl,
+          caption: `Property image ${formData.photos_with_captions.length + index + 1}`,
+          alt_text: `${formData.title || 'Property'} - Image`,
+          category: 'exterior',
+          display_order: formData.photos_with_captions.length + index,
+          is_primary: formData.photos_with_captions.length === 0 && index === 0
+        };
+      });
+
+      const newPhotos = await Promise.all(uploadPromises);
+      const newImageUrls = newPhotos.map(photo => photo.image_url);
+
+      setFormData(prev => ({
+        ...prev,
+        photos_with_captions: [...prev.photos_with_captions, ...newPhotos],
+        images: [...prev.images, ...newImageUrls]
+      }));
+
+      toast({
+        title: "Images uploaded successfully!",
+        description: `${files.length} image(s) added to your property listing.`,
+      });
+    } catch (error) {
+      console.error('Error uploading images:', error);
+      toast({
+        title: "Upload failed",
+        description: "Failed to upload images. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setUploading(false);
+      setUploadProgress(0);
+    }
+  };
 
   const handleDragOver = (e: React.DragEvent) => {
     e.preventDefault();
@@ -57,26 +135,55 @@ const PhotosMedia: React.FC<PhotosMediaProps> = ({
     setDragOver(false);
   };
 
-  const handleDrop = (e: React.DragEvent) => {
+  const handleDrop = async (e: React.DragEvent) => {
     e.preventDefault();
     setDragOver(false);
     
-    // In a real implementation, you would handle file uploads here
-    // For now, we'll add sample images
-    const newPhoto = {
-      image_url: SAMPLE_IMAGES[Math.floor(Math.random() * SAMPLE_IMAGES.length)],
-      caption: 'Sample uploaded image',
-      alt_text: 'Property image',
-      category: 'exterior',
-      display_order: formData.photos_with_captions.length,
-      is_primary: formData.photos_with_captions.length === 0
-    };
+    const files = Array.from(e.dataTransfer.files).filter(file => file.type.startsWith('image/'));
+    if (files.length === 0) return;
 
-    setFormData(prev => ({
-      ...prev,
-      photos_with_captions: [...prev.photos_with_captions, newPhoto],
-      images: [...prev.images, newPhoto.image_url]
-    }));
+    setUploading(true);
+    setUploadProgress(0);
+
+    try {
+      const uploadPromises = files.map(async (file, index) => {
+        const imageUrl = await uploadImage(file);
+        setUploadProgress(((index + 1) / files.length) * 100);
+        
+        return {
+          image_url: imageUrl,
+          caption: `Property image ${formData.photos_with_captions.length + index + 1}`,
+          alt_text: `${formData.title || 'Property'} - Image`,
+          category: 'exterior',
+          display_order: formData.photos_with_captions.length + index,
+          is_primary: formData.photos_with_captions.length === 0 && index === 0
+        };
+      });
+
+      const newPhotos = await Promise.all(uploadPromises);
+      const newImageUrls = newPhotos.map(photo => photo.image_url);
+
+      setFormData(prev => ({
+        ...prev,
+        photos_with_captions: [...prev.photos_with_captions, ...newPhotos],
+        images: [...prev.images, ...newImageUrls]
+      }));
+
+      toast({
+        title: "Images uploaded successfully!",
+        description: `${files.length} image(s) added via drag and drop.`,
+      });
+    } catch (error) {
+      console.error('Error uploading dropped images:', error);
+      toast({
+        title: "Upload failed",
+        description: "Failed to upload dropped images. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setUploading(false);
+      setUploadProgress(0);
+    }
   };
 
   const addPhotoFromUrl = () => {
@@ -101,6 +208,14 @@ const PhotosMedia: React.FC<PhotosMediaProps> = ({
     setNewPhotoUrl('');
     setNewPhotoCaption('');
     setNewPhotoCategory('exterior');
+  };
+
+  const removeImage = (index: number) => {
+    setFormData(prev => ({
+      ...prev,
+      photos_with_captions: prev.photos_with_captions.filter((_, i) => i !== index),
+      images: prev.images.filter((_, i) => i !== index)
+    }));
   };
 
   const addSamplePhotos = () => {
@@ -206,25 +321,49 @@ const PhotosMedia: React.FC<PhotosMediaProps> = ({
           <CardTitle className="text-lg">Add Photos</CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
-          {/* Drag & Drop Area */}
-          <div
-            className={`border-2 border-dashed rounded-lg p-8 text-center transition-colors ${
-              dragOver ? 'border-primary bg-primary/5' : 'border-muted-foreground/25'
-            }`}
-            onDragOver={handleDragOver}
-            onDragLeave={handleDragLeave}
-            onDrop={handleDrop}
-          >
-            <Upload className="w-12 h-12 mx-auto mb-4 text-muted-foreground" />
-            <div className="text-lg font-medium mb-2">Drop your photos here</div>
-            <div className="text-sm text-muted-foreground mb-4">
-              or click to browse and upload
+          {/* File Upload Area */}
+          <div className="space-y-4">
+            <div>
+              <Label htmlFor="file-upload">Upload Property Images</Label>
+              <Input
+                id="file-upload"
+                type="file"
+                multiple
+                accept="image/*"
+                onChange={handleFileUpload}
+                disabled={uploading}
+                className="mt-1"
+              />
+              {uploading && (
+                <div className="mt-2">
+                  <div className="flex items-center justify-between text-sm text-gray-600 mb-1">
+                    <span>Uploading images...</span>
+                    <span>{Math.round(uploadProgress)}%</span>
+                  </div>
+                  <Progress value={uploadProgress} className="h-2" />
+                </div>
+              )}
             </div>
-            <Button variant="outline">
-              Choose Files
-            </Button>
-            <div className="text-xs text-muted-foreground mt-2">
-              Supports: JPG, PNG, WebP (max 10MB each)
+
+            {/* Drag & Drop Area */}
+            <div
+              className={`border-2 border-dashed rounded-lg p-8 text-center transition-colors ${
+                dragOver ? 'border-primary bg-primary/5' : 'border-muted-foreground/25'
+              } ${uploading ? 'opacity-50 pointer-events-none' : ''}`}
+              onDragOver={handleDragOver}
+              onDragLeave={handleDragLeave}
+              onDrop={handleDrop}
+            >
+              <Upload className="w-12 h-12 mx-auto mb-4 text-muted-foreground" />
+              <div className="text-lg font-medium mb-2">
+                {uploading ? 'Uploading...' : 'Drop your photos here'}
+              </div>
+              <div className="text-sm text-muted-foreground mb-4">
+                Drag and drop multiple images at once
+              </div>
+              <div className="text-xs text-muted-foreground">
+                Supports: JPG, PNG, WebP, GIF (max 50MB each)
+              </div>
             </div>
           </div>
 
@@ -315,7 +454,7 @@ const PhotosMedia: React.FC<PhotosMediaProps> = ({
                       size="sm"
                       variant="destructive"
                       className="h-8 w-8 p-0"
-                      onClick={() => removePhoto(index)}
+                      onClick={() => removeImage(index)}
                     >
                       <X className="w-3 h-3" />
                     </Button>
