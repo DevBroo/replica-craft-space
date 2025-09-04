@@ -221,8 +221,8 @@ export class OwnerService {
       const { error } = await supabase
         .from('reviews')
         .update({
-          response,
-          response_at: new Date().toISOString()
+          comment: response, // Using comment field instead of response
+          updated_at: new Date().toISOString()
         })
         .eq('id', reviewId);
 

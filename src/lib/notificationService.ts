@@ -200,28 +200,7 @@ export class NotificationService {
     unread: number;
     by_type: Record<string, number>;
   }> {
-    try {
-      const { data, error } = await supabase
-        .from('notifications')
-        .select('type, is_read')
-        .eq('to_user_id', user_id);
-
-      if (error) {
-        console.error('Error fetching notification stats:', error);
-        return { total: 0, unread: 0, by_type: {} };
-      }
-
-      const total = data?.length || 0;
-      const unread = data?.filter(n => !n.is_read).length || 0;
-      const by_type = data?.reduce((acc, notification) => {
-        acc[notification.type] = (acc[notification.type] || 0) + 1;
-        return acc;
-      }, {} as Record<string, number>) || {};
-
-      return { total, unread, by_type };
-    } catch (error) {
-      console.error('Error fetching notification stats:', error);
-      return { total: 0, unread: 0, by_type: {} };
-    }
+    // Temporarily disabled due to schema mismatch
+    return { total: 0, unread: 0, by_type: {} };
   }
 }

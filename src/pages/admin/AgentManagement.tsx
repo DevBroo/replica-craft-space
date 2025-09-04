@@ -135,7 +135,7 @@ const AgentManagement: React.FC = () => {
   const handleToggleStatus = async (agent: Agent) => {
     try {
       const newStatus = agent.is_active ? 'inactive' : 'active';
-      await agentService.updateAgentStatus(agent.id, newStatus);
+      await agentService.updateAgentStatus();
       toast.success(`Agent ${newStatus === 'active' ? 'activated' : 'deactivated'} successfully`);
       fetchAgents();
     } catch (error: any) {

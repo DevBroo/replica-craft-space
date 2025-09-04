@@ -109,9 +109,9 @@ const BookingPayment: React.FC = () => {
             total_amount: bookingData.totalAmount,
             payment_method: 'phonepe' as const,
             customer_details: {
-                name: user.user_metadata?.full_name || user.email?.split('@')[0],
+                name: user.email?.split('@')[0] || 'Guest',
                 email: user.email!,
-                phone: user.phone || user.user_metadata?.phone
+                phone: user.phone || ''
             },
             booking_details: {
                 property_title: bookingData.propertyTitle,
@@ -223,8 +223,8 @@ const BookingPayment: React.FC = () => {
                         customerData={{
                             userId: user!.id,
                             email: user!.email!,
-                            name: user!.user_metadata?.full_name,
-                            phone: user!.phone || user!.user_metadata?.phone
+                    name: user.email?.split('@')[0] || 'Guest',
+                    phone: user.phone || '',
                         }}
                         onPaymentSuccess={handlePaymentSuccess}
                         onPaymentFailure={handlePaymentFailure}
@@ -295,9 +295,9 @@ const BookingPayment: React.FC = () => {
                             <CardContent className="space-y-3">
                                 <div className="flex justify-between">
                                     <span className="text-gray-600">Name</span>
-                                    <span className="font-medium">
-                                        {user?.user_metadata?.full_name || user?.email?.split('@')[0]}
-                                    </span>
+                    <span className="font-medium">
+                        {user?.email?.split('@')[0] || 'Guest'}
+                    </span>
                                 </div>
                                 <div className="flex justify-between">
                                     <span className="text-gray-600">Email</span>

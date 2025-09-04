@@ -141,7 +141,7 @@ const OptimizedProperties = () => {
     if (updatedFilters.location && updatedFilters.location !== 'all') {
       newParams.set('location', updatedFilters.location);
     }
-    if (updatedFilters.category && updatedFilters.category !== 'all') {
+    if (updatedFilters.category && updatedFilters.category !== ('all' as any)) {
       newParams.set('category', updatedFilters.category);
     }
     if (updatedFilters.date) {
@@ -211,22 +211,22 @@ const OptimizedProperties = () => {
       const matchesSearch = !searchLower || 
         (property.title && property.title.toLowerCase().includes(searchLower)) ||
         (property.general_location && property.general_location.toLowerCase().includes(searchLower)) ||
-        (property.location?.city && property.location.city.toLowerCase().includes(searchLower)) ||
-        (property.location?.state && property.location.state.toLowerCase().includes(searchLower));
+        (property.location && typeof property.location === 'object' && (property.location as any).city && (property.location as any).city.toLowerCase().includes(searchLower)) ||
+        (property.location && typeof property.location === 'object' && (property.location as any).state && (property.location as any).state.toLowerCase().includes(searchLower));
       
       // Location filter - check general_location, city, and state
       const locationLower = selectedLocation.toLowerCase();
       const matchesLocation = selectedLocation === 'all' || 
         (property.general_location && property.general_location.toLowerCase().includes(locationLower)) ||
-        (property.location?.city && property.location.city.toLowerCase().includes(locationLower)) ||
-        (property.location?.state && property.location.state.toLowerCase().includes(locationLower));
+        (property.location && typeof property.location === 'object' && (property.location as any).city && (property.location as any).city.toLowerCase().includes(locationLower)) ||
+        (property.location && typeof property.location === 'object' && (property.location as any).state && (property.location as any).state.toLowerCase().includes(locationLower));
       
       // Property type filter
-      const matchesType = selectedType === 'all' || 
+      const matchesType = selectedType === ('all' as any) || 
         (property.property_type && property.property_type.toLowerCase() === selectedType.toLowerCase());
       
       // Price filter - handle cases where pricing might be null
-      const propertyPrice = property.pricing?.daily_rate || 0;
+      const propertyPrice = (property.pricing && typeof property.pricing === 'object' && (property.pricing as any).daily_rate) || 0;
       const matchesPrice = propertyPrice >= priceRange[0] && propertyPrice <= priceRange[1];
 
       return matchesSearch && matchesLocation && matchesType && matchesPrice;
@@ -239,9 +239,9 @@ const OptimizedProperties = () => {
     
     switch (sortBy) {
       case 'price-low':
-        return sorted.sort((a, b) => (a.pricing?.daily_rate || 0) - (b.pricing?.daily_rate || 0));
+        return sorted.sort((a, b) => ((a.pricing && typeof a.pricing === 'object' && (a.pricing as any).daily_rate) || 0) - ((b.pricing && typeof b.pricing === 'object' && (b.pricing as any).daily_rate) || 0));
       case 'price-high':
-        return sorted.sort((a, b) => (b.pricing?.daily_rate || 0) - (a.pricing?.daily_rate || 0));
+        return sorted.sort((a, b) => ((b.pricing && typeof b.pricing === 'object' && (b.pricing as any).daily_rate) || 0) - ((a.pricing && typeof a.pricing === 'object' && (a.pricing as any).daily_rate) || 0));
       case 'rating':
         return sorted.sort((a, b) => (b.rating || 0) - (a.rating || 0));
       case 'popular':
@@ -616,7 +616,11 @@ const OptimizedProperties = () => {
               <>
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 mb-8">
                   {sortedProperties.map((property) => (
-                    <PropertyCard key={property.id} property={property} />
+                    <PropertyCard key={property.id} property={{
+                      ...property,
+                      location: property.location && typeof property.location === 'object' ? property.location as { city: string; state: string } : { city: '', state: '' },
+                      pricing: property.pricing && typeof property.pricing === 'object' ? property.pricing as { daily_rate: number; currency: string } : { daily_rate: 0, currency: 'INR' }
+                    }} />
                   ))}
                 </div>
 

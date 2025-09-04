@@ -175,7 +175,7 @@ const LocationManagement: React.FC = () => {
       <div className={`flex-1 transition-all duration-300 ${sidebarCollapsed ? 'ml-16' : 'ml-64'}`}>
         <SharedHeader 
           title="Location Management"
-          subtitle="Manage destination cards and locations"
+          breadcrumb="Location Management"
         />
 
         <div className="p-6">

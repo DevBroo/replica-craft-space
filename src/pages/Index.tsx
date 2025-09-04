@@ -99,7 +99,7 @@ const Index: React.FC = () => {
     if (filters.location && filters.location !== 'all') {
       searchParams.set('location', filters.location);
     }
-    if (filters.category && filters.category !== 'all') {
+    if (filters.category && filters.category !== ('all' as any)) {
       searchParams.set('category', filters.category);
     }
     if (filters.date) {
