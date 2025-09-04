@@ -48,7 +48,7 @@ const Properties: React.FC<PropertiesProps> = ({
   const [isEditMode, setIsEditMode] = useState(false);
   const [selectedPropertyForView, setSelectedPropertyForView] = useState<any>(null);
   const [showQuickView, setShowQuickView] = useState(false);
-  const [quickViewInitialTab, setQuickViewInitialTab] = useState<'overview' | 'itinerary' | 'location'>('overview');
+  const [quickViewInitialTab, setQuickViewInitialTab] = useState<'overview' | 'pricing' | 'rooms' | 'amenities' | 'policies' | 'location'>('overview');
   const [activePropertyTab, setActivePropertyTab] = useState<'properties' | 'day-picnic'>('properties');
   const [showDayPicnicForm, setShowDayPicnicForm] = useState(false);
 
@@ -177,7 +177,7 @@ const Properties: React.FC<PropertiesProps> = ({
     navigate(`/owner/day-picnic-setup/${property.id}`);
   };
 
-  const handleViewProperty = (property: any, tab: 'overview' | 'itinerary' | 'location' = 'overview') => {
+  const handleViewProperty = (property: any, tab: 'overview' | 'pricing' | 'rooms' | 'amenities' | 'policies' | 'location' = 'overview') => {
     setSelectedPropertyForView(property);
     setQuickViewInitialTab(tab);
     setShowQuickView(true);

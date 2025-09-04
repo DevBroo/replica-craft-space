@@ -24,7 +24,7 @@ interface PropertyCardProps {
   property: any;
   packagesByProperty: Record<string, any[]>;
   onEdit: (property: any) => void;
-  onView: (property: any, tab?: 'overview' | 'itinerary' | 'location') => void;
+  onView: (property: any, tab?: 'overview' | 'pricing' | 'rooms' | 'amenities' | 'policies' | 'location') => void;
   onEditDayPicnicPricing?: (property: any) => void;
 }
 
