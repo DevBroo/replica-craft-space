@@ -19,11 +19,11 @@ const Reviews: React.FC<ReviewsProps> = ({ sidebarCollapsed, toggleSidebar, acti
   const [statusFilter, setStatusFilter] = useState('all');
   const [searchQuery, setSearchQuery] = useState('');
   const [chartView, setChartView] = useState('weekly');
-  const [expandedReviews, setExpandedReviews] = useState<Set<number>>(new Set());
+  const [expandedReviews, setExpandedReviews] = useState<Set<string>>(new Set());
   const [reviews, setReviews] = useState<OwnerReview[]>([]);
   const [loading, setLoading] = useState(true);
 
-  const toggleReviewExpansion = (reviewId: number) => {
+  const toggleReviewExpansion = (reviewId: string) => {
     const newExpanded = new Set(expandedReviews);
     if (newExpanded.has(reviewId)) {
       newExpanded.delete(reviewId);

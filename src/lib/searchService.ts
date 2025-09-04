@@ -124,7 +124,7 @@ export class SearchService {
       }
 
       // Apply category filter
-      if (filters.category && filters.category !== 'all') {
+      if (filters.category && filters.category !== ('all' as any)) {
         query = query.eq('property_type', filters.category);
       }
 

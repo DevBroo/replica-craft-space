@@ -185,7 +185,7 @@ const Settings: React.FC<SettingsProps> = ({ sidebarCollapsed, toggleSidebar, ac
                   className="w-8 h-8 rounded-full object-cover"
                 />
                 <span className="text-sm font-medium text-gray-700">
-                  {user?.name || user?.email || 'Property Owner'}
+                  {user?.full_name || user?.email || 'Property Owner'}
                 </span>
                 <i className="fas fa-chevron-down text-gray-400 text-xs"></i>
               </div>
