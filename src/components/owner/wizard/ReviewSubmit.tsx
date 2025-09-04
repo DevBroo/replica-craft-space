@@ -110,10 +110,12 @@ const ReviewSubmit: React.FC<ReviewSubmitProps> = ({
               </div>
 
               <div className="text-right">
-                <div className="text-2xl font-bold text-primary">
-                  ₹{(formData.pricing.daily_rate || 0).toLocaleString()}
+                <div className="inline-block p-3 bg-gradient-to-r from-red-600 to-red-700 rounded-lg shadow-lg">
+                  <div className="text-2xl font-bold text-white">
+                    ₹{(formData.pricing.daily_rate || 0).toLocaleString()}
+                  </div>
+                  <div className="text-sm text-red-100">per night</div>
                 </div>
-                <div className="text-sm text-muted-foreground">per night</div>
               </div>
             </div>
 
@@ -135,7 +137,7 @@ const ReviewSubmit: React.FC<ReviewSubmitProps> = ({
                   <div key={amenity} className="text-sm text-muted-foreground">• {amenity}</div>
                 ))}
                 {formData.amenities.length > 5 && (
-                  <div className="text-sm text-primary">+ {formData.amenities.length - 5} more</div>
+                  <div className="text-sm text-red-600">+ {formData.amenities.length - 5} more</div>
                 )}
               </div>
             </div>
@@ -154,7 +156,7 @@ const ReviewSubmit: React.FC<ReviewSubmitProps> = ({
                   <div key={feature} className="text-sm text-muted-foreground">• {feature}</div>
                 ))}
                 {(formData.safety_security.fire_safety.length + formData.safety_security.security_features.length) > 5 && (
-                  <div className="text-sm text-primary">+ More safety features</div>
+                  <div className="text-sm text-red-600">+ More safety features</div>
                 )}
               </div>
             </div>

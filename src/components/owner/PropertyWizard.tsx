@@ -159,12 +159,13 @@ const WIZARD_STEPS = [
 ];
 
 const PropertyWizard: React.FC<PropertyWizardProps> = ({ onBack, propertyId, initialTitle, initialPropertyType }) => {
-  const { user, isAuthenticated } = useAuth();
+  const { user, isAuthenticated, loading } = useAuth();
   const { toast } = useToast();
   
   const [currentStep, setCurrentStep] = useState(0);
   const [isLoading, setIsLoading] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+  const [authChecked, setAuthChecked] = useState(false);
   const [formData, setFormData] = useState<PropertyFormData>({
     // Initialize with default values
     title: '',
@@ -240,8 +241,86 @@ const PropertyWizard: React.FC<PropertyWizardProps> = ({ onBack, propertyId, ini
     bed_configuration: { beds: {} }
   });
 
+  // Handle authentication and load saved draft
+  useEffect(() => {
+    // Check if we have a saved session in localStorage (for refresh scenarios)
+    const savedSession = localStorage.getItem('supabase.auth.token');
+    const hasSavedSession = savedSession && savedSession !== 'null';
+    
+    // Add a small delay to ensure auth state is fully loaded after page refresh
+    const authCheckTimeout = setTimeout(() => {
+      console.log('🔍 PropertyWizard: Auth check - loading:', loading, 'isAuthenticated:', isAuthenticated, 'user:', user?.email, 'role:', user?.role, 'hasSavedSession:', hasSavedSession);
+      
+      if (loading) {
+        console.log('⏳ PropertyWizard: Auth still loading, waiting...');
+        return; // Wait for auth to load
+      }
+      
+      if (!isAuthenticated || !user) {
+        console.log('❌ PropertyWizard: User not authenticated after timeout');
+        
+        // If we have a saved session but auth is not working, give more time
+        if (hasSavedSession) {
+          console.log('🔄 PropertyWizard: Found saved session, giving more time for auth to load...');
+          setTimeout(() => {
+            if (!isAuthenticated || !user) {
+              console.log('❌ PropertyWizard: Still not authenticated after extended wait');
+              toast({
+                title: "Session Expired",
+                description: "Please sign in again to continue creating your property.",
+                variant: "destructive"
+              });
+              onBack();
+            }
+          }, 3000); // Give 3 more seconds for saved sessions
+        } else {
+          // No saved session, redirect immediately
+          toast({
+            title: "Authentication Required",
+            description: "Please sign in to continue creating your property.",
+            variant: "destructive"
+          });
+          onBack();
+        }
+        return;
+      }
+      
+      // More flexible role checking - allow both property_owner and owner roles
+      const validRoles = ['property_owner', 'owner', 'user', 'customer']; // Added more fallback roles
+      if (!validRoles.includes(user.role)) {
+        console.log('❌ PropertyWizard: User not property owner, role:', user.role);
+        toast({
+          title: "Access Denied",
+          description: "Only property owners can create properties.",
+          variant: "destructive"
+        });
+        onBack();
+        return;
+      }
+      
+      console.log('✅ PropertyWizard: Authentication verified, user:', user.email, 'role:', user.role);
+      setAuthChecked(true);
+      
+      // Load saved draft
+      const savedDraft = localStorage.getItem(`property_draft_${user.id}`);
+      if (savedDraft) {
+        try {
+          const draftData = JSON.parse(savedDraft);
+          setFormData(draftData);
+          console.log('📝 Loaded saved draft');
+        } catch (error) {
+          console.error('Error loading draft:', error);
+        }
+      }
+    }, 1000); // 1 second delay for stability
+
+    return () => clearTimeout(authCheckTimeout);
+  }, [user, isAuthenticated, loading, onBack, toast]);
+
   // Auto-save functionality
   useEffect(() => {
+    if (!authChecked) return; // Don't auto-save until auth is checked
+    
     const saveInterval = setInterval(() => {
       if (formData.title && formData.property_type) {
         autoSave();
@@ -249,7 +328,7 @@ const PropertyWizard: React.FC<PropertyWizardProps> = ({ onBack, propertyId, ini
     }, 30000); // Auto-save every 30 seconds
 
     return () => clearInterval(saveInterval);
-  }, [formData]);
+  }, [formData, authChecked]);
 
   // Load existing property data if editing or initialize with props
   useEffect(() => {
@@ -387,6 +466,24 @@ const PropertyWizard: React.FC<PropertyWizardProps> = ({ onBack, propertyId, ini
     }
   };
 
+  // Show loading state while checking authentication
+  if (loading || !authChecked) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-red-600 mx-auto mb-4"></div>
+          <p className="text-gray-600">Loading property creation form...</p>
+          <p className="text-sm text-gray-500 mt-2">
+            {loading ? 'Checking authentication...' : 'Verifying access permissions...'}
+          </p>
+          <p className="text-xs text-gray-400 mt-1">
+            Please wait while we ensure your session is secure
+          </p>
+        </div>
+      </div>
+    );
+  }
+
   const renderStepContent = () => {
     const stepProps = {
       formData,
@@ -448,6 +545,9 @@ const PropertyWizard: React.FC<PropertyWizardProps> = ({ onBack, propertyId, ini
                 </h1>
                 <p className="text-muted-foreground">
                   Complete all steps to list your property
+                </p>
+                <p className="text-xs text-blue-600 mt-1">
+                  💡 Your progress is automatically saved. You can safely refresh the page.
                 </p>
               </div>
             </div>

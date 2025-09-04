@@ -1,12 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
+import { NotificationProvider } from '@/contexts/NotificationContext';
 import PropertiesNew from '../../components/owner/PropertiesNew';
 import Bookings from '../../components/owner/Bookings';
 import Earnings from '../../components/owner/Earnings';
 import Reviews from '../../components/owner/Reviews';
 import Profile from '../../components/owner/Profile';
 import Settings from '../../components/owner/Settings';
+import NotificationDropdown from '../../components/owner/NotificationDropdown';
 
 const OwnerDashboard: React.FC = () => {
   const navigate = useNavigate();
@@ -27,38 +29,43 @@ const OwnerDashboard: React.FC = () => {
 
   // Handle authentication state
   useEffect(() => {
-    console.log('🔐 OwnerDashboard: Auth state check:', { 
-      loading, 
-      isAuthenticated, 
-      user: user ? { id: user.id, email: user.email, role: user.role } : null 
-    });
-    
-    if (loading) {
-      console.log('⏳ Auth loading, waiting...');
-      return; // Wait for auth to load
-    }
-    
-    if (!isAuthenticated || !user) {
-      // User is not authenticated, redirect to owner login
-      console.log('❌ User not authenticated, redirecting to owner login');
-      navigate('/owner/login', { replace: true });
-    } else if (!['property_owner', 'owner'].includes(user.role)) {
-      // User is authenticated but not a property owner, redirect to appropriate page
-      console.log('⚠️ User not property owner, role:', user.role);
-      console.log('🔍 User details:', { id: user.id, email: user.email, role: user.role });
+    // Add a small delay to ensure auth state is fully loaded after page refresh
+    const authCheckTimeout = setTimeout(() => {
+      console.log('🔐 OwnerDashboard: Auth state check:', { 
+        loading, 
+        isAuthenticated, 
+        user: user ? { id: user.id, email: user.email, role: user.role } : null 
+      });
       
-      if (user.role === 'admin') {
-        navigate('/admin/dashboard');
-      } else if (user.role === 'agent') {
-        navigate('/agent/dashboard');  
-      } else {
-        console.log('❌ User role is not property owner, redirecting to homepage');
-        navigate('/'); // Other roles go to main page
+      if (loading) {
+        console.log('⏳ Auth loading, waiting...');
+        return; // Wait for auth to load
       }
-    } else {
-      // User is authenticated owner, show dashboard
-      console.log('✅ User authenticated owner, showing dashboard');
-    }
+      
+      if (!isAuthenticated || !user) {
+        // User is not authenticated, redirect to owner login
+        console.log('❌ User not authenticated, redirecting to owner login');
+        navigate('/owner/login', { replace: true });
+      } else if (!['property_owner', 'owner', 'user', 'customer'].includes(user.role)) {
+        // User is authenticated but not a property owner, redirect to appropriate page
+        console.log('⚠️ User not property owner, role:', user.role);
+        console.log('🔍 User details:', { id: user.id, email: user.email, role: user.role });
+        
+        if (user.role === 'admin') {
+          navigate('/admin/dashboard');
+        } else if (user.role === 'agent') {
+          navigate('/agent/dashboard');  
+        } else {
+          console.log('❌ User role is not property owner, redirecting to homepage');
+          navigate('/'); // Other roles go to main page
+        }
+      } else {
+        // User is authenticated owner, show dashboard
+        console.log('✅ User authenticated owner, showing dashboard');
+      }
+    }, 500); // 500ms delay to ensure auth state is stable
+
+    return () => clearTimeout(authCheckTimeout);
   }, [isAuthenticated, user, loading, navigate]);
 
   // Debug component mount
@@ -104,7 +111,7 @@ const OwnerDashboard: React.FC = () => {
   }
 
   // Show login redirect if not authenticated
-  if (!isAuthenticated || !user || !['property_owner', 'owner'].includes(user.role)) {
+  if (!isAuthenticated || !user || !['property_owner', 'owner', 'user', 'customer'].includes(user.role)) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
@@ -248,7 +255,8 @@ const OwnerDashboard: React.FC = () => {
 
   // Always render the full dashboard layout with sidebar
   return (
-    <div className="min-h-screen bg-gray-50">
+    <NotificationProvider>
+      <div className="min-h-screen bg-gray-50">
       {/* Sidebar */}
       <div className={`fixed left-0 top-0 h-full bg-white shadow-lg transition-all duration-300 z-40 ${sidebarCollapsed ? 'w-16' : 'w-64'}`}>
         <div className="flex items-center justify-between p-4 border-b">
@@ -303,12 +311,7 @@ const OwnerDashboard: React.FC = () => {
                 <i className="fas fa-home text-gray-600"></i>
                 <span className="text-gray-700">Back to Home</span>
               </button>
-              <div className="relative">
-                <button className="p-2 rounded-lg hover:bg-gray-100 cursor-pointer">
-                  <i className="fas fa-bell text-gray-600"></i>
-                  <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">5</span>
-                </button>
-              </div>
+              <NotificationDropdown />
               <div className="flex items-center space-x-2 relative group">
                 <div className="w-8 h-8 bg-blue-600 rounded-full flex items-center justify-center">
                   <span className="text-white text-sm font-medium">
@@ -343,6 +346,7 @@ const OwnerDashboard: React.FC = () => {
         </main>
       </div>
     </div>
+    </NotificationProvider>
   );
 };
 

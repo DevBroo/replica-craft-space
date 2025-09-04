@@ -294,7 +294,7 @@ const RoomsUnits: React.FC<RoomsUnitsProps> = ({
                                 ? "default" 
                                 : "outline"
                             }
-                            className="cursor-pointer hover:bg-primary/10"
+                            className="cursor-pointer hover:bg-red-50 hover:border-red-400 transition-all duration-200"
                             onClick={() => handleRoomAmenityToggle(room.type, amenity)}
                           >
                             {amenity}

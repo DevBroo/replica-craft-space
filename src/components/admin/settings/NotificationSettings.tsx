@@ -12,6 +12,7 @@ import { toast } from 'sonner';
 import { Save, Mail, MessageSquare, Bell, CheckCircle, Settings, Send, Users, Settings2 } from 'lucide-react';
 import { EnhancedNotificationSettings } from './EnhancedNotificationSettings';
 import { UserPreferencesManager } from './UserPreferencesManager';
+import NotificationPanel from '../NotificationPanel';
 
 interface NotificationConfig {
   email_enabled: boolean;
@@ -184,8 +185,12 @@ export const NotificationSettings: React.FC = () => {
         <h2 className="text-lg font-medium">Notification Management</h2>
       </div>
 
-      <Tabs defaultValue="basic" className="w-full">
-        <TabsList className="grid w-full grid-cols-3">
+      <Tabs defaultValue="send" className="w-full">
+        <TabsList className="grid w-full grid-cols-4">
+          <TabsTrigger value="send" className="flex items-center gap-2">
+            <Send className="h-4 w-4" />
+            Send Notifications
+          </TabsTrigger>
           <TabsTrigger value="basic" className="flex items-center gap-2">
             <Settings2 className="h-4 w-4" />
             Basic Settings
@@ -199,6 +204,10 @@ export const NotificationSettings: React.FC = () => {
             User Preferences
           </TabsTrigger>
         </TabsList>
+
+        <TabsContent value="send" className="space-y-6">
+          <NotificationPanel />
+        </TabsContent>
 
         <TabsContent value="basic" className="space-y-6">
           {/* Email Notifications */}

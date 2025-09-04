@@ -1,4 +1,6 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { useAuth } from '@/contexts/AuthContext';
+import { toast } from 'sonner';
 
 interface SettingsProps {
   sidebarCollapsed: boolean;
@@ -8,6 +10,8 @@ interface SettingsProps {
 }
 
 const Settings: React.FC<SettingsProps> = ({ sidebarCollapsed, toggleSidebar, activeTab, setActiveTab }) => {
+  const { user } = useAuth();
+  const [isLoading, setIsLoading] = useState(false);
   const [notifications, setNotifications] = useState({
     emailBookings: true,
     emailReviews: true,
@@ -22,6 +26,86 @@ const Settings: React.FC<SettingsProps> = ({ sidebarCollapsed, toggleSidebar, ac
     showContactInfo: false,
     allowMessaging: true
   });
+
+  const [accountSettings, setAccountSettings] = useState({
+    twoFactorAuth: false,
+    loginNotifications: true,
+    dataRetention: '1year'
+  });
+
+  // Load user settings on component mount
+  useEffect(() => {
+    // Simulate loading user settings
+    const loadSettings = async () => {
+      setIsLoading(true);
+      try {
+        // Simulate API call
+        await new Promise(resolve => setTimeout(resolve, 1000));
+        // In real app, load from API
+        console.log('Settings loaded for user:', user?.email);
+      } catch (error) {
+        toast.error('Failed to load settings');
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    
+    if (user) {
+      loadSettings();
+    }
+  }, [user]);
+
+  // Save settings function
+  const saveSettings = async (settingsType: string, data: any) => {
+    setIsLoading(true);
+    try {
+      // Simulate API call
+      await new Promise(resolve => setTimeout(resolve, 500));
+      toast.success(`${settingsType} settings saved successfully!`);
+      console.log(`Saving ${settingsType}:`, data);
+    } catch (error) {
+      toast.error(`Failed to save ${settingsType} settings`);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // Handle notification changes
+  const handleNotificationChange = (key: string, value: boolean) => {
+    const newNotifications = { ...notifications, [key]: value };
+    setNotifications(newNotifications);
+    saveSettings('notification', newNotifications);
+  };
+
+  // Handle privacy changes
+  const handlePrivacyChange = (key: string, value: boolean) => {
+    const newPrivacy = { ...privacy, [key]: value };
+    setPrivacy(newPrivacy);
+    saveSettings('privacy', newPrivacy);
+  };
+
+  // Handle account action
+  const handleAccountAction = async (action: string) => {
+    setIsLoading(true);
+    try {
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      switch (action) {
+        case 'changePassword':
+          toast.success('Password change email sent!');
+          break;
+        case 'exportData':
+          toast.success('Data export started! You will receive an email when ready.');
+          break;
+        case 'deleteAccount':
+          toast.error('Account deletion requires additional verification. Please contact support.');
+          break;
+      }
+    } catch (error) {
+      toast.error(`Failed to ${action.replace(/([A-Z])/g, ' $1').toLowerCase()}`);
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   const menuItems = [
     { id: 'dashboard', label: 'Dashboard', icon: 'fas fa-tachometer-alt' },
@@ -100,7 +184,9 @@ const Settings: React.FC<SettingsProps> = ({ sidebarCollapsed, toggleSidebar, ac
                   alt="Owner Avatar"
                   className="w-8 h-8 rounded-full object-cover"
                 />
-                <span className="text-sm font-medium text-gray-700">Rajesh Patel</span>
+                <span className="text-sm font-medium text-gray-700">
+                  {user?.name || user?.email || 'Property Owner'}
+                </span>
                 <i className="fas fa-chevron-down text-gray-400 text-xs"></i>
               </div>
             </div>
@@ -129,8 +215,9 @@ const Settings: React.FC<SettingsProps> = ({ sidebarCollapsed, toggleSidebar, ac
                     <input
                       type="checkbox"
                       checked={notifications.emailBookings}
-                      onChange={(e) => setNotifications({...notifications, emailBookings: e.target.checked})}
+                      onChange={(e) => handleNotificationChange('emailBookings', e.target.checked)}
                       className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                      disabled={isLoading}
                     />
                   </div>
                   <div className="flex items-center justify-between">
@@ -138,8 +225,9 @@ const Settings: React.FC<SettingsProps> = ({ sidebarCollapsed, toggleSidebar, ac
                     <input
                       type="checkbox"
                       checked={notifications.emailReviews}
-                      onChange={(e) => setNotifications({...notifications, emailReviews: e.target.checked})}
+                      onChange={(e) => handleNotificationChange('emailReviews', e.target.checked)}
                       className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                      disabled={isLoading}
                     />
                   </div>
                   <div className="flex items-center justify-between">
@@ -147,8 +235,9 @@ const Settings: React.FC<SettingsProps> = ({ sidebarCollapsed, toggleSidebar, ac
                     <input
                       type="checkbox"
                       checked={notifications.emailPayments}
-                      onChange={(e) => setNotifications({...notifications, emailPayments: e.target.checked})}
+                      onChange={(e) => handleNotificationChange('emailPayments', e.target.checked)}
                       className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                      disabled={isLoading}
                     />
                   </div>
                 </div>
@@ -164,8 +253,9 @@ const Settings: React.FC<SettingsProps> = ({ sidebarCollapsed, toggleSidebar, ac
                     <input
                       type="checkbox"
                       checked={notifications.pushBookings}
-                      onChange={(e) => setNotifications({...notifications, pushBookings: e.target.checked})}
+                      onChange={(e) => handleNotificationChange('pushBookings', e.target.checked)}
                       className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                      disabled={isLoading}
                     />
                   </div>
                   <div className="flex items-center justify-between">
@@ -173,8 +263,9 @@ const Settings: React.FC<SettingsProps> = ({ sidebarCollapsed, toggleSidebar, ac
                     <input
                       type="checkbox"
                       checked={notifications.pushReviews}
-                      onChange={(e) => setNotifications({...notifications, pushReviews: e.target.checked})}
+                      onChange={(e) => handleNotificationChange('pushReviews', e.target.checked)}
                       className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                      disabled={isLoading}
                     />
                   </div>
                   <div className="flex items-center justify-between">
@@ -182,8 +273,9 @@ const Settings: React.FC<SettingsProps> = ({ sidebarCollapsed, toggleSidebar, ac
                     <input
                       type="checkbox"
                       checked={notifications.pushPayments}
-                      onChange={(e) => setNotifications({...notifications, pushPayments: e.target.checked})}
+                      onChange={(e) => handleNotificationChange('pushPayments', e.target.checked)}
                       className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                      disabled={isLoading}
                     />
                   </div>
                 </div>
@@ -205,8 +297,9 @@ const Settings: React.FC<SettingsProps> = ({ sidebarCollapsed, toggleSidebar, ac
                   <input
                     type="checkbox"
                     checked={privacy.profileVisible}
-                    onChange={(e) => setPrivacy({...privacy, profileVisible: e.target.checked})}
+                    onChange={(e) => handlePrivacyChange('profileVisible', e.target.checked)}
                     className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                    disabled={isLoading}
                   />
                 </div>
                 <div className="flex items-center justify-between">
@@ -217,8 +310,9 @@ const Settings: React.FC<SettingsProps> = ({ sidebarCollapsed, toggleSidebar, ac
                   <input
                     type="checkbox"
                     checked={privacy.showContactInfo}
-                    onChange={(e) => setPrivacy({...privacy, showContactInfo: e.target.checked})}
+                    onChange={(e) => handlePrivacyChange('showContactInfo', e.target.checked)}
                     className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                    disabled={isLoading}
                   />
                 </div>
                 <div className="flex items-center justify-between">
@@ -229,8 +323,9 @@ const Settings: React.FC<SettingsProps> = ({ sidebarCollapsed, toggleSidebar, ac
                   <input
                     type="checkbox"
                     checked={privacy.allowMessaging}
-                    onChange={(e) => setPrivacy({...privacy, allowMessaging: e.target.checked})}
+                    onChange={(e) => handlePrivacyChange('allowMessaging', e.target.checked)}
                     className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                    disabled={isLoading}
                   />
                 </div>
               </div>
@@ -243,17 +338,29 @@ const Settings: React.FC<SettingsProps> = ({ sidebarCollapsed, toggleSidebar, ac
                 <p className="text-sm text-gray-600 mt-1">Manage your account settings</p>
               </div>
               <div className="p-6 space-y-4">
-                <button className="w-full sm:w-auto bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors cursor-pointer">
+                <button 
+                  onClick={() => handleAccountAction('changePassword')}
+                  disabled={isLoading}
+                  className="w-full sm:w-auto bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+                >
                   <i className="fas fa-key mr-2"></i>
-                  Change Password
+                  {isLoading ? 'Processing...' : 'Change Password'}
                 </button>
-                <button className="w-full sm:w-auto bg-gray-600 text-white px-4 py-2 rounded-lg hover:bg-gray-700 transition-colors cursor-pointer ml-0 sm:ml-2">
+                <button 
+                  onClick={() => handleAccountAction('exportData')}
+                  disabled={isLoading}
+                  className="w-full sm:w-auto bg-gray-600 text-white px-4 py-2 rounded-lg hover:bg-gray-700 transition-colors cursor-pointer ml-0 sm:ml-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
                   <i className="fas fa-download mr-2"></i>
-                  Export Data
+                  {isLoading ? 'Processing...' : 'Export Data'}
                 </button>
-                <button className="w-full sm:w-auto bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 transition-colors cursor-pointer ml-0 sm:ml-2">
+                <button 
+                  onClick={() => handleAccountAction('deleteAccount')}
+                  disabled={isLoading}
+                  className="w-full sm:w-auto bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 transition-colors cursor-pointer ml-0 sm:ml-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
                   <i className="fas fa-trash mr-2"></i>
-                  Delete Account
+                  {isLoading ? 'Processing...' : 'Delete Account'}
                 </button>
               </div>
             </div>

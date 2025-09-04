@@ -121,8 +121,19 @@ export const AppearanceProvider: React.FC<{ children: React.ReactNode }> = ({ ch
         .eq('key', 'appearance')
         .single();
 
-      if (error && error.code !== 'PGRST116') {
-        console.error('Error loading appearance config:', error);
+      if (error) {
+        // Handle different error types gracefully
+        if (error.code === 'PGRST116') {
+          // No rows found - use default config
+          console.log('No appearance config found, using defaults');
+        } else if (error.code === 'PGRST301' || error.message?.includes('406')) {
+          // Table doesn't exist or permission denied - use default config
+          console.log('Appearance settings table not accessible, using defaults');
+        } else {
+          console.error('Error loading appearance config:', error);
+        }
+        // Always use default config on any error
+        setConfig(defaultConfig);
         return;
       }
 
@@ -135,9 +146,13 @@ export const AppearanceProvider: React.FC<{ children: React.ReactNode }> = ({ ch
         }
         
         setConfig(savedConfig);
+      } else {
+        setConfig(defaultConfig);
       }
     } catch (error) {
       console.error('Error loading appearance config:', error);
+      // Always fallback to default config
+      setConfig(defaultConfig);
     } finally {
       setLoading(false);
     }

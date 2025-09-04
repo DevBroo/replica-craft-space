@@ -80,29 +80,29 @@ const SafetySecurity: React.FC<SafetySecurityProps> = ({
         </CardHeader>
         <CardContent>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-center">
-            <div className="p-3 bg-muted rounded-lg">
-              <div className="text-2xl font-bold text-primary">
+            <div className="p-4 border-2 border-red-100 rounded-xl bg-gradient-to-br from-red-50 to-white hover:from-red-100 hover:to-red-50 transition-all duration-300 hover:shadow-md hover:border-red-200">
+              <div className="text-3xl font-bold text-red-600 mb-2">
                 {formData.safety_security.fire_safety.length}
               </div>
-              <div className="text-sm text-muted-foreground">Fire Safety</div>
+              <div className="text-sm font-semibold text-gray-800">Fire Safety</div>
             </div>
-            <div className="p-3 bg-muted rounded-lg">
-              <div className="text-2xl font-bold text-primary">
+            <div className="p-4 border-2 border-red-100 rounded-xl bg-gradient-to-br from-red-50 to-white hover:from-red-100 hover:to-red-50 transition-all duration-300 hover:shadow-md hover:border-red-200">
+              <div className="text-3xl font-bold text-red-600 mb-2">
                 {formData.safety_security.security_features.length}
               </div>
-              <div className="text-sm text-muted-foreground">Security</div>
+              <div className="text-sm font-semibold text-gray-800">Security</div>
             </div>
-            <div className="p-3 bg-muted rounded-lg">
-              <div className="text-2xl font-bold text-primary">
+            <div className="p-4 border-2 border-red-100 rounded-xl bg-gradient-to-br from-red-50 to-white hover:from-red-100 hover:to-red-50 transition-all duration-300 hover:shadow-md hover:border-red-200">
+              <div className="text-3xl font-bold text-red-600 mb-2">
                 {formData.safety_security.health_safety.length}
               </div>
-              <div className="text-sm text-muted-foreground">Health & Safety</div>
+              <div className="text-sm font-semibold text-gray-800">Health & Safety</div>
             </div>
-            <div className="p-3 bg-muted rounded-lg">
-              <div className="text-2xl font-bold text-primary">
+            <div className="p-4 border-2 border-red-100 rounded-xl bg-gradient-to-br from-red-50 to-white hover:from-red-100 hover:to-red-50 transition-all duration-300 hover:shadow-md hover:border-red-200">
+              <div className="text-3xl font-bold text-red-600 mb-2">
                 {formData.safety_security.emergency_procedures.length}
               </div>
-              <div className="text-sm text-muted-foreground">Emergency Plans</div>
+              <div className="text-sm font-semibold text-gray-800">Emergency Plans</div>
             </div>
           </div>
 

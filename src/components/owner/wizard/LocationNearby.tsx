@@ -478,23 +478,23 @@ const LocationNearby: React.FC<LocationNearbyProps> = ({
         </CardHeader>
         <CardContent>
           <div className="grid grid-cols-3 gap-4 text-center">
-            <div className="p-3 bg-muted rounded-lg">
-              <div className="text-2xl font-bold text-primary">
+            <div className="p-4 border-2 border-red-100 rounded-xl bg-gradient-to-br from-red-50 to-white hover:from-red-100 hover:to-red-50 transition-all duration-300 hover:shadow-md hover:border-red-200">
+              <div className="text-3xl font-bold text-red-600 mb-2">
                 {formData.nearby_attractions.landmarks.length}
               </div>
-              <div className="text-sm text-muted-foreground">Landmarks</div>
+              <div className="text-sm font-semibold text-gray-800">Landmarks</div>
             </div>
-            <div className="p-3 bg-muted rounded-lg">
-              <div className="text-2xl font-bold text-primary">
+            <div className="p-4 border-2 border-red-100 rounded-xl bg-gradient-to-br from-red-50 to-white hover:from-red-100 hover:to-red-50 transition-all duration-300 hover:shadow-md hover:border-red-200">
+              <div className="text-3xl font-bold text-red-600 mb-2">
                 {formData.nearby_attractions.dining.length}
               </div>
-              <div className="text-sm text-muted-foreground">Dining Options</div>
+              <div className="text-sm font-semibold text-gray-800">Dining Options</div>
             </div>
-            <div className="p-3 bg-muted rounded-lg">
-              <div className="text-2xl font-bold text-primary">
+            <div className="p-4 border-2 border-red-100 rounded-xl bg-gradient-to-br from-red-50 to-white hover:from-red-100 hover:to-red-50 transition-all duration-300 hover:shadow-md hover:border-red-200">
+              <div className="text-3xl font-bold text-red-600 mb-2">
                 {formData.nearby_attractions.entertainment.length}
               </div>
-              <div className="text-sm text-muted-foreground">Entertainment</div>
+              <div className="text-sm font-semibold text-gray-800">Entertainment</div>
             </div>
           </div>
         </CardContent>

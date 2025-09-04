@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
+import { toast } from 'sonner';
 
 // Scroll animation hook
 const useScrollAnimation = () => {
@@ -31,6 +32,13 @@ const About: React.FC = () => {
     subject: '',
     message: ''
   });
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [stats, setStats] = useState({
+    properties: 0,
+    travelers: 0,
+    cities: 0,
+    satisfaction: 0
+  });
 
   const handleFormChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     setFormData({
@@ -38,9 +46,61 @@ const About: React.FC = () => {
       [e.target.name]: e.target.value
     });
   };
-  const handleSubmit = (e: React.FormEvent) => {
+  // Animate statistics on component mount
+  useEffect(() => {
+    const animateStats = () => {
+      const targetStats = {
+        properties: 1250,
+        travelers: 75000,
+        cities: 45,
+        satisfaction: 98
+      };
+      
+      const duration = 2000;
+      const steps = 60;
+      const stepDuration = duration / steps;
+      
+      let currentStep = 0;
+      const timer = setInterval(() => {
+        currentStep++;
+        const progress = currentStep / steps;
+        
+        setStats({
+          properties: Math.floor(targetStats.properties * progress),
+          travelers: Math.floor(targetStats.travelers * progress),
+          cities: Math.floor(targetStats.cities * progress),
+          satisfaction: Math.floor(targetStats.satisfaction * progress)
+        });
+        
+        if (currentStep >= steps) {
+          clearInterval(timer);
+        }
+      }, stepDuration);
+    };
+    
+    animateStats();
+  }, []);
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    console.log('Form submitted:', formData);
+    setIsSubmitting(true);
+    
+    try {
+      // Simulate API call
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      
+      toast.success('Thank you for your message! We\'ll get back to you soon.');
+      setFormData({
+        name: '',
+        email: '',
+        subject: '',
+        message: ''
+      });
+    } catch (error) {
+      toast.error('Failed to send message. Please try again.');
+    } finally {
+      setIsSubmitting(false);
+    }
   };
   const teamMembers = [{
     id: 1,
@@ -136,6 +196,42 @@ const About: React.FC = () => {
     name: 'Insurance Partners',
     icon: 'fas fa-shield-alt'
   }];
+
+  const testimonials = [
+    {
+      id: 1,
+      name: 'Priya Sharma',
+      location: 'Mumbai, Maharashtra',
+      rating: 5,
+      text: 'Picnify has completely transformed how I travel in India. The properties are authentic, well-maintained, and the booking process is seamless. I\'ve had amazing experiences!',
+      image: 'https://readdy.ai/api/search-image?query=happy%20indian%20woman%20traveler%20smiling%20in%20beautiful%20vacation%20rental%20setting%20positive%20review%20testimonial%20style&width=100&height=100&seq=test1&orientation=squarish'
+    },
+    {
+      id: 2,
+      name: 'Rajesh Kumar',
+      location: 'Delhi, NCR',
+      rating: 5,
+      text: 'As a property owner, Picnify has helped me reach more travelers and increase my bookings by 300%. The platform is user-friendly and the support team is excellent.',
+      image: 'https://readdy.ai/api/search-image?query=professional%20indian%20man%20property%20owner%20smiling%20confident%20business%20owner%20testimonial%20style&width=100&height=100&seq=test2&orientation=squarish'
+    },
+    {
+      id: 3,
+      name: 'Anita Patel',
+      location: 'Bangalore, Karnataka',
+      rating: 5,
+      text: 'The customer service is outstanding! When I had an issue with my booking, they resolved it within hours. I highly recommend Picnify for anyone looking for quality vacation rentals.',
+      image: 'https://readdy.ai/api/search-image?query=happy%20indian%20woman%20customer%20service%20satisfied%20smiling%20testimonial%20style&width=100&height=100&seq=test3&orientation=squarish'
+    },
+    {
+      id: 4,
+      name: 'Vikram Singh',
+      location: 'Goa',
+      rating: 5,
+      text: 'I\'ve been using Picnify for family vacations for over a year now. The properties are exactly as described, and the owners are friendly and helpful. Great platform!',
+      image: 'https://readdy.ai/api/search-image?query=happy%20indian%20man%20family%20traveler%20vacation%20smiling%20testimonial%20style&width=100&height=100&seq=test4&orientation=squarish'
+    }
+  ];
+
   return <div className="min-h-screen bg-white">
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800;900&display=swap');
@@ -196,6 +292,46 @@ const About: React.FC = () => {
               <i className="fas fa-arrow-left text-xl"></i>
               <span>Back to Home</span>
             </a>
+          </div>
+        </div>
+      </section>
+
+      {/* Statistics Section */}
+      <section className="py-20 bg-gradient-to-r from-red-600 to-orange-500 text-white">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center mb-16">
+            <h2 className="text-3xl sm:text-4xl font-bold font-poppins mb-4">Our Impact in Numbers</h2>
+            <p className="text-xl text-red-100">Growing every day to serve you better</p>
+          </div>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
+            <div className="text-center group">
+              <div className="text-4xl sm:text-5xl font-bold mb-2 group-hover:scale-110 transition-transform duration-300">
+                {stats.properties.toLocaleString()}+
+              </div>
+              <div className="text-lg text-red-100 font-semibold">Properties</div>
+              <div className="text-sm text-red-200 mt-1">Verified Listings</div>
+            </div>
+            <div className="text-center group">
+              <div className="text-4xl sm:text-5xl font-bold mb-2 group-hover:scale-110 transition-transform duration-300">
+                {stats.travelers.toLocaleString()}+
+              </div>
+              <div className="text-lg text-red-100 font-semibold">Happy Travelers</div>
+              <div className="text-sm text-red-200 mt-1">Satisfied Customers</div>
+            </div>
+            <div className="text-center group">
+              <div className="text-4xl sm:text-5xl font-bold mb-2 group-hover:scale-110 transition-transform duration-300">
+                {stats.cities}+
+              </div>
+              <div className="text-lg text-red-100 font-semibold">Cities</div>
+              <div className="text-sm text-red-200 mt-1">Across India</div>
+            </div>
+            <div className="text-center group">
+              <div className="text-4xl sm:text-5xl font-bold mb-2 group-hover:scale-110 transition-transform duration-300">
+                {stats.satisfaction}%
+              </div>
+              <div className="text-lg text-red-100 font-semibold">Satisfaction</div>
+              <div className="text-sm text-red-200 mt-1">Customer Rating</div>
+            </div>
           </div>
         </div>
       </section>
@@ -293,6 +429,39 @@ const About: React.FC = () => {
                 <div className="text-red-600 font-semibold mb-4">{member.position}</div>
                 <p className="text-gray-600 leading-relaxed">{member.bio}</p>
               </div>)}
+          </div>
+        </div>
+      </section>
+
+      {/* Testimonials Section */}
+      <section className="py-20 bg-gray-50">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center mb-16">
+            <h2 className="text-3xl sm:text-4xl font-bold text-gray-900 font-poppins mb-4">What Our Users Say</h2>
+            <p className="text-xl text-gray-600">Real stories from real people</p>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
+            {testimonials.map((testimonial, index) => (
+              <div key={testimonial.id} className="bg-white p-6 rounded-2xl shadow-lg hover:shadow-xl transition-shadow duration-300 hover-lift">
+                <div className="flex items-center mb-4">
+                  <img 
+                    src={testimonial.image} 
+                    alt={testimonial.name}
+                    className="w-12 h-12 rounded-full object-cover mr-4"
+                  />
+                  <div>
+                    <div className="font-semibold text-gray-900">{testimonial.name}</div>
+                    <div className="text-sm text-gray-500">{testimonial.location}</div>
+                  </div>
+                </div>
+                <div className="flex mb-3">
+                  {[...Array(testimonial.rating)].map((_, i) => (
+                    <i key={i} className="fas fa-star text-yellow-400 text-sm"></i>
+                  ))}
+                </div>
+                <p className="text-gray-600 text-sm leading-relaxed">"{testimonial.text}"</p>
+              </div>
+            ))}
           </div>
         </div>
       </section>
@@ -448,10 +617,23 @@ const About: React.FC = () => {
                   <label className="block text-gray-700 font-semibold mb-2">Message</label>
                   <textarea name="message" value={formData.message} onChange={handleFormChange} placeholder="Tell us more about your inquiry..." rows={6} className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl outline-none focus:border-red-500 focus:ring-4 focus:ring-red-500/20 transition-all duration-300 text-sm resize-none" required></textarea>
                 </div>
-                <button type="submit" className="w-full bg-gradient-to-r from-red-600 to-orange-500 text-white py-4 rounded-xl hover:from-red-700 hover:to-orange-600 transition-all duration-300 cursor-pointer whitespace-nowrap !rounded-button font-bold text-lg shadow-xl hover:shadow-2xl transform hover:scale-105">
-                  <i className="fas fa-paper-plane mr-3"></i>
-                  Send Message
-                </button>
+                                  <button 
+                    type="submit" 
+                    disabled={isSubmitting}
+                    className="w-full bg-gradient-to-r from-red-600 to-orange-500 text-white py-4 rounded-xl hover:from-red-700 hover:to-orange-600 transition-all duration-300 cursor-pointer whitespace-nowrap !rounded-button font-bold text-lg shadow-xl hover:shadow-2xl transform hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
+                  >
+                    {isSubmitting ? (
+                      <>
+                        <i className="fas fa-spinner fa-spin mr-3"></i>
+                        Sending...
+                      </>
+                    ) : (
+                      <>
+                        <i className="fas fa-paper-plane mr-3"></i>
+                        Send Message
+                      </>
+                    )}
+                  </button>
               </form>
             </div>
           </div>

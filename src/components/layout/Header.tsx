@@ -25,15 +25,15 @@ const Header: React.FC = () => {
 
             {/* Navigation Section */}
             <nav className="hidden lg:flex items-center space-x-8 xl:space-x-10 flex-1 justify-center">
-              <a href="/" className="text-foreground hover:text-brand-orange font-medium transition-colors duration-200 cursor-pointer px-2 py-1 rounded-md hover:bg-orange-50">Home</a>
-              <a href="/properties" className="text-foreground hover:text-brand-orange font-medium transition-colors duration-200 cursor-pointer px-2 py-1 rounded-md hover:bg-orange-50">Properties</a>
-              <a href="/locations" className="text-foreground hover:text-brand-orange font-medium transition-colors duration-200 cursor-pointer px-2 py-1 rounded-md hover:bg-orange-50">Locations</a>
-              <a href="/about" className="text-foreground hover:text-brand-orange font-medium transition-colors duration-200 cursor-pointer px-2 py-1 rounded-md hover:bg-orange-50">About</a>
-              <a href="/contact" className="text-foreground hover:text-brand-orange font-medium transition-colors duration-200 cursor-pointer px-2 py-1 rounded-md hover:bg-orange-50">Contact</a>
+              <a href="/" className="text-foreground hover:text-orange-500 font-medium transition-colors duration-200 cursor-pointer px-2 py-1 rounded-md hover:bg-orange-50">Home</a>
+              <a href="/properties" className="text-foreground hover:text-orange-500 font-medium transition-colors duration-200 cursor-pointer px-2 py-1 rounded-md hover:bg-orange-50">Properties</a>
+              <a href="/locations" className="text-foreground hover:text-orange-500 font-medium transition-colors duration-200 cursor-pointer px-2 py-1 rounded-md hover:bg-orange-50">Locations</a>
+              <a href="/about" className="text-foreground hover:text-orange-500 font-medium transition-colors duration-200 cursor-pointer px-2 py-1 rounded-md hover:bg-orange-50">About</a>
+              <a href="/contact" className="text-foreground hover:text-orange-500 font-medium transition-colors duration-200 cursor-pointer px-2 py-1 rounded-md hover:bg-orange-50">Contact</a>
               
               {/* Portals Dropdown */}
               <div className="relative group">
-                <button className="text-foreground hover:text-brand-orange font-medium transition-colors duration-200 cursor-pointer flex items-center px-2 py-1 rounded-md hover:bg-orange-50">
+                <button className="text-foreground hover:text-orange-500 font-medium transition-colors duration-200 cursor-pointer flex items-center px-2 py-1 rounded-md hover:bg-orange-50">
                   Portals
                   <i className="fas fa-chevron-down ml-1 text-xs transition-transform duration-200 group-hover:rotate-180"></i>
                 </button>
@@ -71,9 +71,9 @@ const Header: React.FC = () => {
                            navigate('/owner/login');
                          }
                       }}
-                      className="w-full text-left px-4 py-3 text-sm text-gray-700 hover:bg-gray-50 hover:text-brand-orange transition-colors duration-200 border-b border-gray-100"
+                      className="w-full text-left px-4 py-3 text-sm text-gray-700 hover:bg-gray-50 hover:text-orange-500 transition-colors duration-200 border-b border-gray-100"
                     >
-                      <i className="fas fa-home mr-3 text-brand-orange"></i>
+                      <i className="fas fa-home mr-3 text-orange-500"></i>
                       Property Owner Portal
                     </button>
                     <button 
@@ -99,13 +99,13 @@ const Header: React.FC = () => {
                           navigate('/agent/login');
                         }
                       }} 
-                      className="w-full text-left px-4 py-3 text-sm text-gray-700 hover:bg-gray-50 hover:text-brand-orange transition-colors duration-200 border-b border-gray-100"
+                      className="w-full text-left px-4 py-3 text-sm text-gray-700 hover:bg-gray-50 hover:text-orange-500 transition-colors duration-200 border-b border-gray-100"
                     >
-                      <i className="fas fa-handshake mr-3 text-brand-orange"></i>
+                      <i className="fas fa-handshake mr-3 text-orange-500"></i>
                       Travel Agent Portal
                     </button>
-                    <a href="/admin/login" className="block px-4 py-3 text-sm text-gray-700 hover:bg-gray-50 hover:text-brand-orange transition-colors duration-200">
-                      <i className="fas fa-cog mr-3 text-brand-orange"></i>
+                    <a href="/admin/login" className="block px-4 py-3 text-sm text-gray-700 hover:bg-gray-50 hover:text-orange-500 transition-colors duration-200">
+                      <i className="fas fa-cog mr-3 text-orange-500"></i>
                       Admin Panel
                     </a>
                   </div>
@@ -115,7 +115,7 @@ const Header: React.FC = () => {
 
             {/* Mobile Menu Button */}
             <button
-              className="lg:hidden flex items-center justify-center w-10 h-10 text-foreground hover:text-brand-orange transition-colors duration-200"
+              className="lg:hidden flex items-center justify-center w-10 h-10 text-foreground hover:text-orange-500 transition-colors duration-200"
               onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
               aria-label="Toggle mobile menu"
             >
@@ -130,7 +130,7 @@ const Header: React.FC = () => {
             <div className="hidden lg:flex items-center space-x-4 min-w-[200px] justify-end">
               {isAuthenticated && user ? (
                 <div className="flex items-center space-x-4">
-                  <div className="w-8 h-8 bg-gradient-to-r from-brand-orange to-brand-red rounded-full flex items-center justify-center text-white font-medium text-sm cursor-pointer hover:scale-110 transition-transform duration-200" title={user.email}>
+                  <div className="w-8 h-8 bg-gradient-to-r from-orange-500 to-red-500 rounded-full flex items-center justify-center text-white font-medium text-sm cursor-pointer hover:scale-110 transition-transform duration-200" title={user.email}>
                     {user.email.charAt(0).toUpperCase()}
                   </div>
                   <button
@@ -147,7 +147,7 @@ const Header: React.FC = () => {
                   </a>
                   <Link
                     to="/signup"
-                    className="bg-gradient-to-r from-brand-orange to-brand-red text-white px-4 py-2 hover:from-orange-600 hover:to-red-600 transition-all duration-300 cursor-pointer whitespace-nowrap rounded-button font-medium shadow-lg hover:shadow-xl transform hover:scale-105 inline-flex items-center text-sm"
+                    className="bg-gradient-to-r from-orange-500 to-red-500 text-white px-4 py-2 hover:from-orange-600 hover:to-red-600 transition-all duration-300 cursor-pointer whitespace-nowrap rounded-button font-medium shadow-lg hover:shadow-xl transform hover:scale-105 inline-flex items-center text-sm"
                   >
                     <i className="fas fa-arrow-right-to-bracket mr-2"></i>Sign Up
                   </Link>
@@ -170,7 +170,7 @@ const Header: React.FC = () => {
               <img src={picnifyLogo} alt="Picnify.in Logo" className="h-10" />
               <button
                 onClick={() => setIsMobileMenuOpen(false)}
-                className="flex items-center justify-center w-10 h-10 text-foreground hover:text-brand-orange transition-colors duration-200 rounded-full hover:bg-gray-100"
+                className="flex items-center justify-center w-10 h-10 text-foreground hover:text-orange-500 transition-colors duration-200 rounded-full hover:bg-gray-100"
                 aria-label="Close mobile menu"
               >
                 <i className="fas fa-times text-xl"></i>
@@ -181,49 +181,49 @@ const Header: React.FC = () => {
             <div className="px-6 py-8 space-y-4">
               <a 
                 href="/" 
-                className="flex items-center text-lg font-medium text-foreground hover:text-brand-orange transition-colors duration-200 py-4 px-3 rounded-lg hover:bg-orange-50"
+                className="flex items-center text-lg font-medium text-foreground hover:text-orange-500 transition-colors duration-200 py-4 px-3 rounded-lg hover:bg-orange-50"
                 onClick={() => setIsMobileMenuOpen(false)}
               >
-                <i className="fas fa-home mr-4 text-brand-orange w-5 text-center"></i>
+                <i className="fas fa-home mr-4 text-orange-500 w-5 text-center"></i>
                 Home
               </a>
               <a 
                 href="/properties" 
-                className="flex items-center text-lg font-medium text-foreground hover:text-brand-orange transition-colors duration-200 py-4 px-3 rounded-lg hover:bg-orange-50"
+                className="flex items-center text-lg font-medium text-foreground hover:text-orange-500 transition-colors duration-200 py-4 px-3 rounded-lg hover:bg-orange-50"
                 onClick={() => setIsMobileMenuOpen(false)}
               >
-                <i className="fas fa-building mr-4 text-brand-orange w-5 text-center"></i>
+                <i className="fas fa-building mr-4 text-orange-500 w-5 text-center"></i>
                 Properties
               </a>
               <a 
                 href="/locations" 
-                className="flex items-center text-lg font-medium text-foreground hover:text-brand-orange transition-colors duration-200 py-4 px-3 rounded-lg hover:bg-orange-50"
+                className="flex items-center text-lg font-medium text-foreground hover:text-orange-500 transition-colors duration-200 py-4 px-3 rounded-lg hover:bg-orange-50"
                 onClick={() => setIsMobileMenuOpen(false)}
               >
-                <i className="fas fa-map-marker-alt mr-4 text-brand-orange w-5 text-center"></i>
+                <i className="fas fa-map-marker-alt mr-4 text-orange-500 w-5 text-center"></i>
                 Locations
               </a>
               <a 
                 href="/about" 
-                className="flex items-center text-lg font-medium text-foreground hover:text-brand-orange transition-colors duration-200 py-4 px-3 rounded-lg hover:bg-orange-50"
+                className="flex items-center text-lg font-medium text-foreground hover:text-orange-500 transition-colors duration-200 py-4 px-3 rounded-lg hover:bg-orange-50"
                 onClick={() => setIsMobileMenuOpen(false)}
               >
-                <i className="fas fa-info-circle mr-4 text-brand-orange w-5 text-center"></i>
+                <i className="fas fa-info-circle mr-4 text-orange-500 w-5 text-center"></i>
                 About
               </a>
               <a 
                 href="/contact" 
-                className="flex items-center text-lg font-medium text-foreground hover:text-brand-orange transition-colors duration-200 py-4 px-3 rounded-lg hover:bg-orange-50"
+                className="flex items-center text-lg font-medium text-foreground hover:text-orange-500 transition-colors duration-200 py-4 px-3 rounded-lg hover:bg-orange-50"
                 onClick={() => setIsMobileMenuOpen(false)}
               >
-                <i className="fas fa-envelope mr-4 text-brand-orange w-5 text-center"></i>
+                <i className="fas fa-envelope mr-4 text-orange-500 w-5 text-center"></i>
                 Contact
               </a>
               
               {/* Mobile Portals Section */}
               <div className="pt-6 border-t border-border/50">
                 <div className="text-lg font-bold text-foreground mb-6 flex items-center">
-                  <i className="fas fa-door-open mr-4 text-brand-orange w-5 text-center"></i>
+                  <i className="fas fa-door-open mr-4 text-orange-500 w-5 text-center"></i>
                   Portals
                 </div>
                 <div className="space-y-4">
@@ -254,25 +254,25 @@ const Header: React.FC = () => {
                        }
                       setIsMobileMenuOpen(false);
                     }}
-                    className="flex items-center w-full text-left text-base text-muted-foreground hover:text-brand-orange transition-colors duration-200 py-3 px-3 rounded-lg hover:bg-orange-50"
+                    className="flex items-center w-full text-left text-base text-muted-foreground hover:text-orange-500 transition-colors duration-200 py-3 px-3 rounded-lg hover:bg-orange-50"
                   >
-                    <i className="fas fa-home mr-4 text-brand-orange w-5 text-center"></i>
+                    <i className="fas fa-home mr-4 text-orange-500 w-5 text-center"></i>
                     Property Owner Portal
                   </button>
                   <Link 
                     to="/agent/login"
-                    className="block text-base text-muted-foreground hover:text-brand-orange transition-colors duration-200"
+                    className="block text-base text-muted-foreground hover:text-orange-500 transition-colors duration-200"
                     onClick={() => setIsMobileMenuOpen(false)}
                   >
-                    <i className="fas fa-handshake mr-3 text-brand-orange w-4"></i>
+                    <i className="fas fa-handshake mr-3 text-orange-500 w-4"></i>
                     Travel Agent Portal
                   </Link>
                   <a 
                     href="/admin/login" 
-                    className="block text-base text-muted-foreground hover:text-brand-orange transition-colors duration-200"
+                    className="block text-base text-muted-foreground hover:text-orange-500 transition-colors duration-200"
                     onClick={() => setIsMobileMenuOpen(false)}
                   >
-                    <i className="fas fa-cog mr-3 text-brand-orange w-4"></i>
+                    <i className="fas fa-cog mr-3 text-orange-500 w-4"></i>
                     Admin Panel
                   </a>
                 </div>
@@ -283,7 +283,7 @@ const Header: React.FC = () => {
                 {isAuthenticated && user ? (
                   <>
                     <div className="flex items-center justify-center bg-gray-50 rounded-lg px-4 py-3">
-                      <div className="w-10 h-10 bg-gradient-to-r from-brand-orange to-brand-red rounded-full flex items-center justify-center text-white font-medium" title={user.email}>
+                      <div className="w-10 h-10 bg-gradient-to-r from-orange-500 to-red-500 rounded-full flex items-center justify-center text-white font-medium" title={user.email}>
                         {user.email.charAt(0).toUpperCase()}
                       </div>
                     </div>
@@ -310,7 +310,7 @@ const Header: React.FC = () => {
                     </a>
                     <Link
                       to="/signup"
-                      className="block w-full bg-gradient-to-r from-brand-orange to-brand-red text-white px-6 py-4 hover:from-orange-600 hover:to-red-600 transition-all duration-300 rounded-lg font-medium shadow-lg text-center"
+                      className="block w-full bg-gradient-to-r from-orange-500 to-red-500 text-white px-6 py-4 hover:from-orange-600 hover:to-red-600 transition-all duration-300 rounded-lg font-medium shadow-lg text-center"
                       onClick={() => setIsMobileMenuOpen(false)}
                     >
                       <i className="fas fa-arrow-right-to-bracket mr-2"></i>

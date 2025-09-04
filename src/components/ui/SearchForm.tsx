@@ -111,7 +111,7 @@ const SearchForm: React.FC<SearchFormProps> = ({
                 className={cn(
                   "px-4 py-2 rounded-full text-sm font-medium transition-all duration-200",
                   filters.category === category.category
-                    ? "bg-brand-orange text-white shadow-md"
+                    ? "bg-orange-500 text-white shadow-md"
                     : "bg-gray-100 text-gray-700 hover:bg-gray-200"
                 )}
               >
@@ -129,7 +129,7 @@ const SearchForm: React.FC<SearchFormProps> = ({
             {/* Location */}
             <Select value={filters.location} onValueChange={handleLocationChange}>
               <SelectTrigger className="flex-1">
-                <MapPinIcon className="w-4 h-4 mr-2 text-brand-orange" />
+                <MapPinIcon className="w-4 h-4 mr-2 text-orange-500" />
                 <SelectValue placeholder="Location" />
               </SelectTrigger>
               <SelectContent>
@@ -146,7 +146,7 @@ const SearchForm: React.FC<SearchFormProps> = ({
             {/* Guests */}
             <Select value={filters.guests?.toString()} onValueChange={handleGuestsChange}>
               <SelectTrigger className="w-32">
-                <UsersIcon className="w-4 h-4 mr-2 text-brand-orange" />
+                <UsersIcon className="w-4 h-4 mr-2 text-orange-500" />
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
@@ -161,7 +161,7 @@ const SearchForm: React.FC<SearchFormProps> = ({
             {/* Search Button */}
             <Button 
               onClick={handleSearch}
-              className="bg-brand-orange hover:bg-brand-red text-white px-6"
+              className="bg-orange-500 hover:bg-red-500 text-white px-6"
             >
               <i className="fas fa-search mr-2"></i>
               Search
@@ -184,7 +184,7 @@ const SearchForm: React.FC<SearchFormProps> = ({
               className={cn(
                 "px-6 py-3 rounded-xl text-base font-medium transition-all duration-300 flex items-center",
                 filters.category === category.category
-                  ? "bg-brand-orange text-white shadow-lg transform scale-105"
+                  ? "bg-orange-500 text-white shadow-lg transform scale-105"
                   : "bg-gray-100 text-gray-700 hover:bg-gray-200 hover:shadow-md"
               )}
               disabled={categoriesLoading}
@@ -213,10 +213,10 @@ const SearchForm: React.FC<SearchFormProps> = ({
         {/* Location */}
         <div className="lg:col-span-2">
           <Select value={filters.location} onValueChange={handleLocationChange} disabled={locationsLoading}>
-            <SelectTrigger className="w-full h-14 text-base">
-              <div className="flex items-center">
-                <MapPinIcon className="w-5 h-5 mr-3 text-brand-orange" />
-                <SelectValue placeholder="Where would you like to go?" />
+            <SelectTrigger className="w-full h-14 text-base border-gray-300 hover:border-gray-400 focus:border-gray-400 focus:ring-1 focus:ring-gray-300">
+              <div className="flex items-center w-full">
+                <MapPinIcon className="w-5 h-5 mr-3 text-orange-500 flex-shrink-0" />
+                <SelectValue placeholder="Where would you like to go?" className="flex-1 text-left" />
               </div>
             </SelectTrigger>
             <SelectContent>
@@ -234,7 +234,7 @@ const SearchForm: React.FC<SearchFormProps> = ({
               {locationsLoading && (
                 <SelectItem value="loading" disabled>
                   <div className="flex items-center">
-                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-brand-orange mr-2"></div>
+                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-orange-500 mr-2"></div>
                     Loading locations...
                   </div>
                 </SelectItem>
@@ -250,12 +250,14 @@ const SearchForm: React.FC<SearchFormProps> = ({
               <Button
                 variant="outline"
                 className={cn(
-                  "w-full h-14 text-base justify-start text-left font-normal",
+                  "w-full h-14 text-base justify-start text-left font-normal border-gray-300 hover:border-gray-400 focus:border-gray-400 focus:ring-1 focus:ring-gray-300",
                   !selectedDate && "text-muted-foreground"
                 )}
               >
-                <CalendarIcon className="w-5 h-5 mr-3 text-brand-orange" />
-                {selectedDate ? format(selectedDate, "dd/MM/yyyy") : "Select date"}
+                <CalendarIcon className="w-5 h-5 mr-3 text-orange-500 flex-shrink-0" />
+                <span className="flex-1 text-left">
+                  {selectedDate ? format(selectedDate, "dd/MM/yyyy") : "Select date"}
+                </span>
               </Button>
             </PopoverTrigger>
             <PopoverContent className="w-auto p-0" align="start">
@@ -273,10 +275,10 @@ const SearchForm: React.FC<SearchFormProps> = ({
         {/* Guests */}
         <div className="lg:col-span-2">
           <Select value={filters.guests?.toString()} onValueChange={handleGuestsChange}>
-            <SelectTrigger className="w-full h-14 text-base">
-              <div className="flex items-center">
-                <UsersIcon className="w-5 h-5 mr-3 text-brand-orange" />
-                <SelectValue placeholder="Select group size" />
+            <SelectTrigger className="w-full h-14 text-base border-gray-300 hover:border-gray-400 focus:border-gray-400 focus:ring-1 focus:ring-gray-300">
+              <div className="flex items-center w-full">
+                <UsersIcon className="w-5 h-5 mr-3 text-orange-500 flex-shrink-0" />
+                <SelectValue placeholder="Select group size" className="flex-1 text-left" />
               </div>
             </SelectTrigger>
             <SelectContent>
@@ -293,7 +295,7 @@ const SearchForm: React.FC<SearchFormProps> = ({
         <div className="lg:col-span-2">
           <Button 
             onClick={handleSearch}
-            className="w-full h-14 bg-brand-orange hover:bg-brand-red text-white text-lg font-semibold shadow-lg hover:shadow-xl transition-all duration-300"
+            className="w-full h-14 bg-orange-500 hover:bg-red-500 text-white text-lg font-semibold shadow-lg hover:shadow-xl transition-all duration-300"
           >
             <i className="fas fa-search mr-2"></i>
             Search

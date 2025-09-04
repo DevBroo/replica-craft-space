@@ -66,6 +66,8 @@ const Properties: React.FC<PropertiesProps> = ({
   ];
 
   useEffect(() => {
+    if (!user?.id) return; // Wait for user to be available
+    
     fetchProperties();
     
     // Check for URL parameters to auto-open add property modal

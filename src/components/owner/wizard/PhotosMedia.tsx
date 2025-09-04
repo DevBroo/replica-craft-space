@@ -296,20 +296,26 @@ const PhotosMedia: React.FC<PhotosMediaProps> = ({
         </CardHeader>
         <CardContent>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-center text-sm text-muted-foreground">
-            <div className="p-4 border rounded-lg">
-              <Image className="w-8 h-8 mx-auto mb-2 text-primary" />
-              <div className="font-medium">High Resolution</div>
-              <div>At least 1024x768 pixels</div>
+            <div className="p-6 border-2 border-red-100 rounded-xl bg-gradient-to-br from-red-50 to-white hover:from-red-100 hover:to-red-50 transition-all duration-300 hover:shadow-lg hover:border-red-200">
+              <div className="w-12 h-12 mx-auto mb-3 bg-red-600 rounded-full flex items-center justify-center shadow-lg">
+                <Image className="w-6 h-6 text-white" />
+              </div>
+              <div className="font-semibold text-gray-800 mb-1">High Resolution</div>
+              <div className="text-gray-600">At least 1024x768 pixels</div>
             </div>
-            <div className="p-4 border rounded-lg">
-              <Eye className="w-8 h-8 mx-auto mb-2 text-primary" />
-              <div className="font-medium">Good Lighting</div>
-              <div>Natural light works best</div>
+            <div className="p-6 border-2 border-red-100 rounded-xl bg-gradient-to-br from-red-50 to-white hover:from-red-100 hover:to-red-50 transition-all duration-300 hover:shadow-lg hover:border-red-200">
+              <div className="w-12 h-12 mx-auto mb-3 bg-red-600 rounded-full flex items-center justify-center shadow-lg">
+                <Eye className="w-6 h-6 text-white" />
+              </div>
+              <div className="font-semibold text-gray-800 mb-1">Good Lighting</div>
+              <div className="text-gray-600">Natural light works best</div>
             </div>
-            <div className="p-4 border rounded-lg">
-              <Star className="w-8 h-8 mx-auto mb-2 text-primary" />
-              <div className="font-medium">Variety</div>
-              <div>Show different areas & angles</div>
+            <div className="p-6 border-2 border-red-100 rounded-xl bg-gradient-to-br from-red-50 to-white hover:from-red-100 hover:to-red-50 transition-all duration-300 hover:shadow-lg hover:border-red-200">
+              <div className="w-12 h-12 mx-auto mb-3 bg-red-600 rounded-full flex items-center justify-center shadow-lg">
+                <Star className="w-6 h-6 text-white" />
+              </div>
+              <div className="font-semibold text-gray-800 mb-1">Variety</div>
+              <div className="text-gray-600">Show different areas & angles</div>
             </div>
           </div>
         </CardContent>
@@ -530,13 +536,13 @@ const PhotosMedia: React.FC<PhotosMediaProps> = ({
           <CardTitle className="text-lg">Photos by Category</CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
             {PHOTO_CATEGORIES.map(category => {
               const count = formData.photos_with_captions.filter(p => p.category === category.value).length;
               return (
-                <div key={category.value} className="text-center p-3 border rounded-lg">
-                  <div className="text-lg font-bold text-primary">{count}</div>
-                  <div className="text-sm font-medium">{category.label}</div>
+                <div key={category.value} className="text-center p-4 border-2 border-red-100 rounded-xl bg-gradient-to-br from-red-50 to-white hover:from-red-100 hover:to-red-50 transition-all duration-300 hover:shadow-md hover:border-red-200">
+                  <div className="text-2xl font-bold text-red-600 mb-1">{count}</div>
+                  <div className="text-sm font-semibold text-gray-800">{category.label}</div>
                 </div>
               );
             })}

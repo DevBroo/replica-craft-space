@@ -54,9 +54,9 @@ const HeroBanner = ({ overlay }: HeroBannerProps) => {
         
         {/* Decorative Elements */}
         <div className="absolute inset-0 pointer-events-none">
-          <div className="absolute top-20 left-10 w-32 h-32 bg-gradient-to-r from-brand-orange/20 to-brand-red/20 rounded-full animate-blob"></div>
-          <div className="absolute top-40 right-16 w-24 h-24 bg-gradient-to-r from-primary/30 to-primary-glow/30 rounded-full animate-blob animation-delay-2000"></div>
-          <div className="absolute bottom-32 left-1/4 w-20 h-20 bg-gradient-to-r from-accent/40 to-primary/40 rounded-full animate-blob animation-delay-4000"></div>
+          <div className="absolute top-20 left-10 w-32 h-32 bg-gradient-to-r from-orange-500/20 to-red-500/20 rounded-full animate-blob"></div>
+          <div className="absolute top-40 right-16 w-24 h-24 bg-gradient-to-r from-blue-500/30 to-blue-400/30 rounded-full animate-blob animation-delay-2000"></div>
+          <div className="absolute bottom-32 left-1/4 w-20 h-20 bg-gradient-to-r from-purple-500/40 to-blue-500/40 rounded-full animate-blob animation-delay-4000"></div>
         </div>
 
         <div className="container mx-auto px-4 text-center relative z-10 max-w-5xl">
@@ -71,7 +71,7 @@ const HeroBanner = ({ overlay }: HeroBannerProps) => {
                     Discover Perfect Getaways Near You
                   </span>
                 </h1>
-                <div className="w-32 h-1 bg-gradient-to-r from-brand-orange to-brand-red mx-auto rounded-full shadow-lg animate-scale-in"></div>
+                <div className="w-32 h-1 bg-gradient-to-r from-orange-500 to-red-500 mx-auto rounded-full shadow-lg animate-scale-in"></div>
               </div>
 
               {/* Enhanced Subtitle */}
@@ -88,7 +88,7 @@ const HeroBanner = ({ overlay }: HeroBannerProps) => {
                 <Button 
                   asChild 
                   size="lg" 
-                  className="text-xl px-12 py-6 bg-gradient-to-r from-brand-orange to-brand-red hover:from-orange-600 hover:to-red-600 text-white font-bold rounded-2xl shadow-2xl hover:shadow-brand-orange/50 transform hover:scale-110 transition-all duration-300 border-2 border-white/20 backdrop-blur-sm"
+                  className="text-xl px-12 py-6 bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-600 hover:to-red-600 text-white font-bold rounded-2xl shadow-2xl hover:shadow-orange-500/50 transform hover:scale-110 transition-all duration-300 border-2 border-white/20 backdrop-blur-sm"
                 >
                   <Link to="/properties" className="flex items-center gap-3">
                     Start Exploring
@@ -125,9 +125,9 @@ const HeroBanner = ({ overlay }: HeroBannerProps) => {
       
       {/* Decorative Elements */}
       <div className="absolute inset-0 pointer-events-none">
-        <div className="absolute top-20 left-10 w-32 h-32 bg-gradient-to-r from-brand-orange/20 to-brand-red/20 rounded-full animate-blob"></div>
-        <div className="absolute top-40 right-16 w-24 h-24 bg-gradient-to-r from-primary/30 to-primary-glow/30 rounded-full animate-blob animation-delay-2000"></div>
-        <div className="absolute bottom-32 left-1/4 w-20 h-20 bg-gradient-to-r from-accent/40 to-primary/40 rounded-full animate-blob animation-delay-4000"></div>
+        <div className="absolute top-20 left-10 w-32 h-32 bg-gradient-to-r from-orange-500/20 to-red-500/20 rounded-full animate-blob"></div>
+        <div className="absolute top-40 right-16 w-24 h-24 bg-gradient-to-r from-blue-500/30 to-blue-400/30 rounded-full animate-blob animation-delay-2000"></div>
+        <div className="absolute bottom-32 left-1/4 w-20 h-20 bg-gradient-to-r from-purple-500/40 to-blue-500/40 rounded-full animate-blob animation-delay-4000"></div>
       </div>
 
       <div className="container mx-auto px-4 text-center relative z-10 max-w-5xl">
@@ -142,7 +142,7 @@ const HeroBanner = ({ overlay }: HeroBannerProps) => {
                   {banner.title}
                 </span>
               </h1>
-              <div className="w-32 h-1 bg-gradient-to-r from-brand-orange to-brand-red mx-auto rounded-full shadow-lg animate-scale-in"></div>
+              <div className="w-32 h-1 bg-gradient-to-r from-orange-500 to-red-500 mx-auto rounded-full shadow-lg animate-scale-in"></div>
             </div>
 
             {/* Enhanced Subtitle */}
@@ -162,7 +162,7 @@ const HeroBanner = ({ overlay }: HeroBannerProps) => {
                 <Button 
                   asChild 
                   size="lg" 
-                  className="text-xl px-12 py-6 bg-gradient-to-r from-brand-orange to-brand-red hover:from-orange-600 hover:to-red-600 text-white font-bold rounded-2xl shadow-2xl hover:shadow-brand-orange/50 transform hover:scale-110 transition-all duration-300 border-2 border-white/20 backdrop-blur-sm"
+                  className="text-xl px-12 py-6 bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-600 hover:to-red-600 text-white font-bold rounded-2xl shadow-2xl hover:shadow-orange-500/50 transform hover:scale-110 transition-all duration-300 border-2 border-white/20 backdrop-blur-sm"
                 >
                   <Link to={banner.cta_link} className="flex items-center gap-3">
                     {banner.cta_text}

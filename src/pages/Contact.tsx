@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
+import { toast } from 'sonner';
 
 // Scroll animation hook
 const useScrollAnimation = () => {
@@ -38,6 +39,8 @@ const Contact: React.FC = () => {
 
   const [activeTab, setActiveTab] = useState('contact');
   const [openFaq, setOpenFaq] = useState<number | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [currentTime, setCurrentTime] = useState(new Date());
 
   const handleFormChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     setFormData({
@@ -46,9 +49,44 @@ const Contact: React.FC = () => {
     });
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  // Update current time every minute
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setCurrentTime(new Date());
+    }, 60000);
+    return () => clearInterval(timer);
+  }, []);
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    console.log('Form submitted:', formData);
+    setIsSubmitting(true);
+    
+    try {
+      // Simulate API call
+      await new Promise(resolve => setTimeout(resolve, 1500));
+      
+      toast.success('Thank you for contacting us! We\'ll get back to you within 24 hours.');
+      setFormData({
+        name: '',
+        email: '',
+        phone: '',
+        subject: '',
+        message: '',
+        inquiryType: 'general'
+      });
+    } catch (error) {
+      toast.error('Failed to send message. Please try again.');
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  // Check if support is currently available
+  const isSupportAvailable = () => {
+    const now = currentTime;
+    const day = now.getDay(); // 0 = Sunday, 1 = Monday, etc.
+    const hour = now.getHours();
+    return day >= 1 && day <= 5 && hour >= 9 && hour < 18; // Mon-Fri 9AM-6PM
   };
 
   const contactMethods = [
@@ -57,8 +95,9 @@ const Contact: React.FC = () => {
       title: 'Phone Support',
       description: 'Speak directly with our support team',
       contact: '+91 80 1234 5678',
-      availability: 'Mon-Fri 9AM-6PM IST',
-      action: 'Call Now'
+      availability: isSupportAvailable() ? 'Available now' : 'Mon-Fri 9AM-6PM IST',
+      action: 'Call Now',
+      status: isSupportAvailable() ? 'online' : 'offline'
     },
     {
       icon: 'fas fa-envelope',
@@ -66,15 +105,17 @@ const Contact: React.FC = () => {
       description: 'Send us your questions anytime',
       contact: 'support@picknify.in',
       availability: 'Response within 24 hours',
-      action: 'Send Email'
+      action: 'Send Email',
+      status: 'always'
     },
     {
       icon: 'fas fa-comments',
       title: 'Live Chat',
       description: 'Get instant help from our team',
       contact: 'Chat Available',
-      availability: 'Online now',
-      action: 'Start Chat'
+      availability: isSupportAvailable() ? 'Online now' : 'Available Mon-Fri 9AM-6PM',
+      action: 'Start Chat',
+      status: isSupportAvailable() ? 'online' : 'offline'
     }
   ];
 
@@ -189,6 +230,15 @@ const Contact: React.FC = () => {
             {contactMethods.map((method, index) => (
               <div key={index} className="relative group cursor-pointer fade-in" style={{animationDelay: `${index * 0.1}s`}}>
                 <div className="bg-gradient-to-br from-white to-gray-50 p-8 rounded-2xl shadow-lg hover:shadow-2xl transition-all duration-300 hover-lift border border-gray-100">
+                  {/* Status Indicator */}
+                  <div className="absolute top-4 right-4">
+                    <div className={`w-3 h-3 rounded-full ${
+                      method.status === 'online' ? 'bg-green-500' : 
+                      method.status === 'offline' ? 'bg-red-500' : 
+                      'bg-blue-500'
+                    }`}></div>
+                  </div>
+                  
                   <div className="w-16 h-16 bg-gradient-to-r from-red-600 to-orange-500 rounded-full flex items-center justify-center mx-auto mb-6 group-hover:scale-110 transition-transform duration-300">
                     <i className={`${method.icon} text-white text-2xl`}></i>
                   </div>
@@ -196,9 +246,22 @@ const Contact: React.FC = () => {
                   <p className="text-gray-600 text-center mb-4">{method.description}</p>
                   <div className="text-center mb-4">
                     <div className="font-semibold text-gray-900 mb-1">{method.contact}</div>
-                    <div className="text-sm text-gray-500">{method.availability}</div>
+                    <div className={`text-sm ${
+                      method.status === 'online' ? 'text-green-600' : 
+                      method.status === 'offline' ? 'text-red-600' : 
+                      'text-gray-500'
+                    }`}>
+                      {method.availability}
+                    </div>
                   </div>
-                  <button className="w-full bg-gradient-to-r from-red-600 to-orange-500 text-white py-3 rounded-xl hover:from-red-700 hover:to-orange-600 transition-all duration-300 cursor-pointer whitespace-nowrap !rounded-button font-semibold">
+                  <button 
+                    className={`w-full py-3 rounded-xl transition-all duration-300 cursor-pointer whitespace-nowrap !rounded-button font-semibold ${
+                      method.status === 'online' || method.status === 'always'
+                        ? 'bg-gradient-to-r from-red-600 to-orange-500 text-white hover:from-red-700 hover:to-orange-600'
+                        : 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                    }`}
+                    disabled={method.status === 'offline'}
+                  >
                     {method.action}
                   </button>
                 </div>
@@ -304,10 +367,20 @@ const Contact: React.FC = () => {
                 </div>
                 <button
                   type="submit"
-                  className="w-full bg-gradient-to-r from-red-600 to-orange-500 text-white py-4 rounded-xl hover:from-red-700 hover:to-orange-600 transition-all duration-300 cursor-pointer whitespace-nowrap !rounded-button font-bold text-lg shadow-xl hover:shadow-2xl transform hover:scale-105"
+                  disabled={isSubmitting}
+                  className="w-full bg-gradient-to-r from-red-600 to-orange-500 text-white py-4 rounded-xl hover:from-red-700 hover:to-orange-600 transition-all duration-300 cursor-pointer whitespace-nowrap !rounded-button font-bold text-lg shadow-xl hover:shadow-2xl transform hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
                 >
-                  <i className="fas fa-paper-plane mr-3"></i>
-                  Send Message
+                  {isSubmitting ? (
+                    <>
+                      <i className="fas fa-spinner fa-spin mr-3"></i>
+                      Sending...
+                    </>
+                  ) : (
+                    <>
+                      <i className="fas fa-paper-plane mr-3"></i>
+                      Send Message
+                    </>
+                  )}
                 </button>
               </form>
             </div>

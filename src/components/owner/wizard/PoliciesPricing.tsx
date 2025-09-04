@@ -383,7 +383,7 @@ const PoliciesPricing: React.FC<PoliciesPricingProps> = ({
               <Badge
                 key={plan}
                 variant={formData.meal_plans.includes(plan) ? "default" : "outline"}
-                className="cursor-pointer hover:bg-primary/10"
+                className="cursor-pointer hover:bg-red-50 hover:border-red-400 transition-all duration-200"
                 onClick={() => handleMealPlanToggle(plan)}
               >
                 {plan}

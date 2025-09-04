@@ -169,7 +169,7 @@ const PropertyAmenities: React.FC<PropertyAmenitiesProps> = ({
               <Badge
                 key={feature}
                 variant={formData.amenities_details.room_features.includes(feature) ? "default" : "outline"}
-                className="cursor-pointer hover:bg-primary/10"
+                className="cursor-pointer hover:bg-red-50 hover:border-red-400 transition-all duration-200"
                 onClick={() => handleRoomFeatureToggle(feature)}
               >
                 {feature}
@@ -190,7 +190,7 @@ const PropertyAmenities: React.FC<PropertyAmenitiesProps> = ({
               <Badge
                 key={facility}
                 variant={formData.amenities_details.recreation.includes(facility) ? "default" : "outline"}
-                className="cursor-pointer hover:bg-primary/10"
+                className="cursor-pointer hover:bg-red-50 hover:border-red-400 transition-all duration-200"
                 onClick={() => handleRecreationToggle(facility)}
               >
                 {facility}
@@ -214,7 +214,7 @@ const PropertyAmenities: React.FC<PropertyAmenitiesProps> = ({
               <Badge
                 key={feature}
                 variant={formData.amenities_details.accessibility.includes(feature) ? "default" : "outline"}
-                className="cursor-pointer hover:bg-primary/10"
+                className="cursor-pointer hover:bg-red-50 hover:border-red-400 transition-all duration-200"
                 onClick={() => handleAccessibilityToggle(feature)}
               >
                 {feature}
@@ -238,7 +238,7 @@ const PropertyAmenities: React.FC<PropertyAmenitiesProps> = ({
               <Badge
                 key={amenity}
                 variant={formData.amenities.includes(amenity) ? "default" : "outline"}
-                className="cursor-pointer hover:bg-primary/10"
+                className="cursor-pointer hover:bg-red-50 hover:border-red-400 transition-all duration-200"
                 onClick={() => handleAmenityToggle(amenity)}
               >
                 {amenity}
@@ -255,29 +255,29 @@ const PropertyAmenities: React.FC<PropertyAmenitiesProps> = ({
         </CardHeader>
         <CardContent>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-center">
-            <div className="p-3 bg-muted rounded-lg">
-              <div className="text-2xl font-bold text-primary">
+            <div className="p-4 border-2 border-red-100 rounded-xl bg-gradient-to-br from-red-50 to-white hover:from-red-100 hover:to-red-50 transition-all duration-300 hover:shadow-md hover:border-red-200">
+              <div className="text-3xl font-bold text-red-600 mb-2">
                 {formData.amenities_details.property_facilities.length}
               </div>
-              <div className="text-sm text-muted-foreground">Property Facilities</div>
+              <div className="text-sm font-semibold text-gray-800">Property Facilities</div>
             </div>
-            <div className="p-3 bg-muted rounded-lg">
-              <div className="text-2xl font-bold text-primary">
+            <div className="p-4 border-2 border-red-100 rounded-xl bg-gradient-to-br from-red-50 to-white hover:from-red-100 hover:to-red-50 transition-all duration-300 hover:shadow-md hover:border-red-200">
+              <div className="text-3xl font-bold text-red-600 mb-2">
                 {formData.amenities_details.room_features.length}
               </div>
-              <div className="text-sm text-muted-foreground">Room Features</div>
+              <div className="text-sm font-semibold text-gray-800">Room Features</div>
             </div>
-            <div className="p-3 bg-muted rounded-lg">
-              <div className="text-2xl font-bold text-primary">
+            <div className="p-4 border-2 border-red-100 rounded-xl bg-gradient-to-br from-red-50 to-white hover:from-red-100 hover:to-red-50 transition-all duration-300 hover:shadow-md hover:border-red-200">
+              <div className="text-3xl font-bold text-red-600 mb-2">
                 {formData.amenities_details.recreation.length}
               </div>
-              <div className="text-sm text-muted-foreground">Recreation</div>
+              <div className="text-sm font-semibold text-gray-800">Recreation</div>
             </div>
-            <div className="p-3 bg-muted rounded-lg">
-              <div className="text-2xl font-bold text-primary">
+            <div className="p-4 border-2 border-red-100 rounded-xl bg-gradient-to-br from-red-50 to-white hover:from-red-100 hover:to-red-50 transition-all duration-300 hover:shadow-md hover:border-red-200">
+              <div className="text-3xl font-bold text-red-600 mb-2">
                 {formData.amenities_details.accessibility.length}
               </div>
-              <div className="text-sm text-muted-foreground">Accessibility</div>
+              <div className="text-sm font-semibold text-gray-800">Accessibility</div>
             </div>
           </div>
         </CardContent>

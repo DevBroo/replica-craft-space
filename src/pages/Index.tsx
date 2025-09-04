@@ -118,7 +118,7 @@ const Index: React.FC = () => {
       {loading && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-white">
           <div className="text-center">
-            <div className="w-16 h-16 bg-gradient-to-r from-brand-orange to-brand-red rounded-full flex items-center justify-center mx-auto mb-4 animate-spin">
+            <div className="w-16 h-16 bg-gradient-to-r from-orange-500 to-red-500 rounded-full flex items-center justify-center mx-auto mb-4 animate-spin">
               <i className="fas fa-spinner text-white text-2xl"></i>
             </div>
             <h3 className="text-lg font-medium text-gray-800 mb-2">
@@ -154,7 +154,7 @@ const Index: React.FC = () => {
       <SecondaryBanner />
 
       {/* Property Owner CTA Section */}
-      <section className="py-16 bg-gradient-to-r from-brand-orange to-brand-red relative overflow-hidden">
+      <section className="py-16 bg-gradient-to-r from-orange-500 to-red-500 relative overflow-hidden">
         <div className="absolute inset-0 bg-black/10"></div>
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative">
           <div className="text-center text-white">
@@ -206,18 +206,18 @@ const Index: React.FC = () => {
 
       {/* Top Picks Section */}
       <section className="py-32 bg-secondary/20 relative overflow-hidden">
-        <div className="absolute top-0 left-0 w-72 h-72 bg-gradient-to-r from-brand-orange/20 to-brand-red/20 rounded-full mix-blend-multiply filter blur-3xl opacity-70 animate-blob"></div>
-        <div className="absolute bottom-0 right-0 w-80 h-80 bg-gradient-to-r from-brand-red/20 to-pink-200/20 rounded-full mix-blend-multiply filter blur-3xl opacity-70 animate-blob animation-delay-2000"></div>
+        <div className="absolute top-0 left-0 w-72 h-72 bg-gradient-to-r from-orange-500/20 to-red-500/20 rounded-full mix-blend-multiply filter blur-3xl opacity-70 animate-blob"></div>
+        <div className="absolute bottom-0 right-0 w-80 h-80 bg-gradient-to-r from-red-500/20 to-pink-200/20 rounded-full mix-blend-multiply filter blur-3xl opacity-70 animate-blob animation-delay-2000"></div>
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative">
           <div className="text-center mb-20 fade-in-up">
             <div className="inline-block">
-              <span className="text-brand-orange font-bold text-lg mb-4 block uppercase tracking-wider">
+              <span className="text-orange-500 font-bold text-lg mb-4 block uppercase tracking-wider">
                 Handpicked Excellence
               </span>
               <h2 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-black text-foreground font-poppins mb-6 text-shadow">
                 Top Picks for You
               </h2>
-              <div className="w-24 h-1 bg-gradient-to-r from-brand-red to-brand-orange mx-auto rounded-full"></div>
+              <div className="w-24 h-1 bg-gradient-to-r from-red-500 to-orange-500 mx-auto rounded-full"></div>
             </div>
             <p className="text-lg text-muted-foreground max-w-3xl mx-auto mt-6 leading-relaxed">
               Curated collection of the most stunning and luxurious properties
@@ -232,7 +232,7 @@ const Index: React.FC = () => {
                   className="group cursor-pointer fade-in-up"
                   style={{ animationDelay: `${index * 0.1}s` }}
                 >
-                  <div className="bg-gradient-to-br from-brand-orange to-brand-red p-0.5 rounded-2xl hover-lift">
+                  <div className="bg-gradient-to-br from-orange-500 to-red-500 p-0.5 rounded-2xl hover-lift">
                     <div className="bg-background rounded-2xl overflow-hidden">
                       <div className="relative">
                         <img
@@ -243,7 +243,7 @@ const Index: React.FC = () => {
                         <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
                         <div className="absolute top-4 left-4">
                           <span className="bg-white/90 backdrop-blur-sm px-4 py-2 rounded-full text-sm font-bold text-gray-800 shadow-lg">
-                            <i className="fas fa-map-marker-alt text-brand-red mr-1"></i>
+                            <i className="fas fa-map-marker-alt text-red-500 mr-1"></i>
                             {property.location}
                           </span>
                         </div>
@@ -263,7 +263,7 @@ const Index: React.FC = () => {
                         </div>
                       </div>
                       <div className="p-6">
-                        <h3 className="text-lg font-bold text-foreground mb-3 group-hover:text-brand-red transition-colors duration-300">
+                        <h3 className="text-lg font-bold text-foreground mb-3 group-hover:text-red-500 transition-colors duration-300">
                           {property.name}
                         </h3>
                         <div className="flex items-center justify-between">
@@ -319,17 +319,17 @@ const Index: React.FC = () => {
 
       {/* Featured Properties Grid */}
       <section className="py-32 bg-gradient-to-b from-background to-secondary/20 relative overflow-hidden">
-        <div className="absolute top-0 right-0 w-96 h-96 bg-gradient-to-l from-brand-orange/10 to-transparent rounded-full filter blur-3xl opacity-50"></div>
-        <div className="absolute bottom-0 left-0 w-96 h-96 bg-gradient-to-r from-brand-red/10 to-transparent rounded-full filter blur-3xl opacity-50"></div>
+        <div className="absolute top-0 right-0 w-96 h-96 bg-gradient-to-l from-orange-500/10 to-transparent rounded-full filter blur-3xl opacity-50"></div>
+        <div className="absolute bottom-0 left-0 w-96 h-96 bg-gradient-to-r from-red-500/10 to-transparent rounded-full filter blur-3xl opacity-50"></div>
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative">
           <div className="text-center mb-20 fade-in-up">
-            <span className="bg-gradient-to-r from-brand-red to-brand-orange bg-clip-text text-transparent font-bold text-lg mb-4 block uppercase tracking-wider">
+            <span className="bg-gradient-to-r from-red-500 to-orange-500 bg-clip-text text-transparent font-bold text-lg mb-4 block uppercase tracking-wider">
               Premium Collection
             </span>
             <h2 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-black text-foreground font-poppins mb-6 text-shadow">
               Featured Properties
             </h2>
-            <div className="w-24 h-1 bg-gradient-to-r from-brand-red to-brand-orange mx-auto rounded-full"></div>
+            <div className="w-24 h-1 bg-gradient-to-r from-red-500 to-orange-500 mx-auto rounded-full"></div>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-10">
             {featuredProperties.length > 0 ? (
@@ -348,7 +348,7 @@ const Index: React.FC = () => {
                       />
                       <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
                       <div className="absolute top-4 right-4">
-                        <button className="w-12 h-12 bg-white/90 backdrop-blur-sm rounded-full flex items-center justify-center shadow-lg hover:bg-brand-red hover:text-white transition-all duration-300 group">
+                        <button className="w-12 h-12 bg-white/90 backdrop-blur-sm rounded-full flex items-center justify-center shadow-lg hover:bg-red-500 hover:text-white transition-all duration-300 group">
                           <i className="fas fa-heart text-gray-600 group-hover:text-white"></i>
                         </button>
                       </div>
@@ -364,11 +364,11 @@ const Index: React.FC = () => {
                     <div className="p-8">
                       <div className="flex items-start justify-between mb-4">
                         <div>
-                          <h3 className="text-lg font-bold text-foreground mb-2 group-hover:text-brand-red transition-colors duration-300">
+                          <h3 className="text-lg font-bold text-foreground mb-2 group-hover:text-red-500 transition-colors duration-300">
                             {property.name}
                           </h3>
                           <div className="flex items-center text-muted-foreground">
-                            <i className="fas fa-map-marker-alt text-brand-red mr-2"></i>
+                            <i className="fas fa-map-marker-alt text-red-500 mr-2"></i>
                             <span className="font-medium">
                               {property.location}
                             </span>
@@ -387,7 +387,7 @@ const Index: React.FC = () => {
                         {property.amenities.map((amenity, amenityIndex) => (
                           <span
                             key={amenityIndex}
-                            className="bg-gradient-to-r from-brand-red/10 to-brand-orange/10 text-brand-red px-4 py-2 rounded-full text-sm font-medium border border-brand-red/20"
+                            className="bg-gradient-to-r from-red-500/10 to-brand-orange/10 text-red-500 px-4 py-2 rounded-full text-sm font-medium border border-red-500/20"
                           >
                             {amenity}
                           </span>
@@ -395,7 +395,7 @@ const Index: React.FC = () => {
                       </div>
                       <button
                         onClick={() => navigate("/properties")}
-                        className="w-full bg-gradient-to-r from-brand-orange to-brand-red text-white py-3 px-6 rounded-xl hover:from-orange-600 hover:to-red-600 transition-all duration-300 cursor-pointer font-bold text-sm shadow-lg hover:shadow-xl transform hover:scale-105 border border-white/20"
+                        className="w-full bg-gradient-to-r from-orange-500 to-red-500 text-white py-3 px-6 rounded-xl hover:from-orange-600 hover:to-red-600 transition-all duration-300 cursor-pointer font-bold text-sm shadow-lg hover:shadow-xl transform hover:scale-105 border border-white/20"
                       >
                         Book Now
                         <i className="fas fa-arrow-right ml-2"></i>
@@ -431,7 +431,7 @@ const Index: React.FC = () => {
       </section>
 
       {/* Host CTA Section */}
-      <section className="py-32 relative overflow-hidden bg-brand-orange">
+      <section className="py-32 relative overflow-hidden bg-orange-500">
         <div className="absolute inset-0 bg-black/20"></div>
         <div className="absolute top-0 left-0 w-full h-full">
           <div className="absolute top-20 left-20 w-40 h-40 bg-white/10 rounded-full filter blur-3xl animate-blob"></div>
@@ -548,7 +548,7 @@ const Index: React.FC = () => {
               className="relative fade-in-up"
               style={{ animationDelay: "0.3s" }}
             >
-              <div className="bg-gradient-to-br from-brand-orange to-brand-red p-0.5 rounded-2xl">
+              <div className="bg-gradient-to-br from-orange-500 to-red-500 p-0.5 rounded-2xl">
                 <div className="bg-white p-2 rounded-2xl">
                   <img
                     src={successfulHost}
