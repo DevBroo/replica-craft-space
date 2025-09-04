@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/owner/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/owner/ui/dialog';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/owner/ui/tabs';
 import { Badge } from '@/components/owner/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/owner/ui/card';
@@ -18,6 +18,62 @@ interface PropertyQuickViewProps {
   onClose: () => void;
   initialTab?: 'overview' | 'pricing' | 'rooms' | 'amenities' | 'policies' | 'location';
 }
+
+// Helper function to safely parse and render JSON data
+const renderJsonData = (data: any, title?: string) => {
+  if (!data || typeof data !== 'object') return null;
+  
+  if (Array.isArray(data)) {
+    return (
+      <div className="space-y-2">
+        {data.map((item, index) => (
+          <Badge key={index} variant="outline">{String(item)}</Badge>
+        ))}
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-3">
+      {Object.entries(data).map(([key, value]) => {
+        if (!value) return null;
+        
+        const formattedKey = key.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+        
+        if (Array.isArray(value)) {
+          return (
+            <div key={key} className="space-y-2">
+              <span className="text-sm font-medium text-muted-foreground">{formattedKey}:</span>
+              <div className="flex flex-wrap gap-2">
+                {value.map((item, index) => (
+                  <Badge key={index} variant="outline">{String(item)}</Badge>
+                ))}
+              </div>
+            </div>
+          );
+        }
+        
+        if (typeof value === 'object' && value !== null) {
+          return (
+            <div key={key} className="space-y-2">
+              <span className="text-sm font-medium text-muted-foreground">{formattedKey}:</span>
+              <div className="pl-4 border-l-2 border-muted">
+                {renderJsonData(value)}
+              </div>
+            </div>
+          );
+        }
+        
+        return (
+          <div key={key} className="flex justify-between items-start">
+            <span className="text-muted-foreground">{formattedKey}:</span>
+            <span className="font-medium text-right max-w-xs">{String(value)}</span>
+          </div>
+        );
+      })}
+    </div>
+  );
+};
 
 export const PropertyQuickView: React.FC<PropertyQuickViewProps> = ({
   property,
@@ -133,6 +189,10 @@ export const PropertyQuickView: React.FC<PropertyQuickViewProps> = ({
     return (
       <Dialog open={isOpen} onOpenChange={onClose}>
         <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Property Details</DialogTitle>
+            <DialogDescription>Loading property information...</DialogDescription>
+          </DialogHeader>
           <div className="flex items-center justify-center py-8">
             <p className="text-muted-foreground">Loading property details...</p>
           </div>
@@ -311,9 +371,7 @@ export const PropertyQuickView: React.FC<PropertyQuickViewProps> = ({
                     <CardTitle className="text-lg">Seasonal Pricing</CardTitle>
                   </CardHeader>
                   <CardContent>
-                    <pre className="text-sm text-muted-foreground bg-muted p-3 rounded-md overflow-auto">
-                      {JSON.stringify(fullProperty.seasonal_pricing, null, 2)}
-                    </pre>
+                    {renderJsonData(fullProperty.seasonal_pricing)}
                   </CardContent>
                 </Card>
               )}
@@ -398,9 +456,7 @@ export const PropertyQuickView: React.FC<PropertyQuickViewProps> = ({
                     <CardTitle className="text-lg">Room Details</CardTitle>
                   </CardHeader>
                   <CardContent>
-                    <pre className="text-sm text-muted-foreground bg-muted p-3 rounded-md overflow-auto">
-                      {JSON.stringify(fullProperty.rooms_details, null, 2)}
-                    </pre>
+                    {renderJsonData(fullProperty.rooms_details)}
                   </CardContent>
                 </Card>
               )}
@@ -411,9 +467,7 @@ export const PropertyQuickView: React.FC<PropertyQuickViewProps> = ({
                     <CardTitle className="text-lg">Bed Configuration</CardTitle>
                   </CardHeader>
                   <CardContent>
-                    <pre className="text-sm text-muted-foreground bg-muted p-3 rounded-md overflow-auto">
-                      {JSON.stringify(fullProperty.bed_configuration, null, 2)}
-                    </pre>
+                    {renderJsonData(fullProperty.bed_configuration)}
                   </CardContent>
                 </Card>
               )}
@@ -447,9 +501,7 @@ export const PropertyQuickView: React.FC<PropertyQuickViewProps> = ({
                     <CardTitle className="text-lg">Detailed Amenities</CardTitle>
                   </CardHeader>
                   <CardContent>
-                    <pre className="text-sm text-muted-foreground bg-muted p-3 rounded-md overflow-auto">
-                      {JSON.stringify(fullProperty.amenities_details, null, 2)}
-                    </pre>
+                    {renderJsonData(fullProperty.amenities_details)}
                   </CardContent>
                 </Card>
               )}
@@ -461,9 +513,7 @@ export const PropertyQuickView: React.FC<PropertyQuickViewProps> = ({
                     <CardTitle className="text-lg">Facilities</CardTitle>
                   </CardHeader>
                   <CardContent>
-                    <pre className="text-sm text-muted-foreground bg-muted p-3 rounded-md overflow-auto">
-                      {JSON.stringify(fullProperty.facilities, null, 2)}
-                    </pre>
+                    {renderJsonData(fullProperty.facilities)}
                   </CardContent>
                 </Card>
               )}
@@ -478,9 +528,7 @@ export const PropertyQuickView: React.FC<PropertyQuickViewProps> = ({
                     </CardTitle>
                   </CardHeader>
                   <CardContent>
-                    <pre className="text-sm text-muted-foreground bg-muted p-3 rounded-md overflow-auto">
-                      {JSON.stringify(fullProperty.safety_security, null, 2)}
-                    </pre>
+                    {renderJsonData(fullProperty.safety_security)}
                   </CardContent>
                 </Card>
               )}
@@ -492,9 +540,7 @@ export const PropertyQuickView: React.FC<PropertyQuickViewProps> = ({
                     <CardTitle className="text-lg">Extra Services</CardTitle>
                   </CardHeader>
                   <CardContent>
-                    <pre className="text-sm text-muted-foreground bg-muted p-3 rounded-md overflow-auto">
-                      {JSON.stringify(fullProperty.extra_services, null, 2)}
-                    </pre>
+                    {renderJsonData(fullProperty.extra_services)}
                   </CardContent>
                 </Card>
               )}
@@ -530,9 +576,7 @@ export const PropertyQuickView: React.FC<PropertyQuickViewProps> = ({
                     <CardTitle className="text-lg">House Rules</CardTitle>
                   </CardHeader>
                   <CardContent>
-                    <pre className="text-sm text-muted-foreground bg-muted p-3 rounded-md overflow-auto">
-                      {JSON.stringify(fullProperty.house_rules, null, 2)}
-                    </pre>
+                    {renderJsonData(fullProperty.house_rules)}
                   </CardContent>
                 </Card>
               )}
@@ -544,9 +588,7 @@ export const PropertyQuickView: React.FC<PropertyQuickViewProps> = ({
                     <CardTitle className="text-lg">Booking Rules</CardTitle>
                   </CardHeader>
                   <CardContent>
-                    <pre className="text-sm text-muted-foreground bg-muted p-3 rounded-md overflow-auto">
-                      {JSON.stringify(fullProperty.booking_rules, null, 2)}
-                    </pre>
+                    {renderJsonData(fullProperty.booking_rules)}
                   </CardContent>
                 </Card>
               )}
@@ -558,9 +600,7 @@ export const PropertyQuickView: React.FC<PropertyQuickViewProps> = ({
                     <CardTitle className="text-lg">Extended Policies</CardTitle>
                   </CardHeader>
                   <CardContent>
-                    <pre className="text-sm text-muted-foreground bg-muted p-3 rounded-md overflow-auto">
-                      {JSON.stringify(fullProperty.policies_extended, null, 2)}
-                    </pre>
+                    {renderJsonData(fullProperty.policies_extended)}
                   </CardContent>
                 </Card>
               )}
@@ -653,9 +693,7 @@ export const PropertyQuickView: React.FC<PropertyQuickViewProps> = ({
                   <CardTitle className="text-lg">Nearby Attractions</CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <pre className="text-sm text-muted-foreground bg-muted p-3 rounded-md overflow-auto">
-                    {JSON.stringify(fullProperty.nearby_attractions, null, 2)}
-                  </pre>
+                  {renderJsonData(fullProperty.nearby_attractions)}
                 </CardContent>
               </Card>
             )}
