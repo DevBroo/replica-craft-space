@@ -133,6 +133,7 @@ const OwnerDashboard: React.FC = () => {
           toggleSidebar={toggleSidebar}
           activeTab={activeTab}
           setActiveTab={setActiveTab}
+          embedded={true}
         />;
       case 'earnings':
         return <Earnings 
@@ -140,6 +141,7 @@ const OwnerDashboard: React.FC = () => {
           toggleSidebar={toggleSidebar}
           activeTab={activeTab}
           setActiveTab={setActiveTab}
+          embedded={true}
         />;
       case 'reviews':
         return <Reviews 
@@ -147,6 +149,7 @@ const OwnerDashboard: React.FC = () => {
           toggleSidebar={toggleSidebar}
           activeTab={activeTab}
           setActiveTab={setActiveTab}
+          embedded={true}
         />;
       case 'profile':
         return <Profile 
@@ -154,6 +157,7 @@ const OwnerDashboard: React.FC = () => {
           toggleSidebar={toggleSidebar}
           activeTab={activeTab}
           setActiveTab={setActiveTab}
+          embedded={true}
         />;
       case 'settings':
         return <Settings 
@@ -161,6 +165,7 @@ const OwnerDashboard: React.FC = () => {
           toggleSidebar={toggleSidebar}
           activeTab={activeTab}
           setActiveTab={setActiveTab}
+          embedded={true}
         />;
       default:
         return (

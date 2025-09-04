@@ -5,9 +5,10 @@ interface ProfileProps {
   toggleSidebar: () => void;
   activeTab: string;
   setActiveTab: (tab: string) => void;
+  embedded?: boolean;
 }
 
-const Profile: React.FC<ProfileProps> = ({ sidebarCollapsed, toggleSidebar, activeTab, setActiveTab }) => {
+const Profile: React.FC<ProfileProps> = ({ sidebarCollapsed, toggleSidebar, activeTab, setActiveTab, embedded = false }) => {
   const [isEditing, setIsEditing] = useState(false);
   // TODO: Replace with actual data from API/database and user context
   const [profileData, setProfileData] = useState({
@@ -44,44 +45,46 @@ const Profile: React.FC<ProfileProps> = ({ sidebarCollapsed, toggleSidebar, acti
   };
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      {/* Sidebar */}
-      <div className={`fixed left-0 top-0 h-full bg-white shadow-lg transition-all duration-300 z-40 ${sidebarCollapsed ? 'w-16' : 'w-64'}`}>
-        <div className="flex items-center justify-between p-4 border-b">
-          {!sidebarCollapsed && (
-            <div className="flex items-center space-x-2">
-              <img
-                src="https://static.readdy.ai/image/15b9112da3f324084e8b4fa88fcbe450/72b18a0ae9a329ec72d4c44a4f7ac86d.png"
-                alt="Picnify Logo"
-                className="h-8 w-auto"
-              />
-            </div>
-          )}
-          <button
-            onClick={toggleSidebar}
-            className="p-2 rounded-lg hover:bg-gray-100 cursor-pointer"
-          >
-            <i className="fas fa-bars text-gray-600"></i>
-          </button>
-        </div>
-        <nav className="mt-4">
-          {menuItems.map((item) => (
+    <div className={embedded ? "" : "min-h-screen bg-gray-50"}>
+      {/* Sidebar - only show if not embedded */}
+      {!embedded && (
+        <div className={`fixed left-0 top-0 h-full bg-white shadow-lg transition-all duration-300 z-40 ${sidebarCollapsed ? 'w-16' : 'w-64'}`}>
+          <div className="flex items-center justify-between p-4 border-b">
+            {!sidebarCollapsed && (
+              <div className="flex items-center space-x-2">
+                <img
+                  src="https://static.readdy.ai/image/15b9112da3f324084e8b4fa88fcbe450/72b18a0ae9a329ec72d4c44a4f7ac86d.png"
+                  alt="Picnify Logo"
+                  className="h-8 w-auto"
+                />
+              </div>
+            )}
             <button
-              key={item.id}
-              onClick={() => setActiveTab(item.id)}
-              className={`w-full flex items-center px-4 py-3 text-left hover:bg-blue-50 transition-colors cursor-pointer ${
-                activeTab === item.id ? 'bg-blue-50 border-r-2 border-blue-600 text-blue-600' : 'text-gray-600'
-              }`}
+              onClick={toggleSidebar}
+              className="p-2 rounded-lg hover:bg-gray-100 cursor-pointer"
             >
-              <i className={`${item.icon} w-5 text-center`}></i>
-              {!sidebarCollapsed && <span className="ml-3">{item.label}</span>}
+              <i className="fas fa-bars text-gray-600"></i>
             </button>
-          ))}
-        </nav>
-      </div>
+          </div>
+          <nav className="mt-4">
+            {menuItems.map((item) => (
+              <button
+                key={item.id}
+                onClick={() => setActiveTab(item.id)}
+                className={`w-full flex items-center px-4 py-3 text-left hover:bg-blue-50 transition-colors cursor-pointer ${
+                  activeTab === item.id ? 'bg-blue-50 border-r-2 border-blue-600 text-blue-600' : 'text-gray-600'
+                }`}
+              >
+                <i className={`${item.icon} w-5 text-center`}></i>
+                {!sidebarCollapsed && <span className="ml-3">{item.label}</span>}
+              </button>
+            ))}
+          </nav>
+        </div>
+      )}
 
       {/* Main Content */}
-      <div className={`transition-all duration-300 ${sidebarCollapsed ? 'ml-16' : 'ml-64'}`}>
+      <div className={embedded ? "" : `transition-all duration-300 ${sidebarCollapsed ? 'ml-16' : 'ml-64'}`}>
         {/* Header */}
         <header className="bg-white shadow-sm border-b px-6 py-4">
           <div className="flex items-center justify-between">
