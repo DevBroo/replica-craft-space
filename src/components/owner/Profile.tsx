@@ -1,4 +1,7 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
+import { useAuth } from '@/contexts/AuthContext';
+import { avatarService } from '@/lib/avatarService';
+import { toast } from 'sonner';
 
 interface ProfileProps {
   sidebarCollapsed: boolean;
@@ -9,20 +12,37 @@ interface ProfileProps {
 }
 
 const Profile: React.FC<ProfileProps> = ({ sidebarCollapsed, toggleSidebar, activeTab, setActiveTab, embedded = false }) => {
+  const { user, updateProfile } = useAuth();
   const [isEditing, setIsEditing] = useState(false);
-  // TODO: Replace with actual data from API/database and user context
+  const [isUploadingAvatar, setIsUploadingAvatar] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  
+  // Use real user data with fallbacks
   const [profileData, setProfileData] = useState({
-    name: '',
-    email: '',
-    phone: '',
-    location: '',
-    about: '',
-    languages: [],
-    joinDate: '',
-    totalProperties: 0,
-    totalBookings: 0,
-    averageRating: 0
+    name: user?.full_name || '',
+    email: user?.email || '',
+    phone: user?.phone || '',
+    location: '', // Could be added to user profile later
+    about: '', // Could be added to user profile later
+    languages: [], // Could be added to user profile later
+    joinDate: user?.created_at || '',
+    totalProperties: 0, // Would need to be fetched from properties table
+    totalBookings: 0, // Would need to be fetched from bookings table
+    averageRating: 0 // Would need to be calculated from reviews
   });
+
+  // Sync profile data with user data when user loads
+  useEffect(() => {
+    if (user) {
+      setProfileData(prev => ({
+        ...prev,
+        name: user.full_name || '',
+        email: user.email || '',
+        phone: user.phone || '',
+        joinDate: user.created_at || '',
+      }));
+    }
+  }, [user]);
 
   const menuItems = [
     { id: 'dashboard', label: 'Dashboard', icon: 'fas fa-tachometer-alt' },
@@ -34,14 +54,71 @@ const Profile: React.FC<ProfileProps> = ({ sidebarCollapsed, toggleSidebar, acti
     { id: 'settings', label: 'Settings', icon: 'fas fa-cog' },
   ];
 
-  const handleSave = () => {
-    setIsEditing(false);
-    // Here you would save the data to your backend
+  const handleAvatarUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file || !user?.id) return;
+
+    setIsUploadingAvatar(true);
+
+    try {
+      const result = await avatarService.uploadAvatar(file, user.id);
+      
+      if (result.success && result.url) {
+        // Update user profile with new avatar URL
+        await updateProfile({ avatar_url: result.url });
+        toast.success('Profile picture updated successfully!');
+      } else {
+        toast.error(result.error || 'Failed to upload image');
+      }
+    } catch (error) {
+      console.error('Avatar upload error:', error);
+      toast.error('An unexpected error occurred while uploading');
+    } finally {
+      setIsUploadingAvatar(false);
+      // Reset file input
+      if (fileInputRef.current) {
+        fileInputRef.current.value = '';
+      }
+    }
+  };
+
+  const handleCameraClick = () => {
+    fileInputRef.current?.click();
+  };
+
+  const handleSave = async () => {
+    if (!user?.id) return;
+    
+    try {
+      // Update profile with new data
+      await updateProfile({
+        full_name: profileData.name,
+        phone: profileData.phone,
+      });
+      
+      setIsEditing(false);
+      toast.success('Profile updated successfully!');
+    } catch (error) {
+      console.error('Profile update error:', error);
+      toast.error('Failed to update profile');
+    }
   };
 
   const handleCancel = () => {
     setIsEditing(false);
-    // Reset any changes
+    // Reset profile data to current user data
+    setProfileData({
+      name: user?.full_name || '',
+      email: user?.email || '',
+      phone: user?.phone || '',
+      location: '',
+      about: '',
+      languages: [],
+      joinDate: user?.created_at || '',
+      totalProperties: 0,
+      totalBookings: 0,
+      averageRating: 0
+    });
   };
 
   return (
@@ -103,11 +180,11 @@ const Profile: React.FC<ProfileProps> = ({ sidebarCollapsed, toggleSidebar, acti
               </div>
               <div className="flex items-center space-x-2">
                 <img
-                  src="https://readdy.ai/api/search-image?query=professional%20Indian%20property%20owner%20businessman%20avatar%20headshot%20with%20traditional%20modern%20fusion%20style%20confident%20expression&width=40&height=40&seq=owner-avatar-001&orientation=squarish"
+                  src={user?.avatar_url || 'https://readdy.ai/api/search-image?query=professional%20Indian%20property%20owner%20businessman%20avatar%20headshot%20with%20traditional%20modern%20fusion%20style%20confident%20expression&width=40&height=40&seq=owner-avatar-001&orientation=squarish'}
                   alt="Owner Avatar"
                   className="w-8 h-8 rounded-full object-cover"
                 />
-                <span className="text-sm font-medium text-gray-700">Rajesh Patel</span>
+                <span className="text-sm font-medium text-gray-700">{user?.full_name || 'User'}</span>
                 <i className="fas fa-chevron-down text-gray-400 text-xs"></i>
               </div>
             </div>
@@ -122,13 +199,29 @@ const Profile: React.FC<ProfileProps> = ({ sidebarCollapsed, toggleSidebar, acti
               <div className="flex items-center space-x-6">
                 <div className="relative">
                   <img
-                    src="https://readdy.ai/api/search-image?query=professional%20Indian%20property%20owner%20businessman%20avatar%20headshot%20with%20traditional%20modern%20fusion%20style%20confident%20expression&width=120&height=120&seq=owner-avatar-large&orientation=squarish"
+                    src={user?.avatar_url || 'https://readdy.ai/api/search-image?query=professional%20Indian%20property%20owner%20businessman%20avatar%20headshot%20with%20traditional%20modern%20fusion%20style%20confident%20expression&width=120&height=120&seq=owner-avatar-large&orientation=squarish'}
                     alt="Profile Picture"
                     className="w-24 h-24 rounded-full object-cover"
                   />
-                  <button className="absolute bottom-0 right-0 bg-blue-600 text-white rounded-full w-8 h-8 flex items-center justify-center cursor-pointer">
-                    <i className="fas fa-camera text-xs"></i>
+                  <button 
+                    onClick={handleCameraClick}
+                    disabled={isUploadingAvatar}
+                    className="absolute bottom-0 right-0 bg-blue-600 text-white rounded-full w-8 h-8 flex items-center justify-center cursor-pointer hover:bg-blue-700 transition-colors disabled:opacity-50"
+                  >
+                    {isUploadingAvatar ? (
+                      <i className="fas fa-spinner fa-spin text-xs"></i>
+                    ) : (
+                      <i className="fas fa-camera text-xs"></i>
+                    )}
                   </button>
+                  {/* Hidden file input */}
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    accept="image/*"
+                    onChange={handleAvatarUpload}
+                    className="hidden"
+                  />
                 </div>
                 <div>
                   <h2 className="text-2xl font-bold text-gray-900">{profileData.name || 'Complete Your Profile'}</h2>
