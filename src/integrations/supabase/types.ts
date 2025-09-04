@@ -936,6 +936,57 @@ export type Database = {
         }
         Relationships: []
       }
+      locations: {
+        Row: {
+          category: string
+          cover_image_url: string | null
+          created_at: string
+          created_by: string | null
+          description: string | null
+          display_order: number | null
+          featured: boolean | null
+          id: string
+          is_active: boolean | null
+          name: string
+          region: string
+          state: string
+          trending: boolean | null
+          updated_at: string
+        }
+        Insert: {
+          category?: string
+          cover_image_url?: string | null
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          display_order?: number | null
+          featured?: boolean | null
+          id?: string
+          is_active?: boolean | null
+          name: string
+          region: string
+          state: string
+          trending?: boolean | null
+          updated_at?: string
+        }
+        Update: {
+          category?: string
+          cover_image_url?: string | null
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          display_order?: number | null
+          featured?: boolean | null
+          id?: string
+          is_active?: boolean | null
+          name?: string
+          region?: string
+          state?: string
+          trending?: boolean | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       login_audit: {
         Row: {
           country: string | null
@@ -1377,6 +1428,67 @@ export type Database = {
           user_id?: string
         }
         Relationships: []
+      }
+      payments: {
+        Row: {
+          amount: number
+          booking_id: string | null
+          created_at: string | null
+          currency: string | null
+          gateway_response: Json | null
+          id: string
+          payment_method: string
+          status: string | null
+          transaction_id: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          amount: number
+          booking_id?: string | null
+          created_at?: string | null
+          currency?: string | null
+          gateway_response?: Json | null
+          id?: string
+          payment_method: string
+          status?: string | null
+          transaction_id?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          amount?: number
+          booking_id?: string | null
+          created_at?: string | null
+          currency?: string | null
+          gateway_response?: Json | null
+          id?: string
+          payment_method?: string
+          status?: string | null
+          transaction_id?: string | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "payments_booking_id_fkey"
+            columns: ["booking_id"]
+            isOneToOne: false
+            referencedRelation: "booking_admin_list"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "payments_booking_id_fkey"
+            columns: ["booking_id"]
+            isOneToOne: false
+            referencedRelation: "booking_summary_for_owners"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "payments_booking_id_fkey"
+            columns: ["booking_id"]
+            isOneToOne: false
+            referencedRelation: "bookings"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       phone_verification_codes: {
         Row: {
