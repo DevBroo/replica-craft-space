@@ -13,6 +13,7 @@ import { Home, Calendar, DollarSign, Star, MessageSquare, User, Settings as Sett
 import PropertyWizard from './PropertyWizard';
 import { PropertyQuickView } from './PropertyQuickView';
 import DayPicnicWizard from './DayPicnicWizard';
+import { PropertyCard } from './PropertyCard';
 
 interface PropertiesProps {
   sidebarCollapsed?: boolean;
@@ -395,162 +396,17 @@ const Properties: React.FC<PropertiesProps> = ({
             });
 
             return filteredProperties.length > 0 ? (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 {filteredProperties.map((property) => (
-                <div key={property.id} className="flex items-center space-x-3 p-3 bg-gray-50 rounded">
-                  <div className="w-12 h-12 bg-gray-200 rounded-lg overflow-hidden">
-                    {property.images && property.images.length > 0 ? (
-                      <img 
-                        src={property.images[0]} 
-                        alt={property.title}
-                        className="w-full h-full object-cover"
-                      />
-                    ) : (
-                      <div className="w-full h-full flex items-center justify-center">
-                        <Home className="w-6 h-6 text-gray-400" />
-                      </div>
-                    )}
-                  </div>
-                   <div className="flex-1">
-                     <p className="font-medium">{property.title}</p>
-                     <p className="text-sm text-gray-600">{formatPropertyType(property.property_type)}</p>
-                     <p className="text-xs text-gray-500">
-                       ₹{property.pricing?.daily_rate || 0}/night
-                     </p>
-                    <p className="text-xs text-blue-600 font-medium">
-                      {property.property_type === 'Day Picnic' ? (
-                        `Max: ${property.day_picnic_capacity || property.max_guests || 0} guests for day picnic`
-                      ) : (
-                        property.rooms_count && property.capacity_per_room ? (
-                          `Max: ${property.max_guests || 0} guests (${property.rooms_count} rooms × ${property.capacity_per_room} each)`
-                        ) : (
-                          `Max: ${property.max_guests || 0} guests`
-                        )
-                      )}
-                     </p>
-                     
-                     {/* Day Picnic Inclusions/Exclusions */}
-                     {property.property_type === 'Day Picnic' && packagesByProperty[property.id] && (
-                       <div className="mt-2 space-y-1">
-                         {packagesByProperty[property.id].map((pkg, idx) => (
-                           <div key={idx} className="text-xs">
-                              {Array.isArray(pkg.displayInclusions) && pkg.displayInclusions.length > 0 && (
-                                <div className="flex items-center space-x-1 mb-1">
-                                  <div className="flex items-center space-x-1">
-                                    {pkg.displayInclusions.slice(0, 3).map((inclusion: string, i: number) => (
-                                      <div key={i} className="flex items-center space-x-1">
-                                        <Check className="w-3 h-3 text-green-600" />
-                                        <span className="text-green-700">{inclusion}</span>
-                                      </div>
-                                    ))}
-                                    {pkg.displayInclusions.length > 3 && (
-                                      <span className="text-green-600">+{pkg.displayInclusions.length - 3} more</span>
-                                    )}
-                                  </div>
-                                </div>
-                              )}
-                              {(pkg.exclusionsFromOptions?.length > 0) && (
-                                <div className="flex items-center space-x-1">
-                                  <div className="flex items-center space-x-1">
-                                    {pkg.exclusionsFromOptions.slice(0, 2).map((exclusion: any, i: number) => (
-                                      <div key={i} className="flex items-center space-x-1">
-                                        <X className="w-3 h-3 text-red-600" />
-                                        <span className="text-red-700">{exclusion.name} (₹{exclusion.price})</span>
-                                      </div>
-                                    ))}
-                                    {pkg.exclusionsFromOptions.length > 2 && (
-                                      <span className="text-red-600">+{pkg.exclusionsFromOptions.length - 2} more</span>
-                                    )}
-                                  </div>
-                                </div>
-                              )}
-                              {Array.isArray(pkg.exclusions) && pkg.exclusions.length > 0 && !pkg.exclusionsFromOptions?.length && (
-                                <div className="flex items-center space-x-1">
-                                  <div className="flex items-center space-x-1">
-                                    {pkg.exclusions.slice(0, 2).map((exclusion: any, i: number) => (
-                                      <div key={i} className="flex items-center space-x-1">
-                                        <X className="w-3 h-3 text-red-600" />
-                                        <span className="text-red-700">{exclusion.item || exclusion}</span>
-                                      </div>
-                                    ))}
-                                    {pkg.exclusions.length > 2 && (
-                                      <span className="text-red-600">+{pkg.exclusions.length - 2} more</span>
-                                   )}
-                                 </div>
-                               </div>
-                             )}
-                           </div>
-                         ))}
-                       </div>
-                     )}
-                   </div>
-                      <div className="flex items-center space-x-1">
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          onClick={() => handleViewProperty(property)}
-                          className="flex items-center gap-2 px-3"
-                          title="View Property"
-                        >
-                          <Eye className="w-4 h-4" />
-                          <span className="text-sm">View Details</span>
-                        </Button>
-                       <Button
-                         size="sm"
-                         variant="outline"
-                         onClick={() => handleViewProperty(property, 'itinerary')}
-                         className="p-2"
-                         title={property.status === 'approved' ? "View Itinerary" : "Available after approval"}
-                         disabled={property.status !== 'approved'}
-                       >
-                         <Clock className="w-4 h-4" />
-                       </Button>
-                       <Button
-                         size="sm"
-                         variant="outline"
-                         onClick={() => handleViewProperty(property, 'location')}
-                         className="p-2"
-                         title={property.status === 'approved' ? "View Location" : "Available after approval"}
-                         disabled={property.status !== 'approved'}
-                       >
-                         <MapPin className="w-4 h-4" />
-                       </Button>
-                       <Button
-                         size="sm"
-                         variant="outline"
-                         onClick={() => handleEditProperty(property)}
-                         className="p-2"
-                         title="Edit Property"
-                       >
-                         <Edit className="w-4 h-4" />
-                       </Button>
-                     {property.property_type === 'Day Picnic' && (
-                       <Button
-                         size="sm"
-                         variant="outline"
-                         onClick={() => handleEditDayPicnicPricing(property)}
-                         className="px-3 py-2"
-                       >
-                         Day Picnic Pricing
-                       </Button>
-                     )}
-                    <div className={`px-2 py-1 rounded-full text-xs font-medium ${
-                      property.status === 'approved' ? 'bg-green-100 text-green-800' :
-                      property.status === 'pending' ? 'bg-yellow-100 text-yellow-800' :
-                      'bg-red-100 text-red-800'
-                    }`}>
-                      {property.status}
-                    </div>
-                  </div>
-                  {/* <Badge variant="secondary" className={
-                    property.status === 'approved' ? 'bg-green-100 text-green-800' :
-                    property.status === 'pending' ? 'bg-yellow-100 text-yellow-800' :
-                    'bg-red-100 text-red-800'
-                  }>
-                    {property.status}
-                  </Badge> */}
-                </div>
-              ))}
+                  <PropertyCard
+                    key={property.id}
+                    property={property}
+                    packagesByProperty={packagesByProperty}
+                    onEdit={handleEditProperty}
+                    onView={handleViewProperty}
+                    onEditDayPicnicPricing={handleEditDayPicnicPricing}
+                  />
+                ))}
               </div>
             ) : (
               <div className="text-center py-8">
