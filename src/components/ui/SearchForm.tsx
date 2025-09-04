@@ -250,12 +250,12 @@ const SearchForm: React.FC<SearchFormProps> = ({
               <Button
                 variant="outline"
                 className={cn(
-                  "w-full h-14 text-base justify-start text-left font-normal border-gray-300 hover:border-gray-400 focus:border-gray-400 focus:ring-1 focus:ring-gray-300",
+                  "w-full h-14 text-base justify-start text-left font-normal border-gray-300 hover:border-gray-400 focus:border-gray-400 focus:ring-1 focus:ring-gray-300 overflow-hidden",
                   !selectedDate && "text-muted-foreground"
                 )}
               >
-                <CalendarIcon className="w-5 h-5 mr-3 text-orange-500 flex-shrink-0" />
-                <span className="flex-1 text-left">
+                <CalendarIcon className="w-5 h-5 mr-2 text-orange-500 flex-shrink-0" />
+                <span className="flex-1 min-w-0 truncate text-left">
                   {selectedDate ? format(selectedDate, "dd/MM/yyyy") : "Select date"}
                 </span>
               </Button>
