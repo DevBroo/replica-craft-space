@@ -57,6 +57,7 @@ const CustomerLogin: React.FC = () => {
       // Default role-based redirects
       switch (user.role) {
         case 'property_owner':
+        case 'owner':
           navigate('/owner/view', { replace: true });
           break;
         case 'agent':

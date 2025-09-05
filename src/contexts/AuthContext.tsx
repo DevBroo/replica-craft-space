@@ -758,6 +758,6 @@ export const useOwnerAuth = () => {
   const auth = useAuth();
   return {
     ...auth,
-    isOwner: auth.hasRole('owner') || auth.hasRole('user'),
+    isOwner: auth.hasRole('owner') || auth.hasRole('property_owner'),
   };
 };

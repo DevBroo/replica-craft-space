@@ -46,7 +46,7 @@ const OwnerDashboard: React.FC = () => {
         // User is not authenticated, redirect to owner login
         console.log('❌ User not authenticated, redirecting to owner login');
         navigate('/owner/login', { replace: true });
-      } else if (!['property_owner', 'owner', 'user', 'customer'].includes(user.role)) {
+      } else if (!['property_owner', 'owner'].includes(user.role)) {
         // User is authenticated but not a property owner, redirect to appropriate page
         console.log('⚠️ User not property owner, role:', user.role);
         console.log('🔍 User details:', { id: user.id, email: user.email, role: user.role });
@@ -111,7 +111,7 @@ const OwnerDashboard: React.FC = () => {
   }
 
   // Show login redirect if not authenticated
-  if (!isAuthenticated || !user || !['property_owner', 'owner', 'user', 'customer'].includes(user.role)) {
+  if (!isAuthenticated || !user || !['property_owner', 'owner'].includes(user.role)) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
