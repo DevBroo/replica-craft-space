@@ -70,6 +70,20 @@ const BookingPayment: React.FC = () => {
             return;
         }
 
+        // Validate that dates are present and valid
+        if (!bookingData.checkInDate || !bookingData.checkOutDate || 
+            bookingData.checkInDate.trim() === '' || bookingData.checkOutDate.trim() === '' ||
+            isNaN(new Date(bookingData.checkInDate).getTime()) || 
+            isNaN(new Date(bookingData.checkOutDate).getTime())) {
+            toast({
+                title: "Missing or Invalid Dates",
+                description: "Please select valid check-in and check-out dates",
+                variant: "destructive"
+            });
+            navigate(`/property/${propertyId}`);
+            return;
+        }
+
         fetchPropertyDetails();
     }, [propertyId, isAuthenticated, bookingData]);
 
