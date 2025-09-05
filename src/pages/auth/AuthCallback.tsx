@@ -56,7 +56,6 @@ export default function AuthCallback() {
             // Role-based redirect
             setTimeout(() => {
               switch (user.role) {
-                case 'property_owner':
                 case 'owner':
                   console.log('🏠 Redirecting owner to dashboard');
                   navigate('/owner/view', { replace: true });
@@ -67,7 +66,7 @@ export default function AuthCallback() {
                   break;
                 case 'agent':
                   console.log('🤝 Redirecting agent to dashboard');
-                  navigate('/host/dashboard', { replace: true });
+                  navigate('/agent/dashboard', { replace: true });
                   break;
                 default:
                   console.log('👤 Redirecting customer to home');
@@ -103,7 +102,6 @@ export default function AuthCallback() {
             
             setTimeout(() => {
               switch (user.role) {
-                case 'property_owner':
                 case 'owner':
                   navigate('/owner/view', { replace: true });
                   break;
@@ -111,7 +109,7 @@ export default function AuthCallback() {
                   navigate('/admin/dashboard', { replace: true });
                   break;
                 case 'agent':
-                  navigate('/host/dashboard', { replace: true });
+                  navigate('/agent/dashboard', { replace: true });
                   break;
                 default:
                   navigate('/', { replace: true });

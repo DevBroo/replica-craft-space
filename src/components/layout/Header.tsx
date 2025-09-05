@@ -18,18 +18,18 @@ const Header: React.FC = () => {
           <div className="flex justify-between items-center h-20">
             {/* Logo Section */}
             <div className="flex items-center min-w-[200px] lg:min-w-[250px]">
-              <a href="/" className="flex items-center">
+              <Link to="/" className="flex items-center">
                 <img src={picnifyLogo} alt="Picnify.in Logo" className="h-10 sm:h-12 w-auto" />
-              </a>
+              </Link>
             </div>
 
             {/* Navigation Section */}
             <nav className="hidden lg:flex items-center space-x-8 xl:space-x-10 flex-1 justify-center">
-              <a href="/" className="text-foreground hover:text-orange-500 font-medium transition-colors duration-200 cursor-pointer px-2 py-1 rounded-md hover:bg-orange-50">Home</a>
-              <a href="/properties" className="text-foreground hover:text-orange-500 font-medium transition-colors duration-200 cursor-pointer px-2 py-1 rounded-md hover:bg-orange-50">Properties</a>
-              <a href="/locations" className="text-foreground hover:text-orange-500 font-medium transition-colors duration-200 cursor-pointer px-2 py-1 rounded-md hover:bg-orange-50">Locations</a>
-              <a href="/about" className="text-foreground hover:text-orange-500 font-medium transition-colors duration-200 cursor-pointer px-2 py-1 rounded-md hover:bg-orange-50">About</a>
-              <a href="/contact" className="text-foreground hover:text-orange-500 font-medium transition-colors duration-200 cursor-pointer px-2 py-1 rounded-md hover:bg-orange-50">Contact</a>
+              <Link to="/" className="text-foreground hover:text-orange-500 font-medium transition-colors duration-200 cursor-pointer px-2 py-1 rounded-md hover:bg-orange-50">Home</Link>
+              <Link to="/properties" className="text-foreground hover:text-orange-500 font-medium transition-colors duration-200 cursor-pointer px-2 py-1 rounded-md hover:bg-orange-50">Properties</Link>
+              <Link to="/locations" className="text-foreground hover:text-orange-500 font-medium transition-colors duration-200 cursor-pointer px-2 py-1 rounded-md hover:bg-orange-50">Locations</Link>
+              <Link to="/about" className="text-foreground hover:text-orange-500 font-medium transition-colors duration-200 cursor-pointer px-2 py-1 rounded-md hover:bg-orange-50">About</Link>
+              <Link to="/contact" className="text-foreground hover:text-orange-500 font-medium transition-colors duration-200 cursor-pointer px-2 py-1 rounded-md hover:bg-orange-50">Contact</Link>
               
               {/* Portals Dropdown */}
               <div className="relative group">
@@ -59,13 +59,13 @@ const Header: React.FC = () => {
                            console.log('✅ User is authenticated, checking role...');
                            console.log('🔍 User role:', user.role);
                            
-                           // Check if user is owner or property_owner
-                           if (user.role === 'property_owner' || user.role === 'owner') {
-                             navigate('/owner/view');
-                           } else {
-                             // Non-owner authenticated user, redirect to owner login with switch option
-                             navigate('/owner/login?switch=1');
-                           }
+                          // Check if user is owner
+                          if (user.role === 'owner') {
+                            navigate('/owner/view');
+                          } else {
+                            // Non-owner authenticated user, redirect to owner login with switch option
+                            navigate('/owner/login?switch=1');
+                          }
                          } else {
                            console.log('❌ User not authenticated, navigating to owner login');
                            navigate('/owner/login');
@@ -104,10 +104,10 @@ const Header: React.FC = () => {
                       <i className="fas fa-handshake mr-3 text-orange-500"></i>
                       Travel Agent Portal
                     </button>
-                    <a href="/admin/login" className="block px-4 py-3 text-sm text-gray-700 hover:bg-gray-50 hover:text-orange-500 transition-colors duration-200">
+                    <Link to="/admin/login" className="block px-4 py-3 text-sm text-gray-700 hover:bg-gray-50 hover:text-orange-500 transition-colors duration-200">
                       <i className="fas fa-cog mr-3 text-orange-500"></i>
                       Admin Panel
-                    </a>
+                    </Link>
                   </div>
                 </div>
               </div>
@@ -142,9 +142,9 @@ const Header: React.FC = () => {
                 </div>
               ) : (
                 <div className="flex items-center space-x-3">
-                  <a href="/login" className="bg-secondary text-secondary-foreground hover:bg-secondary/80 font-medium transition-all duration-200 cursor-pointer whitespace-nowrap rounded-button px-4 py-2 inline-flex items-center text-sm">
+                  <Link to="/login" className="bg-secondary text-secondary-foreground hover:bg-secondary/80 font-medium transition-all duration-200 cursor-pointer whitespace-nowrap rounded-button px-4 py-2 inline-flex items-center text-sm">
                     <i className="fas fa-user mr-2"></i>Login
-                  </a>
+                  </Link>
                   <Link
                     to="/signup"
                     className="bg-gradient-to-r from-orange-500 to-red-500 text-white px-4 py-2 hover:from-orange-600 hover:to-red-600 transition-all duration-300 cursor-pointer whitespace-nowrap rounded-button font-medium shadow-lg hover:shadow-xl transform hover:scale-105 inline-flex items-center text-sm"
@@ -179,46 +179,46 @@ const Header: React.FC = () => {
             
             {/* Mobile Navigation */}
             <div className="px-6 py-8 space-y-4">
-              <a 
-                href="/" 
+              <Link 
+                to="/" 
                 className="flex items-center text-lg font-medium text-foreground hover:text-orange-500 transition-colors duration-200 py-4 px-3 rounded-lg hover:bg-orange-50"
                 onClick={() => setIsMobileMenuOpen(false)}
               >
                 <i className="fas fa-home mr-4 text-orange-500 w-5 text-center"></i>
                 Home
-              </a>
-              <a 
-                href="/properties" 
+              </Link>
+              <Link 
+                to="/properties" 
                 className="flex items-center text-lg font-medium text-foreground hover:text-orange-500 transition-colors duration-200 py-4 px-3 rounded-lg hover:bg-orange-50"
                 onClick={() => setIsMobileMenuOpen(false)}
               >
                 <i className="fas fa-building mr-4 text-orange-500 w-5 text-center"></i>
                 Properties
-              </a>
-              <a 
-                href="/locations" 
+              </Link>
+              <Link 
+                to="/locations" 
                 className="flex items-center text-lg font-medium text-foreground hover:text-orange-500 transition-colors duration-200 py-4 px-3 rounded-lg hover:bg-orange-50"
                 onClick={() => setIsMobileMenuOpen(false)}
               >
                 <i className="fas fa-map-marker-alt mr-4 text-orange-500 w-5 text-center"></i>
                 Locations
-              </a>
-              <a 
-                href="/about" 
+              </Link>
+              <Link 
+                to="/about" 
                 className="flex items-center text-lg font-medium text-foreground hover:text-orange-500 transition-colors duration-200 py-4 px-3 rounded-lg hover:bg-orange-50"
                 onClick={() => setIsMobileMenuOpen(false)}
               >
                 <i className="fas fa-info-circle mr-4 text-orange-500 w-5 text-center"></i>
                 About
-              </a>
-              <a 
-                href="/contact" 
+              </Link>
+              <Link 
+                to="/contact" 
                 className="flex items-center text-lg font-medium text-foreground hover:text-orange-500 transition-colors duration-200 py-4 px-3 rounded-lg hover:bg-orange-50"
                 onClick={() => setIsMobileMenuOpen(false)}
               >
                 <i className="fas fa-envelope mr-4 text-orange-500 w-5 text-center"></i>
                 Contact
-              </a>
+              </Link>
               
               {/* Mobile Portals Section */}
               <div className="pt-6 border-t border-border/50">
@@ -241,13 +241,13 @@ const Header: React.FC = () => {
                          console.log('✅ User is authenticated, checking role...');
                          console.log('🔍 User role:', user.role);
                          
-                         // Check if user is owner or property_owner
-                         if (user.role === 'property_owner' || user.role === 'owner') {
-                           navigate('/owner/view');
-                         } else {
-                           // Non-owner authenticated user, redirect to owner login with switch option
-                           navigate('/owner/login?switch=1');
-                         }
+                          // Check if user is owner
+                          if (user.role === 'owner') {
+                            navigate('/owner/view');
+                          } else {
+                            // Non-owner authenticated user, redirect to owner login with switch option
+                            navigate('/owner/login?switch=1');
+                          }
                        } else {
                          console.log('❌ User not authenticated, navigating to owner login');
                          navigate('/owner/login');
@@ -267,14 +267,14 @@ const Header: React.FC = () => {
                     <i className="fas fa-handshake mr-3 text-orange-500 w-4"></i>
                     Travel Agent Portal
                   </Link>
-                  <a 
-                    href="/admin/login" 
+                  <Link 
+                    to="/admin/login" 
                     className="block text-base text-muted-foreground hover:text-orange-500 transition-colors duration-200"
                     onClick={() => setIsMobileMenuOpen(false)}
                   >
                     <i className="fas fa-cog mr-3 text-orange-500 w-4"></i>
                     Admin Panel
-                  </a>
+                  </Link>
                 </div>
               </div>
 
@@ -300,14 +300,14 @@ const Header: React.FC = () => {
                   </>
                 ) : (
                   <>
-                    <a 
-                      href="/login" 
+                    <Link 
+                      to="/login" 
                       className="block w-full bg-secondary text-secondary-foreground hover:bg-secondary/80 font-medium transition-all duration-200 rounded-lg px-6 py-4 text-center"
                       onClick={() => setIsMobileMenuOpen(false)}
                     >
                       <i className="fas fa-user mr-2"></i>
                       Login
-                    </a>
+                    </Link>
                     <Link
                       to="/signup"
                       className="block w-full bg-gradient-to-r from-orange-500 to-red-500 text-white px-6 py-4 hover:from-orange-600 hover:to-red-600 transition-all duration-300 rounded-lg font-medium shadow-lg text-center"

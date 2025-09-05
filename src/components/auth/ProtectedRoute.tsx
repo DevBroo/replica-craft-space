@@ -75,6 +75,12 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
   if (requiredRoles && requiredRoles.length > 0 && !hasAnyRole(requiredRoles)) {
     // Redirect to unauthorized page or dashboard based on user role
     const userRole = user?.role;
+    
+    // If this is an owner-protected route and user is not an owner, add switch=1
+    if (requiredRoles.includes('owner') && userRole && userRole !== 'owner') {
+      return <Navigate to="/owner/login?switch=1" replace />;
+    }
+    
     let unauthorizedRedirect = '/unauthorized';
     
     switch (userRole) {
@@ -82,8 +88,7 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
         unauthorizedRedirect = '/admin/dashboard';
         break;
       case 'owner':
-      case 'property_owner':
-        unauthorizedRedirect = '/owner/login';
+        unauthorizedRedirect = '/owner/view';
         break;
       case 'agent':
         unauthorizedRedirect = '/agent/dashboard';
@@ -116,7 +121,7 @@ export const AdminRoute: React.FC<{ children: ReactNode }> = ({ children }) => (
 
 export const OwnerRoute: React.FC<{ children: ReactNode }> = ({ children }) => (
   <ProtectedRoute 
-    requiredRoles={["property_owner", "owner", "customer", "user"]} 
+    requiredRoles={["owner"]} 
     redirectTo="/owner/login"
   >
     {children}

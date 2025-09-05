@@ -166,13 +166,14 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
             
             // Get the role from user metadata (set during registration)
             const userRole = session.user.user_metadata?.role || 'customer';
-            console.log('🎭 User role from metadata:', userRole);
+            const normalizedRole = userRole === 'user' ? 'customer' : userRole === 'property_owner' ? 'owner' : userRole;
+            console.log('🎭 User role from metadata:', userRole, '-> normalized:', normalizedRole);
             
             // Set user immediately with basic data for fast loading
             const basicUser = {
               id: session.user.id,
               email: session.user.email || '',
-              role: userRole,
+              role: normalizedRole,
               full_name: session.user.user_metadata?.full_name || '',
               avatar_url: session.user.user_metadata?.avatar_url || null,
               phone: session.user.user_metadata?.phone || null,
@@ -209,10 +210,11 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
             console.error('❌ Error during profile sync:', error);
             // Set a basic user object even if profile sync fails
             const userRole = session.user.user_metadata?.role || 'customer';
+            const normalizedRole = userRole === 'user' ? 'customer' : userRole === 'property_owner' ? 'owner' : userRole;
             setUser({
               id: session.user.id,
               email: session.user.email || '',
-              role: userRole,
+              role: normalizedRole,
               full_name: session.user.user_metadata?.full_name || '',
               avatar_url: session.user.user_metadata?.avatar_url || null,
               phone: session.user.user_metadata?.phone || null,
@@ -385,17 +387,17 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     try {
       setError(null);
       
-      const redirectUrl = `${window.location.origin}/auth/callback`;
-      
-      console.log('🔐 Attempting registration for:', data.email);
-      const { data: authData, error } = await supabase.auth.signUp({
-        email: data.email,
-        password: data.password,
-        options: {
-          emailRedirectTo: redirectUrl,
-          data: {
-            full_name: `${data.firstName || ''} ${data.lastName || ''}`.trim(),
-            role: data.role === 'user' ? 'customer' : (data.role || 'customer'), // Normalize 'user' to 'customer'
+        const redirectUrl = `${window.location.origin}/auth/callback`;
+        
+        console.log('🔐 Attempting registration for:', data.email);
+        const { data: authData, error } = await supabase.auth.signUp({
+          email: data.email,
+          password: data.password,
+          options: {
+            emailRedirectTo: redirectUrl,
+            data: {
+              full_name: `${data.firstName || ''} ${data.lastName || ''}`.trim(),
+              role: data.role === 'user' ? 'customer' : data.role === 'property_owner' ? 'owner' : (data.role || 'customer'), // Normalize roles
             phone: data.phone || '',
             first_name: data.firstName || '',
             last_name: data.lastName || '',
