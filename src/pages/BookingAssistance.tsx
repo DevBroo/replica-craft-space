@@ -1,6 +1,9 @@
+import React, { useState } from 'react';
 import { Book, CreditCard, Calendar, Users, MapPin, CheckCircle, Phone, Mail, MessageCircle } from 'lucide-react';
+import { LiveChatModal } from '@/components/support/LiveChatModal';
 
 const BookingAssistance = () => {
+  const [openChatModal, setOpenChatModal] = useState(false);
   return (
     <div className="min-h-screen bg-background">
       {/* Header */}
@@ -196,7 +199,10 @@ const BookingAssistance = () => {
               <MessageCircle className="w-12 h-12 text-primary mx-auto mb-4" />
               <h3 className="font-semibold mb-2">Live Chat</h3>
               <p className="text-sm text-muted-foreground mb-3">Get instant help online</p>
-              <button className="bg-primary text-primary-foreground px-4 py-2 rounded-lg text-sm font-semibold hover:bg-primary/90 transition-colors">
+              <button 
+                onClick={() => setOpenChatModal(true)}
+                className="bg-primary text-primary-foreground px-4 py-2 rounded-lg text-sm font-semibold hover:bg-primary/90 transition-colors"
+              >
                 Start Chat
               </button>
             </div>
@@ -210,6 +216,9 @@ const BookingAssistance = () => {
           </div>
         </section>
       </main>
+
+      {/* Live Chat Modal */}
+      <LiveChatModal open={openChatModal} onOpenChange={setOpenChatModal} />
     </div>
   );
 };

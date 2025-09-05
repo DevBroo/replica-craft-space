@@ -1,9 +1,11 @@
+import React, { useState } from 'react';
 import { Search, HelpCircle, Book, CreditCard, MapPin, User, Phone, Mail } from 'lucide-react';
-import { useState } from 'react';
+import { LiveChatModal } from '@/components/support/LiveChatModal';
 
 const HelpCenter = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('all');
+  const [openChatModal, setOpenChatModal] = useState(false);
 
   const faqCategories = [
     { id: 'all', name: 'All Topics', icon: HelpCircle },
@@ -177,13 +179,19 @@ const HelpCenter = () => {
               </div>
               <h3 className="text-xl font-semibold mb-2">Live Chat</h3>
               <p className="text-muted-foreground mb-4">Chat with our support agents</p>
-              <button className="bg-primary text-primary-foreground px-6 py-2 rounded-lg font-semibold hover:bg-primary/90 transition-colors">
+              <button 
+                onClick={() => setOpenChatModal(true)}
+                className="bg-primary text-primary-foreground px-6 py-2 rounded-lg font-semibold hover:bg-primary/90 transition-colors"
+              >
                 Start Chat
               </button>
             </div>
           </div>
         </section>
       </main>
+
+      {/* Live Chat Modal */}
+      <LiveChatModal open={openChatModal} onOpenChange={setOpenChatModal} />
     </div>
   );
 };

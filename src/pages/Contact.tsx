@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { toast } from 'sonner';
+import { LiveChatModal } from '@/components/support/LiveChatModal';
 
 // Scroll animation hook
 const useScrollAnimation = () => {
@@ -41,6 +42,7 @@ const Contact: React.FC = () => {
   const [openFaq, setOpenFaq] = useState<number | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [currentTime, setCurrentTime] = useState(new Date());
+  const [openChatModal, setOpenChatModal] = useState(false);
 
   const handleFormChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     setFormData({
@@ -210,7 +212,10 @@ const Contact: React.FC = () => {
                 <i className="fas fa-phone text-xl"></i>
                 <span>Call Us Now</span>
               </button>
-              <button className="inline-flex items-center gap-3 bg-white text-red-600 px-8 py-4 rounded-xl border-2 border-red-600 hover:bg-red-600 hover:text-white transition-all duration-300 cursor-pointer whitespace-nowrap !rounded-button font-bold text-lg shadow-xl hover:shadow-2xl">
+              <button 
+                onClick={() => setOpenChatModal(true)}
+                className="inline-flex items-center gap-3 bg-white text-red-600 px-8 py-4 rounded-xl border-2 border-red-600 hover:bg-red-600 hover:text-white transition-all duration-300 cursor-pointer whitespace-nowrap !rounded-button font-bold text-lg shadow-xl hover:shadow-2xl"
+              >
                 <i className="fas fa-comments text-xl"></i>
                 <span>Start Live Chat</span>
               </button>
@@ -255,6 +260,7 @@ const Contact: React.FC = () => {
                     </div>
                   </div>
                   <button 
+                    onClick={() => method.title === 'Live Chat' ? setOpenChatModal(true) : undefined}
                     className={`w-full py-3 rounded-xl transition-all duration-300 cursor-pointer whitespace-nowrap !rounded-button font-semibold ${
                       method.status === 'online' || method.status === 'always'
                         ? 'bg-gradient-to-r from-red-600 to-orange-500 text-white hover:from-red-700 hover:to-orange-600'
@@ -570,9 +576,10 @@ const Contact: React.FC = () => {
             </div>
           </div>
         </div>
-      </section>
+        </section>
 
-
+      {/* Live Chat Modal */}
+      <LiveChatModal open={openChatModal} onOpenChange={setOpenChatModal} />
     </div>
   );
 };

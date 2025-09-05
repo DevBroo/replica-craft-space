@@ -419,6 +419,37 @@ class SupportTicketService {
     if (error) throw error;
     return data;
   }
+
+  // Chat-specific helper method
+  async getOrCreateChatTicketForUser(): Promise<any> {
+    const user = (await supabase.auth.getUser()).data.user;
+    if (!user) throw new Error('Not authenticated');
+
+    // First, try to find an existing open chat ticket
+    const { data: existingTickets, error: searchError } = await supabase
+      .from('support_tickets')
+      .select('*')
+      .eq('created_by', user.id)
+      .in('status', ['open', 'in-progress'])
+      .ilike('subject', '%Live Chat%')
+      .order('created_at', { ascending: false })
+      .limit(1);
+
+    if (searchError) throw searchError;
+
+    if (existingTickets && existingTickets.length > 0) {
+      return existingTickets[0];
+    }
+
+    // Create new chat ticket
+    return this.createTicket({
+      created_by: user.id,
+      subject: 'Live Chat Session',
+      description: 'Live chat conversation initiated by user',
+      priority: 'medium',
+      category: 'Technical'
+    });
+  }
 }
 
 export const supportTicketService = new SupportTicketService();
