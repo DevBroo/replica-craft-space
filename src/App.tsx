@@ -26,6 +26,7 @@ import TrustSafety from "@/pages/TrustSafety";
 import HelpCenter from "@/pages/HelpCenter";
 import BookingAssistance from "@/pages/BookingAssistance";
 import Locations from "@/pages/Locations";
+import HostResources from "@/pages/HostResources";
 
 // Authentication Pages (immediate load)
 import CustomerLogin from "@/pages/CustomerLogin";
@@ -190,6 +191,11 @@ function App() {
                     <Route path="/locations" element={
                       <PublicLayout>
                         <Locations />
+                      </PublicLayout>
+                    } />
+                    <Route path="/host-resources" element={
+                      <PublicLayout>
+                        <HostResources />
                       </PublicLayout>
                     } />
                     <Route path="*" element={
