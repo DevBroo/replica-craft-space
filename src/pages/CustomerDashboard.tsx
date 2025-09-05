@@ -460,7 +460,7 @@ export default function CustomerDashboard() {
                   </Link>
                 </Button>
                 <Button variant="outline" asChild className="h-auto p-6 flex-col glass-card-light hover-lift border-0 shadow-elevated">
-                  <Link to="/help">
+                  <Link to="/help-center">
                     <User className="h-8 w-8 mb-2 text-blue-600" />
                     <span className="font-medium">Get Help</span>
                   </Link>

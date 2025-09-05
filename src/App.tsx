@@ -183,6 +183,11 @@ function App() {
                         <HelpCenter />
                       </PublicLayout>
                     } />
+                    <Route path="/help" element={
+                      <PublicLayout>
+                        <HelpCenter />
+                      </PublicLayout>
+                    } />
                     <Route path="/booking-assistance" element={
                       <PublicLayout>
                         <BookingAssistance />
