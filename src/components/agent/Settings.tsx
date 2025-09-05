@@ -467,10 +467,16 @@ const Settings: React.FC = () => {
             <div className="bg-white rounded-lg shadow-sm border p-6">
               <h3 className="text-lg font-semibold text-gray-800 mb-6">Quick Actions</h3>
               <div className="space-y-3">
-                <button className="w-full px-4 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors cursor-pointer text-left">
+                <a 
+                  href="mailto:support@picnify.in?subject=Bug%20Report&body=Please%20describe%20the%20issue%20you%20encountered%2C%20including%20steps%20to%20reproduce%20it%3A%0A%0A"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="w-full px-4 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors cursor-pointer text-left block"
+                  aria-label="Report a bug via email"
+                >
                   <span className="mr-2">🐛</span>
                   Report a Bug
-                </button>
+                </a>
                 <button className="w-full px-4 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors cursor-pointer text-left">
                   <span className="mr-2">💡</span>
                   Request a Feature

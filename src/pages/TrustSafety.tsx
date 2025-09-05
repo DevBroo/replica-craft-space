@@ -1,4 +1,5 @@
 import { Shield, CheckCircle, AlertTriangle, Eye, Lock, Users, FileText, Phone } from 'lucide-react';
+import { Link } from 'react-router-dom';
 
 const TrustSafety = () => {
   return (
@@ -196,9 +197,13 @@ const TrustSafety = () => {
               <FileText className="w-12 h-12 text-primary mx-auto mb-4" />
               <h3 className="text-xl font-semibold mb-3">Easy Reporting</h3>
               <p className="text-muted-foreground mb-4">Report safety concerns or inappropriate behavior with one click</p>
-              <button className="text-primary font-semibold hover:underline">
+              <Link 
+                to="/contact#contact-form" 
+                className="text-primary font-semibold hover:underline"
+                aria-label="Report an issue via contact form"
+              >
                 Report an Issue →
-              </button>
+              </Link>
             </div>
             
             <div className="text-center p-6 border rounded-lg">

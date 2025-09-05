@@ -1,4 +1,5 @@
 import { Shield, CheckCircle, AlertTriangle, Phone, Users, FileText } from 'lucide-react';
+import { Link } from 'react-router-dom';
 
 const SafetyGuidelines = () => {
   return (
@@ -158,12 +159,20 @@ const SafetyGuidelines = () => {
           <h2 className="text-2xl font-bold mb-4">Need Help with Safety Concerns?</h2>
           <p className="text-muted-foreground mb-6">Our safety team is available 24/7 to assist you</p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <button className="bg-primary text-primary-foreground px-6 py-3 rounded-lg font-semibold hover:bg-primary/90 transition-colors">
+            <Link 
+              to="/contact" 
+              className="bg-primary text-primary-foreground px-6 py-3 rounded-lg font-semibold hover:bg-primary/90 transition-colors text-center"
+              aria-label="Contact our safety team"
+            >
               Contact Safety Team
-            </button>
-            <button className="border border-primary text-primary px-6 py-3 rounded-lg font-semibold hover:bg-primary/10 transition-colors">
+            </Link>
+            <Link 
+              to="/contact#contact-form" 
+              className="border border-primary text-primary px-6 py-3 rounded-lg font-semibold hover:bg-primary/10 transition-colors text-center"
+              aria-label="Report a safety issue via contact form"
+            >
               Report an Issue
-            </button>
+            </Link>
           </div>
         </section>
       </main>
