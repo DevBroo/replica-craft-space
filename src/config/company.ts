@@ -7,7 +7,7 @@ export const COMPANY_INFO = {
   },
   phone: {
     support: '+91 80 1234 5678',
-    privacy: '1800-XXX-XXXX'
+    privacy: '+91 80 1234 5678'
   },
   address: {
     headquarters: 'Tech Hub, Koramangala, Bangalore, Karnataka 560034, India',
