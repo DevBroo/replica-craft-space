@@ -482,28 +482,52 @@ const Contact: React.FC = () => {
               <h2 className="text-3xl font-bold text-gray-900 font-poppins mb-8">Connect With Us</h2>
               <p className="text-xl text-gray-600 mb-8">Follow us on social media for updates, tips, and travel inspiration</p>
               <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
-                <a href="#" className="flex flex-col items-center p-6 bg-white rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 cursor-pointer hover-lift">
+                <a 
+                  href="https://www.facebook.com/picnify" 
+                  target="_blank" 
+                  rel="noopener noreferrer"
+                  aria-label="Follow Picnify on Facebook"
+                  className="flex flex-col items-center p-6 bg-white rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 cursor-pointer hover-lift"
+                >
                   <div className="w-12 h-12 bg-blue-600 rounded-full flex items-center justify-center mb-3">
                     <i className="fab fa-facebook text-white text-xl"></i>
                   </div>
                   <span className="font-semibold text-gray-900">Facebook</span>
                   <span className="text-sm text-gray-500">50K+ followers</span>
                 </a>
-                <a href="#" className="flex flex-col items-center p-6 bg-white rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 cursor-pointer hover-lift">
+                <a 
+                  href="https://www.instagram.com/picnify" 
+                  target="_blank" 
+                  rel="noopener noreferrer"
+                  aria-label="Follow Picnify on Instagram"
+                  className="flex flex-col items-center p-6 bg-white rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 cursor-pointer hover-lift"
+                >
                   <div className="w-12 h-12 bg-pink-600 rounded-full flex items-center justify-center mb-3">
                     <i className="fab fa-instagram text-white text-xl"></i>
                   </div>
                   <span className="font-semibold text-gray-900">Instagram</span>
                   <span className="text-sm text-gray-500">75K+ followers</span>
                 </a>
-                <a href="#" className="flex flex-col items-center p-6 bg-white rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 cursor-pointer hover-lift">
+                <a 
+                  href="https://www.twitter.com/picnify" 
+                  target="_blank" 
+                  rel="noopener noreferrer"
+                  aria-label="Follow Picnify on Twitter"
+                  className="flex flex-col items-center p-6 bg-white rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 cursor-pointer hover-lift"
+                >
                   <div className="w-12 h-12 bg-blue-400 rounded-full flex items-center justify-center mb-3">
                     <i className="fab fa-twitter text-white text-xl"></i>
                   </div>
                   <span className="font-semibold text-gray-900">Twitter</span>
                   <span className="text-sm text-gray-500">25K+ followers</span>
                 </a>
-                <a href="#" className="flex flex-col items-center p-6 bg-white rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 cursor-pointer hover-lift">
+                <a 
+                  href="https://www.youtube.com/picnify" 
+                  target="_blank" 
+                  rel="noopener noreferrer"
+                  aria-label="Subscribe to Picnify on YouTube"
+                  className="flex flex-col items-center p-6 bg-white rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 cursor-pointer hover-lift"
+                >
                   <div className="w-12 h-12 bg-red-600 rounded-full flex items-center justify-center mb-3">
                     <i className="fab fa-youtube text-white text-xl"></i>
                   </div>
