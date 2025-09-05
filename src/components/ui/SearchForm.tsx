@@ -292,7 +292,7 @@ const SearchForm: React.FC<SearchFormProps> = ({
         </div>
 
         {/* Search Button */}
-        <div className="lg:col-span-2">
+        <div className="lg:col-span-2 lg:ml-3 xl:ml-4">
           <Button 
             onClick={handleSearch}
             className="w-full h-14 bg-orange-500 hover:bg-red-500 text-white text-lg font-semibold shadow-lg hover:shadow-xl transition-all duration-300"
