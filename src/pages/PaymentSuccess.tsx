@@ -147,31 +147,59 @@ const PaymentSuccess: React.FC = () => {
     };
 
     const downloadReceipt = async () => {
-        if (!paymentStatus || !bookingDetails) return;
+        if (!paymentStatus) return;
 
-        // Create a simple receipt object
-        const receipt = {
-            transactionId: paymentStatus.transactionId,
-            bookingId: paymentStatus.bookingId,
-            propertyTitle: paymentStatus.propertyTitle,
-            amount: paymentStatus.amount,
-            currency: 'INR',
-            paymentDate: new Date().toISOString(),
-            status: paymentStatus.status,
-            paymentMethod: 'PhonePe',
-            customerEmail: bookingDetails.user_id // You might want to get actual email
-        };
+        try {
+            // Create a comprehensive receipt object with safe access to booking details
+            const receipt = {
+                transactionId: paymentStatus.transactionId,
+                bookingId: paymentStatus.bookingId || 'N/A',
+                propertyTitle: paymentStatus.propertyTitle || bookingDetails?.properties?.title || 'N/A',
+                amount: paymentStatus.amount,
+                currency: 'INR',
+                paymentDate: new Date().toISOString(),
+                status: paymentStatus.status,
+                paymentMethod: 'PhonePe',
+                customerEmail: bookingDetails?.booking_details?.customer_details?.email || 'N/A',
+                checkInDate: bookingDetails?.check_in_date || 'N/A',
+                checkOutDate: bookingDetails?.check_out_date || 'N/A',
+                guests: bookingDetails?.guests || 'N/A',
+                receiptGeneratedAt: new Date().toISOString()
+            };
 
-        // Convert to JSON and download
-        const dataStr = JSON.stringify(receipt, null, 2);
-        const dataUri = 'data:application/json;charset=utf-8,' + encodeURIComponent(dataStr);
+            // Convert to JSON and create blob for download
+            const dataStr = JSON.stringify(receipt, null, 2);
+            const blob = new Blob([dataStr], { type: 'application/json' });
+            
+            const exportFileDefaultName = `receipt_${paymentStatus.transactionId}.json`;
 
-        const exportFileDefaultName = `receipt_${paymentStatus.transactionId}.json`;
+            // Modern browser download method
+            const url = URL.createObjectURL(blob);
+            const linkElement = document.createElement('a');
+            linkElement.href = url;
+            linkElement.download = exportFileDefaultName;
+            linkElement.style.display = 'none';
+            
+            document.body.appendChild(linkElement);
+            linkElement.click();
+            document.body.removeChild(linkElement);
+            
+            // Clean up the URL object
+            URL.revokeObjectURL(url);
 
-        const linkElement = document.createElement('a');
-        linkElement.setAttribute('href', dataUri);
-        linkElement.setAttribute('download', exportFileDefaultName);
-        linkElement.click();
+            toast({
+                title: "Receipt Downloaded",
+                description: "Your payment receipt has been downloaded successfully.",
+            });
+
+        } catch (error) {
+            console.error('Error downloading receipt:', error);
+            toast({
+                title: "Download Failed",
+                description: "Unable to download receipt. Please try again.",
+                variant: "destructive"
+            });
+        }
     };
 
     if (loading) {
