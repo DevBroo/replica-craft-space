@@ -357,6 +357,19 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       }
 
       console.log('✅ User logged in successfully:', data.user?.email);
+      
+      // Claim historical bookings after successful login
+      try {
+        console.log('🔗 Claiming historical bookings for user...');
+        const { data: claimedCount } = await supabase.rpc('claim_user_bookings');
+        if (claimedCount && claimedCount > 0) {
+          console.log(`✅ Claimed ${claimedCount} historical booking(s)`);
+        }
+      } catch (claimError) {
+        console.error('⚠️ Failed to claim historical bookings:', claimError);
+        // Don't fail login if claiming bookings fails
+      }
+      
       // Don't set loading to false here - let the auth state listener handle it
     } catch (err: unknown) {
       const errorMessage = err instanceof Error ? err.message : 'Login failed';

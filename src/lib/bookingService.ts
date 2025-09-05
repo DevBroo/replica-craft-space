@@ -78,7 +78,7 @@ export class BookingService {
     }
   }
 
-  static async getUserBookings(userId: string) {
+  static async getUserBookings(userId: string, userEmail?: string) {
     try {
       const { data, error } = await supabase
         .from('bookings')
@@ -91,7 +91,7 @@ export class BookingService {
             property_type
           )
         `)
-        .eq('user_id', userId)
+        .or(`user_id.eq.${userId}${userEmail ? `,customer_email.ilike.${userEmail}` : ''}`)
         .order('created_at', { ascending: false });
 
       if (error) {

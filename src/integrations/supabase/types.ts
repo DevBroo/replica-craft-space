@@ -360,6 +360,7 @@ export type Database = {
           check_in_date: string
           check_out_date: string
           created_at: string
+          customer_email: string | null
           guests: number
           id: string
           last_modified_by: string | null
@@ -385,6 +386,7 @@ export type Database = {
           check_in_date: string
           check_out_date: string
           created_at?: string
+          customer_email?: string | null
           guests?: number
           id?: string
           last_modified_by?: string | null
@@ -410,6 +412,7 @@ export type Database = {
           check_in_date?: string
           check_out_date?: string
           created_at?: string
+          customer_email?: string | null
           guests?: number
           id?: string
           last_modified_by?: string | null
@@ -2926,6 +2929,10 @@ export type Database = {
         Args: { p_ticket_id: string }
         Returns: boolean
       }
+      claim_user_bookings: {
+        Args: { p_user_id?: string }
+        Returns: number
+      }
       generate_commission_for_booking: {
         Args: { p_booking_id: string }
         Returns: string
@@ -3002,6 +3009,10 @@ export type Database = {
           total_refunds: number
           total_revenue: number
         }[]
+      }
+      get_current_user_email: {
+        Args: Record<PropertyKey, never>
+        Returns: string
       }
       get_highest_rated_properties: {
         Args: { limit_count?: number; min_reviews?: number }

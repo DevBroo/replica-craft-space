@@ -53,7 +53,7 @@ export default function CustomerDashboard() {
     try {
       // Fetch bookings using BookingService
       if (user?.id) {
-        const bookingsData = await BookingService.getUserBookings(user.id);
+        const bookingsData = await BookingService.getUserBookings(user.id, user.email);
         const formattedBookings = bookingsData.map(booking => ({
           id: booking.id,
           property_id: booking.property_id,
