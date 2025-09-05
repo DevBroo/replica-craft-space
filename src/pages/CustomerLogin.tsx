@@ -23,12 +23,14 @@ const CustomerLogin: React.FC = () => {
   useEffect(() => {
     if (location.state?.message) {
       setSuccessMessage(location.state.message);
+      // Clear any existing errors when we have a success message
+      clearError();
       // Pre-fill email if provided
       if (location.state.email) {
         setEmail(location.state.email);
       }
     }
-  }, [location.state]);
+  }, [location.state, clearError]);
 
   // Restore booking data if available
   useEffect(() => {

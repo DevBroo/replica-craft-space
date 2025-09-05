@@ -405,6 +405,32 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       
       if (error) {
         console.error('❌ Registration error:', error.message);
+        
+        // Check if this is a database error but registration actually succeeded
+        if (error.message.includes('database') || error.message.includes('saving')) {
+          console.log('🔄 Database error detected, performing resilience check...');
+          
+          try {
+            // Try to sign in with the same credentials to verify if user was actually created
+            const { data: signInData, error: signInError } = await supabase.auth.signInWithPassword({
+              email: data.email,
+              password: data.password,
+            });
+            
+            if (signInData.user && !signInError) {
+              console.log('✅ User was actually created successfully despite database error');
+              return; // Success, let auth state handler take over
+            }
+            
+            if (signInError?.message.includes('Email not confirmed')) {
+              console.log('✅ User was created but needs email confirmation, treating as success');
+              return; // Success, email verification required
+            }
+          } catch (resilientCheckError) {
+            console.error('❌ Resilience check failed:', resilientCheckError);
+          }
+        }
+        
         setError({
           message: error.message,
           code: error.name,

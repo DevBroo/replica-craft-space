@@ -60,6 +60,9 @@ const Signup: React.FC = () => {
       
       // Wait 3 seconds before redirecting to show the success message
       const timer = setTimeout(() => {
+        // Clear any errors before navigation to prevent stale errors
+        clearError();
+        
         if (isAuthenticated && user) {
           // User is authenticated, redirect to dashboard
           const userRole = user.role || role;
