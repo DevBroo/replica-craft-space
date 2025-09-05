@@ -243,9 +243,8 @@ const PropertyWizard: React.FC<PropertyWizardProps> = ({ onBack, propertyId, ini
 
   // Handle authentication and load saved draft
   useEffect(() => {
-    // Check if we have a saved session in localStorage (for refresh scenarios)
-    const savedSession = localStorage.getItem('supabase.auth.token');
-    const hasSavedSession = savedSession && savedSession !== 'null';
+    // Check if we have a saved session (improved check using session from useAuth)
+    const hasSavedSession = !!user || isAuthenticated;
     
     // Add a small delay to ensure auth state is fully loaded after page refresh
     const authCheckTimeout = setTimeout(() => {

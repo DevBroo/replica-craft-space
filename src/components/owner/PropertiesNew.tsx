@@ -71,13 +71,24 @@ const Properties: React.FC<PropertiesProps> = ({
     
     fetchProperties();
     
-    // Check for URL parameters to auto-open add property modal
+    // Check for URL parameters to auto-open add property modal and restore tab
     const urlParams = new URLSearchParams(window.location.search);
-    if (urlParams.get('add') === '1') {
+    const shouldAdd = urlParams.get('add') === '1';
+    const tabFromUrl = urlParams.get('tab') as 'properties' | 'day-picnic';
+    
+    if (tabFromUrl) {
+      setActivePropertyTab(tabFromUrl);
+    }
+    
+    if (shouldAdd) {
       handleAddProperty();
       // Clean URL after opening modal
-      const newUrl = window.location.pathname + window.location.search.replace(/[?&]add=1/, '').replace(/^&/, '?');
-      window.history.replaceState({}, '', newUrl);
+      const newUrl = window.location.pathname + window.location.search
+        .replace(/[?&]add=1/, '')
+        .replace(/[?&]tab=(properties|day-picnic)/, '')
+        .replace(/^&/, '?')
+        .replace(/^\?$/, '');
+      window.history.replaceState({}, '', newUrl || window.location.pathname);
     }
   }, [user?.id]);
 
@@ -159,6 +170,13 @@ const Properties: React.FC<PropertiesProps> = ({
     setSelectedPropertyType('');
     setShowTypeSelector(false);
     setShowAddForm(true);
+    
+    // Add URL parameters to persist modal state on refresh
+    const urlParams = new URLSearchParams(window.location.search);
+    urlParams.set('add', '1');
+    urlParams.set('tab', activePropertyTab);
+    const newUrl = `${window.location.pathname}?${urlParams.toString()}`;
+    window.history.replaceState({}, '', newUrl);
   };
 
   const handleAddDayPicnic = () => {
@@ -262,6 +280,11 @@ const Properties: React.FC<PropertiesProps> = ({
     setIsEditMode(false);
     setSelectedPropertyType('');
     setPropertyName('');
+    
+    // Clear URL parameters when closing modal
+    const newUrl = window.location.pathname;
+    window.history.replaceState({}, '', newUrl);
+    
     fetchProperties(); // Refresh properties list
   };
 

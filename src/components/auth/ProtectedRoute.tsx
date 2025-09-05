@@ -82,7 +82,8 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
         unauthorizedRedirect = '/admin/dashboard';
         break;
       case 'owner':
-        unauthorizedRedirect = '/owner';
+      case 'property_owner':
+        unauthorizedRedirect = '/owner/login';
         break;
       case 'agent':
         unauthorizedRedirect = '/agent/dashboard';
@@ -115,7 +116,7 @@ export const AdminRoute: React.FC<{ children: ReactNode }> = ({ children }) => (
 
 export const OwnerRoute: React.FC<{ children: ReactNode }> = ({ children }) => (
   <ProtectedRoute 
-    requiredRoles={["property_owner", "owner"]} 
+    requiredRoles={["property_owner", "owner", "customer", "user"]} 
     redirectTo="/owner/login"
   >
     {children}
