@@ -35,7 +35,7 @@ const DayPicnicBooking: React.FC = () => {
   const [property, setProperty] = useState<any>(null);
   const [package_, setPackage] = useState<any>(null);
   const [optionPrices, setOptionPrices] = useState<any[]>([]);
-  const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
+  const [selectedDate, setSelectedDate] = useState('');
   const [selectedDuration, setSelectedDuration] = useState('');
   const [guests, setGuests] = useState<GuestBreakdown>({ adults: 2, children: [] });
   const [selectedAddOns, setSelectedAddOns] = useState<string[]>([]);
@@ -317,7 +317,7 @@ const DayPicnicBooking: React.FC = () => {
       return;
     }
 
-    if (!selectedDate) {
+    if (!selectedDate || selectedDate.trim() === '') {
       toast({
         title: "Date Required",
         description: "Please select a date for your day picnic",
@@ -546,17 +546,21 @@ const DayPicnicBooking: React.FC = () => {
                 <CardTitle>Book Your Day Picnic</CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
-                <div>
-                  <Label htmlFor="date">Select Date</Label>
+                <div className={`${!selectedDate ? 'border-2 border-red-200 rounded-lg p-3 bg-red-50' : ''}`}>
+                  <Label htmlFor="date" className={`${!selectedDate ? 'text-red-700 font-semibold' : ''}`}>
+                    Select Date *
+                  </Label>
                   <Input
                     id="date"
                     type="date"
                     value={selectedDate}
                     onChange={(e) => setSelectedDate(e.target.value)}
                     min={new Date().toISOString().split('T')[0]}
+                    className={`mt-2 ${!selectedDate ? 'border-red-300 focus:border-red-500' : ''}`}
+                    placeholder="Please select a date"
                   />
                   {!selectedDate && (
-                    <p className="text-sm text-muted-foreground mt-1">Please select a date to enable booking</p>
+                    <p className="text-sm text-red-600 mt-1 font-medium">⚠️ Date is required to enable booking</p>
                   )}
                 </div>
 
@@ -729,7 +733,7 @@ const DayPicnicBooking: React.FC = () => {
 
                 <Button
                   onClick={handleBooking}
-                  disabled={loading || !selectedDate}
+                  disabled={loading || !selectedDate || selectedDate.trim() === ''}
                   className="w-full"
                 >
                   {loading ? (
