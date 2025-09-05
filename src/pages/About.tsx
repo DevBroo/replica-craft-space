@@ -387,19 +387,23 @@ const About: React.FC = () => {
             <p className="text-xl text-gray-600">The journey that brought us here</p>
           </div>
           <div className="relative">
-            <div className="absolute left-1/2 transform -translate-x-1/2 w-1 h-full timeline-line rounded-full"></div>
-            <div className="space-y-16">
-              {milestones.map((milestone, index) => <div key={index} className={`flex items-center ${index % 2 === 0 ? 'flex-row' : 'flex-row-reverse'}`}>
-                  <div className={`w-1/2 ${index % 2 === 0 ? 'pr-12 text-right' : 'pl-12 text-left'}`}>
-                    <div className="bg-white p-8 rounded-2xl shadow-lg hover:shadow-xl transition-shadow duration-300 hover-lift">
-                      <div className="text-2xl font-bold text-red-600 mb-2">{milestone.year}</div>
-                      <h3 className="text-xl font-bold text-gray-900 mb-4">{milestone.title}</h3>
-                      <p className="text-gray-600 leading-relaxed">{milestone.description}</p>
+            {/* Timeline line - hidden on mobile */}
+            <div className="absolute left-1/2 transform -translate-x-1/2 w-1 h-full timeline-line rounded-full hidden md:block"></div>
+            <div className="space-y-8 md:space-y-16">
+              {milestones.map((milestone, index) => (
+                <div key={index} className={`flex flex-col md:flex-row md:items-center ${index % 2 === 0 ? 'md:flex-row' : 'md:flex-row-reverse'}`}>
+                  <div className={`w-full md:w-1/2 ${index % 2 === 0 ? 'md:pr-12 md:text-right' : 'md:pl-12 md:text-left'} text-left`}>
+                    <div className="bg-white p-6 md:p-8 rounded-2xl shadow-lg hover:shadow-xl transition-shadow duration-300 hover-lift">
+                      <div className="text-xl md:text-2xl font-bold text-red-600 mb-2">{milestone.year}</div>
+                      <h3 className="text-lg md:text-xl font-bold text-gray-900 mb-3 md:mb-4">{milestone.title}</h3>
+                      <p className="text-sm md:text-base text-gray-600 leading-relaxed">{milestone.description}</p>
                     </div>
                   </div>
-                  <div className="absolute left-1/2 transform -translate-x-1/2 w-6 h-6 milestone-dot rounded-full border-4 border-white shadow-lg"></div>
-                  <div className="w-1/2"></div>
-                </div>)}
+                  {/* Timeline dot - hidden on mobile */}
+                  <div className="absolute left-1/2 transform -translate-x-1/2 w-6 h-6 milestone-dot rounded-full border-4 border-white shadow-lg hidden md:block"></div>
+                  <div className="hidden md:block md:w-1/2"></div>
+                </div>
+              ))}
             </div>
           </div>
         </div>
