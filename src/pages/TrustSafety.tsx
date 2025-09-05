@@ -130,7 +130,7 @@ const TrustSafety = () => {
         </section>
 
         {/* Community Standards */}
-        <section className="mb-20 bg-muted/30 rounded-2xl p-12">
+        <section id="community" className="mb-20 bg-muted/30 rounded-2xl p-12 scroll-mt-24">
           <h2 className="text-3xl font-bold mb-8 text-center">Community Standards</h2>
           
           <div className="grid md:grid-cols-2 gap-8">

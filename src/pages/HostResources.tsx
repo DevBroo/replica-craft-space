@@ -1,4 +1,5 @@
 import { Home, DollarSign, Star, Users, Camera, Shield, TrendingUp, BookOpen } from 'lucide-react';
+import { Link } from 'react-router-dom';
 
 const HostResources = () => {
   return (
@@ -234,12 +235,12 @@ const HostResources = () => {
           <p className="text-muted-foreground mb-8">Our host success team is here to help you maximize your earnings</p>
           
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <button className="bg-primary text-primary-foreground px-8 py-3 rounded-lg font-semibold hover:bg-primary/90 transition-colors">
+            <Link to="/contact#contact-form" className="bg-primary text-primary-foreground px-8 py-3 rounded-lg font-semibold hover:bg-primary/90 transition-colors text-center">
               Contact Host Support
-            </button>
-            <button className="border border-primary text-primary px-8 py-3 rounded-lg font-semibold hover:bg-primary/10 transition-colors">
+            </Link>
+            <Link to="/trust-safety#community" className="border border-primary text-primary px-8 py-3 rounded-lg font-semibold hover:bg-primary/10 transition-colors text-center">
               Join Host Community
-            </button>
+            </Link>
           </div>
         </section>
       </main>
