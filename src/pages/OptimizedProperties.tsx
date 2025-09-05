@@ -62,7 +62,7 @@ const OptimizedProperties = () => {
   const [searchTerm, setSearchTerm] = useState(searchParams.get('search') || '');
   const [selectedLocation, setSelectedLocation] = useState(searchParams.get('location') || 'all');
   const [selectedType, setSelectedType] = useState(searchParams.get('category') || searchParams.get('type') || 'all');
-  const [priceRange, setPriceRange] = useState([0, 15000]);
+  const [priceRange, setPriceRange] = useState<[number, number]>([0, 15000]);
   const [sortBy, setSortBy] = useState('newest');
   const [currentPage, setCurrentPage] = useState(1);
   const [activeTab, setActiveTab] = useState(searchParams.get('tab') || (searchParams.get('category') === 'day-picnic' ? 'day-picnics' : 'properties'));
@@ -82,8 +82,8 @@ const OptimizedProperties = () => {
     isLoading: isLoadingProperties,
     error: propertiesError 
   } = useQuery({
-    queryKey: ['properties_search', searchFilters, currentPage],
-    queryFn: () => SearchService.searchProperties(searchFilters),
+    queryKey: ['properties_search', searchFilters, priceRange, currentPage],
+    queryFn: () => SearchService.searchProperties({ ...searchFilters, priceRange }),
     staleTime: 2 * 60 * 1000,
     gcTime: 5 * 60 * 1000,
   });
@@ -198,13 +198,8 @@ const OptimizedProperties = () => {
 
   // Memoized filtered and sorted properties
   const filteredProperties = useMemo(() => {
-    // If we have search filters active (especially location), use the search results directly
-    // since SearchService already handles the filtering correctly
-    if (searchFilters.location && searchFilters.location !== 'all') {
-      return properties; // searchedProperties are already filtered
-    }
-    
-    // Otherwise, apply client-side filtering for manual filter interactions
+    // Apply client-side filtering for search text, type, location, and price
+    // This ensures all filters work together properly
     return properties.filter(property => {
       // Search filter - check title and location
       const searchLower = debouncedSearchTerm.toLowerCase().trim();
@@ -542,7 +537,7 @@ const OptimizedProperties = () => {
                 value={`${priceRange[0]}-${priceRange[1]}`} 
                 onValueChange={(value) => {
                   const [min, max] = value.split('-').map(Number);
-                  setPriceRange([min, max]);
+                  setPriceRange([min, max] as [number, number]);
                 }}
               >
                 <SelectTrigger className="w-full">
@@ -554,7 +549,7 @@ const OptimizedProperties = () => {
                   <SelectItem value="2500-5000">₹2,500 - ₹5,000</SelectItem>
                   <SelectItem value="5000-7500">₹5,000 - ₹7,500</SelectItem>
                   <SelectItem value="7500-10000">₹7,500 - ₹10,000</SelectItem>
-                  <SelectItem value="10000-15000">₹10,000+</SelectItem>
+                  <SelectItem value="10000-50000">₹10,000+</SelectItem>
                 </SelectContent>
               </Select>
             </div>
