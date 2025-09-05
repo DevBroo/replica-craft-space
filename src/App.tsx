@@ -90,6 +90,9 @@ const DayPicnicSetup = React.lazy(
   () => import("@/components/owner/DayPicnicSetup")
 );
 
+// Auth Callback Component
+const AuthCallback = React.lazy(() => import("@/pages/auth/AuthCallback"));
+
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
@@ -215,6 +218,11 @@ function App() {
                     <Route path="/forgot-password" element={<ForgotPassword />} />
                     <Route path="/reset-password" element={<ResetPassword />} />
                     <Route path="/resend-verification" element={<ResendVerification />} />
+                    <Route path="/auth/callback" element={
+                      <Suspense fallback={<LoadingSpinner />}>
+                        <AuthCallback />
+                      </Suspense>
+                    } />
 
                     {/* Customer Routes */}
                     <Route path="/dashboard" element={<CustomerDashboard />} />

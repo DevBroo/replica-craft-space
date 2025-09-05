@@ -385,7 +385,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     try {
       setError(null);
       
-      const redirectUrl = `${window.location.origin}/`;
+      const redirectUrl = `${window.location.origin}/auth/callback`;
       
       console.log('🔐 Attempting registration for:', data.email);
       const { data: authData, error } = await supabase.auth.signUp({
@@ -590,7 +590,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         type: 'signup',
         email: email,
         options: {
-          emailRedirectTo: `${window.location.origin}/`
+          emailRedirectTo: `${window.location.origin}/auth/callback`
         }
       });
       
