@@ -136,7 +136,7 @@ const About: React.FC = () => {
     id: 4,
     name: 'Sneha Gupta',
     position: 'Head of Customer Success',
-    bio: 'Customer advocate dedicated to ensuring every traveler has an exceptional experience with Picknify.',
+    bio: 'Customer advocate dedicated to ensuring every traveler has an exceptional experience with Picnify.',
     image: 'https://readdy.ai/api/search-image?query=professional%20indian%20customer%20success%20manager%20businesswoman%20in%20modern%20office%20friendly%20smile%20professional%20attire%20clean%20background%20corporate%20headshot%20style&width=300&height=300&seq=cs1&orientation=squarish',
     social: {
       linkedin: '#',
@@ -410,7 +410,7 @@ const About: React.FC = () => {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-16">
             <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold text-gray-900 font-poppins mb-4">Meet Our Team</h2>
-            <p className="text-xl text-gray-600">The passionate people behind Picknify.in</p>
+            <p className="text-xl text-gray-600">The passionate people behind Picnify.in</p>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
             {teamMembers.map(member => <div key={member.id} className="text-center group cursor-pointer">
@@ -470,7 +470,7 @@ const About: React.FC = () => {
       <section className="py-20 bg-gray-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-16">
-            <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold text-gray-900 font-poppins mb-4">How Picknify Works</h2>
+            <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold text-gray-900 font-poppins mb-4">How Picnify Works</h2>
             <p className="text-xl text-gray-600">Simple steps to your perfect vacation rental</p>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-12">
@@ -575,7 +575,7 @@ const About: React.FC = () => {
                   </div>
                   <div>
                     <div className="font-semibold text-gray-900">Email Address</div>
-                    <div className="text-gray-600">hello@picknify.in</div>
+                    <div className="text-gray-600">hello@picnify.in</div>
                   </div>
                 </div>
                 <div className="flex items-center gap-4">

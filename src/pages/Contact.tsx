@@ -103,7 +103,7 @@ const Contact: React.FC = () => {
       icon: 'fas fa-envelope',
       title: 'Email Support',
       description: 'Send us your questions anytime',
-      contact: 'support@picknify.in',
+      contact: 'support@picnify.in',
       availability: 'Response within 24 hours',
       action: 'Send Email',
       status: 'always'
@@ -131,7 +131,7 @@ const Contact: React.FC = () => {
   const faqs = [
     {
       category: 'Booking',
-      question: 'How do I make a booking on Picknify?',
+      question: 'How do I make a booking on Picnify?',
       answer: 'Simply search for your destination, select your preferred property, choose your dates, and complete the secure payment process. You\'ll receive instant confirmation via email.'
     },
     {
@@ -152,11 +152,11 @@ const Contact: React.FC = () => {
     {
       category: 'Support',
       question: 'How can I contact customer support?',
-      answer: 'You can reach us via phone (+91 80 1234 5678), email (support@picknify.in), or live chat. Our support team is available Monday to Friday, 9 AM to 6 PM IST.'
+      answer: 'You can reach us via phone (+91 80 1234 5678), email (support@picnify.in), or live chat. Our support team is available Monday to Friday, 9 AM to 6 PM IST.'
     },
     {
       category: 'Host',
-      question: 'How can I list my property on Picknify?',
+      question: 'How can I list my property on Picnify?',
       answer: 'Click on "List Your Property" in the navigation menu, fill out the property details form, upload photos, and our team will review and approve your listing within 24-48 hours.'
     }
   ];
