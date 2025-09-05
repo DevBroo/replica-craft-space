@@ -244,7 +244,7 @@ const SearchForm: React.FC<SearchFormProps> = ({
         </div>
 
         {/* Date */}
-        <div className="lg:col-span-1">
+        <div className="lg:col-span-2">
           <Popover>
             <PopoverTrigger asChild>
               <Button
@@ -273,12 +273,12 @@ const SearchForm: React.FC<SearchFormProps> = ({
         </div>
 
         {/* Guests */}
-        <div className="lg:col-span-2">
+        <div className="lg:col-span-1">
           <Select value={filters.guests?.toString()} onValueChange={handleGuestsChange}>
-            <SelectTrigger className="w-full h-14 text-base border-gray-300 hover:border-gray-400 focus:border-gray-400 focus:ring-1 focus:ring-gray-300">
-              <div className="flex items-center w-full">
+            <SelectTrigger className="w-full h-14 text-base border-gray-300 hover:border-gray-400 focus:border-gray-400 focus:ring-1 focus:ring-gray-300 min-w-0">
+              <div className="flex items-center w-full min-w-0">
                 <UsersIcon className="w-5 h-5 mr-3 text-orange-500 flex-shrink-0" />
-                <SelectValue placeholder="Select group size" className="flex-1 text-left" />
+                <SelectValue placeholder="Guests" className="flex-1 text-left truncate" />
               </div>
             </SelectTrigger>
             <SelectContent>
