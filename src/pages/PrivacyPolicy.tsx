@@ -1,4 +1,5 @@
 import { Shield, Eye, Lock, FileText, Mail, Globe } from 'lucide-react';
+import { COMPANY_INFO } from '@/config/company';
 
 const PrivacyPolicy = () => {
   return (
@@ -156,9 +157,9 @@ const PrivacyPolicy = () => {
             <h2 className="text-2xl font-bold mb-4">Questions About Privacy?</h2>
             <p className="text-muted-foreground mb-6">Contact our Data Protection Officer for any privacy-related inquiries</p>
             <div className="space-y-2">
-              <p><strong>Email:</strong> privacy@picnify.com</p>
-              <p><strong>Address:</strong> Picnify Privacy Team, [Company Address]</p>
-              <p><strong>Phone:</strong> 1800-XXX-XXXX</p>
+              <p><strong>Email:</strong> {COMPANY_INFO.email.privacy}</p>
+              <p><strong>Address:</strong> {COMPANY_INFO.departments.privacy}, {COMPANY_INFO.address.headquarters}</p>
+              <p><strong>Phone:</strong> {COMPANY_INFO.phone.privacy}</p>
             </div>
           </section>
         </div>

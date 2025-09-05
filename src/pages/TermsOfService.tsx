@@ -1,4 +1,5 @@
 import { FileText, Scale, AlertCircle, CheckCircle, DollarSign, Users } from 'lucide-react';
+import { COMPANY_INFO } from '@/config/company';
 
 const TermsOfService = () => {
   return (
@@ -202,8 +203,8 @@ const TermsOfService = () => {
             <h2 className="text-2xl font-bold mb-4">Legal Questions?</h2>
             <p className="text-muted-foreground mb-6">Contact our legal team for clarification on these terms</p>
             <div className="space-y-2">
-              <p><strong>Email:</strong> legal@picnify.com</p>
-              <p><strong>Address:</strong> Picnify Legal Department, [Company Address]</p>
+              <p><strong>Email:</strong> {COMPANY_INFO.email.legal}</p>
+              <p><strong>Address:</strong> {COMPANY_INFO.departments.legal}, {COMPANY_INFO.address.headquarters}</p>
             </div>
           </section>
         </div>

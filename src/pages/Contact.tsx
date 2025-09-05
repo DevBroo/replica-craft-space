@@ -362,7 +362,7 @@ const Contact: React.FC = () => {
                 <div className="flex items-center gap-3">
                   <input type="checkbox" id="privacy" className="w-5 h-5 text-red-600 cursor-pointer" required />
                   <label htmlFor="privacy" className="text-sm text-gray-600 cursor-pointer">
-                    I agree to the <a href="#" className="text-red-600 hover:underline">Privacy Policy</a> and <a href="#" className="text-red-600 hover:underline">Terms of Service</a>
+                    I agree to the <Link to="/privacy-policy" className="text-red-600 hover:underline">Privacy Policy</Link> and <Link to="/terms-of-service" className="text-red-600 hover:underline">Terms of Service</Link>
                   </label>
                 </div>
                 <button
