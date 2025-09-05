@@ -315,6 +315,28 @@ function App() {
                       </Suspense>
                     } />
 
+                    {/* Agent Portal Routes - Alias to Host/Owner */}
+                    <Route path="/agent/login" element={
+                      <Suspense fallback={<LoadingSpinner />}>
+                        <HostLogin />
+                      </Suspense>
+                    } />
+                    <Route path="/agent/signup" element={
+                      <Suspense fallback={<LoadingSpinner />}>
+                        <HostSignup />
+                      </Suspense>
+                    } />
+                    <Route path="/agent/dashboard" element={
+                      <Suspense fallback={<LoadingSpinner />}>
+                        <HostDashboard />
+                      </Suspense>
+                    } />
+                    <Route path="/agent/day-picnic-setup/:propertyId" element={
+                      <Suspense fallback={<LoadingSpinner />}>
+                        <DayPicnicSetup />
+                      </Suspense>
+                    } />
+
                     {/* Owner Portal Routes - Lazy Loaded */}
                     <Route path="/owner/login" element={
                       <Suspense fallback={<LoadingSpinner />}>
