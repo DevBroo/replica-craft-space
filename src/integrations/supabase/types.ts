@@ -939,6 +939,72 @@ export type Database = {
         }
         Relationships: []
       }
+      live_session_requests: {
+        Row: {
+          accepted_at: string | null
+          actual_duration_minutes: number | null
+          channel_name: string
+          created_at: string | null
+          customer_id: string
+          designer_id: string
+          ended_at: string | null
+          estimated_duration_hours: number | null
+          expires_at: string | null
+          id: string
+          message: string | null
+          service_type: string
+          started_at: string | null
+          status: string
+        }
+        Insert: {
+          accepted_at?: string | null
+          actual_duration_minutes?: number | null
+          channel_name: string
+          created_at?: string | null
+          customer_id: string
+          designer_id: string
+          ended_at?: string | null
+          estimated_duration_hours?: number | null
+          expires_at?: string | null
+          id?: string
+          message?: string | null
+          service_type?: string
+          started_at?: string | null
+          status?: string
+        }
+        Update: {
+          accepted_at?: string | null
+          actual_duration_minutes?: number | null
+          channel_name?: string
+          created_at?: string | null
+          customer_id?: string
+          designer_id?: string
+          ended_at?: string | null
+          estimated_duration_hours?: number | null
+          expires_at?: string | null
+          id?: string
+          message?: string | null
+          service_type?: string
+          started_at?: string | null
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "live_session_requests_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "live_session_requests_designer_id_fkey"
+            columns: ["designer_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       locations: {
         Row: {
           category: string
@@ -1887,6 +1953,42 @@ export type Database = {
           },
         ]
       }
+      property_messages: {
+        Row: {
+          booking_id: string
+          created_at: string
+          id: string
+          is_read: boolean
+          message: string
+          property_id: string
+          receiver_id: string
+          sender_id: string
+          updated_at: string
+        }
+        Insert: {
+          booking_id: string
+          created_at?: string
+          id?: string
+          is_read?: boolean
+          message: string
+          property_id: string
+          receiver_id: string
+          sender_id: string
+          updated_at?: string
+        }
+        Update: {
+          booking_id?: string
+          created_at?: string
+          id?: string
+          is_read?: boolean
+          message?: string
+          property_id?: string
+          receiver_id?: string
+          sender_id?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       property_status_history: {
         Row: {
           actor_id: string | null
@@ -2478,6 +2580,66 @@ export type Database = {
         }
         Relationships: []
       }
+      user_payment_methods: {
+        Row: {
+          brand: string | null
+          cardholder_name: string | null
+          created_at: string | null
+          expiry_month: number | null
+          expiry_year: number | null
+          external_id: string | null
+          id: string
+          is_active: boolean | null
+          is_default: boolean | null
+          is_verified: boolean | null
+          last_four: string | null
+          metadata: Json | null
+          processor_metadata: Json | null
+          provider: string
+          type: string
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          brand?: string | null
+          cardholder_name?: string | null
+          created_at?: string | null
+          expiry_month?: number | null
+          expiry_year?: number | null
+          external_id?: string | null
+          id?: string
+          is_active?: boolean | null
+          is_default?: boolean | null
+          is_verified?: boolean | null
+          last_four?: string | null
+          metadata?: Json | null
+          processor_metadata?: Json | null
+          provider?: string
+          type: string
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          brand?: string | null
+          cardholder_name?: string | null
+          created_at?: string | null
+          expiry_month?: number | null
+          expiry_year?: number | null
+          external_id?: string | null
+          id?: string
+          is_active?: boolean | null
+          is_default?: boolean | null
+          is_verified?: boolean | null
+          last_four?: string | null
+          metadata?: Json | null
+          processor_metadata?: Json | null
+          provider?: string
+          type?: string
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       user_roles: {
         Row: {
           created_at: string
@@ -2910,6 +3072,60 @@ export type Database = {
         }
         Relationships: []
       }
+      user_payment_methods_safe: {
+        Row: {
+          brand: string | null
+          cardholder_name: string | null
+          created_at: string | null
+          expiry_month: number | null
+          expiry_year: number | null
+          id: string | null
+          is_active: boolean | null
+          is_default: boolean | null
+          is_verified: boolean | null
+          last_four: string | null
+          metadata: Json | null
+          provider: string | null
+          type: string | null
+          updated_at: string | null
+          user_id: string | null
+        }
+        Insert: {
+          brand?: string | null
+          cardholder_name?: string | null
+          created_at?: string | null
+          expiry_month?: number | null
+          expiry_year?: number | null
+          id?: string | null
+          is_active?: boolean | null
+          is_default?: boolean | null
+          is_verified?: boolean | null
+          last_four?: string | null
+          metadata?: never
+          provider?: string | null
+          type?: string | null
+          updated_at?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          brand?: string | null
+          cardholder_name?: string | null
+          created_at?: string | null
+          expiry_month?: number | null
+          expiry_year?: number | null
+          id?: string | null
+          is_active?: boolean | null
+          is_default?: boolean | null
+          is_verified?: boolean | null
+          last_four?: string | null
+          metadata?: never
+          provider?: string | null
+          type?: string | null
+          updated_at?: string | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
       approve_commission: {
@@ -2933,8 +3149,16 @@ export type Database = {
         Args: { p_user_id?: string }
         Returns: number
       }
+      expire_old_live_session_requests: {
+        Args: Record<PropertyKey, never>
+        Returns: undefined
+      }
       generate_commission_for_booking: {
         Args: { p_booking_id: string }
+        Returns: string
+      }
+      generate_live_session_channel: {
+        Args: Record<PropertyKey, never>
         Returns: string
       }
       get_admin_bank_details_safe: {
@@ -3210,6 +3434,10 @@ export type Database = {
       }
       is_analytics_admin: {
         Args: Record<PropertyKey, never>
+        Returns: boolean
+      }
+      is_designer_available_for_live_session: {
+        Args: { designer_profile_id: string }
         Returns: boolean
       }
       is_finance_admin: {

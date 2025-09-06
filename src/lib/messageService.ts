@@ -52,13 +52,15 @@ export class MessageService {
     try {
       console.log('🔍 Fetching real message threads for user:', userId);
       
+      const allThreads: MessageThread[] = [];
+
       // Get bookings where user is the customer (guest)
-      const { data: bookings, error } = await supabase
+      const { data: guestBookings, error: guestError } = await supabase
         .from('bookings')
         .select(`
           id,
           property_id,
-          customer_id,
+          user_id,
           status,
           created_at,
           properties!inner(
@@ -72,58 +74,128 @@ export class MessageService {
             )
           )
         `)
-        .eq('customer_id', userId)
-        // Temporarily allow all statuses for debugging
-        // .in('status', ['confirmed', 'completed']) // Only show threads for confirmed/completed bookings
+        .eq('user_id', userId)
+        .in('status', ['confirmed', 'completed'])
         .order('created_at', { ascending: false });
 
-      console.log('📊 Bookings query result:', { bookings, error });
+      console.log('📊 Guest bookings query result:', { guestBookings, guestError });
 
-      if (error) {
-        console.error('❌ Error fetching bookings for threads:', error);
-        return [];
-      }
-
-      if (!bookings || bookings.length === 0) {
-        console.log('⚠️ No confirmed bookings found for user:', userId);
-        return [];
-      }
-
-      console.log(`📋 Found ${bookings.length} confirmed bookings`);
-
-      // Convert bookings to message threads
-      const threads: MessageThread[] = bookings.map((booking: any) => {
-        const property = booking.properties;
-        const owner = property.profiles;
+      if (guestError) {
+        console.error('❌ Error fetching guest bookings:', guestError);
+      } else if (guestBookings && guestBookings.length > 0) {
+        console.log(`📋 Found ${guestBookings.length} guest bookings`);
         
-        console.log('🏠 Processing booking:', {
-          bookingId: booking.id,
-          propertyTitle: property.title,
-          ownerName: owner?.full_name
+        // Convert guest bookings to message threads
+        const guestThreads: MessageThread[] = guestBookings.map((booking: any) => {
+          const property = booking.properties;
+          const owner = property.profiles;
+          
+          console.log('🏠 Processing guest booking:', {
+            bookingId: booking.id,
+            propertyTitle: property.title,
+            ownerName: owner?.full_name
+          });
+          
+          return {
+            id: `thread-${booking.id}`,
+            booking_id: booking.id,
+            property_id: property.id,
+            guest_id: userId,
+            owner_id: property.owner_id,
+            subject: `Messages about ${property.title}`,
+            last_message_at: booking.created_at,
+            last_message_id: null,
+            is_active: true,
+            created_at: booking.created_at,
+            updated_at: booking.created_at,
+            guest_name: 'You',
+            owner_name: owner?.full_name || 'Property Owner',
+            property_title: property.title,
+            last_message: 'Start a conversation with the property owner',
+            unread_count: 0
+          };
         });
         
-        return {
-          id: `thread-${booking.id}`,
-          booking_id: booking.id,
-          property_id: property.id,
-          guest_id: userId,
-          owner_id: property.owner_id,
-          subject: `Messages about ${property.title}`,
-          last_message_at: booking.created_at,
-          last_message_id: null,
-          is_active: true,
-          created_at: booking.created_at,
-          updated_at: booking.created_at,
-          guest_name: 'You',
-          owner_name: owner?.full_name || 'Property Owner',
-          property_title: property.title,
-          last_message: 'Start a conversation with the property owner',
-          unread_count: 0
-        };
-      });
+        allThreads.push(...guestThreads);
+      }
 
-      console.log('✅ Real message threads created:', threads.length, threads);
-      return threads;
+      // Get bookings where user is the property owner
+      const { data: ownerBookings, error: ownerError } = await supabase
+        .from('bookings')
+        .select(`
+          id,
+          property_id,
+          user_id,
+          status,
+          created_at,
+          properties!inner(
+            id,
+            title,
+            owner_id,
+            profiles!properties_owner_id_fkey(
+              id,
+              full_name,
+              email
+            )
+          ),
+          profiles!bookings_user_id_fkey(
+            id,
+            full_name,
+            email
+          )
+        `)
+        .eq('properties.owner_id', userId)
+        .in('status', ['confirmed', 'completed'])
+        .order('created_at', { ascending: false });
+
+      console.log('📊 Owner bookings query result:', { ownerBookings, ownerError });
+
+      if (ownerError) {
+        console.error('❌ Error fetching owner bookings:', ownerError);
+      } else if (ownerBookings && ownerBookings.length > 0) {
+        console.log(`📋 Found ${ownerBookings.length} owner bookings`);
+        
+        // Convert owner bookings to message threads
+        const ownerThreads: MessageThread[] = ownerBookings.map((booking: any) => {
+          const property = booking.properties;
+          const guest = booking.profiles;
+          
+          console.log('🏠 Processing owner booking:', {
+            bookingId: booking.id,
+            propertyTitle: property.title,
+            guestName: guest?.full_name
+          });
+          
+          return {
+            id: `thread-${booking.id}`,
+            booking_id: booking.id,
+            property_id: property.id,
+            guest_id: booking.user_id,
+            owner_id: userId,
+            subject: `Messages about ${property.title}`,
+            last_message_at: booking.created_at,
+            last_message_id: null,
+            is_active: true,
+            created_at: booking.created_at,
+            updated_at: booking.created_at,
+            guest_name: guest?.full_name || 'Guest',
+            owner_name: 'You',
+            property_title: property.title,
+            last_message: 'Start a conversation with the guest',
+            unread_count: 0
+          };
+        });
+        
+        allThreads.push(...ownerThreads);
+      }
+
+      // Remove duplicates based on booking_id and sort by created_at
+      const uniqueThreads = allThreads.filter((thread, index, self) => 
+        index === self.findIndex(t => t.booking_id === thread.booking_id)
+      ).sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+
+      console.log('✅ Real message threads created:', uniqueThreads.length, uniqueThreads);
+      return uniqueThreads;
     } catch (error) {
       console.error('❌ Error fetching real message threads:', error);
       return [];
@@ -163,7 +235,7 @@ export class MessageService {
       
       // Try to get real messages from database
       const { data: messages, error } = await supabase
-        .from('messages')
+        .from('messages' as any)
         .select(`
           *,
           sender:profiles!messages_sender_id_fkey(full_name),
@@ -223,7 +295,7 @@ export class MessageService {
 
       // Try to save to messages table
       const { data: savedMessage, error } = await supabase
-        .from('messages')
+        .from('messages' as any)
         .insert({
           booking_id: messageData.booking_id,
           property_id: messageData.property_id,
@@ -262,20 +334,21 @@ export class MessageService {
       }
 
       // Convert saved message to Message format
+      const message = savedMessage as any;
       const formattedMessage: Message = {
-        id: savedMessage.id,
-        booking_id: savedMessage.booking_id,
-        property_id: savedMessage.property_id,
-        sender_id: savedMessage.sender_id,
-        receiver_id: savedMessage.receiver_id,
-        message: savedMessage.message,
-        message_type: savedMessage.message_type || 'text',
-        is_read: savedMessage.is_read || false,
-        read_at: savedMessage.read_at,
-        created_at: savedMessage.created_at,
-        updated_at: savedMessage.updated_at,
-        sender_name: savedMessage.sender?.full_name || 'You',
-        property_title: savedMessage.property?.title || 'Property'
+        id: message.id,
+        booking_id: message.booking_id,
+        property_id: message.property_id,
+        sender_id: message.sender_id,
+        receiver_id: message.receiver_id,
+        message: message.message,
+        message_type: message.message_type || 'text',
+        is_read: message.is_read || false,
+        read_at: message.read_at,
+        created_at: message.created_at,
+        updated_at: message.updated_at,
+        sender_name: message.sender?.full_name || 'You',
+        property_title: message.property?.title || 'Property'
       };
 
       console.log('✅ Message saved to database successfully');

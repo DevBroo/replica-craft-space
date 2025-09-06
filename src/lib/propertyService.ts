@@ -335,7 +335,7 @@ export class PropertyService {
       }
 
       console.log('✅ Owner properties fetched successfully:', data?.length || 0);
-      return data || [];
+      return (data as any) || [];
     } catch (error) {
       console.error('❌ Failed to fetch owner properties:', error);
       throw error;

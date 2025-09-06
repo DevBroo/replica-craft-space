@@ -69,7 +69,7 @@ export default function CustomerDashboard() {
       setProfileForm({
         full_name: user.full_name || '',
         phone: user.phone || '',
-        bio: user.bio || ''
+        bio: (user as any).bio || ''
       });
     }
   }, [user]);
@@ -140,7 +140,7 @@ export default function CustomerDashboard() {
 
     setEditLoading(true);
     try {
-      await updateProfile(user.id, profileForm);
+      await updateProfile(profileForm);
       setShowEditProfile(false);
       toast({
         title: "Profile Updated",
@@ -164,7 +164,7 @@ export default function CustomerDashboard() {
       setProfileForm({
         full_name: user.full_name || '',
         phone: user.phone || '',
-        bio: user.bio || ''
+        bio: (user as any).bio || ''
       });
     }
     setShowEditProfile(false);
@@ -570,8 +570,8 @@ export default function CustomerDashboard() {
                     {user?.phone && (
                       <p className="text-sm text-muted-foreground">{user.phone}</p>
                     )}
-                    {user?.bio && (
-                      <p className="text-sm text-muted-foreground mt-1 italic">"{user.bio}"</p>
+                    {(user as any)?.bio && (
+                      <p className="text-sm text-muted-foreground mt-1 italic">"{(user as any).bio}"</p>
                     )}
                     <Button variant="outline" size="sm" className="mt-2" onClick={handleEditProfile}>
                       <User className="h-4 w-4 mr-2" />
