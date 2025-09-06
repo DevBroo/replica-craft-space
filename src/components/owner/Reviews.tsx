@@ -23,6 +23,7 @@ const Reviews: React.FC<ReviewsProps> = ({ sidebarCollapsed, toggleSidebar, acti
   const [expandedReviews, setExpandedReviews] = useState<Set<string>>(new Set());
   const [reviews, setReviews] = useState<OwnerReview[]>([]);
   const [loading, setLoading] = useState(true);
+  const [hasProperties, setHasProperties] = useState(false);
 
   const toggleReviewExpansion = (reviewId: string) => {
     const newExpanded = new Set(expandedReviews);
@@ -79,8 +80,14 @@ const Reviews: React.FC<ReviewsProps> = ({ sidebarCollapsed, toggleSidebar, acti
       setLoading(true);
       const ownerReviews = await OwnerService.getOwnerReviews(user.id);
       setReviews(ownerReviews);
+      
+      // Check if user has properties by looking at the reviews data
+      // If we got here without error, it means the user has properties
+      setHasProperties(true);
     } catch (error) {
       console.error('❌ Error loading reviews:', error);
+      // If there's an error, we can't determine if user has properties
+      setHasProperties(false);
     } finally {
       setLoading(false);
     }
@@ -314,11 +321,11 @@ const Reviews: React.FC<ReviewsProps> = ({ sidebarCollapsed, toggleSidebar, acti
               </div>
               <div className="flex items-center space-x-2">
                 <img
-                  src="https://readdy.ai/api/search-image?query=professional%20Indian%20property%20owner%20businessman%20avatar%20headshot%20with%20traditional%20modern%20fusion%20style%20confident%20expression&width=40&height=40&seq=owner-avatar-001&orientation=squarish"
+                  src={user?.avatar_url || "https://readdy.ai/api/search-image?query=professional%20Indian%20property%20owner%20businessman%20avatar%20headshot%20with%20traditional%20modern%20fusion%20style%20confident%20expression&width=40&height=40&seq=owner-avatar-001&orientation=squarish"}
                   alt="Owner Avatar"
                   className="w-8 h-8 rounded-full object-cover"
                 />
-                <span className="text-sm font-medium text-gray-700">Rajesh Patel</span>
+                <span className="text-sm font-medium text-gray-700">{user?.full_name || user?.email || 'Property Owner'}</span>
                 <i className="fas fa-chevron-down text-gray-400 text-xs"></i>
               </div>
             </div>
@@ -737,14 +744,38 @@ const Reviews: React.FC<ReviewsProps> = ({ sidebarCollapsed, toggleSidebar, acti
                           <i className="fas fa-star text-gray-400 text-5xl"></i>
                           <div>
                             <h3 className="text-lg font-medium text-gray-900 mb-2">No reviews yet</h3>
-                            <p className="text-gray-500 mb-4">Start getting reviews by adding properties and hosting guests.</p>
-                            <button 
-                              onClick={() => setActiveTab('properties')}
-                              className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors cursor-pointer"
-                            >
-                              <i className="fas fa-plus mr-2"></i>
-                              Add Your First Property
-                            </button>
+                            {hasProperties ? (
+                              <>
+                                <p className="text-gray-500 mb-4">Your properties are ready! Reviews will appear here once guests start leaving feedback.</p>
+                                <div className="flex space-x-3">
+                                  <button 
+                                    onClick={() => setActiveTab('bookings')}
+                                    className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors cursor-pointer"
+                                  >
+                                    <i className="fas fa-calendar mr-2"></i>
+                                    View Bookings
+                                  </button>
+                                  <button 
+                                    onClick={() => setActiveTab('properties')}
+                                    className="bg-gray-600 text-white px-4 py-2 rounded-lg hover:bg-gray-700 transition-colors cursor-pointer"
+                                  >
+                                    <i className="fas fa-home mr-2"></i>
+                                    Manage Properties
+                                  </button>
+                                </div>
+                              </>
+                            ) : (
+                              <>
+                                <p className="text-gray-500 mb-4">Start getting reviews by adding properties and hosting guests.</p>
+                                <button 
+                                  onClick={() => setActiveTab('properties')}
+                                  className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors cursor-pointer"
+                                >
+                                  <i className="fas fa-plus mr-2"></i>
+                                  Add Your First Property
+                                </button>
+                              </>
+                            )}
                           </div>
                         </div>
                       </td>

@@ -139,13 +139,33 @@ export class OwnerService {
     try {
       console.log('🔍 Fetching reviews for owner:', ownerId);
       
+      // First, get all properties owned by this user
+      const { data: properties, error: propertiesError } = await supabase
+        .from('properties')
+        .select('id, title')
+        .eq('owner_id', ownerId);
+
+      if (propertiesError) {
+        console.error('❌ Error fetching owner properties:', propertiesError);
+        throw propertiesError;
+      }
+
+      if (!properties || properties.length === 0) {
+        console.log('📝 No properties found for owner, returning empty reviews');
+        return [];
+      }
+
+      const propertyIds = properties.map(p => p.id);
+      console.log('📝 Found properties for owner:', propertyIds);
+
+      // Then get reviews for those properties
       const { data, error } = await supabase
         .from('reviews')
         .select(`
           *,
-          properties!inner(title, owner_id)
+          profiles!reviews_user_id_fkey(full_name, email)
         `)
-        .eq('properties.owner_id', ownerId)
+        .in('property_id', propertyIds)
         .order('created_at', { ascending: false });
 
       if (error) {
@@ -153,17 +173,20 @@ export class OwnerService {
         throw error;
       }
 
-      const reviews = (data || []).map((review: any) => ({
-        id: review.id,
-        property_id: review.property_id,
-        property_title: review.properties?.title || 'Unknown Property',
-        reviewer_name: review.reviewer_name,
-        rating: review.rating,
-        comment: review.comment,
-        created_at: review.created_at,
-        response: review.response,
-        response_at: review.response_at
-      }));
+      const reviews = (data || []).map((review: any) => {
+        const property = properties.find(p => p.id === review.property_id);
+        return {
+          id: review.id,
+          property_id: review.property_id,
+          property_title: property?.title || 'Unknown Property',
+          reviewer_name: review.profiles?.full_name || review.profiles?.email || 'Anonymous',
+          rating: review.rating,
+          comment: review.comment,
+          created_at: review.created_at,
+          response: review.response,
+          response_at: review.response_at
+        };
+      });
 
       console.log('✅ Owner reviews fetched:', reviews.length);
       return reviews;
