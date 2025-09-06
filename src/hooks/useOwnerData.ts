@@ -30,6 +30,7 @@ export interface OwnerProperty {
 export interface OwnerBooking {
   id: string;
   property_id: string;
+  user_id: string;
   check_in_date: string;
   check_out_date: string;
   guests: number;

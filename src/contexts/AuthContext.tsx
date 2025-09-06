@@ -136,9 +136,9 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
             full_name: data.full_name,
             avatar_url: data.avatar_url,
             phone: data.phone,
-            about: data.about,
-            location: data.location,
-            languages: data.languages,
+            about: (data as any).about || '',
+            location: (data as any).location || '',
+            languages: (data as any).languages || '',
             created_at: data.created_at,
             updated_at: data.updated_at,
           };

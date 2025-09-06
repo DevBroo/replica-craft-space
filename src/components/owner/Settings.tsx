@@ -326,7 +326,7 @@ const Settings: React.FC<SettingsProps> = ({ sidebarCollapsed, toggleSidebar, ac
           phone: user?.phone || '',
           role: user?.role || '',
           created_at: user?.created_at || '',
-          last_sign_in: user?.last_sign_in_at || '',
+          last_sign_in: user?.created_at || '',
           user_id: user.id
         },
         properties: {

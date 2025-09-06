@@ -40,7 +40,7 @@ const NotificationPanel: React.FC = () => {
             formData.title,
             formData.message,
             user?.id,
-            formData.type,
+            'system',
             formData.action_url || undefined
           );
           break;
@@ -49,7 +49,7 @@ const NotificationPanel: React.FC = () => {
             formData.title,
             formData.message,
             user?.id,
-            formData.type,
+            'system',
             formData.action_url || undefined
           );
           break;
@@ -64,7 +64,7 @@ const NotificationPanel: React.FC = () => {
             formData.message,
             formData.role,
             user?.id,
-            formData.type,
+            'system',
             formData.action_url || undefined
           );
           break;

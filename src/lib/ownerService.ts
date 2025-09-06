@@ -3,6 +3,7 @@ import { supabase } from '@/integrations/supabase/client';
 export interface OwnerBooking {
   id: string;
   property_id: string;
+  user_id: string;
   property_title: string;
   guest_name: string;
   guest_email: string;
@@ -59,9 +60,10 @@ export class OwnerService {
         throw error;
       }
 
-      const bookings = (data || []).map((booking: any) => ({
+      const bookings: OwnerBooking[] = (data || []).map((booking: any) => ({
         id: booking.id,
         property_id: booking.property_id,
+        user_id: booking.user_id || '',
         property_title: booking.properties?.title || 'Unknown Property',
         guest_name: booking.guest_name || 'Unknown Guest',
         guest_email: booking.guest_email || '',
