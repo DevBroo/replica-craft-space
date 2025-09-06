@@ -13,7 +13,8 @@ import {
   BarChart3,
   Headphones, 
   Settings,
-  MapPin
+  MapPin,
+  MessageCircle
 } from 'lucide-react';
 import IconButton from './ui/IconButton';
 
@@ -43,6 +44,7 @@ const SharedSidebar: React.FC<SharedSidebarProps> = ({ sidebarCollapsed, setSide
     { id: 'cms', label: 'CMS Management', icon: Edit, path: '/admin/cms-management' },
     { id: 'notifications', label: 'Notifications', icon: Bell, path: '/admin/notifications-management' },
     { id: 'support', label: 'Support Tickets', icon: Headphones, path: '/admin/support-tickets' },
+    { id: 'live-chat', label: 'Live Chat', icon: MessageCircle, path: '/admin/live-chat' },
     { id: 'settings', label: 'Settings', icon: Settings, path: '/admin/settings' },
   ];
 

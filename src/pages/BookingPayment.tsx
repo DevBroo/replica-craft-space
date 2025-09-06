@@ -8,6 +8,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { PropertyService } from '@/lib/propertyService';
 import { BookingService } from '@/lib/bookingService';
 import { PhonePePayment } from '@/components/payment/PhonePePayment';
+import GuestInformationForm, { GuestInfo } from '@/components/ui/GuestInformationForm';
 import {
     ArrowLeft,
     Calendar,
@@ -26,6 +27,10 @@ interface BookingState {
     totalAmount: number;
     propertyTitle: string;
     propertyImages: string[];
+    // Optional guest info from day picnic booking
+    guestName?: string;
+    guestPhone?: string;
+    guestDateOfBirth?: string;
 }
 
 const BookingPayment: React.FC = () => {
@@ -40,9 +45,25 @@ const BookingPayment: React.FC = () => {
     const [loading, setLoading] = useState(true);
     const [creatingBooking, setCreatingBooking] = useState(false);
     const [showPayment, setShowPayment] = useState(false);
+    const [guestInfo, setGuestInfo] = useState<GuestInfo>({
+        name: '',
+        phone: '',
+        dateOfBirth: ''
+    });
 
     // Get booking data from location state or URL params
     const bookingData: BookingState | null = location.state?.bookingData || null;
+
+    // Initialize guest info from booking data if available (from day picnic booking)
+    useEffect(() => {
+        if (bookingData?.guestName || bookingData?.guestPhone || bookingData?.guestDateOfBirth) {
+            setGuestInfo({
+                name: bookingData.guestName || '',
+                phone: bookingData.guestPhone || '',
+                dateOfBirth: bookingData.guestDateOfBirth || ''
+            });
+        }
+    }, [bookingData]);
 
     useEffect(() => {
         if (!isAuthenticated) {
@@ -113,6 +134,34 @@ const BookingPayment: React.FC = () => {
     const proceedToPayment = () => {
         if (!user || !bookingData) return;
 
+        // Validate guest information
+        if (!guestInfo.name.trim()) {
+            toast({
+                title: "Guest Name Required",
+                description: "Please enter the guest's full name",
+                variant: "destructive"
+            });
+            return;
+        }
+
+        if (!guestInfo.phone.trim()) {
+            toast({
+                title: "Phone Number Required", 
+                description: "Please enter the guest's phone number",
+                variant: "destructive"
+            });
+            return;
+        }
+
+        if (!guestInfo.dateOfBirth) {
+            toast({
+                title: "Date of Birth Required",
+                description: "Please enter the guest's date of birth",
+                variant: "destructive"
+            });
+            return;
+        }
+
         // Store booking data in session for post-payment creation
         const bookingRequest = {
             property_id: propertyId!,
@@ -121,6 +170,10 @@ const BookingPayment: React.FC = () => {
             check_out_date: bookingData.checkOutDate,
             guests: bookingData.guests,
             total_amount: bookingData.totalAmount,
+            // Add mandatory guest information
+            guest_name: guestInfo.name.trim(),
+            guest_phone: guestInfo.phone.trim(),
+            guest_date_of_birth: guestInfo.dateOfBirth,
             payment_method: 'phonepe' as const,
             customer_details: {
                 name: user.email?.split('@')[0] || 'Guest',
@@ -130,7 +183,9 @@ const BookingPayment: React.FC = () => {
             booking_details: {
                 property_title: bookingData.propertyTitle,
                 property_images: bookingData.propertyImages,
-                booking_type: 'standard'
+                booking_type: bookingData.guestName ? 'day_picnic' : 'standard',
+                // Include original booking details if from day picnic
+                ...(bookingData as any).bookingDetails
             }
         };
 
@@ -308,23 +363,25 @@ const BookingPayment: React.FC = () => {
                             </CardHeader>
                             <CardContent className="space-y-3">
                                 <div className="flex justify-between">
-                                    <span className="text-gray-600">Name</span>
-                    <span className="font-medium">
-                        {user?.email?.split('@')[0] || 'Guest'}
-                    </span>
-                                </div>
-                                <div className="flex justify-between">
-                                    <span className="text-gray-600">Email</span>
+                                    <span className="text-gray-600">Account Email</span>
                                     <span className="font-medium">{user?.email}</span>
                                 </div>
                                 {user?.phone && (
                                     <div className="flex justify-between">
-                                        <span className="text-gray-600">Phone</span>
+                                        <span className="text-gray-600">Account Phone</span>
                                         <span className="font-medium">{user.phone}</span>
                                     </div>
                                 )}
                             </CardContent>
                         </Card>
+
+                        {/* Guest Information Form */}
+                        <GuestInformationForm
+                            onGuestInfoChange={setGuestInfo}
+                            initialData={guestInfo}
+                            showTitle={true}
+                            required={true}
+                        />
                     </div>
 
                     {/* Booking Summary */}
@@ -389,11 +446,18 @@ const BookingPayment: React.FC = () => {
 
                         <Button
                             onClick={proceedToPayment}
-                            className="w-full bg-purple-600 hover:bg-purple-700 text-white"
+                            disabled={!guestInfo.name.trim() || !guestInfo.phone.trim() || !guestInfo.dateOfBirth}
+                            className="w-full bg-purple-600 hover:bg-purple-700 text-white disabled:bg-gray-400 disabled:cursor-not-allowed"
                             size="lg"
                         >
                             Proceed to Payment
                         </Button>
+                        
+                        {(!guestInfo.name.trim() || !guestInfo.phone.trim() || !guestInfo.dateOfBirth) && (
+                            <p className="text-sm text-gray-600 text-center">
+                                Please complete guest information to proceed
+                            </p>
+                        )}
                     </div>
                 </div>
             </div>

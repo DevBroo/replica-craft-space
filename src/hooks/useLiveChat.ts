@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { supportTicketService } from '@/lib/supportTicketService';
+import { AIChatService, CustomerDetails } from '@/lib/aiChatService';
 import { toast } from '@/hooks/use-toast';
 
 export interface ChatMessage {
@@ -31,6 +32,8 @@ export const useLiveChat = () => {
   const [currentTicket, setCurrentTicket] = useState<ChatTicket | null>(null);
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [user, setUser] = useState<any>(null);
+  const [customerDetails, setCustomerDetails] = useState<CustomerDetails>({});
+  const [isAIMode, setIsAIMode] = useState(true);
 
   // Check authentication
   useEffect(() => {
@@ -181,14 +184,38 @@ export const useLiveChat = () => {
   };
 
   const getOrCreateChatTicket = useCallback(async () => {
-    if (!user) {
-      console.log('No user, cannot create chat ticket');
-      return;
-    }
-
     try {
       setIsCreatingTicket(true);
       console.log('Getting or creating chat ticket');
+      
+      if (!user) {
+        // Create guest session
+        console.log('Creating guest chat session');
+        const guestTicket = {
+          id: `guest-${Date.now()}`,
+          subject: 'Guest Live Chat Session',
+          status: 'open',
+          created_at: new Date().toISOString()
+        };
+        setCurrentTicket(guestTicket);
+        
+        // Add welcome message for guest
+        const welcomeMessage: ChatMessage = {
+          id: `welcome-${Date.now()}`,
+          content: "Hello! Welcome to Picnify support. I'm an AI assistant here to help you. Since you're not logged in, I can still assist you with general questions. For account-specific issues, you may need to sign in later. How can I help you today?",
+          author_id: 'ai-assistant',
+          author_role: 'agent',
+          created_at: new Date().toISOString(),
+          is_internal: false,
+          author_profile: {
+            full_name: 'AI Assistant',
+            email: 'ai@picnify.com',
+            role: 'agent'
+          }
+        };
+        setMessages([welcomeMessage]);
+        return;
+      }
       
       const ticket = await getOrCreateChatTicketForUser();
       setCurrentTicket(ticket);
@@ -203,49 +230,226 @@ export const useLiveChat = () => {
       setMessages(ticketMessages as any);
     } catch (error) {
       console.error('Error creating chat ticket:', error);
-      toast({
-        title: "Error",
-        description: "Failed to start chat session. Please try again.",
-        variant: "destructive"
-      });
+      
+      // Fallback to guest mode if database fails
+      console.log('Falling back to guest mode due to error');
+      const guestTicket = {
+        id: `guest-${Date.now()}`,
+        subject: 'Guest Live Chat Session',
+        status: 'open',
+        created_at: new Date().toISOString()
+      };
+      setCurrentTicket(guestTicket);
+      
+      const errorMessage: ChatMessage = {
+        id: `error-${Date.now()}`,
+        content: "Hello! I'm here to help you. Due to a temporary issue, we're running in guest mode. I can still assist you with general questions about Picnify. How can I help you today?",
+        author_id: 'ai-assistant',
+        author_role: 'agent',
+        created_at: new Date().toISOString(),
+        is_internal: false,
+        author_profile: {
+          full_name: 'AI Assistant',
+          email: 'ai@picnify.com',
+          role: 'agent'
+        }
+      };
+      setMessages([errorMessage]);
     } finally {
       setIsCreatingTicket(false);
     }
   }, [user]);
 
   const sendMessage = async (content: string) => {
-    if (!currentTicket || !user) {
-      console.log('Cannot send message: no ticket or user');
+    if (!currentTicket) {
+      console.log('Cannot send message: no ticket');
       return;
     }
 
     try {
       console.log('Sending message:', content);
-      await supportTicketService.addMessage(currentTicket.id, content, false);
-      console.log('Message sent successfully');
+      
+      // Add user message to local state immediately
+      const userMessage: ChatMessage = {
+        id: `temp-${Date.now()}`,
+        content,
+        author_id: user?.id || 'guest',
+        author_role: 'customer',
+        created_at: new Date().toISOString(),
+        is_internal: false,
+        author_profile: {
+          full_name: user?.user_metadata?.full_name || customerDetails.name || 'You',
+          email: user?.email || customerDetails.email || '',
+          role: 'customer'
+        }
+      };
+      
+      setMessages(prev => [...prev, userMessage]);
+      
+      // Save user message to database (only if authenticated)
+      if (user && !currentTicket.id.startsWith('guest-')) {
+        try {
+          await supportTicketService.addMessage(currentTicket.id, content, false);
+        } catch (dbError) {
+          console.warn('Failed to save message to database:', dbError);
+          // Continue with AI processing even if database save fails
+        }
+      }
+      
+      // Process with AI if in AI mode
+      if (isAIMode) {
+        try {
+          const aiResponse = await AIChatService.processMessage(content, currentTicket.id);
+          setCustomerDetails(AIChatService.getCustomerDetails());
+          
+          // Add AI response message
+          const aiMessage: ChatMessage = {
+            id: `ai-${Date.now()}`,
+            content: aiResponse.message,
+            author_id: 'ai-assistant',
+            author_role: 'agent',
+            created_at: new Date().toISOString(),
+            is_internal: false,
+            author_profile: {
+              full_name: 'AI Assistant',
+              email: 'ai@picnify.com',
+              role: 'agent'
+            }
+          };
+          
+          setMessages(prev => [...prev, aiMessage]);
+          
+          // Save AI response to database (only if authenticated)
+          if (user && !currentTicket.id.startsWith('guest-')) {
+            try {
+              await supportTicketService.addMessage(currentTicket.id, aiResponse.message, false, 'ai-assistant');
+            } catch (dbError) {
+              console.warn('Failed to save AI response to database:', dbError);
+            }
+          }
+          
+          // Check if should escalate to human
+          if (aiResponse.should_escalate || AIChatService.shouldEscalateToHuman(
+            AIChatService.getCustomerDetails(), 
+            messages.length + 2
+          )) {
+            setIsAIMode(false);
+            
+            // Add escalation message
+            const escalationMessage: ChatMessage = {
+              id: `escalation-${Date.now()}`,
+              content: "I'm connecting you with one of our human support agents who can provide more specialized assistance. They'll be with you shortly!",
+              author_id: 'system',
+              author_role: 'system',
+              created_at: new Date().toISOString(),
+              is_internal: false,
+              author_profile: {
+                full_name: 'System',
+                email: 'system@picnify.com',
+                role: 'system'
+              }
+            };
+            
+            setMessages(prev => [...prev, escalationMessage]);
+            
+            // Save escalation message and update ticket (only if authenticated)
+            if (user && !currentTicket.id.startsWith('guest-')) {
+              try {
+                await supportTicketService.addMessage(currentTicket.id, escalationMessage.content, false, 'system');
+                
+                // Update ticket to request human agent
+                await supportTicketService.updateTicket(currentTicket.id, {
+                  priority: 'high',
+                  category: customerDetails.issue_type === 'booking' ? 'Booking' : 
+                           customerDetails.issue_type === 'payment' ? 'Payment' : 
+                           customerDetails.issue_type === 'property' ? 'Property' : 'Other'
+                });
+              } catch (dbError) {
+                console.warn('Failed to save escalation to database:', dbError);
+              }
+            }
+          }
+        } catch (aiError) {
+          console.error('❌ AI processing error:', aiError);
+          
+          // Add error message to chat instead of failing silently
+          const errorMessage: ChatMessage = {
+            id: `error-${Date.now()}`,
+            content: "I'm experiencing some technical difficulties. Let me try to help you in a different way. Could you please tell me what you need assistance with?",
+            author_id: 'ai-assistant',
+            author_role: 'agent',
+            created_at: new Date().toISOString(),
+            is_internal: false,
+            author_profile: {
+              full_name: 'AI Assistant',
+              email: 'ai@picnify.com',
+              role: 'agent'
+            }
+          };
+          
+          setMessages(prev => [...prev, errorMessage]);
+          
+          // Don't immediately switch to human mode, give AI another chance
+          console.log('⚠️ AI error handled, continuing in AI mode');
+        }
+      }
+      
+      console.log('✅ Message sent successfully');
     } catch (error) {
-      console.error('Error sending message:', error);
+      console.error('❌ Critical error sending message:', error);
+      
+      // Add error message to chat instead of just showing toast
+      const criticalErrorMessage: ChatMessage = {
+        id: `critical-error-${Date.now()}`,
+        content: "I'm sorry, but I encountered an unexpected error. Please try sending your message again, or refresh the page if the problem persists.",
+        author_id: 'system',
+        author_role: 'system',
+        created_at: new Date().toISOString(),
+        is_internal: false,
+        author_profile: {
+          full_name: 'System',
+          email: 'system@picnify.com',
+          role: 'system'
+        }
+      };
+      
+      setMessages(prev => [...prev, criticalErrorMessage]);
+      
+      // Still show toast for user awareness
       toast({
-        title: "Error",
-        description: "Failed to send message. Please try again.",
+        title: "Connection Issue",
+        description: "There was a problem sending your message. The chat is still active - please try again.",
         variant: "destructive"
       });
     }
   };
 
   const endChat = async () => {
-    if (!currentTicket || !user) return;
+    if (!currentTicket) return;
 
     try {
-      console.log('Ending chat session for ticket:', currentTicket.id);
-      await supportTicketService.updateStatus(currentTicket.id, 'closed', 'User ended live chat session');
+      console.log('🔚 Ending chat session for ticket:', currentTicket.id);
       
-      // Clear from localStorage
-      localStorage.removeItem(`liveChat_${user.id}`);
+      // Only update database if not guest session
+      if (user && !currentTicket.id.startsWith('guest-')) {
+        try {
+          await supportTicketService.updateStatus(currentTicket.id, 'closed', 'User ended live chat session');
+          // Clear from localStorage
+          localStorage.removeItem(`liveChat_${user.id}`);
+        } catch (dbError) {
+          console.warn('⚠️ Failed to update database on chat end:', dbError);
+          // Continue with cleanup even if database update fails
+        }
+      }
+      
+      // Reset AI service
+      AIChatService.resetConversation();
       
       // Reset state
       setCurrentTicket(null);
       setMessages([]);
+      setCustomerDetails({});
+      setIsAIMode(true);
       setIsOpen(false);
       
       toast({
@@ -253,10 +457,18 @@ export const useLiveChat = () => {
         description: "Your chat session has been ended. You can start a new one anytime.",
       });
     } catch (error) {
-      console.error('Error ending chat:', error);
+      console.error('❌ Error ending chat:', error);
+      
+      // Force cleanup even if there's an error
+      setCurrentTicket(null);
+      setMessages([]);
+      setCustomerDetails({});
+      setIsAIMode(true);
+      setIsOpen(false);
+      
       toast({
-        title: "Error",
-        description: "Failed to end chat session.",
+        title: "Chat Session Ended",
+        description: "The chat session has been closed. You can start a new one anytime.",
         variant: "destructive"
       });
     }
@@ -282,6 +494,8 @@ export const useLiveChat = () => {
     sendMessage,
     endChat,
     isLoading,
-    isCreatingTicket
+    isCreatingTicket,
+    customerDetails,
+    isAIMode
   };
 };

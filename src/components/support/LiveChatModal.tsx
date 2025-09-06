@@ -2,8 +2,9 @@ import React, { useState, useRef, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { Badge } from '@/components/ui/badge';
 import { useLiveChat, ChatMessage } from '@/hooks/useLiveChat';
-import { MessageCircle, Send, X, LogIn, Clock } from 'lucide-react';
+import { MessageCircle, Send, X, LogIn, Clock, Bot, User, Phone, Mail, MapPin } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { format } from 'date-fns';
 
@@ -22,7 +23,9 @@ export const LiveChatModal: React.FC<LiveChatModalProps> = ({ open, onOpenChange
     isLoading,
     isCreatingTicket,
     openChat,
-    closeChat
+    closeChat,
+    customerDetails,
+    isAIMode
   } = useLiveChat();
   
   const [messageText, setMessageText] = useState('');
@@ -93,38 +96,8 @@ export const LiveChatModal: React.FC<LiveChatModalProps> = ({ open, onOpenChange
     return message.author_profile?.full_name || 'Support Agent';
   };
 
-  // Not authenticated view
-  if (!user) {
-    return (
-      <Dialog open={open} onOpenChange={onOpenChange}>
-        <DialogContent className="sm:max-w-md">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <MessageCircle className="w-5 h-5 text-primary" />
-              Live Chat
-            </DialogTitle>
-          </DialogHeader>
-          
-          <div className="text-center py-8">
-            <LogIn className="w-16 h-16 text-muted-foreground mx-auto mb-4" />
-            <h3 className="text-lg font-semibold mb-2">Sign in to Chat</h3>
-            <p className="text-muted-foreground mb-6">
-              Please sign in to your account to start a live chat with our support team.
-            </p>
-            <div className="flex gap-2">
-              <Button onClick={handleSignIn} className="flex-1">
-                <LogIn className="w-4 h-4 mr-2" />
-                Sign In
-              </Button>
-              <Button variant="outline" onClick={() => onOpenChange(false)} className="flex-1">
-                Cancel
-              </Button>
-            </div>
-          </div>
-        </DialogContent>
-      </Dialog>
-    );
-  }
+  // Guest mode information (removed authentication requirement)
+  const isGuestMode = !user;
 
   // Loading states
   if (isLoading || isCreatingTicket) {
@@ -158,6 +131,14 @@ export const LiveChatModal: React.FC<LiveChatModalProps> = ({ open, onOpenChange
             <DialogTitle className="flex items-center gap-2">
               <MessageCircle className="w-5 h-5 text-primary" />
               Live Chat
+              {isAIMode && <Badge variant="secondary" className="flex items-center gap-1">
+                <Bot className="w-3 h-3" />
+                AI Assistant
+              </Badge>}
+              {!isAIMode && <Badge variant="default" className="flex items-center gap-1">
+                <User className="w-3 h-3" />
+                Human Agent
+              </Badge>}
               {currentTicket?.status && (
                 <span className={`text-xs px-2 py-1 rounded-full ${
                   currentTicket.status === 'open' ? 'bg-green-100 text-green-800' :
@@ -177,11 +158,32 @@ export const LiveChatModal: React.FC<LiveChatModalProps> = ({ open, onOpenChange
               <X className="w-4 h-4" />
             </Button>
           </div>
-          {currentTicket && (
-            <p className="text-sm text-muted-foreground">
-              Chat started {format(new Date(currentTicket.created_at), 'MMM d, HH:mm')}
-            </p>
-          )}
+          <div className="space-y-2">
+            <div className="flex items-center justify-between">
+              {currentTicket && (
+                <p className="text-sm text-muted-foreground">
+                  {isGuestMode ? 'Guest Chat Session' : `Chat started ${format(new Date(currentTicket.created_at), 'MMM d, HH:mm')}`}
+                </p>
+              )}
+              {customerDetails.name && (
+                <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                  <User className="w-3 h-3" />
+                  {customerDetails.name}
+                  {customerDetails.email && (
+                    <>
+                      <Mail className="w-3 h-3 ml-2" />
+                      {customerDetails.email}
+                    </>
+                  )}
+                </div>
+              )}
+            </div>
+            {isGuestMode && (
+              <div className="text-xs text-muted-foreground bg-yellow-50 px-2 py-1 rounded">
+                💡 Guest mode - Sign in for full account support
+              </div>
+            )}
+          </div>
         </DialogHeader>
 
         {/* Messages */}
@@ -190,7 +192,10 @@ export const LiveChatModal: React.FC<LiveChatModalProps> = ({ open, onOpenChange
             <div className="text-center py-8">
               <MessageCircle className="w-12 h-12 text-muted-foreground mx-auto mb-4 opacity-50" />
               <p className="text-muted-foreground">
-                Welcome to live chat! Send a message to get started.
+                {isGuestMode 
+                  ? "Welcome to Picnify support! Our AI assistant is ready to help. Send a message to get started."
+                  : "Welcome to live chat! Send a message to get started."
+                }
               </p>
             </div>
           ) : (

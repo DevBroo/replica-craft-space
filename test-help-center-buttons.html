@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Help Center Button Test</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        :root {
+            /* Light Mode Color Palette */
+            --background: 0 0% 100%;
+            --foreground: 240 10% 3.9%;
+            --primary: 217 91% 60%;
+            --primary-foreground: 0 0% 100%;
+            --muted: 240 5% 96%;
+            --muted-foreground: 240 3.8% 46.1%;
+            --border: 240 5.9% 90%;
+            --accent: 240 5% 96%;
+            --accent-foreground: 240 10% 3.9%;
+        }
+        
+        /* Help Center Button Enhancements */
+        .help-center-button {
+            position: relative;
+            overflow: hidden;
+            -webkit-backdrop-filter: blur(10px);
+            backdrop-filter: blur(10px);
+        }
+        
+        .help-center-button::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+            transition: left 0.5s;
+        }
+        
+        .help-center-button:hover::before {
+            left: 100%;
+        }
+        
+        /* Ensure button text is always visible */
+        .help-center-button-active {
+            background: hsl(var(--primary)) !important;
+            color: hsl(var(--primary-foreground)) !important;
+            border-color: hsl(var(--primary)) !important;
+            box-shadow: 0 4px 12px hsl(var(--primary) / 0.25) !important;
+        }
+        
+        .help-center-button-inactive {
+            background: hsl(var(--muted)) !important;
+            color: hsl(var(--muted-foreground)) !important;
+            border-color: hsl(var(--border)) !important;
+        }
+        
+        .help-center-button-inactive:hover {
+            background: hsl(var(--accent)) !important;
+            color: hsl(var(--accent-foreground)) !important;
+            border-color: hsl(var(--primary) / 0.5) !important;
+        }
+    </style>
+</head>
+<body class="p-8 bg-white">
+    <div class="max-w-4xl mx-auto">
+        <h1 class="text-3xl font-bold mb-8 text-center">Help Center Button Test</h1>
+        
+        <div class="mb-8">
+            <h2 class="text-xl font-semibold mb-4">Test 1: Default State (All Topics Active)</h2>
+            <div class="flex flex-wrap gap-4 justify-center">
+                <button class="flex items-center px-6 py-3 rounded-lg font-medium transition-all duration-200 border help-center-button help-center-button-active">
+                    All Topics
+                </button>
+                <button class="flex items-center px-6 py-3 rounded-lg font-medium transition-all duration-200 border help-center-button help-center-button-inactive">
+                    Booking
+                </button>
+                <button class="flex items-center px-6 py-3 rounded-lg font-medium transition-all duration-200 border help-center-button help-center-button-inactive">
+                    Payment
+                </button>
+                <button class="flex items-center px-6 py-3 rounded-lg font-medium transition-all duration-200 border help-center-button help-center-button-inactive">
+                    Properties
+                </button>
+                <button class="flex items-center px-6 py-3 rounded-lg font-medium transition-all duration-200 border help-center-button help-center-button-inactive">
+                    Account
+                </button>
+            </div>
+        </div>
+        
+        <div class="mb-8">
+            <h2 class="text-xl font-semibold mb-4">Test 2: Interactive Test</h2>
+            <p class="mb-4 text-gray-600">Click the buttons below to test the visibility and state changes:</p>
+            <div class="flex flex-wrap gap-4 justify-center" id="interactive-buttons">
+                <button onclick="setActive(this)" class="flex items-center px-6 py-3 rounded-lg font-medium transition-all duration-200 border help-center-button help-center-button-active">
+                    All Topics
+                </button>
+                <button onclick="setActive(this)" class="flex items-center px-6 py-3 rounded-lg font-medium transition-all duration-200 border help-center-button help-center-button-inactive">
+                    Booking
+                </button>
+                <button onclick="setActive(this)" class="flex items-center px-6 py-3 rounded-lg font-medium transition-all duration-200 border help-center-button help-center-button-inactive">
+                    Payment
+                </button>
+                <button onclick="setActive(this)" class="flex items-center px-6 py-3 rounded-lg font-medium transition-all duration-200 border help-center-button help-center-button-inactive">
+                    Properties
+                </button>
+                <button onclick="setActive(this)" class="flex items-center px-6 py-3 rounded-lg font-medium transition-all duration-200 border help-center-button help-center-button-inactive">
+                    Account
+                </button>
+            </div>
+        </div>
+        
+        <div class="mb-8">
+            <h2 class="text-xl font-semibold mb-4">Test 3: Color Override Test</h2>
+            <p class="mb-4 text-gray-600">Test with different primary colors to simulate the AppearanceContext issue:</p>
+            <div class="mb-4 space-x-4">
+                <button onclick="changeColor('#3B82F6')" class="px-4 py-2 bg-blue-500 text-white rounded">Blue</button>
+                <button onclick="changeColor('#EF4444')" class="px-4 py-2 bg-red-500 text-white rounded">Red</button>
+                <button onclick="changeColor('#10B981')" class="px-4 py-2 bg-green-500 text-white rounded">Green</button>
+                <button onclick="changeColor('#F59E0B')" class="px-4 py-2 bg-yellow-500 text-white rounded">Yellow</button>
+                <button onclick="changeColor('#8B5CF6')" class="px-4 py-2 bg-purple-500 text-white rounded">Purple</button>
+            </div>
+            <div class="flex flex-wrap gap-4 justify-center" id="color-test-buttons">
+                <button class="flex items-center px-6 py-3 rounded-lg font-medium transition-all duration-200 border help-center-button help-center-button-active">
+                    Active Button
+                </button>
+                <button class="flex items-center px-6 py-3 rounded-lg font-medium transition-all duration-200 border help-center-button help-center-button-inactive">
+                    Inactive Button
+                </button>
+            </div>
+        </div>
+        
+        <div class="mt-8 p-4 bg-gray-100 rounded-lg">
+            <h3 class="font-semibold mb-2">Expected Behavior:</h3>
+            <ul class="text-sm text-gray-700 space-y-1">
+                <li>• Active buttons should have blue background with white text (or the selected color)</li>
+                <li>• Inactive buttons should have light gray background with darker text</li>
+                <li>• All buttons should be clearly visible and readable</li>
+                <li>• Hover effects should work smoothly</li>
+                <li>• Color changes should not make buttons invisible</li>
+            </ul>
+        </div>
+    </div>
+    
+    <script>
+        function setActive(clickedButton) {
+            // Remove active class from all buttons in the same container
+            const container = clickedButton.parentElement;
+            const buttons = container.querySelectorAll('button');
+            
+            buttons.forEach(button => {
+                button.classList.remove('help-center-button-active');
+                button.classList.add('help-center-button-inactive');
+            });
+            
+            // Add active class to clicked button
+            clickedButton.classList.remove('help-center-button-inactive');
+            clickedButton.classList.add('help-center-button-active');
+        }
+        
+        function hexToHsl(hex) {
+            // Remove # if present
+            hex = hex.replace('#', '');
+            
+            // Convert hex to RGB
+            const r = parseInt(hex.substr(0, 2), 16) / 255;
+            const g = parseInt(hex.substr(2, 2), 16) / 255;
+            const b = parseInt(hex.substr(4, 2), 16) / 255;
+            
+            // Convert RGB to HSL
+            const max = Math.max(r, g, b);
+            const min = Math.min(r, g, b);
+            let h = 0, s = 0, l = (max + min) / 2;
+            
+            if (max !== min) {
+                const d = max - min;
+                s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
+                
+                switch (max) {
+                    case r: h = (g - b) / d + (g < b ? 6 : 0); break;
+                    case g: h = (b - r) / d + 2; break;
+                    case b: h = (r - g) / d + 4; break;
+                }
+                h /= 6;
+            }
+            
+            // Convert to HSL string format for CSS
+            return `${Math.round(h * 360)} ${Math.round(s * 100)}% ${Math.round(l * 100)}%`;
+        }
+        
+        function changeColor(hexColor) {
+            const hslColor = hexToHsl(hexColor);
+            document.documentElement.style.setProperty('--primary', hslColor);
+            console.log(`Changed primary color to: ${hexColor} (HSL: ${hslColor})`);
+        }
+    </script>
+</body>
+</html>

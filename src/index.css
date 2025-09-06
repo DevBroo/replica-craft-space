@@ -235,6 +235,7 @@ All colors MUST be HSL.
   /* Modern Glass Effects */
   .glass-card {
     background: rgba(255, 255, 255, 0.05);
+    -webkit-backdrop-filter: blur(20px);
     backdrop-filter: blur(20px);
     border: 1px solid rgba(255, 255, 255, 0.1);
     box-shadow: var(--shadow-glass);
@@ -242,6 +243,7 @@ All colors MUST be HSL.
 
   .glass-card-light {
     background: rgba(255, 255, 255, 0.8);
+    -webkit-backdrop-filter: blur(20px);
     backdrop-filter: blur(20px);
     border: 1px solid rgba(255, 255, 255, 0.2);
     box-shadow: var(--shadow-glass);
@@ -326,6 +328,7 @@ All colors MUST be HSL.
   .sidebar-modern {
     background: hsl(var(--sidebar-background));
     border-right: 1px solid hsl(var(--sidebar-border));
+    -webkit-backdrop-filter: blur(20px);
     backdrop-filter: blur(20px);
   }
 
@@ -416,16 +419,16 @@ All colors MUST be HSL.
   /* Glassmorphic Effects */
   .glass-card {
     background: rgba(255, 255, 255, 0.1);
-    backdrop-filter: blur(20px);
     -webkit-backdrop-filter: blur(20px);
+    backdrop-filter: blur(20px);
     border: 1px solid rgba(255, 255, 255, 0.2);
     box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.37);
   }
   
   .glass-card-property {
     background: rgba(255, 255, 255, 0.08);
-    backdrop-filter: blur(16px);
     -webkit-backdrop-filter: blur(16px);
+    backdrop-filter: blur(16px);
     border: 1px solid rgba(255, 255, 255, 0.15);
     box-shadow: 0 12px 40px 0 rgba(31, 38, 135, 0.2);
     transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
@@ -433,8 +436,8 @@ All colors MUST be HSL.
   
   .glass-card-property:hover {
     background: rgba(255, 255, 255, 0.12);
-    backdrop-filter: blur(24px);
     -webkit-backdrop-filter: blur(24px);
+    backdrop-filter: blur(24px);
     border: 1px solid rgba(255, 255, 255, 0.25);
     box-shadow: 0 20px 60px 0 rgba(31, 38, 135, 0.3);
     transform: translateY(-8px) scale(1.02);
@@ -442,8 +445,8 @@ All colors MUST be HSL.
   
   .glass-sidebar {
     background: rgba(255, 255, 255, 0.12);
-    backdrop-filter: blur(20px);
     -webkit-backdrop-filter: blur(20px);
+    backdrop-filter: blur(20px);
     border: 1px solid rgba(255, 255, 255, 0.2);
     box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.37);
   }
@@ -483,5 +486,48 @@ All colors MUST be HSL.
   
   .property-card-actions {
     margin-top: auto;
+  }
+  
+  /* Help Center Button Enhancements */
+  .help-center-button {
+    position: relative;
+    overflow: hidden;
+    -webkit-backdrop-filter: blur(10px);
+    backdrop-filter: blur(10px);
+  }
+  
+  .help-center-button::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+    transition: left 0.5s;
+  }
+  
+  .help-center-button:hover::before {
+    left: 100%;
+  }
+  
+  /* Ensure button text is always visible */
+  .help-center-button-active {
+    background: hsl(var(--primary)) !important;
+    color: hsl(var(--primary-foreground)) !important;
+    border-color: hsl(var(--primary)) !important;
+    box-shadow: 0 4px 12px hsl(var(--primary) / 0.25) !important;
+  }
+  
+  .help-center-button-inactive {
+    background: hsl(var(--muted)) !important;
+    color: hsl(var(--muted-foreground)) !important;
+    border-color: hsl(var(--border)) !important;
+  }
+  
+  .help-center-button-inactive:hover {
+    background: hsl(var(--accent)) !important;
+    color: hsl(var(--accent-foreground)) !important;
+    border-color: hsl(var(--primary) / 0.5) !important;
   }
 }

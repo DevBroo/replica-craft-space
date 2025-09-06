@@ -130,7 +130,11 @@ const Header: React.FC = () => {
             <div className="hidden lg:flex items-center space-x-4 min-w-[200px] justify-end">
               {isAuthenticated && user ? (
                 <div className="flex items-center space-x-4">
-                  <div className="w-8 h-8 bg-gradient-to-r from-orange-500 to-red-500 rounded-full flex items-center justify-center text-white font-medium text-sm cursor-pointer hover:scale-110 transition-transform duration-200" title={user.email}>
+                  <div 
+                    className="w-8 h-8 bg-gradient-to-r from-orange-500 to-red-500 rounded-full flex items-center justify-center text-white font-medium text-sm cursor-pointer hover:scale-110 transition-transform duration-200" 
+                    title={user.email}
+                    onClick={() => navigate('/dashboard')}
+                  >
                     {user.email.charAt(0).toUpperCase()}
                   </div>
                   <button
@@ -283,7 +287,14 @@ const Header: React.FC = () => {
                 {isAuthenticated && user ? (
                   <>
                     <div className="flex items-center justify-center bg-gray-50 rounded-lg px-4 py-3">
-                      <div className="w-10 h-10 bg-gradient-to-r from-orange-500 to-red-500 rounded-full flex items-center justify-center text-white font-medium" title={user.email}>
+                      <div 
+                        className="w-10 h-10 bg-gradient-to-r from-orange-500 to-red-500 rounded-full flex items-center justify-center text-white font-medium cursor-pointer hover:scale-110 transition-transform duration-200" 
+                        title={user.email}
+                        onClick={() => {
+                          navigate('/dashboard');
+                          setIsMobileMenuOpen(false);
+                        }}
+                      >
                         {user.email.charAt(0).toUpperCase()}
                       </div>
                     </div>

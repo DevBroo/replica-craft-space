@@ -10,9 +10,15 @@ import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Calendar, Home, User, Heart, CreditCard, Bell, LogOut, MapPin, Star } from 'lucide-react';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
+import { Calendar, Home, User, Heart, CreditCard, Bell, LogOut, MapPin, Star, Edit, Save, X, MessageCircle } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
 import { ReviewYourStay } from '@/components/reviews/ReviewYourStay';
+import CustomerMessages from '@/components/customer/CustomerMessages';
+import { MessageService } from '@/lib/messageService';
 
 interface Booking {
   id: string;
@@ -34,10 +40,18 @@ interface Property {
 }
 
 export default function CustomerDashboard() {
-  const { user, logout } = useAuth();
+  const { user, logout, updateProfile } = useAuth();
   const navigate = useNavigate();
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [loading, setLoading] = useState(true);
+  const [showEditProfile, setShowEditProfile] = useState(false);
+  const [editLoading, setEditLoading] = useState(false);
+  const [activeTab, setActiveTab] = useState('bookings');
+  const [profileForm, setProfileForm] = useState({
+    full_name: '',
+    phone: '',
+    bio: ''
+  });
   
   const { savedProperties, savedCount, removeFromWishlist } = useWishlist();
 
@@ -49,10 +63,28 @@ export default function CustomerDashboard() {
     fetchUserData();
   }, [user, navigate]);
 
+  // Initialize profile form with user data
+  useEffect(() => {
+    if (user) {
+      setProfileForm({
+        full_name: user.full_name || '',
+        phone: user.phone || '',
+        bio: user.bio || ''
+      });
+    }
+  }, [user]);
+
   const fetchUserData = async () => {
     try {
       // Fetch bookings using BookingService
       if (user?.id) {
+        // First try to claim any bookings made with this email before user registration
+        try {
+          await supabase.rpc('claim_user_bookings');
+        } catch (claimError) {
+          // Silently handle if claim function is not available
+        }
+        
         const bookingsData = await BookingService.getUserBookings(user.id, user.email);
         const formattedBookings = bookingsData.map(booking => ({
           id: booking.id,
@@ -91,11 +123,114 @@ export default function CustomerDashboard() {
       console.error('Error fetching user data:', error);
       toast({
         title: "Error",
-        description: "Failed to load dashboard data",
+        description: "Failed to load dashboard data. Please refresh the page.",
         variant: "destructive"
       });
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleEditProfile = () => {
+    setShowEditProfile(true);
+  };
+
+  const handleSaveProfile = async () => {
+    if (!user?.id) return;
+
+    setEditLoading(true);
+    try {
+      await updateProfile(user.id, profileForm);
+      setShowEditProfile(false);
+      toast({
+        title: "Profile Updated",
+        description: "Your profile has been updated successfully.",
+      });
+    } catch (error) {
+      console.error('Error updating profile:', error);
+      toast({
+        title: "Update Failed",
+        description: "Failed to update profile. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setEditLoading(false);
+    }
+  };
+
+  const handleCancelEdit = () => {
+    // Reset form to original values
+    if (user) {
+      setProfileForm({
+        full_name: user.full_name || '',
+        phone: user.phone || '',
+        bio: user.bio || ''
+      });
+    }
+    setShowEditProfile(false);
+  };
+
+  const handleMessageHost = async (booking: Booking) => {
+    console.log('🚀 Starting message host for booking:', booking);
+    
+    if (!user?.id) {
+      toast({
+        title: "Login Required",
+        description: "Please login to message the property owner.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    try {
+      console.log('📋 Getting property details for property_id:', booking.property_id);
+      
+      // Get property details to find owner_id
+      const { data: propertyData, error: propertyError } = await supabase
+        .from('properties')
+        .select('owner_id, title')
+        .eq('id', booking.property_id)
+        .single();
+
+      console.log('🏠 Property data:', propertyData);
+      console.log('❌ Property error:', propertyError);
+
+      if (propertyError || !propertyData) {
+        toast({
+          title: "Error",
+          description: "Unable to find property owner. Please try again.",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      console.log('🧵 Creating message thread...');
+      
+      // Create or get existing message thread for this booking
+      const thread = await MessageService.getOrCreateThread(
+        booking.id,
+        booking.property_id,
+        user.id,
+        propertyData.owner_id
+      );
+
+      console.log('✅ Thread created:', thread);
+
+      // Switch to Messages tab to show the conversation
+      setActiveTab('messages');
+
+      toast({
+        title: "Message Thread Ready! 💬",
+        description: `You can now chat with the host about your booking for "${booking.property_title}".`,
+      });
+
+    } catch (error) {
+      console.error('❌ Error creating message thread:', error);
+      toast({
+        title: "Failed to Start Chat",
+        description: "Unable to start conversation with the host. Please try again.",
+        variant: "destructive",
+      });
     }
   };
 
@@ -166,6 +301,18 @@ export default function CustomerDashboard() {
       </header>
 
       <div className="container mx-auto px-4 py-8">
+        {/* Back to Home Button */}
+        <div className="mb-6">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => navigate('/')}
+            className="flex items-center gap-2 glass-card hover-lift"
+          >
+            <Home className="w-4 h-4" />
+            Back to Home
+          </Button>
+        </div>
         {/* Welcome Section */}
         <div className="mb-8 text-center">
           <h2 className="text-4xl font-bold mb-4 bg-gradient-to-r from-primary via-blue-600 to-purple-600 bg-clip-text text-transparent">
@@ -227,9 +374,10 @@ export default function CustomerDashboard() {
         </div>
 
         {/* Main Dashboard Content */}
-        <Tabs defaultValue="bookings" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-5 glass-card-light h-12 p-1">
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
+          <TabsList className="grid w-full grid-cols-6 glass-card-light h-12 p-1">
             <TabsTrigger value="bookings" className="data-[state=active]:bg-white/40 data-[state=active]:shadow-sm transition-all">My Bookings</TabsTrigger>
+            <TabsTrigger value="messages" className="data-[state=active]:bg-white/40 data-[state=active]:shadow-sm transition-all">Messages</TabsTrigger>
             <TabsTrigger value="reviews" className="data-[state=active]:bg-white/40 data-[state=active]:shadow-sm transition-all">Reviews</TabsTrigger>
             <TabsTrigger value="saved" className="data-[state=active]:bg-white/40 data-[state=active]:shadow-sm transition-all">Saved Properties</TabsTrigger>
             <TabsTrigger value="profile" className="data-[state=active]:bg-white/40 data-[state=active]:shadow-sm transition-all">Profile</TabsTrigger>
@@ -240,13 +388,33 @@ export default function CustomerDashboard() {
           <TabsContent value="bookings" className="space-y-4">
             <Card className="glass-card border-0 shadow-elevated">
               <CardHeader>
-                <CardTitle className="text-xl font-semibold bg-gradient-to-r from-primary to-blue-600 bg-clip-text text-transparent">My Bookings</CardTitle>
-                <CardDescription className="text-muted-foreground/80">
-                  View and manage your current and past bookings
-                </CardDescription>
+                <div className="flex items-center justify-between">
+                  <div>
+                    <CardTitle className="text-xl font-semibold bg-gradient-to-r from-primary to-blue-600 bg-clip-text text-transparent">My Bookings</CardTitle>
+                    <CardDescription className="text-muted-foreground/80">
+                      View and manage your current and past bookings
+                    </CardDescription>
+                  </div>
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    onClick={() => {
+                      setLoading(true);
+                      fetchUserData();
+                    }}
+                    disabled={loading}
+                  >
+                    {loading ? "Loading..." : "Refresh"}
+                  </Button>
+                </div>
               </CardHeader>
               <CardContent>
-                {bookings.length === 0 ? (
+                {loading ? (
+                  <div className="text-center py-8">
+                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
+                    <p className="text-muted-foreground">Loading your bookings...</p>
+                  </div>
+                ) : bookings.length === 0 ? (
                   <div className="text-center py-8">
                     <Calendar className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
                     <h3 className="text-lg font-semibold mb-2">No bookings yet</h3>
@@ -269,20 +437,47 @@ export default function CustomerDashboard() {
                           <p className="text-sm text-muted-foreground">
                             {new Date(booking.check_in_date).toLocaleDateString()} - {new Date(booking.check_out_date).toLocaleDateString()}
                           </p>
-                          <p className="text-sm font-medium">${booking.total_amount}</p>
+                          <p className="text-sm font-medium">₹{booking.total_amount.toLocaleString()}</p>
                         </div>
                         <div className="flex items-center space-x-2">
                           <Badge variant={getStatusBadgeVariant(booking.status)}>
                             {booking.status}
                           </Badge>
+                          <Button 
+                            variant="outline" 
+                            size="sm" 
+                            onClick={() => handleMessageHost(booking)}
+                            className="bg-blue-50 hover:bg-blue-100 text-blue-700 border-blue-200"
+                          >
+                            <MessageCircle className="h-3 w-3 mr-1" />
+                            Message Host
+                          </Button>
                           <Button variant="outline" size="sm" asChild>
-                            <Link to={`/properties/${booking.property_id}`}>View</Link>
+                            <Link to={`/booking/${booking.id}`}>View Booking</Link>
+                          </Button>
+                          <Button variant="ghost" size="sm" asChild>
+                            <Link to={`/property/${booking.property_id}`}>View Property</Link>
                           </Button>
                         </div>
                       </div>
                     ))}
                   </div>
                 )}
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          {/* Messages Tab */}
+          <TabsContent value="messages" className="space-y-4">
+            <Card className="glass-card border-0 shadow-elevated">
+              <CardHeader>
+                <CardTitle className="text-xl font-semibold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">Messages</CardTitle>
+                <CardDescription className="text-muted-foreground/80">
+                  Chat with property owners about your bookings and inquiries
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="p-0">
+                <CustomerMessages className="rounded-b-lg" />
               </CardContent>
             </Card>
           </TabsContent>
@@ -328,6 +523,8 @@ export default function CustomerDashboard() {
                           <button 
                             className="absolute top-3 right-3 p-2 rounded-full bg-white/80 hover:bg-white transition-colors"
                             onClick={() => removeFromWishlist(property.id)}
+                            aria-label={`Remove ${property.title} from wishlist`}
+                            title={`Remove ${property.title} from wishlist`}
                           >
                             <Heart className="h-4 w-4 fill-red-500 text-red-500" />
                           </button>
@@ -370,7 +567,13 @@ export default function CustomerDashboard() {
                   <div>
                     <h3 className="text-lg font-semibold">{user?.full_name || 'User'}</h3>
                     <p className="text-muted-foreground">{user?.email}</p>
-                    <Button variant="outline" size="sm" className="mt-2">
+                    {user?.phone && (
+                      <p className="text-sm text-muted-foreground">{user.phone}</p>
+                    )}
+                    {user?.bio && (
+                      <p className="text-sm text-muted-foreground mt-1 italic">"{user.bio}"</p>
+                    )}
+                    <Button variant="outline" size="sm" className="mt-2" onClick={handleEditProfile}>
                       <User className="h-4 w-4 mr-2" />
                       Edit Profile
                     </Button>
@@ -476,6 +679,66 @@ export default function CustomerDashboard() {
           </Card>
         </div>
       </div>
+
+      {/* Edit Profile Modal */}
+      <Dialog open={showEditProfile} onOpenChange={setShowEditProfile}>
+        <DialogContent className="sm:max-w-[500px]">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Edit className="h-5 w-5" />
+              Edit Profile
+            </DialogTitle>
+            <DialogDescription>
+              Update your personal information and preferences.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label htmlFor="full_name">Full Name</Label>
+              <Input
+                id="full_name"
+                value={profileForm.full_name}
+                onChange={(e) => setProfileForm(prev => ({ ...prev, full_name: e.target.value }))}
+                placeholder="Enter your full name"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="phone">Phone Number</Label>
+              <Input
+                id="phone"
+                type="tel"
+                value={profileForm.phone}
+                onChange={(e) => setProfileForm(prev => ({ ...prev, phone: e.target.value }))}
+                placeholder="Enter your phone number"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="bio">Bio</Label>
+              <Textarea
+                id="bio"
+                value={profileForm.bio}
+                onChange={(e) => setProfileForm(prev => ({ ...prev, bio: e.target.value }))}
+                placeholder="Tell us about yourself..."
+                rows={3}
+              />
+            </div>
+          </div>
+          <div className="flex justify-end space-x-2">
+            <Button variant="outline" onClick={handleCancelEdit} disabled={editLoading}>
+              <X className="h-4 w-4 mr-2" />
+              Cancel
+            </Button>
+            <Button onClick={handleSaveProfile} disabled={editLoading}>
+              {editLoading ? (
+                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+              ) : (
+                <Save className="h-4 w-4 mr-2" />
+              )}
+              Save Changes
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

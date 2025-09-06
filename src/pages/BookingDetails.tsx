@@ -1,9 +1,167 @@
-import React, { useState } from 'react';
-import { Link } from 'react-router-dom';
+import React, { useState, useEffect } from 'react';
+import { Link, useParams } from 'react-router-dom';
+import { supabase } from '@/integrations/supabase/client';
+import { useToast } from '@/hooks/use-toast';
+
+interface BookingData {
+  id: string;
+  property_id: string;
+  check_in_date: string;
+  check_out_date: string;
+  guests: number;
+  total_amount: number;
+  status: string;
+  payment_status: string;
+  user_id: string;
+  agent_id?: string;
+  customer_email?: string;
+  properties?: {
+    title: string;
+    address: string;
+    description?: string;
+    pricing?: any;
+    images?: string[];
+    amenities?: string[];
+  };
+}
 
 const BookingDetails: React.FC = () => {
+  const { id } = useParams<{ id: string }>();
+  const { toast } = useToast();
   const [showModifyModal, setShowModifyModal] = useState(false);
   const [showCancelModal, setShowCancelModal] = useState(false);
+  const [booking, setBooking] = useState<BookingData | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    if (id) {
+      fetchBookingDetails(id);
+    }
+  }, [id]);
+
+  const fetchBookingDetails = async (bookingId: string) => {
+    try {
+      setLoading(true);
+      console.log('🔍 Fetching booking details for ID:', bookingId);
+      
+      const { data, error } = await supabase
+        .from('bookings')
+        .select(`
+          *,
+          properties (
+            title,
+            address,
+            description,
+            pricing,
+            images,
+            amenities
+          )
+        `)
+        .eq('id', bookingId)
+        .single();
+
+      console.log('📊 Booking query result:', { data, error });
+
+      if (error) {
+        console.error('❌ Error fetching booking details:', error);
+        
+        // If booking not found, let's check what bookings exist
+        if (error.code === 'PGRST116') {
+          console.log('🔍 Booking not found, checking available bookings...');
+          
+          const { data: allBookings, error: listError } = await supabase
+            .from('bookings')
+            .select('id, created_at, properties(title)')
+            .limit(5);
+          
+          if (!listError && allBookings && allBookings.length > 0) {
+            console.log('📋 Available bookings:', allBookings);
+            toast({
+              title: "Booking Not Found",
+              description: `Booking ${bookingId} doesn't exist. Found ${allBookings.length} other bookings in the database.`,
+              variant: "destructive",
+            });
+          } else {
+            toast({
+              title: "Booking Not Found",
+              description: "This booking doesn't exist and no other bookings were found in the database.",
+              variant: "destructive",
+            });
+          }
+        } else {
+          toast({
+            title: "Error",
+            description: `Failed to load booking details: ${error.message}`,
+            variant: "destructive",
+          });
+        }
+        return;
+      }
+
+      if (!data) {
+        console.warn('⚠️ No booking data returned');
+        toast({
+          title: "Error",
+          description: "No booking found with this ID.",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      console.log('✅ Booking data loaded successfully:', data);
+      setBooking(data);
+    } catch (error) {
+      console.error('❌ Exception in fetchBookingDetails:', error);
+      toast({
+        title: "Error",
+        description: "Failed to load booking details. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const formatDate = (dateString: string) => {
+    return new Date(dateString).toLocaleDateString('en-US', {
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric'
+    });
+  };
+
+  const calculateNights = (checkIn: string, checkOut: string) => {
+    const start = new Date(checkIn);
+    const end = new Date(checkOut);
+    const diffTime = Math.abs(end.getTime() - start.getTime());
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+    return diffDays;
+  };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-orange-500"></div>
+          <p className="mt-4 text-gray-600">Loading booking details...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!booking) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <h2 className="text-2xl font-bold text-gray-900 mb-4">Booking Not Found</h2>
+          <p className="text-gray-600 mb-8">The booking you're looking for doesn't exist or has been removed.</p>
+          <Link to="/dashboard" className="bg-orange-500 text-white px-6 py-3 rounded-lg hover:bg-orange-600">
+            Back to Dashboard
+          </Link>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -16,7 +174,11 @@ const BookingDetails: React.FC = () => {
               <span className="text-sm font-medium">Back</span>
             </Link>
             <h1 className="text-lg font-semibold text-gray-900">Booking Details</h1>
-            <button className="text-gray-600 hover:text-gray-900 cursor-pointer whitespace-nowrap">
+            <button 
+              className="text-gray-600 hover:text-gray-900 cursor-pointer whitespace-nowrap"
+              title="Share booking"
+              aria-label="Share booking"
+            >
               <i className="fas fa-share-alt"></i>
             </button>
           </div>
@@ -24,24 +186,24 @@ const BookingDetails: React.FC = () => {
       </header>
 
       {/* Main Content */}
-      <main className="pt-16 pb-32">
-        {/* Hotel Banner */}
+      <main className="pt-16 pb-24 md:pb-20">
+        {/* Property Banner */}
         <div className="relative h-64 overflow-hidden">
           <img
-            src="https://images.unsplash.com/photo-1566073771259-6a8506099945?w=1440&h=256&fit=crop&crop=center"
-            alt="Grand Palace Hotel"
+            src={booking.properties?.images?.[0] || "https://images.unsplash.com/photo-1566073771259-6a8506099945?w=1440&h=256&fit=crop&crop=center"}
+            alt={booking.properties?.title || 'Property'}
             className="w-full h-full object-cover object-center"
           />
           <div className="absolute inset-0 bg-black bg-opacity-20"></div>
         </div>
 
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 -mt-8 relative z-10">
-          {/* Hotel Information Card */}
+          {/* Property Information Card */}
           <div className="bg-white rounded-xl shadow-lg border border-gray-200 mb-6">
             <div className="p-4 sm:p-6">
               <div className="flex flex-col sm:flex-row sm:items-start justify-between mb-4 gap-4">
                 <div>
-                  <h2 className="text-xl sm:text-2xl font-bold text-gray-900 mb-2">Grand Palace Hotel</h2>
+                  <h2 className="text-xl sm:text-2xl font-bold text-gray-900 mb-2">{booking.properties?.title || 'Property'}</h2>
                   <div className="flex items-center mb-2">
                     <div className="flex text-yellow-400 mr-2">
                       <i className="fas fa-star"></i>
@@ -54,12 +216,12 @@ const BookingDetails: React.FC = () => {
                   </div>
                   <p className="text-gray-600 flex items-center">
                     <i className="fas fa-map-marker-alt mr-2 text-red-500"></i>
-                    123 Fifth Avenue, Downtown, New York, NY 10001
+                    {booking.properties?.address || 'Address not available'}
                   </p>
                 </div>
                 <button className="bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 cursor-pointer whitespace-nowrap">
                   <i className="fas fa-hotel mr-2"></i>
-                  View Hotel
+                  View Property
                 </button>
               </div>
             </div>
@@ -70,11 +232,21 @@ const BookingDetails: React.FC = () => {
             <div className="p-4 sm:p-6">
               <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-4 gap-4">
                 <div>
-                  <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-green-100 text-green-800">
-                    <i className="fas fa-check-circle mr-2"></i>
-                    Confirmed
+                  <span className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium ${
+                    booking.status === 'confirmed' ? 'bg-green-100 text-green-800' :
+                    booking.status === 'pending' ? 'bg-yellow-100 text-yellow-800' :
+                    booking.status === 'cancelled' ? 'bg-red-100 text-red-800' :
+                    'bg-gray-100 text-gray-800'
+                  }`}>
+                    <i className={`fas ${
+                      booking.status === 'confirmed' ? 'fa-check-circle' :
+                      booking.status === 'pending' ? 'fa-clock' :
+                      booking.status === 'cancelled' ? 'fa-times-circle' :
+                      'fa-info-circle'
+                    } mr-2`}></i>
+                    {booking.status.charAt(0).toUpperCase() + booking.status.slice(1)}
                   </span>
-                  <p className="text-sm text-gray-600 mt-2">Booking Reference: <span className="font-semibold text-gray-900">#GPH-2024-001234</span></p>
+                  <p className="text-sm text-gray-600 mt-2">Booking Reference: <span className="font-semibold text-gray-900">#{booking.id.slice(-8).toUpperCase()}</span></p>
                 </div>
                 <div className="text-center">
                   <div className="w-20 h-20 bg-gray-100 rounded-lg flex items-center justify-center mb-2 mx-auto">
@@ -100,7 +272,7 @@ const BookingDetails: React.FC = () => {
                     </div>
                     <div>
                       <p className="text-sm text-gray-500">Check-in</p>
-                      <p className="font-semibold text-gray-900">December 25, 2024</p>
+                      <p className="font-semibold text-gray-900">{formatDate(booking.check_in_date)}</p>
                       <p className="text-sm text-gray-600">After 3:00 PM</p>
                     </div>
                   </div>
@@ -110,7 +282,7 @@ const BookingDetails: React.FC = () => {
                     </div>
                     <div>
                       <p className="text-sm text-gray-500">Check-out</p>
-                      <p className="font-semibold text-gray-900">December 27, 2024</p>
+                      <p className="font-semibold text-gray-900">{formatDate(booking.check_out_date)}</p>
                       <p className="text-sm text-gray-600">Before 11:00 AM</p>
                     </div>
                   </div>
@@ -122,7 +294,7 @@ const BookingDetails: React.FC = () => {
                     </div>
                     <div>
                       <p className="text-sm text-gray-500">Duration</p>
-                      <p className="font-semibold text-gray-900">2 nights</p>
+                      <p className="font-semibold text-gray-900">{calculateNights(booking.check_in_date, booking.check_out_date)} nights</p>
                     </div>
                   </div>
                   <div className="flex items-center mb-4">
@@ -131,7 +303,7 @@ const BookingDetails: React.FC = () => {
                     </div>
                     <div>
                       <p className="text-sm text-gray-500">Guests</p>
-                      <p className="font-semibold text-gray-900">2 adults</p>
+                      <p className="font-semibold text-gray-900">{booking.guests} guests</p>
                     </div>
                   </div>
                 </div>
@@ -161,26 +333,28 @@ const BookingDetails: React.FC = () => {
             <div className="p-4 sm:p-6">
               <div className="space-y-3">
                 <div className="flex justify-between">
-                  <span className="text-gray-600">Room rate (2 nights)</span>
-                  <span className="text-gray-900">$398.00</span>
+                  <span className="text-gray-600">Room rate ({calculateNights(booking.check_in_date, booking.check_out_date)} nights)</span>
+                  <span className="text-gray-900">₹{(booking.total_amount * 0.85).toFixed(2)}</span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-gray-600">Taxes & fees</span>
-                  <span className="text-gray-900">$67.30</span>
+                  <span className="text-gray-900">₹{(booking.total_amount * 0.12).toFixed(2)}</span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-gray-600">Service charge</span>
-                  <span className="text-gray-900">$23.70</span>
+                  <span className="text-gray-900">₹{(booking.total_amount * 0.03).toFixed(2)}</span>
                 </div>
                 <div className="border-t border-gray-200 pt-3">
                   <div className="flex justify-between">
                     <span className="text-lg font-semibold text-gray-900">Total Amount</span>
-                    <span className="text-lg font-bold text-gray-900">$489.00</span>
+                    <span className="text-lg font-bold text-gray-900">₹{booking.total_amount.toFixed(2)}</span>
                   </div>
                 </div>
                 <div className="flex items-center mt-4">
-                  <i className="fas fa-check-circle text-green-500 mr-2"></i>
-                  <span className="text-sm text-green-600 font-medium">Payment Completed</span>
+                  <i className={`fas ${booking.payment_status === 'completed' ? 'fa-check-circle text-green-500' : 'fa-clock text-yellow-500'} mr-2`}></i>
+                  <span className={`text-sm font-medium ${booking.payment_status === 'completed' ? 'text-green-600' : 'text-yellow-600'}`}>
+                    Payment {booking.payment_status === 'completed' ? 'Completed' : 'Pending'}
+                  </span>
                 </div>
               </div>
             </div>
@@ -310,7 +484,7 @@ const BookingDetails: React.FC = () => {
       </main>
 
       {/* Action Buttons */}
-      <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 p-4">
+      <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 p-4 z-40 shadow-lg">
         <div className="max-w-4xl mx-auto flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-4">
           <button
             onClick={() => setShowModifyModal(true)}
@@ -331,8 +505,8 @@ const BookingDetails: React.FC = () => {
 
       {/* Modify Modal */}
       {showModifyModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-xl max-w-md w-full p-6">
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4 pb-24">
+          <div className="bg-white rounded-xl max-w-md w-full p-6 max-h-[calc(100vh-8rem)] overflow-y-auto">
             <div className="text-center mb-6">
               <i className="fas fa-edit text-4xl text-blue-500 mb-4"></i>
               <h3 className="text-lg font-semibold text-gray-900 mb-2">Modify Booking</h3>
@@ -369,8 +543,8 @@ const BookingDetails: React.FC = () => {
 
       {/* Cancel Modal */}
       {showCancelModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-xl max-w-md w-full p-6">
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4 pb-24">
+          <div className="bg-white rounded-xl max-w-md w-full p-6 max-h-[calc(100vh-8rem)] overflow-y-auto">
             <div className="text-center mb-6">
               <i className="fas fa-exclamation-triangle text-4xl text-red-500 mb-4"></i>
               <h3 className="text-lg font-semibold text-gray-900 mb-2">Cancel Booking</h3>
@@ -379,7 +553,7 @@ const BookingDetails: React.FC = () => {
             <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-6">
               <p className="text-sm text-red-700">
                 <i className="fas fa-info-circle mr-2"></i>
-                Cancellation within 48 hours will incur a 50% charge ($244.50)
+                Cancellation within 48 hours will incur a 50% charge (₹244.50)
               </p>
             </div>
             <div className="flex space-x-3">

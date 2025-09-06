@@ -1,11 +1,40 @@
 import React, { useState } from 'react';
 import { Search, HelpCircle, Book, CreditCard, MapPin, User, Phone, Mail } from 'lucide-react';
 import { LiveChatModal } from '@/components/support/LiveChatModal';
+import { toast } from 'sonner';
 
 const HelpCenter = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('all');
   const [openChatModal, setOpenChatModal] = useState(false);
+
+  // Handle phone call
+  const handlePhoneCall = () => {
+    try {
+      window.open('tel:+918012345678', '_self');
+      toast.success('Opening phone dialer...');
+    } catch (error) {
+      toast.error('Unable to open phone dialer. Please call +91 80 1234 5678 manually.');
+    }
+  };
+
+  // Handle email
+  const handleEmail = () => {
+    try {
+      const subject = encodeURIComponent('Help Request');
+      const body = encodeURIComponent('Hello Picnify Support Team,\n\nI need help with:\n\n[Please describe your issue here]\n\nThank you!');
+      window.open(`mailto:support@picnify.in?subject=${subject}&body=${body}`, '_self');
+      toast.success('Opening email client...');
+    } catch (error) {
+      toast.error('Unable to open email client. Please email support@picnify.in manually.');
+    }
+  };
+
+  // Handle chat
+  const handleStartChat = () => {
+    setOpenChatModal(true);
+    toast.success('Starting live chat...');
+  };
 
   const faqCategories = [
     { id: 'all', name: 'All Topics', icon: HelpCircle },
@@ -110,10 +139,10 @@ const HelpCenter = () => {
             <button
               key={category.id}
               onClick={() => setSelectedCategory(category.id)}
-              className={`flex items-center px-6 py-3 rounded-lg font-medium transition-colors ${
+              className={`flex items-center px-6 py-3 rounded-lg font-medium transition-all duration-200 border help-center-button ${
                 selectedCategory === category.id
-                  ? 'bg-primary text-primary-foreground'
-                  : 'bg-muted hover:bg-muted/70'
+                  ? 'help-center-button-active'
+                  : 'help-center-button-inactive'
               }`}
             >
               <category.icon className="w-5 h-5 mr-2" />
@@ -159,9 +188,16 @@ const HelpCenter = () => {
               <div className="bg-primary/10 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
                 <Phone className="w-8 h-8 text-primary" />
               </div>
-              <h3 className="text-xl font-semibold mb-2">Call Us</h3>
-              <p className="text-muted-foreground mb-4">Available 24/7 for urgent assistance</p>
-              <p className="font-semibold">1800-XXX-XXXX</p>
+              <h3 className="text-xl font-semibold mb-2">Phone Support</h3>
+              <p className="text-muted-foreground mb-3">Speak directly with our support team</p>
+              <p className="font-semibold mb-2">+91 80 1234 5678</p>
+              <p className="text-sm text-muted-foreground mb-4">Mon-Fri 9AM-6PM IST</p>
+              <button 
+                onClick={handlePhoneCall}
+                className="bg-gray-100 text-gray-700 px-6 py-2 rounded-lg font-semibold hover:bg-gradient-to-r hover:from-red-500 hover:to-orange-500 hover:text-white transition-all duration-200"
+              >
+                Call Now
+              </button>
             </div>
             
             <div className="text-center">
@@ -169,8 +205,15 @@ const HelpCenter = () => {
                 <Mail className="w-8 h-8 text-primary" />
               </div>
               <h3 className="text-xl font-semibold mb-2">Email Support</h3>
-              <p className="text-muted-foreground mb-4">Get detailed help via email</p>
-              <p className="font-semibold">support@picnify.com</p>
+              <p className="text-muted-foreground mb-3">Send us your questions anytime</p>
+              <p className="font-semibold mb-2">support@picnify.in</p>
+              <p className="text-sm text-muted-foreground mb-4">Response within 24 hours</p>
+              <button 
+                onClick={handleEmail}
+                className="bg-gradient-to-r from-red-600 to-orange-500 text-white px-6 py-2 rounded-lg font-semibold hover:from-red-700 hover:to-orange-600 transition-all duration-200"
+              >
+                Send Email
+              </button>
             </div>
             
             <div className="text-center">
@@ -178,10 +221,12 @@ const HelpCenter = () => {
                 <HelpCircle className="w-8 h-8 text-primary" />
               </div>
               <h3 className="text-xl font-semibold mb-2">Live Chat</h3>
-              <p className="text-muted-foreground mb-4">Chat with our support agents</p>
+              <p className="text-muted-foreground mb-3">Get instant help from our team</p>
+              <p className="font-semibold mb-2">Chat Available</p>
+              <p className="text-sm text-muted-foreground mb-4">Available Mon-Fri 9AM-6PM</p>
               <button 
-                onClick={() => setOpenChatModal(true)}
-                className="bg-primary text-primary-foreground px-6 py-2 rounded-lg font-semibold hover:bg-primary/90 transition-colors"
+                onClick={handleStartChat}
+                className="bg-gray-100 text-gray-700 px-6 py-2 rounded-lg font-semibold hover:bg-gradient-to-r hover:from-blue-500 hover:to-purple-500 hover:text-white transition-all duration-200"
               >
                 Start Chat
               </button>

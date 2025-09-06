@@ -10,6 +10,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import GuestSelector, { GuestBreakdown } from '@/components/ui/GuestSelector';
+import GuestInformationForm, { GuestInfo } from '@/components/ui/GuestInformationForm';
 import { CouponService, Coupon } from '@/lib/couponService';
 import {
   Clock,
@@ -36,10 +37,16 @@ const DayPicnicBooking: React.FC = () => {
   const [package_, setPackage] = useState<any>(null);
   const [optionPrices, setOptionPrices] = useState<any[]>([]);
   const [selectedDate, setSelectedDate] = useState('');
+  const [selectedEndDate, setSelectedEndDate] = useState('');
   const [selectedDuration, setSelectedDuration] = useState('');
   const [guests, setGuests] = useState<GuestBreakdown>({ adults: 2, children: [] });
   const [selectedAddOns, setSelectedAddOns] = useState<string[]>([]);
   const [durationPrices, setDurationPrices] = useState<{ duration_type: string; price: number }[]>([]);
+  const [guestInfo, setGuestInfo] = useState<GuestInfo>({
+    name: '',
+    phone: '',
+    dateOfBirth: ''
+  });
 
   // Coupon related state
   const [couponCode, setCouponCode] = useState('');
@@ -319,8 +326,54 @@ const DayPicnicBooking: React.FC = () => {
 
     if (!selectedDate || selectedDate.trim() === '') {
       toast({
-        title: "Date Required",
-        description: "Please select a date for your day picnic",
+        title: "Start Date Required",
+        description: "Please select a start date for your day picnic",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    if (!selectedEndDate || selectedEndDate.trim() === '') {
+      toast({
+        title: "End Date Required",
+        description: "Please select an end date for your day picnic",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    if (selectedEndDate < selectedDate) {
+      toast({
+        title: "Invalid Date Range",
+        description: "End date must be after or same as start date",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    // Validate guest information
+    if (!guestInfo.name.trim()) {
+      toast({
+        title: "Guest Name Required",
+        description: "Please enter the guest's full name",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    if (!guestInfo.phone.trim()) {
+      toast({
+        title: "Phone Number Required",
+        description: "Please enter the guest's phone number",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    if (!guestInfo.dateOfBirth) {
+      toast({
+        title: "Date of Birth Required",
+        description: "Please enter the guest's date of birth",
         variant: "destructive"
       });
       return;
@@ -332,9 +385,13 @@ const DayPicnicBooking: React.FC = () => {
       propertyTitle: property?.title || 'Day Picnic',
       propertyImages: property?.images || [],
       checkInDate: selectedDate,
-      checkOutDate: selectedDate, // Same day for day picnics
+      checkOutDate: selectedEndDate,
       guests: guests.adults + guests.children.length,
       totalAmount: calculateTotalPrice(),
+      // Add mandatory guest information
+      guestName: guestInfo.name.trim(),
+      guestPhone: guestInfo.phone.trim(),
+      guestDateOfBirth: guestInfo.dateOfBirth,
       bookingDetails: {
         booking_type: 'day_picnic',
         package_id: package_.id,
@@ -546,22 +603,52 @@ const DayPicnicBooking: React.FC = () => {
                 <CardTitle>Book Your Day Picnic</CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
-                <div className={`${!selectedDate ? 'border-2 border-red-200 rounded-lg p-3 bg-red-50' : ''}`}>
-                  <Label htmlFor="date" className={`${!selectedDate ? 'text-red-700 font-semibold' : ''}`}>
-                    Select Date *
-                  </Label>
-                  <Input
-                    id="date"
-                    type="date"
-                    value={selectedDate}
-                    onChange={(e) => setSelectedDate(e.target.value)}
-                    min={new Date().toISOString().split('T')[0]}
-                    className={`mt-2 ${!selectedDate ? 'border-red-300 focus:border-red-500' : ''}`}
-                    placeholder="Please select a date"
-                  />
-                  {!selectedDate && (
-                    <p className="text-sm text-red-600 mt-1 font-medium">⚠️ Date is required to enable booking</p>
-                  )}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className={`${!selectedDate ? 'border-2 border-red-200 rounded-lg p-3 bg-red-50' : ''}`}>
+                    <Label htmlFor="date" className={`${!selectedDate ? 'text-red-700 font-semibold' : ''}`}>
+                      Start Date *
+                    </Label>
+                    <Input
+                      id="date"
+                      type="date"
+                      value={selectedDate}
+                      onChange={(e) => {
+                        setSelectedDate(e.target.value);
+                        // Auto-set end date to same day if not set
+                        if (!selectedEndDate) {
+                          setSelectedEndDate(e.target.value);
+                        }
+                      }}
+                      min={new Date().toISOString().split('T')[0]}
+                      className={`mt-2 ${!selectedDate ? 'border-red-300 focus:border-red-500' : ''}`}
+                      placeholder="Please select a start date"
+                    />
+                    {!selectedDate && (
+                      <p className="text-sm text-red-600 mt-1 font-medium">⚠️ Start date is required</p>
+                    )}
+                  </div>
+
+                  <div className={`${selectedDate && !selectedEndDate ? 'border-2 border-red-200 rounded-lg p-3 bg-red-50' : ''}`}>
+                    <Label htmlFor="endDate" className={`${selectedDate && !selectedEndDate ? 'text-red-700 font-semibold' : ''}`}>
+                      End Date *
+                    </Label>
+                    <Input
+                      id="endDate"
+                      type="date"
+                      value={selectedEndDate}
+                      onChange={(e) => setSelectedEndDate(e.target.value)}
+                      min={selectedDate || new Date().toISOString().split('T')[0]}
+                      className={`mt-2 ${selectedDate && !selectedEndDate ? 'border-red-300 focus:border-red-500' : ''}`}
+                      placeholder="Please select an end date"
+                      disabled={!selectedDate}
+                    />
+                    {selectedDate && !selectedEndDate && (
+                      <p className="text-sm text-red-600 mt-1 font-medium">⚠️ End date is required</p>
+                    )}
+                    {selectedEndDate && selectedDate && selectedEndDate < selectedDate && (
+                      <p className="text-sm text-red-600 mt-1 font-medium">⚠️ End date must be after start date</p>
+                    )}
+                  </div>
                 </div>
 
                 <div>
@@ -618,6 +705,16 @@ const DayPicnicBooking: React.FC = () => {
                     maxGuests={property.max_guests}
                     onGuestsChange={setGuests}
                     initialGuests={guests}
+                  />
+                </div>
+
+                {/* Guest Information Form */}
+                <div>
+                  <GuestInformationForm
+                    onGuestInfoChange={setGuestInfo}
+                    initialData={guestInfo}
+                    showTitle={true}
+                    required={true}
                   />
                 </div>
 
@@ -733,7 +830,7 @@ const DayPicnicBooking: React.FC = () => {
 
                 <Button
                   onClick={handleBooking}
-                  disabled={loading || !selectedDate || selectedDate.trim() === ''}
+                  disabled={loading || !selectedDate || selectedDate.trim() === '' || !selectedEndDate || selectedEndDate.trim() === '' || selectedEndDate < selectedDate || !guestInfo.name.trim() || !guestInfo.phone.trim() || !guestInfo.dateOfBirth}
                   className="w-full"
                 >
                   {loading ? (

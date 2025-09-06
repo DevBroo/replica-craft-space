@@ -76,6 +76,7 @@ const NotificationsManagement = React.lazy(
 );
 const Analytics = React.lazy(() => import("@/pages/admin/Analytics"));
 const SupportTickets = React.lazy(() => import("@/pages/admin/SupportTickets"));
+const LiveChatDashboard = React.lazy(() => import("@/components/admin/LiveChatDashboard"));
 const ProtectedRoute = React.lazy(
   () => import("@/components/admin/ProtectedRoute")
 );
@@ -298,6 +299,11 @@ function App() {
                     <Route path="/admin/support-tickets" element={
                       <Suspense fallback={<LoadingSpinner />}>
                         <ProtectedRoute><SupportTickets /></ProtectedRoute>
+                      </Suspense>
+                    } />
+                    <Route path="/admin/live-chat" element={
+                      <Suspense fallback={<LoadingSpinner />}>
+                        <ProtectedRoute><LiveChatDashboard /></ProtectedRoute>
                       </Suspense>
                     } />
                     <Route path="/admin/settings" element={

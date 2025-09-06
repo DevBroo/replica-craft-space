@@ -1,0 +1,524 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Live Chat Test</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        .chat-container {
+            max-height: 400px;
+            overflow-y: auto;
+        }
+        
+        .user-message {
+            background: #3B82F6;
+            color: white;
+            margin-left: auto;
+        }
+        
+        .ai-message {
+            background: #F3F4F6;
+            color: #374151;
+            margin-right: auto;
+        }
+        
+        .message-bubble {
+            max-width: 80%;
+            padding: 12px 16px;
+            border-radius: 18px;
+            margin-bottom: 8px;
+            word-wrap: break-word;
+        }
+        
+        .typing-indicator {
+            display: none;
+            align-items: center;
+            gap: 4px;
+            padding: 8px 12px;
+            background: #F3F4F6;
+            border-radius: 18px;
+            margin-right: auto;
+            margin-bottom: 8px;
+            max-width: 80px;
+        }
+        
+        .typing-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: #9CA3AF;
+            animation: typing 1.4s infinite ease-in-out;
+        }
+        
+        .typing-dot:nth-child(2) { animation-delay: 0.2s; }
+        .typing-dot:nth-child(3) { animation-delay: 0.4s; }
+        
+        @keyframes typing {
+            0%, 60%, 100% { transform: translateY(0); }
+            30% { transform: translateY(-10px); }
+        }
+    </style>
+</head>
+<body class="bg-gray-100 p-8">
+    <div class="max-w-4xl mx-auto">
+        <h1 class="text-3xl font-bold text-center mb-8">AI Live Chat Test</h1>
+        
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+            <!-- Chat Interface -->
+            <div class="bg-white rounded-lg shadow-lg overflow-hidden">
+                <div class="bg-blue-600 text-white p-4">
+                    <h2 class="text-xl font-semibold flex items-center gap-2">
+                        🤖 AI Live Chat
+                        <span id="mode-indicator" class="text-sm bg-blue-800 px-2 py-1 rounded">AI Mode</span>
+                    </h2>
+                    <p class="text-blue-100 text-sm">Test the AI-powered customer support chat</p>
+                </div>
+                
+                <div id="chat-messages" class="chat-container p-4 bg-gray-50">
+                    <div class="message-bubble ai-message">
+                        <div class="text-sm font-medium text-gray-600 mb-1">AI Assistant</div>
+                        <div>Hello! Welcome to Picnify support. I'm here to help you with any questions or concerns you might have. To better assist you, could you please tell me your name and what I can help you with today?</div>
+                    </div>
+                </div>
+                
+                <div id="typing-indicator" class="typing-indicator px-4">
+                    <div class="typing-dot"></div>
+                    <div class="typing-dot"></div>
+                    <div class="typing-dot"></div>
+                </div>
+                
+                <div class="p-4 border-t bg-white">
+                    <div class="flex gap-2">
+                        <input 
+                            type="text" 
+                            id="message-input" 
+                            placeholder="Type your message..." 
+                            class="flex-1 p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                            onkeypress="handleKeyPress(event)"
+                        >
+                        <button 
+                            onclick="sendMessage()" 
+                            class="bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition-colors"
+                        >
+                            Send
+                        </button>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Customer Details Panel -->
+            <div class="bg-white rounded-lg shadow-lg overflow-hidden">
+                <div class="bg-green-600 text-white p-4">
+                    <h2 class="text-xl font-semibold">👤 Collected Customer Details</h2>
+                    <p class="text-green-100 text-sm">Information extracted by AI</p>
+                </div>
+                
+                <div class="p-4 space-y-4">
+                    <div class="grid grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Name</label>
+                            <div id="customer-name" class="p-2 bg-gray-50 rounded border text-gray-600">Not provided</div>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Email</label>
+                            <div id="customer-email" class="p-2 bg-gray-50 rounded border text-gray-600">Not provided</div>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Phone</label>
+                            <div id="customer-phone" class="p-2 bg-gray-50 rounded border text-gray-600">Not provided</div>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Issue Type</label>
+                            <div id="customer-issue" class="p-2 bg-gray-50 rounded border text-gray-600">Not identified</div>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Booking Reference</label>
+                            <div id="customer-booking" class="p-2 bg-gray-50 rounded border text-gray-600">Not provided</div>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Urgency Level</label>
+                            <div id="customer-urgency" class="p-2 bg-gray-50 rounded border text-gray-600">Not determined</div>
+                        </div>
+                    </div>
+                    
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Conversation Summary</label>
+                        <div id="conversation-summary" class="p-3 bg-gray-50 rounded border text-gray-600 min-h-[100px] text-sm">
+                            Conversation will be summarized here...
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Test Scenarios -->
+        <div class="mt-8 bg-white rounded-lg shadow-lg p-6">
+            <h2 class="text-2xl font-semibold mb-4">🧪 Test Scenarios</h2>
+            <p class="text-gray-600 mb-4">Click these buttons to test different customer scenarios:</p>
+            
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                <button onclick="testScenario('intro')" class="p-4 bg-blue-50 hover:bg-blue-100 rounded-lg border border-blue-200 text-left transition-colors">
+                    <h3 class="font-semibold text-blue-800">👋 Introduction</h3>
+                    <p class="text-sm text-blue-600">Basic greeting with name</p>
+                </button>
+                
+                <button onclick="testScenario('booking')" class="p-4 bg-green-50 hover:bg-green-100 rounded-lg border border-green-200 text-left transition-colors">
+                    <h3 class="font-semibold text-green-800">📅 Booking Issue</h3>
+                    <p class="text-sm text-green-600">Customer with booking problem</p>
+                </button>
+                
+                <button onclick="testScenario('payment')" class="p-4 bg-yellow-50 hover:bg-yellow-100 rounded-lg border border-yellow-200 text-left transition-colors">
+                    <h3 class="font-semibold text-yellow-800">💳 Payment Issue</h3>
+                    <p class="text-sm text-yellow-600">Payment/refund related query</p>
+                </button>
+                
+                <button onclick="testScenario('urgent')" class="p-4 bg-red-50 hover:bg-red-100 rounded-lg border border-red-200 text-left transition-colors">
+                    <h3 class="font-semibold text-red-800">🚨 Urgent Issue</h3>
+                    <p class="text-sm text-red-600">High priority emergency</p>
+                </button>
+                
+                <button onclick="testScenario('complex')" class="p-4 bg-purple-50 hover:bg-purple-100 rounded-lg border border-purple-200 text-left transition-colors">
+                    <h3 class="font-semibold text-purple-800">🔄 Complex Issue</h3>
+                    <p class="text-sm text-purple-600">Multi-step problem</p>
+                </button>
+                
+                <button onclick="clearChat()" class="p-4 bg-gray-50 hover:bg-gray-100 rounded-lg border border-gray-200 text-left transition-colors">
+                    <h3 class="font-semibold text-gray-800">🗑️ Clear Chat</h3>
+                    <p class="text-sm text-gray-600">Reset conversation</p>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Simulated AI Chat Service
+        class MockAIChatService {
+            static customerDetails = {};
+            static conversationHistory = [];
+            static messageCount = 0;
+
+            static async processMessage(userMessage) {
+                this.conversationHistory.push({ role: 'user', content: userMessage });
+                this.messageCount++;
+
+                // Extract information from the message
+                const extractedInfo = this.extractCustomerInfo(userMessage);
+                this.customerDetails = { ...this.customerDetails, ...extractedInfo };
+
+                // Generate AI response
+                const aiResponse = await this.generateAIResponse(userMessage, this.customerDetails);
+                this.conversationHistory.push({ role: 'assistant', content: aiResponse.message });
+
+                return aiResponse;
+            }
+
+            static extractCustomerInfo(message) {
+                const extracted = {};
+                const lowerMessage = message.toLowerCase();
+
+                // Extract name patterns
+                const namePatterns = [
+                    /my name is ([a-zA-Z\s]+)/i,
+                    /i'm ([a-zA-Z\s]+)/i,
+                    /i am ([a-zA-Z\s]+)/i,
+                    /this is ([a-zA-Z\s]+)/i
+                ];
+
+                for (const pattern of namePatterns) {
+                    const match = message.match(pattern);
+                    if (match && match[1] && match[1].trim().length > 1) {
+                        extracted.name = match[1].trim();
+                        break;
+                    }
+                }
+
+                // Extract email
+                const emailPattern = /([a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,})/;
+                const emailMatch = message.match(emailPattern);
+                if (emailMatch) {
+                    extracted.email = emailMatch[1];
+                }
+
+                // Extract phone number
+                const phonePattern = /(\+91[\s-]?)?([6-9]\d{9})/;
+                const phoneMatch = message.match(phonePattern);
+                if (phoneMatch && phoneMatch[0]) {
+                    extracted.phone = phoneMatch[0].replace(/[\s-]/g, '');
+                }
+
+                // Extract booking reference
+                const bookingPatterns = [
+                    /booking.*?([A-Z0-9]{6,})/i,
+                    /reference.*?([A-Z0-9]{6,})/i,
+                    /order.*?([A-Z0-9]{6,})/i
+                ];
+
+                for (const pattern of bookingPatterns) {
+                    const match = message.match(pattern);
+                    if (match && match[1]) {
+                        extracted.booking_reference = match[1];
+                        break;
+                    }
+                }
+
+                // Determine issue type
+                if (lowerMessage.includes('booking') || lowerMessage.includes('reservation')) {
+                    extracted.issue_type = 'booking';
+                } else if (lowerMessage.includes('payment') || lowerMessage.includes('refund') || lowerMessage.includes('charge')) {
+                    extracted.issue_type = 'payment';
+                } else if (lowerMessage.includes('property') || lowerMessage.includes('location') || lowerMessage.includes('venue')) {
+                    extracted.issue_type = 'property';
+                } else if (lowerMessage.includes('account') || lowerMessage.includes('login') || lowerMessage.includes('password')) {
+                    extracted.issue_type = 'account';
+                }
+
+                // Determine urgency
+                if (lowerMessage.includes('urgent') || lowerMessage.includes('emergency') || lowerMessage.includes('asap')) {
+                    extracted.urgency_level = 'high';
+                } else if (lowerMessage.includes('soon') || lowerMessage.includes('today')) {
+                    extracted.urgency_level = 'medium';
+                }
+
+                return extracted;
+            }
+
+            static async generateAIResponse(userMessage, customerDetails) {
+                const lowerMessage = userMessage.toLowerCase();
+                
+                // Simulate AI processing delay
+                await new Promise(resolve => setTimeout(resolve, 1000 + Math.random() * 2000));
+
+                // Greeting responses
+                if (this.conversationHistory.length <= 2 && (
+                    lowerMessage.includes('hello') || 
+                    lowerMessage.includes('hi') || 
+                    lowerMessage.includes('hey') ||
+                    lowerMessage.includes('good')
+                )) {
+                    return {
+                        message: `Hello! Welcome to Picnify support. I'm here to help you with any questions or concerns you might have. To better assist you, could you please tell me your name and what I can help you with today?`,
+                        next_question: "What's your name and how can I assist you?"
+                    };
+                }
+
+                // Collect missing information
+                if (!customerDetails.name && !this.isNameInMessage(userMessage)) {
+                    return {
+                        message: "Thank you for contacting us! To provide you with personalized assistance, could you please tell me your name?",
+                        next_question: "What's your name?"
+                    };
+                }
+
+                if (!customerDetails.email && customerDetails.name) {
+                    return {
+                        message: `Nice to meet you, ${customerDetails.name}! Could you please provide your email address so I can look up your account and send you any follow-up information?`,
+                        next_question: "What's your email address?"
+                    };
+                }
+
+                // Issue-specific responses
+                if (customerDetails.issue_type === 'booking') {
+                    if (!customerDetails.booking_reference) {
+                        return {
+                            message: "I understand you have a booking-related inquiry. Do you have a booking reference number? This will help me locate your reservation quickly.",
+                            next_question: "What's your booking reference number?"
+                        };
+                    } else {
+                        return {
+                            message: `I found your booking reference ${customerDetails.booking_reference}. Let me check the details for you. What specific issue are you experiencing with your booking?`,
+                            suggested_actions: ['Check booking status', 'Modify booking', 'Cancel booking', 'Contact property owner'],
+                            should_escalate: this.messageCount > 5
+                        };
+                    }
+                }
+
+                if (customerDetails.issue_type === 'payment') {
+                    return {
+                        message: "I can help you with payment-related issues. Are you having trouble with a recent payment, need a refund, or have questions about charges? Also, if you have a booking reference, that would be helpful.",
+                        suggested_actions: ['Check payment status', 'Process refund', 'Dispute charge', 'Update payment method'],
+                        should_escalate: this.messageCount > 4
+                    };
+                }
+
+                // Check for escalation
+                if (customerDetails.urgency_level === 'high' || this.messageCount > 8) {
+                    return {
+                        message: "I understand this is important to you. Let me connect you with one of our human support agents who can provide more specialized assistance. They'll be with you shortly!",
+                        should_escalate: true
+                    };
+                }
+
+                // General helpful response
+                return {
+                    message: `Thank you for the information, ${customerDetails.name || 'there'}! I understand you need help with ${customerDetails.issue_type || 'your inquiry'}. Let me assist you with this. Could you provide more specific details about what you're experiencing?`,
+                    collected_info: customerDetails,
+                    confidence_score: this.calculateConfidenceScore(customerDetails)
+                };
+            }
+
+            static isNameInMessage(message) {
+                const nameIndicators = ['my name is', "i'm", 'i am', 'this is', 'call me'];
+                const lowerMessage = message.toLowerCase();
+                return nameIndicators.some(indicator => lowerMessage.includes(indicator));
+            }
+
+            static calculateConfidenceScore(details) {
+                let score = 0;
+                if (details.name) score += 20;
+                if (details.email) score += 20;
+                if (details.phone) score += 15;
+                if (details.issue_type) score += 25;
+                if (details.booking_reference) score += 20;
+                return Math.min(score, 100);
+            }
+
+            static resetConversation() {
+                this.customerDetails = {};
+                this.conversationHistory = [];
+                this.messageCount = 0;
+            }
+        }
+
+        // UI Functions
+        function addMessage(content, isUser = false, author = null) {
+            const messagesContainer = document.getElementById('chat-messages');
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `message-bubble ${isUser ? 'user-message' : 'ai-message'}`;
+            
+            const authorName = author || (isUser ? 'You' : 'AI Assistant');
+            const textColor = isUser ? 'text-blue-100' : 'text-gray-600';
+            
+            messageDiv.innerHTML = `
+                <div class="text-sm font-medium ${textColor} mb-1">${authorName}</div>
+                <div>${content}</div>
+            `;
+            
+            messagesContainer.appendChild(messageDiv);
+            messagesContainer.scrollTop = messagesContainer.scrollHeight;
+        }
+
+        function showTypingIndicator() {
+            document.getElementById('typing-indicator').style.display = 'flex';
+            const messagesContainer = document.getElementById('chat-messages');
+            messagesContainer.scrollTop = messagesContainer.scrollHeight;
+        }
+
+        function hideTypingIndicator() {
+            document.getElementById('typing-indicator').style.display = 'none';
+        }
+
+        function updateCustomerDetails() {
+            const details = MockAIChatService.customerDetails;
+            
+            document.getElementById('customer-name').textContent = details.name || 'Not provided';
+            document.getElementById('customer-email').textContent = details.email || 'Not provided';
+            document.getElementById('customer-phone').textContent = details.phone || 'Not provided';
+            document.getElementById('customer-issue').textContent = details.issue_type || 'Not identified';
+            document.getElementById('customer-booking').textContent = details.booking_reference || 'Not provided';
+            document.getElementById('customer-urgency').textContent = details.urgency_level || 'Not determined';
+            
+            // Update conversation summary
+            const summary = MockAIChatService.conversationHistory
+                .slice(-3)
+                .map(msg => `${msg.role === 'user' ? 'Customer' : 'AI'}: ${msg.content.substring(0, 100)}...`)
+                .join('\n\n');
+            document.getElementById('conversation-summary').textContent = summary || 'Conversation will be summarized here...';
+        }
+
+        async function sendMessage() {
+            const input = document.getElementById('message-input');
+            const message = input.value.trim();
+            
+            if (!message) return;
+            
+            // Add user message
+            addMessage(message, true);
+            input.value = '';
+            
+            // Show typing indicator
+            showTypingIndicator();
+            
+            try {
+                // Process with AI
+                const response = await MockAIChatService.processMessage(message);
+                
+                // Hide typing indicator
+                hideTypingIndicator();
+                
+                // Add AI response
+                addMessage(response.message, false);
+                
+                // Update customer details
+                updateCustomerDetails();
+                
+                // Check if should escalate
+                if (response.should_escalate) {
+                    setTimeout(() => {
+                        addMessage("I'm connecting you with one of our human support agents who can provide more specialized assistance. They'll be with you shortly!", false, "System");
+                        document.getElementById('mode-indicator').textContent = 'Human Agent';
+                        document.getElementById('mode-indicator').className = 'text-sm bg-green-800 px-2 py-1 rounded';
+                    }, 1000);
+                }
+                
+            } catch (error) {
+                hideTypingIndicator();
+                addMessage("I apologize, but I'm having trouble processing your request right now. Let me connect you with a human agent.", false);
+            }
+        }
+
+        function handleKeyPress(event) {
+            if (event.key === 'Enter') {
+                sendMessage();
+            }
+        }
+
+        function testScenario(scenario) {
+            const scenarios = {
+                intro: "Hi there! My name is Sarah Johnson and I need help with something.",
+                booking: "Hello, my name is John Doe and I'm having trouble with my booking. My booking reference is PIC123456 and I need to change the date.",
+                payment: "Hi, I'm Lisa Smith. I was charged twice for my booking and need a refund. My email is lisa.smith@email.com",
+                urgent: "URGENT! My name is Mike Wilson, booking ref ABC789XYZ. The property is not as described and my event is tomorrow! Please help ASAP!",
+                complex: "Hello, I'm Emma Davis (emma.davis@email.com, +91-9876543210). I have multiple issues: my booking PIC456789 was cancelled, I was still charged, and now I can't rebook the same property for my anniversary."
+            };
+            
+            if (scenarios[scenario]) {
+                document.getElementById('message-input').value = scenarios[scenario];
+                sendMessage();
+            }
+        }
+
+        function clearChat() {
+            // Clear messages
+            const messagesContainer = document.getElementById('chat-messages');
+            messagesContainer.innerHTML = `
+                <div class="message-bubble ai-message">
+                    <div class="text-sm font-medium text-gray-600 mb-1">AI Assistant</div>
+                    <div>Hello! Welcome to Picnify support. I'm here to help you with any questions or concerns you might have. To better assist you, could you please tell me your name and what I can help you with today?</div>
+                </div>
+            `;
+            
+            // Reset AI service
+            MockAIChatService.resetConversation();
+            
+            // Reset customer details
+            document.getElementById('customer-name').textContent = 'Not provided';
+            document.getElementById('customer-email').textContent = 'Not provided';
+            document.getElementById('customer-phone').textContent = 'Not provided';
+            document.getElementById('customer-issue').textContent = 'Not identified';
+            document.getElementById('customer-booking').textContent = 'Not provided';
+            document.getElementById('customer-urgency').textContent = 'Not determined';
+            document.getElementById('conversation-summary').textContent = 'Conversation will be summarized here...';
+            
+            // Reset mode indicator
+            document.getElementById('mode-indicator').textContent = 'AI Mode';
+            document.getElementById('mode-indicator').className = 'text-sm bg-blue-800 px-2 py-1 rounded';
+        }
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('AI Live Chat Test initialized');
+        });
+    </script>
+</body>
+</html>

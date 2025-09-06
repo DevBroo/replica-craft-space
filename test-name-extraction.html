@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Name Extraction Test</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-100 p-8">
+    <div class="max-w-2xl mx-auto">
+        <h1 class="text-2xl font-bold mb-6">Name Extraction Test</h1>
+        
+        <div class="bg-white rounded-lg p-6 shadow-lg">
+            <h2 class="text-lg font-semibold mb-4">Test Name Recognition</h2>
+            
+            <button onclick="runTests()" class="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600 mb-4">
+                Run Tests
+            </button>
+            
+            <div id="results" class="space-y-2"></div>
+        </div>
+        
+        <div class="bg-white rounded-lg p-6 shadow-lg mt-6">
+            <h2 class="text-lg font-semibold mb-4">Manual Test</h2>
+            <input type="text" id="testInput" placeholder="Type a message with your name..." 
+                   class="w-full p-3 border rounded mb-4">
+            <button onclick="testSingle()" class="bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600">
+                Test Message
+            </button>
+            <div id="singleResult" class="mt-4 p-3 bg-gray-50 rounded"></div>
+        </div>
+    </div>
+
+    <script>
+        function extractNameFromMessage(message) {
+            const namePatterns = [
+                /my name is ([a-zA-Z\s]+)/i,
+                /i'm ([a-zA-Z\s]+)/i,
+                /i am ([a-zA-Z\s]+)/i,
+                /this is ([a-zA-Z\s]+)/i,
+                /call me ([a-zA-Z\s]+)/i,
+                /hi,?\s+i'm ([a-zA-Z\s]+)/i,
+                /hello,?\s+i'm ([a-zA-Z\s]+)/i,
+                /^([a-zA-Z\s]{2,20})$/i
+            ];
+
+            for (const pattern of namePatterns) {
+                const match = message.match(pattern);
+                if (match && match[1] && match[1].trim().length > 1 && match[1].trim().length < 50) {
+                    const name = match[1].trim();
+                    const falsePositives = ['help', 'support', 'assistance', 'issue', 'problem', 'booking', 'payment'];
+                    if (!falsePositives.some(fp => name.toLowerCase().includes(fp))) {
+                        return name;
+                    }
+                }
+            }
+            return null;
+        }
+
+        function runTests() {
+            const testMessages = [
+                'My name is John Smith',
+                'Hi, I am Sarah Johnson', 
+                'John Smith',
+                'I am Mike Wilson',
+                'This is Emma Davis',
+                'Hello, I\'m David Brown',
+                'Call me Alex',
+                'Hi I\'m Jennifer',
+                'help',
+                'I need assistance',
+                'booking issue',
+                'My name is A', // Too short
+                'I am booking', // False positive
+            ];
+
+            const results = document.getElementById('results');
+            results.innerHTML = '<h3 class="font-semibold mb-2">Test Results:</h3>';
+
+            testMessages.forEach(msg => {
+                const extracted = extractNameFromMessage(msg);
+                const resultDiv = document.createElement('div');
+                resultDiv.className = `p-2 rounded ${extracted ? 'bg-green-50 border-l-4 border-green-500' : 'bg-red-50 border-l-4 border-red-500'}`;
+                resultDiv.innerHTML = `
+                    <div class="flex justify-between">
+                        <span class="font-mono">"${msg}"</span>
+                        <span class="font-semibold ${extracted ? 'text-green-700' : 'text-red-700'}">
+                            ${extracted || 'No name found'}
+                        </span>
+                    </div>
+                `;
+                results.appendChild(resultDiv);
+            });
+        }
+
+        function testSingle() {
+            const input = document.getElementById('testInput');
+            const message = input.value.trim();
+            
+            if (!message) {
+                alert('Please enter a message');
+                return;
+            }
+
+            const extracted = extractNameFromMessage(message);
+            const result = document.getElementById('singleResult');
+            
+            result.innerHTML = `
+                <div class="space-y-2">
+                    <div><strong>Message:</strong> "${message}"</div>
+                    <div><strong>Extracted Name:</strong> 
+                        <span class="font-semibold ${extracted ? 'text-green-600' : 'text-red-600'}">
+                            ${extracted || 'No name found'}
+                        </span>
+                    </div>
+                </div>
+            `;
+        }
+
+        // Auto-run tests on load
+        document.addEventListener('DOMContentLoaded', runTests);
+    </script>
+</body>
+</html>

@@ -270,23 +270,37 @@ class SupportTicketService {
     return data;
   }
 
-  async addMessage(ticketId: string, content: string, isInternal: boolean = false) {
+  async addMessage(ticketId: string, content: string, isInternal: boolean = false, authorId?: string) {
     const user = (await supabase.auth.getUser()).data.user;
-    if (!user) throw new Error('Not authenticated');
+    if (!user && !authorId) throw new Error('Not authenticated');
 
-    // Get user role
-    const { data: profile } = await supabase
-      .from('profiles')
-      .select('role')
-      .eq('id', user.id)
-      .single();
+    let authorRole = 'customer';
+    let actualAuthorId = user?.id;
+
+    if (authorId) {
+      actualAuthorId = authorId;
+      if (authorId === 'ai-assistant') {
+        authorRole = 'agent';
+      } else if (authorId === 'system') {
+        authorRole = 'system';
+      }
+    } else if (user) {
+      // Get user role
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('role')
+        .eq('id', user.id)
+        .single();
+      
+      authorRole = profile?.role || 'customer';
+    }
 
     const { data, error } = await supabase
       .from('support_ticket_messages')
       .insert([{
         ticket_id: ticketId,
-        author_id: user.id,
-        author_role: profile?.role || 'user',
+        author_id: actualAuthorId,
+        author_role: authorRole,
         content,
         is_internal: isInternal
       }])
@@ -294,6 +308,13 @@ class SupportTicketService {
       .single();
 
     if (error) throw error;
+
+    // Update last_message_at on the ticket
+    await supabase
+      .from('support_tickets')
+      .update({ last_message_at: new Date().toISOString() })
+      .eq('id', ticketId);
+
     return data;
   }
 

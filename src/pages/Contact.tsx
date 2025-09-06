@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { toast } from 'sonner';
 import { LiveChatModal } from '@/components/support/LiveChatModal';
+import { openGoogleMapsDirections, generateOfficeDirectionsUrl } from '@/lib/googleMapsUtils';
 
 // Scroll animation hook
 const useScrollAnimation = () => {
@@ -187,6 +188,17 @@ const Contact: React.FC = () => {
     }
   ];
 
+  // Handle Get Directions button click
+  const handleGetDirections = (office: typeof officeLocations[0]) => {
+    try {
+      openGoogleMapsDirections(office.address);
+      toast.success(`Opening directions to our ${office.city} office`);
+    } catch (error) {
+      console.error('Error opening Google Maps:', error);
+      toast.error('Unable to open directions. Please try again.');
+    }
+  };
+
   return (
     <div className="min-h-screen bg-background font-poppins">
 
@@ -330,6 +342,8 @@ const Contact: React.FC = () => {
                         name="inquiryType"
                         value={formData.inquiryType}
                         onChange={handleFormChange}
+                        title="Select inquiry type"
+                        aria-label="Select inquiry type"
                         className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl outline-none focus:border-red-500 focus:ring-4 focus:ring-red-500/20 transition-all duration-300 text-sm appearance-none cursor-pointer"
                         required
                       >
@@ -419,7 +433,10 @@ const Contact: React.FC = () => {
                         <span className="text-gray-600">{office.hours}</span>
                       </div>
                     </div>
-                    <button className="mt-4 w-full bg-gray-100 text-gray-700 py-2 rounded-lg hover:bg-gray-200 transition-colors duration-200 cursor-pointer whitespace-nowrap !rounded-button font-medium">
+                    <button 
+                      onClick={() => handleGetDirections(office)}
+                      className="mt-4 w-full bg-gray-100 text-gray-700 py-2 rounded-lg hover:bg-gray-200 transition-colors duration-200 cursor-pointer whitespace-nowrap !rounded-button font-medium hover:bg-gradient-to-r hover:from-red-500 hover:to-orange-500 hover:text-white"
+                    >
                       <i className="fas fa-directions mr-2"></i>
                       Get Directions
                     </button>

@@ -296,17 +296,38 @@ export class PropertyService {
   }
 
   /**
-   * Get all properties for a specific owner
+   * Get all properties for a specific owner (optimized)
    */
-  static async getOwnerProperties(ownerId: string): Promise<Property[]> {
+  static async getOwnerProperties(ownerId: string, limit?: number): Promise<Property[]> {
     try {
       console.log('🔍 Fetching properties for owner:', ownerId);
       
-      const { data, error } = await supabase
+      // Build optimized query - only select essential fields for dashboard
+      let query = supabase
         .from('properties')
-        .select('*')
+        .select(`
+          id,
+          title,
+          property_type,
+          status,
+          images,
+          pricing,
+          created_at,
+          max_guests,
+          bedrooms,
+          bathrooms,
+          rating,
+          review_count
+        `)
         .eq('owner_id', ownerId)
         .order('created_at', { ascending: false });
+
+      // Add limit for dashboard view to load faster
+      if (limit) {
+        query = query.limit(limit);
+      }
+
+      const { data, error } = await query;
 
       if (error) {
         console.error('❌ Error fetching owner properties:', error);

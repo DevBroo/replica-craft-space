@@ -46,34 +46,165 @@ export interface SendMessageData {
 
 export class MessageService {
   /**
+   * Get real message threads based on actual bookings
+   */
+  static async getRealMessageThreads(userId: string): Promise<MessageThread[]> {
+    try {
+      console.log('🔍 Fetching real message threads for user:', userId);
+      
+      // Get bookings where user is the customer (guest)
+      const { data: bookings, error } = await supabase
+        .from('bookings')
+        .select(`
+          id,
+          property_id,
+          customer_id,
+          status,
+          created_at,
+          properties!inner(
+            id,
+            title,
+            owner_id,
+            profiles!properties_owner_id_fkey(
+              id,
+              full_name,
+              email
+            )
+          )
+        `)
+        .eq('customer_id', userId)
+        // Temporarily allow all statuses for debugging
+        // .in('status', ['confirmed', 'completed']) // Only show threads for confirmed/completed bookings
+        .order('created_at', { ascending: false });
+
+      console.log('📊 Bookings query result:', { bookings, error });
+
+      if (error) {
+        console.error('❌ Error fetching bookings for threads:', error);
+        return [];
+      }
+
+      if (!bookings || bookings.length === 0) {
+        console.log('⚠️ No confirmed bookings found for user:', userId);
+        return [];
+      }
+
+      console.log(`📋 Found ${bookings.length} confirmed bookings`);
+
+      // Convert bookings to message threads
+      const threads: MessageThread[] = bookings.map((booking: any) => {
+        const property = booking.properties;
+        const owner = property.profiles;
+        
+        console.log('🏠 Processing booking:', {
+          bookingId: booking.id,
+          propertyTitle: property.title,
+          ownerName: owner?.full_name
+        });
+        
+        return {
+          id: `thread-${booking.id}`,
+          booking_id: booking.id,
+          property_id: property.id,
+          guest_id: userId,
+          owner_id: property.owner_id,
+          subject: `Messages about ${property.title}`,
+          last_message_at: booking.created_at,
+          last_message_id: null,
+          is_active: true,
+          created_at: booking.created_at,
+          updated_at: booking.created_at,
+          guest_name: 'You',
+          owner_name: owner?.full_name || 'Property Owner',
+          property_title: property.title,
+          last_message: 'Start a conversation with the property owner',
+          unread_count: 0
+        };
+      });
+
+      console.log('✅ Real message threads created:', threads.length, threads);
+      return threads;
+    } catch (error) {
+      console.error('❌ Error fetching real message threads:', error);
+      return [];
+    }
+  }
+
+  /**
    * Get all message threads for a user (as guest or owner)
    */
   static async getUserThreads(userId: string): Promise<MessageThread[]> {
     try {
       console.log('🔍 Fetching message threads for user:', userId);
 
-      // Since message_threads table doesn't exist, generate sample threads
-      return await this.generateSampleThreads(userId);
+      // First, try to get real message threads from database
+      const realThreads = await this.getRealMessageThreads(userId);
+      if (realThreads.length > 0) {
+        return realThreads;
+      }
+
+      // If no real threads, return empty array (no dummy data)
+      return [];
     } catch (error) {
       console.error('❌ Failed to fetch message threads:', error);
-      // Return sample threads as fallback
-      return await this.generateSampleThreads(userId);
+      return [];
     }
   }
 
   /**
    * Get messages for a specific thread
    */
-  static async getThreadMessages(threadId: string, userId: string): Promise<Message[]> {
+  static async getThreadMessages(threadId: string, userId?: string): Promise<Message[]> {
     try {
       console.log('🔍 Fetching messages for thread:', threadId);
 
-      // Since messages table doesn't exist, generate sample messages
-      return await this.generateSampleMessages(threadId, userId);
+      // Extract booking ID from thread ID
+      const bookingId = threadId.replace('thread-', '');
+      
+      // Try to get real messages from database
+      const { data: messages, error } = await supabase
+        .from('messages')
+        .select(`
+          *,
+          sender:profiles!messages_sender_id_fkey(full_name),
+          property:properties!messages_property_id_fkey(title)
+        `)
+        .eq('booking_id', bookingId)
+        .order('created_at', { ascending: true });
+
+      if (error) {
+        console.warn('Messages table not found or error:', error);
+        // Return empty array for new threads
+        return [];
+      }
+
+      if (!messages || messages.length === 0) {
+        console.log('No messages found for thread:', threadId);
+        return [];
+      }
+
+      // Convert database messages to Message format
+      const formattedMessages: Message[] = messages.map((msg: any) => ({
+        id: msg.id,
+        booking_id: msg.booking_id,
+        property_id: msg.property_id,
+        sender_id: msg.sender_id,
+        receiver_id: msg.receiver_id,
+        message: msg.message,
+        message_type: msg.message_type || 'text',
+        is_read: msg.is_read || false,
+        read_at: msg.read_at,
+        created_at: msg.created_at,
+        updated_at: msg.updated_at,
+        sender_name: msg.sender?.full_name || 'Unknown User',
+        property_title: msg.property?.title || 'Property'
+      }));
+
+      console.log('✅ Real messages loaded:', formattedMessages.length);
+      return formattedMessages;
     } catch (error) {
       console.error('❌ Failed to fetch thread messages:', error);
-      // Return sample messages as fallback
-      return await this.generateSampleMessages(threadId, userId);
+      return [];
     }
   }
 
@@ -84,25 +215,71 @@ export class MessageService {
     try {
       console.log('📤 Sending message:', messageData);
 
-      // Since messages table doesn't exist, create a sample message
-      const sampleMessage: Message = {
-        id: `sample-msg-${Date.now()}`,
-        booking_id: messageData.booking_id,
-        property_id: messageData.property_id,
-        sender_id: 'current-user',
-        receiver_id: messageData.receiver_id,
-        message: messageData.message,
-        message_type: messageData.message_type || 'text',
-        is_read: false,
-        read_at: null,
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
-        sender_name: 'You',
-        property_title: 'Sample Property'
+      // Get current user
+      const { data: { user }, error: userError } = await supabase.auth.getUser();
+      if (userError || !user) {
+        throw new Error('User not authenticated');
+      }
+
+      // Try to save to messages table
+      const { data: savedMessage, error } = await supabase
+        .from('messages')
+        .insert({
+          booking_id: messageData.booking_id,
+          property_id: messageData.property_id,
+          sender_id: user.id,
+          receiver_id: messageData.receiver_id,
+          message: messageData.message,
+          message_type: messageData.message_type || 'text',
+          is_read: false
+        })
+        .select(`
+          *,
+          sender:profiles!messages_sender_id_fkey(full_name),
+          property:properties!messages_property_id_fkey(title)
+        `)
+        .single();
+
+      if (error) {
+        console.warn('Messages table not available, creating local message:', error);
+        // Create a local message object if database save fails
+        const localMessage: Message = {
+          id: `local-msg-${Date.now()}`,
+          booking_id: messageData.booking_id,
+          property_id: messageData.property_id,
+          sender_id: user.id,
+          receiver_id: messageData.receiver_id,
+          message: messageData.message,
+          message_type: messageData.message_type || 'text',
+          is_read: false,
+          read_at: null,
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+          sender_name: 'You',
+          property_title: 'Property'
+        };
+        return localMessage;
+      }
+
+      // Convert saved message to Message format
+      const formattedMessage: Message = {
+        id: savedMessage.id,
+        booking_id: savedMessage.booking_id,
+        property_id: savedMessage.property_id,
+        sender_id: savedMessage.sender_id,
+        receiver_id: savedMessage.receiver_id,
+        message: savedMessage.message,
+        message_type: savedMessage.message_type || 'text',
+        is_read: savedMessage.is_read || false,
+        read_at: savedMessage.read_at,
+        created_at: savedMessage.created_at,
+        updated_at: savedMessage.updated_at,
+        sender_name: savedMessage.sender?.full_name || 'You',
+        property_title: savedMessage.property?.title || 'Property'
       };
 
-      console.log('✅ Sample message created successfully');
-      return sampleMessage;
+      console.log('✅ Message saved to database successfully');
+      return formattedMessage;
     } catch (error) {
       console.error('❌ Failed to send message:', error);
       throw error;
@@ -119,28 +296,52 @@ export class MessageService {
     ownerId: string
   ): Promise<MessageThread> {
     try {
-      // Since message_threads table doesn't exist, create a sample thread
-      const sampleThread: MessageThread = {
-        id: `sample-thread-${Date.now()}`,
-        booking_id: bookingId || 'sample-booking',
+      if (!bookingId) {
+        throw new Error('Booking ID is required to create a message thread');
+      }
+
+      // Get property and owner details
+      const { data: propertyData, error: propertyError } = await supabase
+        .from('properties')
+        .select(`
+          id,
+          title,
+          owner_id,
+          profiles!properties_owner_id_fkey(
+            id,
+            full_name,
+            email
+          )
+        `)
+        .eq('id', propertyId)
+        .single();
+
+      if (propertyError || !propertyData) {
+        throw new Error('Property not found');
+      }
+
+      // Create thread based on booking
+      const thread: MessageThread = {
+        id: `thread-${bookingId}`,
+        booking_id: bookingId,
         property_id: propertyId,
         guest_id: guestId,
         owner_id: ownerId,
-        subject: `Messages for ${propertyId}`,
+        subject: `Messages about ${propertyData.title}`,
         last_message_at: new Date().toISOString(),
-        last_message_id: `sample-message-${Date.now()}`,
+        last_message_id: null,
         is_active: true,
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString(),
-        guest_name: 'Guest',
-        owner_name: 'Owner',
-        property_title: 'Sample Property',
-        last_message: 'Sample message',
+        guest_name: 'You',
+        owner_name: propertyData.profiles?.full_name || 'Property Owner',
+        property_title: propertyData.title,
+        last_message: 'Start a conversation with the property owner',
         unread_count: 0
       };
 
-      console.log('✅ Sample message thread created:', sampleThread.id);
-      return sampleThread;
+      console.log('✅ Message thread created for booking:', bookingId);
+      return thread;
     } catch (error) {
       console.error('❌ Failed to get or create thread:', error);
       throw error;

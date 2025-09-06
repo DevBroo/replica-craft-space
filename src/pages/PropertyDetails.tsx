@@ -20,11 +20,15 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Textarea } from "@/components/ui/textarea";
+import { Label } from "@/components/ui/label";
 import { useState, useEffect } from "react";
 import { PropertyService } from "@/lib/propertyService";
 import { BookingService } from "@/lib/bookingService";
 import { CouponService, Coupon } from "@/lib/couponService";
 import { AvailabilityService, PropertyAvailability } from "@/lib/availabilityService";
+import { MessageService } from "@/lib/messageService";
 import { useAuth } from "@/contexts/AuthContext";
 import { useWishlist } from "@/contexts/WishlistContext";
 import { useToast } from "@/hooks/use-toast";
@@ -65,6 +69,9 @@ const PropertyDetails = () => {
   const [activeTab, setActiveTab] = useState("description");
   const [propertyAvailability, setPropertyAvailability] = useState<PropertyAvailability | null>(null);
   const [availabilityLoading, setAvailabilityLoading] = useState(false);
+  const [showMessageModal, setShowMessageModal] = useState(false);
+  const [messageText, setMessageText] = useState('');
+  const [sendingMessage, setSendingMessage] = useState(false);
 
   const { user, isAuthenticated } = useAuth();
   const { toast } = useToast();
@@ -345,6 +352,45 @@ const PropertyDetails = () => {
       title: "Coupon Removed",
       description: "The coupon discount has been removed from your booking.",
     });
+  };
+
+  const handleSendMessage = async () => {
+    if (!user?.id || !property?.owner_id || !messageText.trim()) {
+      toast({
+        title: "Error",
+        description: "Please login and enter a message to contact the owner.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setSendingMessage(true);
+    try {
+      // Send message using MessageService
+      await MessageService.sendMessage({
+        property_id: property.id,
+        receiver_id: property.owner_id,
+        message: messageText.trim(),
+        message_type: 'text'
+      });
+
+      setMessageText('');
+      setShowMessageModal(false);
+      
+      toast({
+        title: "Message Sent! 📨",
+        description: "Your message has been sent to the property owner. They will respond soon.",
+      });
+    } catch (error) {
+      console.error('Error sending message:', error);
+      toast({
+        title: "Failed to Send",
+        description: "Unable to send your message. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setSendingMessage(false);
+    }
   };
 
   const handleBooking = async () => {
@@ -985,18 +1031,23 @@ const PropertyDetails = () => {
                   )}
 
                   {/* Quick Contact */}
-                  {property.contact_phone && (
-                    <div className="flex gap-2 pt-4">
+                  <div className="flex gap-2 pt-4">
+                    <Button 
+                      variant="outline" 
+                      className="flex-1" 
+                      size="sm"
+                      onClick={() => setShowMessageModal(true)}
+                    >
+                      <MessageCircle className="h-4 w-4 mr-2" />
+                      Message Owner
+                    </Button>
+                    {property.contact_phone && (
                       <Button variant="outline" className="flex-1" size="sm">
                         <Phone className="h-4 w-4 mr-2" />
                         Call
                       </Button>
-                      <Button variant="outline" className="flex-1" size="sm">
-                        <MessageCircle className="h-4 w-4 mr-2" />
-                        WhatsApp
-                      </Button>
-                    </div>
-                  )}
+                    )}
+                  </div>
                 </CardContent>
               </Card>
             </div>
@@ -1043,6 +1094,65 @@ const PropertyDetails = () => {
         startIndex={lightboxStartIndex}
         onClose={() => setLightboxOpen(false)}
       />
+
+      {/* Message Owner Modal */}
+      <Dialog open={showMessageModal} onOpenChange={setShowMessageModal}>
+        <DialogContent className="sm:max-w-[500px]">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <MessageCircle className="h-5 w-5" />
+              Message Property Owner
+            </DialogTitle>
+            <DialogDescription>
+              Send a message to the property owner about this listing. They'll respond to you directly.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label htmlFor="message">Your Message</Label>
+              <Textarea
+                id="message"
+                value={messageText}
+                onChange={(e) => setMessageText(e.target.value)}
+                placeholder="Hi! I'm interested in this property. Could you please provide more details about..."
+                rows={4}
+                className="resize-none"
+              />
+              <p className="text-sm text-muted-foreground">
+                Be specific about your questions to get a helpful response.
+              </p>
+            </div>
+          </div>
+          <div className="flex justify-end space-x-2">
+            <Button 
+              variant="outline" 
+              onClick={() => {
+                setShowMessageModal(false);
+                setMessageText('');
+              }} 
+              disabled={sendingMessage}
+            >
+              Cancel
+            </Button>
+            <Button 
+              onClick={handleSendMessage} 
+              disabled={sendingMessage || !messageText.trim()}
+            >
+              {sendingMessage ? (
+                <>
+                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                  Sending...
+                </>
+              ) : (
+                <>
+                  <MessageCircle className="h-4 w-4 mr-2" />
+                  Send Message
+                </>
+              )}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };

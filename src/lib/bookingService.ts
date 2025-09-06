@@ -7,6 +7,10 @@ export interface BookingData {
   check_out_date: string;
   guests: number;
   total_amount: number;
+  // Mandatory guest information fields
+  guest_name: string;
+  guest_phone: string;
+  guest_date_of_birth: string;
   booking_details?: Record<string, any>;
   status?: string;
   payment_method?: 'phonepe' | 'razorpay' | 'stripe' | 'cash';
@@ -20,6 +24,29 @@ export interface BookingData {
 export class BookingService {
   static async createBooking(bookingData: BookingData) {
     try {
+      // Validate mandatory fields
+      if (!bookingData.guest_name?.trim()) {
+        throw new Error('Guest name is required');
+      }
+      if (!bookingData.guest_phone?.trim()) {
+        throw new Error('Guest phone number is required');
+      }
+      if (!bookingData.guest_date_of_birth) {
+        throw new Error('Guest date of birth is required');
+      }
+
+      // Validate date of birth format and reasonableness
+      const dobDate = new Date(bookingData.guest_date_of_birth);
+      if (isNaN(dobDate.getTime())) {
+        throw new Error('Invalid date of birth format');
+      }
+      
+      const today = new Date();
+      const minDate = new Date('1900-01-01');
+      if (dobDate > today || dobDate < minDate) {
+        throw new Error('Date of birth must be between 1900 and today');
+      }
+
       const { data, error } = await supabase
         .from('bookings')
         .insert([{
@@ -29,6 +56,10 @@ export class BookingService {
           check_out_date: bookingData.check_out_date,
           guests: bookingData.guests,
           total_amount: bookingData.total_amount,
+          // Add mandatory guest information
+          guest_name: bookingData.guest_name.trim(),
+          guest_phone: bookingData.guest_phone.trim(),
+          guest_date_of_birth: bookingData.guest_date_of_birth,
           booking_details: {
             ...bookingData.booking_details,
             payment_method: bookingData.payment_method || 'phonepe',
@@ -80,7 +111,8 @@ export class BookingService {
 
   static async getUserBookings(userId: string, userEmail?: string) {
     try {
-      const { data, error } = await supabase
+      // First try to get bookings by user_id
+      let { data, error } = await supabase
         .from('bookings')
         .select(`
           *,
@@ -91,14 +123,39 @@ export class BookingService {
             property_type
           )
         `)
-        .or(`user_id.eq.${userId}${userEmail ? `,customer_email.ilike.${userEmail}` : ''}`)
+        .eq('user_id', userId)
         .order('created_at', { ascending: false });
+
+      // If no results by user_id and we have email, try by email
+      if ((!data || data.length === 0) && userEmail) {
+        const { data: emailData, error: emailError } = await supabase
+          .from('bookings')
+          .select(`
+            *,
+            properties (
+              title,
+              images,
+              address,
+              property_type
+            )
+          `)
+          .ilike('customer_email', userEmail)
+          .order('created_at', { ascending: false });
+        
+        if (emailError) {
+          console.error('Error fetching user bookings by email:', emailError);
+          throw emailError;
+        }
+        
+        data = emailData;
+        error = emailError;
+      }
 
       if (error) {
         console.error('Error fetching user bookings:', error);
         throw error;
       }
-
+      
       return data || [];
     } catch (error) {
       console.error('BookingService.getUserBookings error:', error);

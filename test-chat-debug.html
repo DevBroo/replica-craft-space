@@ -1,0 +1,280 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chat Debug Test</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-100 p-8">
+    <div class="max-w-2xl mx-auto">
+        <h1 class="text-2xl font-bold mb-6">Chat Debug Test</h1>
+        
+        <div class="bg-white rounded-lg p-6 shadow-lg">
+            <h2 class="text-lg font-semibold mb-4">Test AI Response Generation</h2>
+            
+            <div class="space-y-4">
+                <button onclick="testBasicResponse()" class="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600">
+                    Test Basic Response
+                </button>
+                
+                <button onclick="testNameExtraction()" class="bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600">
+                    Test Name Extraction
+                </button>
+                
+                <button onclick="testEmailExtraction()" class="bg-purple-500 text-white px-4 py-2 rounded hover:bg-purple-600">
+                    Test Email Extraction
+                </button>
+                
+                <button onclick="testMultipleMessages()" class="bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600">
+                    Test Multiple Messages
+                </button>
+            </div>
+            
+            <div id="results" class="mt-6 p-4 bg-gray-50 rounded min-h-[200px] overflow-y-auto">
+                <p class="text-gray-500">Test results will appear here...</p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function log(message, type = 'info') {
+            const results = document.getElementById('results');
+            const timestamp = new Date().toLocaleTimeString();
+            const color = type === 'error' ? 'text-red-600' : type === 'success' ? 'text-green-600' : 'text-blue-600';
+            results.innerHTML += `<div class="${color} mb-2">[${timestamp}] ${message}</div>`;
+            results.scrollTop = results.scrollHeight;
+            console.log(message);
+        }
+
+        function clearResults() {
+            document.getElementById('results').innerHTML = '';
+        }
+
+        async function testBasicResponse() {
+            clearResults();
+            log('🧪 Testing basic AI response generation...', 'info');
+            
+            try {
+                // Simulate the AI response generation logic
+                const userMessage = "Hello, I need help";
+                const customerDetails = {};
+                
+                log(`📨 User message: "${userMessage}"`, 'info');
+                
+                // Test basic greeting response
+                const response = generateMockAIResponse(userMessage, customerDetails);
+                log(`🤖 AI response: "${response.message}"`, 'success');
+                log(`✅ Basic response test passed!`, 'success');
+                
+            } catch (error) {
+                log(`❌ Basic response test failed: ${error.message}`, 'error');
+            }
+        }
+
+        async function testNameExtraction() {
+            clearResults();
+            log('🧪 Testing name extraction...', 'info');
+            
+            try {
+                const testMessages = [
+                    "My name is John Smith",
+                    "Hi, I'm Sarah Johnson",
+                    "This is Mike Wilson calling",
+                    "I am Emma Davis"
+                ];
+                
+                for (const message of testMessages) {
+                    const extracted = extractCustomerInfo(message);
+                    log(`📨 Message: "${message}"`, 'info');
+                    log(`👤 Extracted name: "${extracted.name || 'None'}"`, extracted.name ? 'success' : 'error');
+                }
+                
+                log(`✅ Name extraction test completed!`, 'success');
+                
+            } catch (error) {
+                log(`❌ Name extraction test failed: ${error.message}`, 'error');
+            }
+        }
+
+        async function testEmailExtraction() {
+            clearResults();
+            log('🧪 Testing email extraction...', 'info');
+            
+            try {
+                const testMessages = [
+                    "My email is john@example.com",
+                    "You can reach me at sarah.johnson@gmail.com",
+                    "Contact me via mike.wilson123@company.co.uk",
+                    "No email in this message"
+                ];
+                
+                for (const message of testMessages) {
+                    const extracted = extractCustomerInfo(message);
+                    log(`📨 Message: "${message}"`, 'info');
+                    log(`📧 Extracted email: "${extracted.email || 'None'}"`, extracted.email ? 'success' : 'info');
+                }
+                
+                log(`✅ Email extraction test completed!`, 'success');
+                
+            } catch (error) {
+                log(`❌ Email extraction test failed: ${error.message}`, 'error');
+            }
+        }
+
+        async function testMultipleMessages() {
+            clearResults();
+            log('🧪 Testing multiple message conversation...', 'info');
+            
+            try {
+                let customerDetails = {};
+                const conversationHistory = [];
+                
+                const messages = [
+                    "Hello, I need help",
+                    "My name is John Smith",
+                    "I have a booking issue with reference ABC123",
+                    "My email is john.smith@email.com",
+                    "It's quite urgent"
+                ];
+                
+                for (let i = 0; i < messages.length; i++) {
+                    const message = messages[i];
+                    conversationHistory.push({ role: 'user', content: message });
+                    
+                    log(`📨 Message ${i + 1}: "${message}"`, 'info');
+                    
+                    // Extract info
+                    const extracted = extractCustomerInfo(message);
+                    customerDetails = { ...customerDetails, ...extracted };
+                    
+                    // Generate response
+                    const response = generateMockAIResponse(message, customerDetails, conversationHistory.length);
+                    conversationHistory.push({ role: 'assistant', content: response.message });
+                    
+                    log(`🤖 AI Response ${i + 1}: "${response.message.substring(0, 100)}..."`, 'success');
+                    log(`👤 Current details: ${JSON.stringify(customerDetails)}`, 'info');
+                    
+                    // Small delay to make it readable
+                    await new Promise(resolve => setTimeout(resolve, 500));
+                }
+                
+                log(`✅ Multiple message test completed!`, 'success');
+                log(`📊 Final customer details: ${JSON.stringify(customerDetails, null, 2)}`, 'success');
+                
+            } catch (error) {
+                log(`❌ Multiple message test failed: ${error.message}`, 'error');
+            }
+        }
+
+        // Mock functions to test the logic
+        function extractCustomerInfo(message) {
+            const extracted = {};
+            const lowerMessage = message.toLowerCase();
+
+            // Extract name patterns
+            const namePatterns = [
+                /my name is ([a-zA-Z\s]+)/i,
+                /i'm ([a-zA-Z\s]+)/i,
+                /i am ([a-zA-Z\s]+)/i,
+                /this is ([a-zA-Z\s]+)/i
+            ];
+
+            for (const pattern of namePatterns) {
+                const match = message.match(pattern);
+                if (match && match[1] && match[1].trim().length > 1) {
+                    extracted.name = match[1].trim();
+                    break;
+                }
+            }
+
+            // Extract email
+            const emailPattern = /([a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,})/;
+            const emailMatch = message.match(emailPattern);
+            if (emailMatch) {
+                extracted.email = emailMatch[1];
+            }
+
+            // Extract booking reference
+            const bookingPatterns = [
+                /booking.*?([A-Z0-9]{6,})/i,
+                /reference.*?([A-Z0-9]{6,})/i
+            ];
+
+            for (const pattern of bookingPatterns) {
+                const match = message.match(pattern);
+                if (match && match[1]) {
+                    extracted.booking_reference = match[1];
+                    break;
+                }
+            }
+
+            // Determine issue type
+            if (lowerMessage.includes('booking')) {
+                extracted.issue_type = 'booking';
+            } else if (lowerMessage.includes('payment')) {
+                extracted.issue_type = 'payment';
+            }
+
+            // Determine urgency
+            if (lowerMessage.includes('urgent') || lowerMessage.includes('emergency')) {
+                extracted.urgency_level = 'high';
+            }
+
+            return extracted;
+        }
+
+        function generateMockAIResponse(userMessage, customerDetails, messageCount = 1) {
+            const lowerMessage = userMessage.toLowerCase();
+            
+            // Greeting responses
+            if (messageCount <= 2 && (
+                lowerMessage.includes('hello') || 
+                lowerMessage.includes('hi') || 
+                lowerMessage.includes('help')
+            )) {
+                return {
+                    message: "Hello! Welcome to Picnify support. I'm here to help you with any questions or concerns you might have. To better assist you, could you please tell me your name and what I can help you with today?"
+                };
+            }
+
+            // Collect missing information
+            if (!customerDetails.name && !isNameInMessage(userMessage)) {
+                return {
+                    message: "Thank you for contacting us! To provide you with personalized assistance, could you please tell me your name?"
+                };
+            }
+
+            if (!customerDetails.email && customerDetails.name) {
+                return {
+                    message: `Nice to meet you, ${customerDetails.name}! Could you please provide your email address so I can look up your account and send you any follow-up information?`
+                };
+            }
+
+            // Issue-specific responses
+            if (customerDetails.issue_type === 'booking') {
+                if (!customerDetails.booking_reference) {
+                    return {
+                        message: "I understand you have a booking-related inquiry. Do you have a booking reference number? This will help me locate your reservation quickly."
+                    };
+                } else {
+                    return {
+                        message: `I found your booking reference ${customerDetails.booking_reference}. Let me check the details for you. What specific issue are you experiencing with your booking?`
+                    };
+                }
+            }
+
+            // General helpful response
+            return {
+                message: `Thank you for the information, ${customerDetails.name || 'there'}! I understand you need help with ${customerDetails.issue_type || 'your inquiry'}. Let me assist you with this. Could you provide more specific details about what you're experiencing?`
+            };
+        }
+
+        function isNameInMessage(message) {
+            const nameIndicators = ['my name is', "i'm", 'i am', 'this is'];
+            const lowerMessage = message.toLowerCase();
+            return nameIndicators.some(indicator => lowerMessage.includes(indicator));
+        }
+    </script>
+</body>
+</html>
