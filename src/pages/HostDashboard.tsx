@@ -41,10 +41,25 @@ const HostDashboard: React.FC = () => {
   const [activeTab, setActiveTab] = useState('dashboard');
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
 
-  // Fetch real data using custom hooks
-  const { properties, loading: propertiesLoading } = useOwnerProperties(user?.id || '');
-  const { bookings, loading: bookingsLoading } = useOwnerBookings(user?.id || '');
-  const { stats, loading: statsLoading } = useOwnerStats(user?.id || '');
+  // Fetch real data using custom hooks - with error handling
+  const { properties, loading: propertiesLoading, error: propertiesError } = useOwnerProperties(user?.id || '');
+  const { bookings, loading: bookingsLoading, error: bookingsError } = useOwnerBookings(user?.id || '');
+  const { stats, loading: statsLoading, error: statsError } = useOwnerStats(user?.id || '');
+
+  // Debug logging
+  useEffect(() => {
+    console.log('HostDashboard Debug:', {
+      user: user ? { id: user.id, email: user.email, role: user.role } : null,
+      isAuthenticated,
+      loading,
+      propertiesLoading,
+      bookingsLoading,
+      statsLoading,
+      propertiesError,
+      bookingsError,
+      statsError
+    });
+  }, [user, isAuthenticated, loading, propertiesLoading, bookingsLoading, statsLoading, propertiesError, bookingsError, statsError]);
 
   // Check for success message from signup/login
   useEffect(() => {
@@ -108,12 +123,45 @@ const HostDashboard: React.FC = () => {
     );
   }
 
+  // Show error state if there are critical errors
+  if (propertiesError || bookingsError || statsError) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center max-w-md">
+          <div className="text-red-500 text-6xl mb-4">⚠️</div>
+          <h2 className="text-2xl font-bold text-gray-900 mb-4">Dashboard Error</h2>
+          <p className="text-gray-600 mb-4">
+            There was an error loading your dashboard data. Please try refreshing the page.
+          </p>
+          <div className="space-y-2 text-sm text-gray-500">
+            {propertiesError && <p>Properties: {propertiesError}</p>}
+            {bookingsError && <p>Bookings: {bookingsError}</p>}
+            {statsError && <p>Stats: {statsError}</p>}
+          </div>
+          <button 
+            onClick={() => window.location.reload()} 
+            className="mt-4 px-4 py-2 bg-orange-500 text-white rounded hover:bg-orange-600"
+          >
+            Refresh Page
+          </button>
+        </div>
+      </div>
+    );
+  }
+
   // Show redirecting state for non-hosts
   if (!isAuthenticated || !user || (user.role !== 'owner' && user.role !== 'agent')) {
+    console.log('HostDashboard: Redirecting user', { isAuthenticated, user: user ? { id: user.id, role: user.role } : null });
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-orange-500 mx-auto mb-4"></div>
           <p className="text-gray-600">Redirecting...</p>
+          <p className="text-sm text-gray-500 mt-2">
+            {!isAuthenticated ? 'Not authenticated' : 
+             !user ? 'No user data' : 
+             `User role: ${user.role} (expected: owner or agent)`}
+          </p>
         </div>
       </div>
     );
@@ -292,18 +340,19 @@ const HostDashboard: React.FC = () => {
     </div>
   );
 
-  return (
-    <div className="min-h-screen bg-gray-50 flex">
-      {/* Success Message */}
-      {successMessage && (
-        <div className="fixed top-4 right-4 z-50">
-          <Alert className="border-green-200 bg-green-50">
-            <AlertDescription className="text-green-800">
-              {successMessage}
-            </AlertDescription>
-          </Alert>
-        </div>
-      )}
+  try {
+    return (
+      <div className="min-h-screen bg-gray-50 flex">
+        {/* Success Message */}
+        {successMessage && (
+          <div className="fixed top-4 right-4 z-50">
+            <Alert className="border-green-200 bg-green-50">
+              <AlertDescription className="text-green-800">
+                {successMessage}
+              </AlertDescription>
+            </Alert>
+          </div>
+        )}
 
       {/* Sidebar */}
       <div className={`${sidebarCollapsed ? 'w-16' : 'w-64'} transition-all duration-300 bg-white shadow-lg flex flex-col`}>
@@ -439,7 +488,30 @@ const HostDashboard: React.FC = () => {
         )}
       </div>
     </div>
-  );
+    );
+  } catch (error) {
+    console.error('HostDashboard rendering error:', error);
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center max-w-md">
+          <div className="text-red-500 text-6xl mb-4">💥</div>
+          <h2 className="text-2xl font-bold text-gray-900 mb-4">Rendering Error</h2>
+          <p className="text-gray-600 mb-4">
+            There was an error rendering the dashboard. Please check the console for details.
+          </p>
+          <p className="text-sm text-gray-500 mb-4">
+            Error: {error instanceof Error ? error.message : 'Unknown error'}
+          </p>
+          <button 
+            onClick={() => window.location.reload()} 
+            className="px-4 py-2 bg-orange-500 text-white rounded hover:bg-orange-600"
+          >
+            Refresh Page
+          </button>
+        </div>
+      </div>
+    );
+  }
 };
 
 export default HostDashboard;

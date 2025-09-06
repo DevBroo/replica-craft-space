@@ -201,27 +201,53 @@ export default function CustomerDashboard() {
       <div className="container mx-auto px-4 py-8">
         {/* Enhanced Welcome Section */}
         <div className="mb-8 text-center relative">
-          <div className="absolute inset-0 bg-gradient-to-r from-primary/5 via-blue-600/5 to-purple-600/5 rounded-3xl blur-3xl"></div>
-          <div className="relative bg-white/40 backdrop-blur-sm rounded-2xl p-8 border border-white/20 shadow-xl">
-            <div className="flex items-center justify-center mb-4">
-              <div className="h-16 w-16 bg-gradient-to-r from-primary to-blue-600 rounded-full flex items-center justify-center shadow-lg">
-                <User className="h-8 w-8 text-white" />
+          {/* Animated background elements */}
+          <div className="absolute inset-0 bg-gradient-to-r from-primary/10 via-blue-600/10 to-purple-600/10 rounded-3xl blur-3xl animate-pulse"></div>
+          <div className="absolute top-4 left-4 w-20 h-20 bg-gradient-to-r from-yellow-400/20 to-orange-500/20 rounded-full blur-xl animate-bounce"></div>
+          <div className="absolute bottom-4 right-4 w-16 h-16 bg-gradient-to-r from-pink-400/20 to-red-500/20 rounded-full blur-xl animate-bounce animation-delay-1000"></div>
+          
+          <div className="relative bg-white/60 backdrop-blur-xl rounded-3xl p-12 border border-white/30 shadow-2xl overflow-hidden">
+            {/* Decorative elements */}
+            <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-primary via-blue-600 to-purple-600"></div>
+            <div className="absolute top-4 right-4 w-8 h-8 bg-gradient-to-r from-yellow-400 to-orange-500 rounded-full opacity-20 animate-ping"></div>
+            
+            <div className="flex items-center justify-center mb-6">
+              <div className="relative">
+                <div className="h-20 w-20 bg-gradient-to-r from-primary via-blue-600 to-purple-600 rounded-full flex items-center justify-center shadow-2xl animate-pulse">
+                  <User className="h-10 w-10 text-white" />
+                </div>
+                <div className="absolute -top-2 -right-2 w-6 h-6 bg-gradient-to-r from-green-400 to-emerald-500 rounded-full flex items-center justify-center shadow-lg">
+                  <div className="w-2 h-2 bg-white rounded-full"></div>
+                </div>
               </div>
             </div>
-            <h2 className="text-5xl font-bold mb-4 bg-gradient-to-r from-primary via-blue-600 to-purple-600 bg-clip-text text-transparent">
-              Welcome back, {user?.full_name?.split(' ')[0] || 'Traveler'}! 👋
+            
+            <h2 className="text-6xl font-black mb-6 bg-gradient-to-r from-primary via-blue-600 to-purple-600 bg-clip-text text-transparent leading-tight">
+              Welcome back,<br />
+              <span className="text-4xl">{user?.full_name?.split(' ')[0] || 'Traveler'}! 👋</span>
             </h2>
-            <p className="text-xl text-muted-foreground max-w-3xl mx-auto leading-relaxed">
-              Your personalized travel hub is ready. Manage bookings, discover new destinations, and plan your next adventure with our advanced dashboard.
-            </p>
-            <div className="flex items-center justify-center space-x-6 mt-6">
-              <div className="flex items-center space-x-2 text-sm text-muted-foreground">
-                <div className="h-2 w-2 bg-green-500 rounded-full"></div>
-                <span>Account Active</span>
+            
+            <div className="max-w-4xl mx-auto mb-8">
+              <p className="text-2xl text-gray-700 leading-relaxed font-medium mb-4">
+                Your personalized travel hub is ready.
+              </p>
+              <p className="text-lg text-gray-600 leading-relaxed">
+                Manage bookings, discover new destinations, and plan your next adventure with our advanced dashboard.
+              </p>
+            </div>
+            
+            <div className="flex items-center justify-center space-x-8 mt-8">
+              <div className="flex items-center space-x-3 bg-green-50 px-6 py-3 rounded-full border border-green-200 shadow-sm">
+                <div className="h-3 w-3 bg-green-500 rounded-full animate-pulse"></div>
+                <span className="text-green-700 font-semibold">Account Active</span>
               </div>
-              <div className="flex items-center space-x-2 text-sm text-muted-foreground">
-                <Award className="h-4 w-4" />
-                <span>Premium Member</span>
+              <div className="flex items-center space-x-3 bg-gradient-to-r from-yellow-50 to-orange-50 px-6 py-3 rounded-full border border-yellow-200 shadow-sm">
+                <Award className="h-5 w-5 text-yellow-600" />
+                <span className="text-yellow-700 font-semibold">Premium Member</span>
+              </div>
+              <div className="flex items-center space-x-3 bg-blue-50 px-6 py-3 rounded-full border border-blue-200 shadow-sm">
+                <Shield className="h-5 w-5 text-blue-600" />
+                <span className="text-blue-700 font-semibold">Verified</span>
               </div>
             </div>
           </div>
@@ -229,84 +255,88 @@ export default function CustomerDashboard() {
 
         {/* Enhanced Quick Stats */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
-          <Card className="glass-card-light hover-lift border-0 shadow-elevated group relative overflow-hidden">
+          <Card className="glass-card-light hover-lift border-0 shadow-elevated group relative overflow-hidden transform hover:scale-105 transition-all duration-300">
             <div className="absolute inset-0 bg-gradient-to-br from-blue-500/10 to-primary/10 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+            <div className="absolute top-0 right-0 w-20 h-20 bg-gradient-to-br from-blue-500/5 to-primary/5 rounded-full blur-xl"></div>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 relative">
               <CardTitle className="text-sm font-medium text-foreground/80">Total Bookings</CardTitle>
-              <div className="h-12 w-12 rounded-full bg-gradient-to-r from-blue-500/20 to-primary/20 flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
-                <Calendar className="h-6 w-6 text-primary" />
+              <div className="h-14 w-14 rounded-full bg-gradient-to-r from-blue-500/20 to-primary/20 flex items-center justify-center group-hover:scale-110 transition-transform duration-300 shadow-lg">
+                <Calendar className="h-7 w-7 text-primary" />
               </div>
             </CardHeader>
             <CardContent className="relative">
-              <div className="text-4xl font-bold text-foreground mb-1">{bookings.length}</div>
-              <p className="text-sm text-muted-foreground">
+              <div className="text-5xl font-black text-foreground mb-2 bg-gradient-to-r from-blue-600 to-primary bg-clip-text text-transparent">{bookings.length}</div>
+              <p className="text-sm text-muted-foreground mb-3">
                 {bookings.filter(b => b.status === 'confirmed').length} confirmed
               </p>
-              <div className="flex items-center mt-2">
-                <TrendingUp className="h-4 w-4 text-green-500 mr-1" />
-                <span className="text-xs text-green-600 font-medium">+12% this month</span>
+              <div className="flex items-center bg-green-50 px-3 py-2 rounded-full">
+                <TrendingUp className="h-4 w-4 text-green-500 mr-2" />
+                <span className="text-xs text-green-600 font-semibold">+12% this month</span>
               </div>
             </CardContent>
           </Card>
 
-          <Card className="glass-card-light hover-lift border-0 shadow-elevated group relative overflow-hidden">
+          <Card className="glass-card-light hover-lift border-0 shadow-elevated group relative overflow-hidden transform hover:scale-105 transition-all duration-300">
             <div className="absolute inset-0 bg-gradient-to-br from-pink-500/10 to-red-500/10 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+            <div className="absolute top-0 right-0 w-20 h-20 bg-gradient-to-br from-pink-500/5 to-red-500/5 rounded-full blur-xl"></div>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 relative">
               <CardTitle className="text-sm font-medium text-foreground/80">Saved Properties</CardTitle>
-              <div className="h-12 w-12 rounded-full bg-gradient-to-r from-pink-500/20 to-red-500/20 flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
-                <Heart className="h-6 w-6 text-pink-600" />
+              <div className="h-14 w-14 rounded-full bg-gradient-to-r from-pink-500/20 to-red-500/20 flex items-center justify-center group-hover:scale-110 transition-transform duration-300 shadow-lg">
+                <Heart className="h-7 w-7 text-pink-600" />
               </div>
             </CardHeader>
             <CardContent className="relative">
-              <div className="text-4xl font-bold text-foreground mb-1">{savedCount}</div>
-              <p className="text-sm text-muted-foreground">
+              <div className="text-5xl font-black text-foreground mb-2 bg-gradient-to-r from-pink-600 to-red-600 bg-clip-text text-transparent">{savedCount}</div>
+              <p className="text-sm text-muted-foreground mb-3">
                 Ready to book
               </p>
-              <div className="flex items-center mt-2">
-                <Plus className="h-4 w-4 text-blue-500 mr-1" />
-                <span className="text-xs text-blue-600 font-medium">Add more</span>
+              <div className="flex items-center bg-blue-50 px-3 py-2 rounded-full">
+                <Plus className="h-4 w-4 text-blue-500 mr-2" />
+                <span className="text-xs text-blue-600 font-semibold">Add more</span>
               </div>
             </CardContent>
           </Card>
 
-          <Card className="glass-card-light hover-lift border-0 shadow-elevated group relative overflow-hidden">
+          <Card className="glass-card-light hover-lift border-0 shadow-elevated group relative overflow-hidden transform hover:scale-105 transition-all duration-300">
             <div className="absolute inset-0 bg-gradient-to-br from-green-500/10 to-emerald-500/10 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+            <div className="absolute top-0 right-0 w-20 h-20 bg-gradient-to-br from-green-500/5 to-emerald-500/5 rounded-full blur-xl"></div>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 relative">
               <CardTitle className="text-sm font-medium text-foreground/80">Next Trip</CardTitle>
-              <div className="h-12 w-12 rounded-full bg-gradient-to-r from-green-500/20 to-emerald-500/20 flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
-                <MapPin className="h-6 w-6 text-green-600" />
+              <div className="h-14 w-14 rounded-full bg-gradient-to-r from-green-500/20 to-emerald-500/20 flex items-center justify-center group-hover:scale-110 transition-transform duration-300 shadow-lg">
+                <MapPin className="h-7 w-7 text-green-600" />
               </div>
             </CardHeader>
             <CardContent className="relative">
-              <div className="text-4xl font-bold text-foreground mb-1">
+              <div className="text-5xl font-black text-foreground mb-2 bg-gradient-to-r from-green-600 to-emerald-600 bg-clip-text text-transparent">
                 {bookings.find(b => new Date(b.check_in_date) > new Date()) ? 'Soon' : 'None'}
               </div>
-              <p className="text-sm text-muted-foreground">
+              <p className="text-sm text-muted-foreground mb-3">
                 Upcoming bookings
               </p>
-              <div className="flex items-center mt-2">
-                <Calendar className="h-4 w-4 text-orange-500 mr-1" />
-                <span className="text-xs text-orange-600 font-medium">Plan ahead</span>
+              <div className="flex items-center bg-orange-50 px-3 py-2 rounded-full">
+                <Calendar className="h-4 w-4 text-orange-500 mr-2" />
+                <span className="text-xs text-orange-600 font-semibold">Plan ahead</span>
               </div>
             </CardContent>
           </Card>
 
-          <Card className="glass-card-light hover-lift border-0 shadow-elevated group relative overflow-hidden">
+          <Card className="glass-card-light hover-lift border-0 shadow-elevated group relative overflow-hidden transform hover:scale-105 transition-all duration-300">
             <div className="absolute inset-0 bg-gradient-to-br from-purple-500/10 to-indigo-500/10 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+            <div className="absolute top-0 right-0 w-20 h-20 bg-gradient-to-br from-purple-500/5 to-indigo-500/5 rounded-full blur-xl"></div>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 relative">
               <CardTitle className="text-sm font-medium text-foreground/80">Member Level</CardTitle>
-              <div className="h-12 w-12 rounded-full bg-gradient-to-r from-purple-500/20 to-indigo-500/20 flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
-                <Award className="h-6 w-6 text-purple-600" />
+              <div className="h-14 w-14 rounded-full bg-gradient-to-r from-purple-500/20 to-indigo-500/20 flex items-center justify-center group-hover:scale-110 transition-transform duration-300 shadow-lg">
+                <Award className="h-7 w-7 text-purple-600" />
               </div>
             </CardHeader>
             <CardContent className="relative">
-              <div className="text-4xl font-bold text-foreground mb-1">Gold</div>
-              <p className="text-sm text-muted-foreground">
+              <div className="text-5xl font-black text-foreground mb-2 bg-gradient-to-r from-purple-600 to-indigo-600 bg-clip-text text-transparent">Gold</div>
+              <p className="text-sm text-muted-foreground mb-3">
                 Premium member
               </p>
-              <div className="flex items-center mt-2">
-                <Star className="h-4 w-4 text-yellow-500 mr-1" />
-                <span className="text-xs text-yellow-600 font-medium">5.0 rating</span>
+              <div className="flex items-center bg-yellow-50 px-3 py-2 rounded-full">
+                <Star className="h-4 w-4 text-yellow-500 mr-2" />
+                <span className="text-xs text-yellow-600 font-semibold">5.0 rating</span>
               </div>
             </CardContent>
           </Card>

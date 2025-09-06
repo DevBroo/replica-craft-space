@@ -75,9 +75,9 @@ const Bookings: React.FC<BookingsProps> = ({ sidebarCollapsed, toggleSidebar, ac
 
   const filteredBookings = bookings.filter(booking => {
     const matchesStatus = statusFilter === 'all' || booking.status === statusFilter;
-    const matchesSearch = booking.guest_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      booking.id.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      booking.property_title.toLowerCase().includes(searchQuery.toLowerCase());
+    const matchesSearch = (booking.guest_name || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
+      (booking.id || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
+      (booking.property_title || '').toLowerCase().includes(searchQuery.toLowerCase());
     return matchesStatus && matchesSearch;
   });
 
@@ -86,11 +86,11 @@ const Bookings: React.FC<BookingsProps> = ({ sidebarCollapsed, toggleSidebar, ac
       case 'checkin':
         return new Date(a.check_in_date).getTime() - new Date(b.check_in_date).getTime();
       case 'guest':
-        return a.guest_name.localeCompare(b.guest_name);
+        return (a.guest_name || '').localeCompare(b.guest_name || '');
       case 'property':
-        return a.property_title.localeCompare(b.property_title);
+        return (a.property_title || '').localeCompare(b.property_title || '');
       case 'amount':
-        return b.total_amount - a.total_amount;
+        return (b.total_amount || 0) - (a.total_amount || 0);
       default:
         return 0;
     }
@@ -360,7 +360,7 @@ const Bookings: React.FC<BookingsProps> = ({ sidebarCollapsed, toggleSidebar, ac
                     currentBookings.map((booking) => (
                       <tr key={booking.id} className="border-b hover:bg-gray-50">
                         <td className="py-4 px-6">
-                          <span className="text-sm font-medium text-gray-900">{booking.id}</span>
+                          <span className="text-sm font-medium text-gray-900">{booking.id || 'N/A'}</span>
                         </td>
                         <td className="py-4 px-6">
                           <div className="flex items-center space-x-3">
@@ -368,15 +368,15 @@ const Bookings: React.FC<BookingsProps> = ({ sidebarCollapsed, toggleSidebar, ac
                               <i className="fas fa-user text-gray-600 text-sm"></i>
                             </div>
                             <div>
-                              <p className="text-sm font-medium text-gray-900">{booking.guest_name}</p>
-                              <p className="text-xs text-gray-500">{booking.guests_count} guests</p>
+                              <p className="text-sm font-medium text-gray-900">{booking.guest_name || 'Guest'}</p>
+                              <p className="text-xs text-gray-500">{booking.guests_count || 0} guests</p>
                             </div>
                           </div>
                         </td>
                         <td className="py-4 px-6">
                           <div>
-                            <p className="text-sm font-medium text-gray-900">{booking.property_title}</p>
-                            <p className="text-xs text-gray-500">{booking.nights} nights</p>
+                            <p className="text-sm font-medium text-gray-900">{booking.property_title || 'Property'}</p>
+                            <p className="text-xs text-gray-500">{booking.nights || 0} nights</p>
                           </div>
                         </td>
                         <td className="py-4 px-6">
@@ -396,7 +396,7 @@ const Bookings: React.FC<BookingsProps> = ({ sidebarCollapsed, toggleSidebar, ac
                           </span>
                         </td>
                         <td className="py-4 px-6">
-                          <span className="text-sm font-medium text-gray-900">₹{booking.total_amount.toLocaleString()}</span>
+                          <span className="text-sm font-medium text-gray-900">₹{(booking.total_amount || 0).toLocaleString()}</span>
                         </td>
                         <td className="py-4 px-6">
                           <div className="flex items-center space-x-2">

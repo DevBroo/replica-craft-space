@@ -50,7 +50,7 @@ const About: React.FC = () => {
 
   const handleBecomePartner = () => {
     // Navigate directly to owner signup page
-    navigate('/host-signup');
+    navigate('/owner/signup');
   };
   // Animate statistics on component mount
   useEffect(() => {
