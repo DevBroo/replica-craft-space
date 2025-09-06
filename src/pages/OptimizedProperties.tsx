@@ -88,7 +88,7 @@ const OptimizedProperties = () => {
       priceRange,
       search: debouncedSearchTerm,
       location: selectedLocation !== 'all' ? selectedLocation : undefined,
-      category: selectedType !== 'all' ? selectedType : undefined
+      category: selectedType !== 'all' ? selectedType as any : undefined
     }),
     staleTime: 2 * 60 * 1000,
     gcTime: 5 * 60 * 1000,
@@ -179,6 +179,17 @@ const OptimizedProperties = () => {
       setActiveTab('properties');
     }
   }, [handleFilterChange, activeTab]);
+
+  // Handle tab change
+  const handleTabChange = useCallback((value: string) => {
+    setActiveTab(value);
+    
+    // If switching away from day-picnics tab and category is day-picnic, reset category
+    if (value === 'properties' && selectedType === 'day-picnic') {
+      setSelectedType('all');
+      handleFilterChange({ category: 'all' as any });
+    }
+  }, [selectedType, handleFilterChange]);
 
   // Handle search term change
   const handleSearchChange = useCallback((search: string) => {
@@ -505,11 +516,13 @@ const OptimizedProperties = () => {
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">All Types</SelectItem>
-                {categoriesWithCounts.map((category) => (
-                  <SelectItem key={category.category} value={category.category}>
-                    {category.label} ({category.count})
-                  </SelectItem>
-                ))}
+                {categoriesWithCounts
+                  .filter((category) => category.category !== 'day-picnic')
+                  .map((category) => (
+                    <SelectItem key={category.category} value={category.category}>
+                      {category.label} ({category.count})
+                    </SelectItem>
+                  ))}
               </SelectContent>
             </Select>
 
@@ -576,38 +589,21 @@ const OptimizedProperties = () => {
 
         {/* Tabs */}
         <div className="flex justify-between items-center mb-6">
-          <Tabs value={activeTab} onValueChange={(tab) => {
-            setActiveTab(tab);
-            // Auto-set category filter based on tab
-            if (tab === 'day-picnics') {
-              setSelectedType('day-picnic');
-              handleFilterChange({ category: 'day-picnic' as any });
-            } else if (tab === 'properties' && selectedType === 'day-picnic') {
-              setSelectedType('all');
-              handleFilterChange({ category: 'all' as any });
-            }
-          }} className="w-auto">
+          <Tabs value={activeTab} onValueChange={handleTabChange} className="w-auto">
             <TabsList>
               <TabsTrigger value="properties">Properties ({properties.length})</TabsTrigger>
-              <TabsTrigger value="day-picnics">
-                Day Picnics ({dayPicnics.length}{ownerDayPicnics.length > 0 && dayPicnics.length === 0 ? ` + ${ownerDayPicnics.length} preview` : ''})
-              </TabsTrigger>
+              {/* Only show Day Picnics tab when day-picnic category is selected or no specific property type is selected */}
+              {(selectedType === 'day-picnic' || selectedType === 'all') && (
+                <TabsTrigger value="day-picnics">
+                  Day Picnics ({dayPicnics.length}{ownerDayPicnics.length > 0 && dayPicnics.length === 0 ? ` + ${ownerDayPicnics.length} preview` : ''})
+                </TabsTrigger>
+              )}
             </TabsList>
           </Tabs>
         </div>
 
         {/* Content */}
-        <Tabs value={activeTab} onValueChange={(tab) => {
-          setActiveTab(tab);
-          // Auto-set category filter based on tab
-          if (tab === 'day-picnics') {
-            setSelectedType('day-picnic');
-            handleFilterChange({ category: 'day-picnic' as any });
-          } else if (tab === 'properties' && selectedType === 'day-picnic') {
-            setSelectedType('all');
-            handleFilterChange({ category: 'all' as any });
-          }
-        }}>
+        <Tabs value={activeTab} onValueChange={handleTabChange}>
           <TabsContent value="properties" className="mt-0">
             {/* Results count */}
             <div className="mb-6">
