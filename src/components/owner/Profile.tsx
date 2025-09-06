@@ -1,7 +1,9 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { avatarService } from '@/lib/avatarService';
+import { NotificationService } from '@/lib/notificationService';
 import { toast } from 'sonner';
+import { Bell, ChevronDown, Save, X, Edit, Camera, Home, Calendar, Star } from 'lucide-react';
 
 interface ProfileProps {
   sidebarCollapsed: boolean;
@@ -15,6 +17,10 @@ const Profile: React.FC<ProfileProps> = ({ sidebarCollapsed, toggleSidebar, acti
   const { user, updateProfile } = useAuth();
   const [isEditing, setIsEditing] = useState(false);
   const [isUploadingAvatar, setIsUploadingAvatar] = useState(false);
+  const [showNotifications, setShowNotifications] = useState(false);
+  const [notifications, setNotifications] = useState<any[]>([]);
+  const [unreadCount, setUnreadCount] = useState(0);
+  const [isLoadingNotifications, setIsLoadingNotifications] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   
   // Use real user data with fallbacks
@@ -22,9 +28,9 @@ const Profile: React.FC<ProfileProps> = ({ sidebarCollapsed, toggleSidebar, acti
     name: user?.full_name || '',
     email: user?.email || '',
     phone: user?.phone || '',
-    location: '', // Could be added to user profile later
-    about: '', // Could be added to user profile later
-    languages: [], // Could be added to user profile later
+    location: user?.location || '',
+    about: user?.about || '',
+    languages: user?.languages || [],
     joinDate: user?.created_at || '',
     totalProperties: 0, // Would need to be fetched from properties table
     totalBookings: 0, // Would need to be fetched from bookings table
@@ -39,10 +45,81 @@ const Profile: React.FC<ProfileProps> = ({ sidebarCollapsed, toggleSidebar, acti
         name: user.full_name || '',
         email: user.email || '',
         phone: user.phone || '',
+        location: user.location || '',
+        about: user.about || '',
+        languages: user.languages || [],
         joinDate: user.created_at || '',
       }));
     }
   }, [user]);
+
+  // Load notifications
+  const loadNotifications = async () => {
+    if (!user?.id) return;
+    
+    try {
+      setIsLoadingNotifications(true);
+      const notificationsData = await NotificationService.getUserNotifications(user.id);
+      setNotifications(notificationsData);
+      setUnreadCount(notificationsData.filter(n => !n.is_read).length);
+    } catch (error) {
+      console.error('Failed to load notifications:', error);
+    } finally {
+      setIsLoadingNotifications(false);
+    }
+  };
+
+  // Load notifications on component mount
+  useEffect(() => {
+    loadNotifications();
+  }, [user?.id]);
+
+  // Close notifications dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      const target = event.target as HTMLElement;
+      if (!target.closest('.notification-dropdown')) {
+        setShowNotifications(false);
+      }
+    };
+
+    if (showNotifications) {
+      document.addEventListener('mousedown', handleClickOutside);
+    }
+
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [showNotifications]);
+
+  // Handle notification click
+  const handleNotificationClick = async (notification: any) => {
+    try {
+      if (!notification.is_read) {
+        await NotificationService.markAsRead(notification.id);
+        setNotifications(prev => prev.map(n => 
+          n.id === notification.id ? { ...n, is_read: true } : n
+        ));
+        setUnreadCount(prev => Math.max(0, prev - 1));
+      }
+    } catch (error) {
+      console.error('Failed to mark notification as read:', error);
+    }
+  };
+
+  // Mark all notifications as read
+  const markAllAsRead = async () => {
+    if (!user?.id) return;
+    
+    try {
+      await NotificationService.markAllAsRead(user.id);
+      setNotifications(prev => prev.map(n => ({ ...n, is_read: true })));
+      setUnreadCount(0);
+      toast.success('All notifications marked as read');
+    } catch (error) {
+      console.error('Failed to mark all notifications as read:', error);
+    }
+  };
 
   const menuItems = [
     { id: 'dashboard', label: 'Dashboard', icon: 'fas fa-tachometer-alt' },
@@ -90,14 +167,29 @@ const Profile: React.FC<ProfileProps> = ({ sidebarCollapsed, toggleSidebar, acti
     if (!user?.id) return;
     
     try {
-      // Update profile with new data
+      // Update profile with new data including bio fields
       await updateProfile({
         full_name: profileData.name,
         phone: profileData.phone,
+        email: profileData.email,
+        location: profileData.location,
+        about: profileData.about,
+        languages: profileData.languages,
       });
       
       setIsEditing(false);
       toast.success('Profile updated successfully!');
+      
+      // Update the profile data state to reflect the saved changes
+      setProfileData(prev => ({
+        ...prev,
+        name: profileData.name,
+        email: profileData.email,
+        phone: profileData.phone,
+        location: profileData.location,
+        about: profileData.about,
+        languages: profileData.languages,
+      }));
     } catch (error) {
       console.error('Profile update error:', error);
       toast.error('Failed to update profile');
@@ -111,9 +203,9 @@ const Profile: React.FC<ProfileProps> = ({ sidebarCollapsed, toggleSidebar, acti
       name: user?.full_name || '',
       email: user?.email || '',
       phone: user?.phone || '',
-      location: '',
-      about: '',
-      languages: [],
+      location: user?.location || '',
+      about: user?.about || '',
+      languages: user?.languages || [],
       joinDate: user?.created_at || '',
       totalProperties: 0,
       totalBookings: 0,
@@ -172,11 +264,75 @@ const Profile: React.FC<ProfileProps> = ({ sidebarCollapsed, toggleSidebar, acti
               </div>
             </div>
             <div className="flex items-center space-x-4">
-              <div className="relative">
-                <button className="p-2 rounded-lg hover:bg-gray-100 cursor-pointer">
-                  <i className="fas fa-bell text-gray-600"></i>
-                  <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">3</span>
+              <div className="relative notification-dropdown">
+                <button 
+                  onClick={() => setShowNotifications(!showNotifications)}
+                  className="p-2 rounded-lg hover:bg-gray-100 cursor-pointer"
+                >
+                  <Bell className="h-5 w-5 text-gray-600" />
+                  {unreadCount > 0 && (
+                    <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
+                      {unreadCount}
+                    </span>
+                  )}
                 </button>
+                
+                {showNotifications && (
+                  <div className="absolute right-0 top-12 w-80 bg-white border border-gray-200 rounded-lg shadow-lg z-50 max-h-96 overflow-y-auto">
+                    <div className="p-4 border-b">
+                      <div className="flex items-center justify-between">
+                        <h3 className="text-lg font-semibold text-gray-900">Notifications</h3>
+                        {unreadCount > 0 && (
+                          <button
+                            onClick={markAllAsRead}
+                            className="text-sm text-blue-600 hover:text-blue-800 cursor-pointer"
+                          >
+                            Mark all as read
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                    
+                    <div className="max-h-80 overflow-y-auto">
+                      {isLoadingNotifications ? (
+                        <div className="p-4 text-center text-gray-500">
+                          Loading notifications...
+                        </div>
+                      ) : notifications.length === 0 ? (
+                        <div className="p-4 text-center text-gray-500">
+                          No notifications yet
+                        </div>
+                      ) : (
+                        notifications.map((notification) => (
+                          <div
+                            key={notification.id}
+                            onClick={() => handleNotificationClick(notification)}
+                            className={`p-4 border-b hover:bg-gray-50 cursor-pointer ${
+                              !notification.is_read ? 'bg-blue-50' : ''
+                            }`}
+                          >
+                            <div className="flex items-start space-x-3">
+                              <div className={`w-2 h-2 rounded-full mt-2 ${
+                                !notification.is_read ? 'bg-blue-500' : 'bg-gray-300'
+                              }`}></div>
+                              <div className="flex-1">
+                                <p className="text-sm font-medium text-gray-900">
+                                  {notification.title}
+                                </p>
+                                <p className="text-sm text-gray-600 mt-1">
+                                  {notification.message}
+                                </p>
+                                <p className="text-xs text-gray-400 mt-1">
+                                  {new Date(notification.created_at).toLocaleString()}
+                                </p>
+                              </div>
+                            </div>
+                          </div>
+                        ))
+                      )}
+                    </div>
+                  </div>
+                )}
               </div>
               <div className="flex items-center space-x-2">
                 <img
@@ -185,7 +341,7 @@ const Profile: React.FC<ProfileProps> = ({ sidebarCollapsed, toggleSidebar, acti
                   className="w-8 h-8 rounded-full object-cover"
                 />
                 <span className="text-sm font-medium text-gray-700">{user?.full_name || 'User'}</span>
-                <i className="fas fa-chevron-down text-gray-400 text-xs"></i>
+                <ChevronDown className="h-4 w-4 text-gray-400" />
               </div>
             </div>
           </div>
@@ -209,9 +365,9 @@ const Profile: React.FC<ProfileProps> = ({ sidebarCollapsed, toggleSidebar, acti
                     className="absolute bottom-0 right-0 bg-blue-600 text-white rounded-full w-8 h-8 flex items-center justify-center cursor-pointer hover:bg-blue-700 transition-colors disabled:opacity-50"
                   >
                     {isUploadingAvatar ? (
-                      <i className="fas fa-spinner fa-spin text-xs"></i>
+                      <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-white"></div>
                     ) : (
-                      <i className="fas fa-camera text-xs"></i>
+                      <Camera className="h-3 w-3" />
                     )}
                   </button>
                   {/* Hidden file input */}
@@ -239,25 +395,26 @@ const Profile: React.FC<ProfileProps> = ({ sidebarCollapsed, toggleSidebar, acti
                   <>
                     <button
                       onClick={handleSave}
-                      className="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition-colors cursor-pointer"
+                      className="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition-colors cursor-pointer flex items-center space-x-2"
                     >
-                      <i className="fas fa-save mr-2"></i>
-                      Save
+                      <Save className="h-4 w-4" />
+                      <span>Save</span>
                     </button>
                     <button
                       onClick={handleCancel}
-                      className="bg-gray-600 text-white px-4 py-2 rounded-lg hover:bg-gray-700 transition-colors cursor-pointer"
+                      className="bg-gray-600 text-white px-4 py-2 rounded-lg hover:bg-gray-700 transition-colors cursor-pointer flex items-center space-x-2"
                     >
-                      Cancel
+                      <X className="h-4 w-4" />
+                      <span>Cancel</span>
                     </button>
                   </>
                 ) : (
                   <button
                     onClick={() => setIsEditing(true)}
-                    className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors cursor-pointer"
+                    className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors cursor-pointer flex items-center space-x-2"
                   >
-                    <i className="fas fa-edit mr-2"></i>
-                    Edit Profile
+                    <Edit className="h-4 w-4" />
+                    <span>Edit Profile</span>
                   </button>
                 )}
               </div>
@@ -273,7 +430,7 @@ const Profile: React.FC<ProfileProps> = ({ sidebarCollapsed, toggleSidebar, acti
                   <p className="text-2xl font-bold text-gray-900 mt-1">{profileData.totalProperties}</p>
                 </div>
                 <div className="bg-blue-100 p-3 rounded-full">
-                  <i className="fas fa-home text-blue-600 text-xl"></i>
+                  <Home className="h-6 w-6 text-blue-600" />
                 </div>
               </div>
             </div>
@@ -284,7 +441,7 @@ const Profile: React.FC<ProfileProps> = ({ sidebarCollapsed, toggleSidebar, acti
                   <p className="text-2xl font-bold text-gray-900 mt-1">{profileData.totalBookings}</p>
                 </div>
                 <div className="bg-green-100 p-3 rounded-full">
-                  <i className="fas fa-calendar-check text-green-600 text-xl"></i>
+                  <Calendar className="h-6 w-6 text-green-600" />
                 </div>
               </div>
             </div>
@@ -305,7 +462,7 @@ const Profile: React.FC<ProfileProps> = ({ sidebarCollapsed, toggleSidebar, acti
                   </div>
                 </div>
                 <div className="bg-yellow-100 p-3 rounded-full">
-                  <i className="fas fa-star text-yellow-600 text-xl"></i>
+                  <Star className="h-6 w-6 text-yellow-600" />
                 </div>
               </div>
             </div>

@@ -18,16 +18,18 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
   redirectTo = '/login',
   fallback,
 }) => {
-  const { user, loading, isAuthenticated, hasRole, hasAnyRole } = useAuth();
+  const { user, session, loading, profileLoading, isAuthenticated, hasRole, hasAnyRole } = useAuth();
   const location = useLocation();
 
-  // Show loading spinner while checking authentication
-  if (loading) {
+  // Show loading spinner while checking authentication or loading profile
+  if (loading || profileLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="flex flex-col items-center space-y-4">
           <Loader2 className="h-8 w-8 animate-spin text-primary" />
-          <p className="text-sm text-muted-foreground">Loading...</p>
+          <p className="text-sm text-muted-foreground">
+            {loading ? 'Loading...' : 'Loading profile...'}
+          </p>
         </div>
       </div>
     );
@@ -35,6 +37,8 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
 
   // Check if user is authenticated
   if (!isAuthenticated) {
+    console.log('🔒 ProtectedRoute: User not authenticated, redirecting to:', redirectTo);
+    console.log('🔍 ProtectedRoute: User:', user, 'Session:', session, 'Loading:', loading);
     // Redirect to login with return URL
     return (
       <Navigate
@@ -47,6 +51,7 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
 
   // Check role requirements
   if (requiredRole && !hasRole(requiredRole)) {
+    console.log('🔒 ProtectedRoute: User role mismatch. Required:', requiredRole, 'User role:', user?.role);
     // Redirect to unauthorized page or dashboard based on user role
     const userRole = user?.role;
     let unauthorizedRedirect = '/unauthorized';
@@ -73,6 +78,7 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
 
   // Check multiple role requirements
   if (requiredRoles && requiredRoles.length > 0 && !hasAnyRole(requiredRoles)) {
+    console.log('🔒 ProtectedRoute: User role mismatch. Required roles:', requiredRoles, 'User role:', user?.role);
     // Redirect to unauthorized page or dashboard based on user role
     const userRole = user?.role;
     

@@ -63,9 +63,9 @@ export class OwnerService {
         id: booking.id,
         property_id: booking.property_id,
         property_title: booking.properties?.title || 'Unknown Property',
-        guest_name: booking.guest_name,
-        guest_email: booking.guest_email,
-        guest_phone: booking.guest_phone,
+        guest_name: booking.guest_name || 'Unknown Guest',
+        guest_email: booking.guest_email || '',
+        guest_phone: booking.guest_phone || '',
         check_in_date: booking.check_in_date,
         check_out_date: booking.check_out_date,
         status: booking.status,
@@ -91,30 +91,48 @@ export class OwnerService {
     try {
       console.log('🔍 Fetching earnings for owner:', ownerId);
       
-      // Get commission data for owner
+      // Get all bookings for owner's properties
+      const { data: bookings, error: bookingsError } = await supabase
+        .from('bookings')
+        .select(`
+          *,
+          properties!inner(owner_id)
+        `)
+        .eq('properties.owner_id', ownerId)
+        .eq('status', 'confirmed');
+
+      if (bookingsError) {
+        console.error('❌ Error fetching owner bookings:', bookingsError);
+        throw bookingsError;
+      }
+
+      // Get commission data for owner (if exists)
       const { data: commissions, error: commissionError } = await supabase
         .from('commission_disbursements')
         .select('*')
         .eq('owner_id', ownerId);
 
       if (commissionError) {
-        console.error('❌ Error fetching owner commissions:', commissionError);
-        throw commissionError;
+        console.warn('⚠️ No commission data found, using booking data:', commissionError);
       }
 
-      // Calculate earnings
-      const totalRevenue = commissions?.reduce((sum, c) => sum + c.owner_share, 0) || 0;
-      const pendingPayments = commissions?.filter(c => c.disbursement_status === 'pending')
-        .reduce((sum, c) => sum + c.owner_share, 0) || 0;
-      const completedTransactions = commissions?.filter(c => c.disbursement_status === 'completed').length || 0;
+      // Calculate earnings from bookings
+      const totalRevenue = bookings?.reduce((sum, b) => sum + (Number(b.total_amount) || 0), 0) || 0;
+      const completedTransactions = bookings?.filter(b => b.status === 'confirmed').length || 0;
       
       // Get current month earnings
       const currentMonth = new Date().getMonth();
       const currentYear = new Date().getFullYear();
-      const monthlyEarnings = commissions?.filter(c => {
-        const commissionDate = new Date(c.created_at);
-        return commissionDate.getMonth() === currentMonth && commissionDate.getFullYear() === currentYear;
-      }).reduce((sum, c) => sum + c.owner_share, 0) || 0;
+      const monthlyEarnings = bookings?.filter(b => {
+        const bookingDate = new Date(b.created_at);
+        return bookingDate.getMonth() === currentMonth && bookingDate.getFullYear() === currentYear;
+      }).reduce((sum, b) => sum + (Number(b.total_amount) || 0), 0) || 0;
+
+      // Calculate pending payments (bookings that are confirmed but not yet paid out)
+      const pendingPayments = bookings?.filter(b => 
+        b.status === 'confirmed' && 
+        !commissions?.some(c => c.booking_id === b.id && c.disbursement_status === 'completed')
+      ).reduce((sum, b) => sum + (Number(b.total_amount) || 0), 0) || 0;
 
       const earnings: OwnerEarnings = {
         total_revenue: totalRevenue,

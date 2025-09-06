@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { formatPropertyType } from '@/lib/utils';
@@ -9,7 +10,8 @@ import { Label } from '@/components/ui/label';
 import { Plus, Edit, Eye, Check, X, Clock, MapPin } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
-import { Home, Calendar, DollarSign, Star, MessageSquare, User, Settings as SettingsIcon, BarChart3, Bell, Menu, LogOut } from 'lucide-react';
+import { NotificationService } from '@/lib/notificationService';
+import { Home, Calendar, DollarSign, Star, MessageSquare, User, Settings as SettingsIcon, BarChart3, Bell, Menu, LogOut, X as XIcon } from 'lucide-react';
 import PropertyWizard from './PropertyWizard';
 import { PropertyQuickView } from './PropertyQuickView';
 import DayPicnicWizard from './DayPicnicWizard';
@@ -51,6 +53,11 @@ const Properties: React.FC<PropertiesProps> = ({
   const [quickViewInitialTab, setQuickViewInitialTab] = useState<'overview' | 'pricing' | 'rooms' | 'amenities' | 'policies' | 'location'>('overview');
   const [activePropertyTab, setActivePropertyTab] = useState<'properties' | 'day-picnic'>('properties');
   const [showDayPicnicForm, setShowDayPicnicForm] = useState(false);
+  
+  // Notification state
+  const [notifications, setNotifications] = useState<any[]>([]);
+  const [showNotifications, setShowNotifications] = useState(false);
+  const [notificationsLoading, setNotificationsLoading] = useState(false);
 
   const propertyTypes = [
     'Hotels',
@@ -66,10 +73,77 @@ const Properties: React.FC<PropertiesProps> = ({
     'Wedding Venue'
   ];
 
+  // Load notifications
+  const loadNotifications = async () => {
+    if (!user?.id) return;
+    
+    try {
+      setNotificationsLoading(true);
+      const userNotifications = await NotificationService.getUserNotifications(user.id);
+      setNotifications(userNotifications);
+    } catch (error) {
+      console.error('❌ Error loading notifications:', error);
+    } finally {
+      setNotificationsLoading(false);
+    }
+  };
+
+  // Handle notification click
+  const handleNotificationClick = (notification: any) => {
+    // Mark notification as read
+    if (!notification.is_read) {
+      NotificationService.markAsRead(notification.id, user?.id);
+      loadNotifications();
+    }
+
+    // Handle notification action
+    if (notification.action_url) {
+      // Navigate to specific property or page
+      if (notification.action_url.includes('property')) {
+        // Find and show property details
+        const propertyId = notification.action_url.split('/').pop();
+        const property = properties.find(p => p.id === propertyId);
+        if (property) {
+          setSelectedPropertyForView(property);
+          setShowQuickView(true);
+        }
+      }
+    }
+  };
+
+  // Handle mark all as read
+  const handleMarkAllAsRead = async () => {
+    try {
+      if (!user?.id) return;
+      
+      // Get all notification IDs
+      const allNotificationIds = notifications.map(n => n.id);
+      
+      // Mark all notifications as read in localStorage
+      await NotificationService.markAllAsRead(user.id, allNotificationIds);
+      
+      // Reload notifications to reflect the changes
+      loadNotifications();
+      
+      toast({
+        title: "All Notifications Marked as Read",
+        description: "All notifications have been marked as read.",
+      });
+    } catch (error) {
+      console.error('Error marking notifications as read:', error);
+      toast({
+        title: "Error",
+        description: "Failed to mark notifications as read.",
+        variant: "destructive",
+      });
+    }
+  };
+
   useEffect(() => {
     if (!user?.id) return; // Wait for user to be available
     
     fetchProperties();
+    loadNotifications();
     
     // Check for URL parameters to auto-open add property modal and restore tab
     const urlParams = new URLSearchParams(window.location.search);
@@ -91,6 +165,24 @@ const Properties: React.FC<PropertiesProps> = ({
       window.history.replaceState({}, '', newUrl || window.location.pathname);
     }
   }, [user?.id]);
+
+  // Close notifications dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      const target = event.target as HTMLElement;
+      if (!target.closest('.notification-dropdown')) {
+        setShowNotifications(false);
+      }
+    };
+
+    if (showNotifications) {
+      document.addEventListener('mousedown', handleClickOutside);
+    }
+
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [showNotifications]);
 
   const fetchProperties = async () => {
     setLoading(true);
@@ -163,6 +255,35 @@ const Properties: React.FC<PropertiesProps> = ({
       setLoading(false);
     }
   };
+
+  // Set up real-time subscription for properties
+  useEffect(() => {
+    if (!user?.id) return;
+
+    const channel = supabase
+      .channel('properties-changes')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'properties',
+          filter: `owner_id=eq.${user.id}`
+        },
+        (payload) => {
+          console.log('Properties change received:', payload);
+          // Refresh properties when any change occurs
+          fetchProperties();
+          // Also refresh notifications
+          loadNotifications();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [user?.id]);
 
   const handleAddProperty = () => {
     setEditingProperty(null);
@@ -306,9 +427,110 @@ const Properties: React.FC<PropertiesProps> = ({
           </p>
         </div>
         <div className="flex items-center space-x-2">
-          <Button variant="outline" size="sm">
-            <Bell className="w-4 h-4" />
-          </Button>
+          <div className="relative notification-dropdown">
+            <Button 
+              variant="outline" 
+              size="sm"
+              onClick={() => setShowNotifications(!showNotifications)}
+            >
+              <Bell className="w-4 h-4" />
+              {notifications.filter(n => !n.is_read).length > 0 && (
+                <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
+                  {notifications.filter(n => !n.is_read).length}
+                </span>
+              )}
+            </Button>
+            
+            {/* Notifications Dropdown - Portal Based */}
+            {showNotifications && createPortal(
+              <>
+                {/* Backdrop */}
+                <div 
+                  className="fixed inset-0 bg-black bg-opacity-25 z-[99998]"
+                  onClick={() => setShowNotifications(false)}
+                />
+                
+                {/* Dropdown */}
+                <div className="fixed top-20 right-4 w-80 bg-white border border-gray-200 rounded-lg shadow-2xl z-[99999] max-h-96 overflow-y-auto animate-in fade-in-0 zoom-in-95 duration-200">
+                  <div className="p-4 border-b">
+                    <div className="flex items-center justify-between">
+                      <h3 className="text-lg font-semibold text-gray-900">Notifications</h3>
+                      <div className="flex items-center space-x-2">
+                        {notifications.filter(n => !n.is_read).length > 0 && (
+                          <button
+                            onClick={handleMarkAllAsRead}
+                            className="text-sm text-blue-600 hover:text-blue-800 cursor-pointer"
+                          >
+                            Mark all as read
+                          </button>
+                        )}
+                        <button
+                          onClick={() => setShowNotifications(false)}
+                          className="text-gray-400 hover:text-gray-600 cursor-pointer"
+                        >
+                          <XIcon className="h-4 w-4" />
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                  
+                  <div className="max-h-64 overflow-y-auto">
+                    {notificationsLoading ? (
+                      <div className="p-4 text-center">
+                        <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600 mx-auto"></div>
+                        <p className="text-sm text-gray-500 mt-2">Loading notifications...</p>
+                      </div>
+                    ) : notifications.length === 0 ? (
+                      <div className="p-4 text-center">
+                        <Bell className="h-8 w-8 text-gray-400 mx-auto mb-2" />
+                        <p className="text-sm text-gray-500">No notifications yet</p>
+                        <p className="text-xs text-gray-400 mt-1">You'll receive notifications about your properties here</p>
+                      </div>
+                    ) : (
+                      notifications.map((notification) => (
+                        <div
+                          key={notification.id}
+                          onClick={() => handleNotificationClick(notification)}
+                          className={`p-4 border-b hover:bg-gray-50 cursor-pointer ${
+                            !notification.is_read ? 'bg-blue-50' : ''
+                          }`}
+                        >
+                          <div className="flex items-start space-x-3">
+                            <div className={`w-2 h-2 rounded-full mt-2 ${
+                              !notification.is_read ? 'bg-blue-500' : 'bg-gray-300'
+                            }`}></div>
+                            <div className="flex-1">
+                              <h4 className="text-sm font-medium text-gray-900">
+                                {notification.title}
+                              </h4>
+                              <p className="text-sm text-gray-600 mt-1">
+                                {notification.message}
+                              </p>
+                              <p className="text-xs text-gray-500 mt-1">
+                                {new Date(notification.created_at).toLocaleString()}
+                              </p>
+                            </div>
+                          </div>
+                        </div>
+                      ))
+                    )}
+                  </div>
+                  
+                  {notifications.length > 0 && (
+                    <div className="p-4 border-t">
+                      <button
+                        onClick={() => setActiveTab('messages')}
+                        className="w-full text-center text-sm text-blue-600 hover:text-blue-800 cursor-pointer"
+                      >
+                        View all notifications
+                      </button>
+                    </div>
+                  )}
+                </div>
+              </>,
+              document.body
+            )}
+          </div>
         </div>
       </div>
 

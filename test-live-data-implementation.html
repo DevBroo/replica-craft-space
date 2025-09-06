@@ -1,0 +1,275 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Live Data Implementation Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .test-section {
+            background: white;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .success { color: #22c55e; }
+        .error { color: #ef4444; }
+        .warning { color: #f59e0b; }
+        .info { color: #3b82f6; }
+        button {
+            background: #3b82f6;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        button:hover { background: #2563eb; }
+        .log {
+            background: #f8f9fa;
+            border: 1px solid #e9ecef;
+            padding: 10px;
+            border-radius: 4px;
+            font-family: monospace;
+            font-size: 12px;
+            max-height: 300px;
+            overflow-y: auto;
+            white-space: pre-wrap;
+        }
+        .feature-list {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 15px;
+            margin: 20px 0;
+        }
+        .feature-item {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 8px;
+            border-left: 4px solid #3b82f6;
+        }
+        .feature-item h4 {
+            margin: 0 0 10px 0;
+            color: #3b82f6;
+        }
+        .feature-item p {
+            margin: 0;
+            font-size: 14px;
+            color: #666;
+        }
+        .code {
+            background: #f1f3f4;
+            border: 1px solid #e0e0e0;
+            padding: 10px;
+            border-radius: 4px;
+            font-family: monospace;
+            font-size: 12px;
+            margin: 10px 0;
+        }
+    </style>
+</head>
+<body>
+    <h1>🔧 Live Data Implementation Test</h1>
+    
+    <div class="test-section">
+        <h2>📋 Test Overview</h2>
+        <p>This test verifies that the Earnings Dashboard now displays live/real-time data for both earnings and notifications.</p>
+        <p><strong>Features Implemented:</strong></p>
+        <ul>
+            <li>Live earnings data from Supabase database</li>
+            <li>Real-time notifications based on actual booking/review activity</li>
+            <li>Dynamic percentage changes for earnings metrics</li>
+            <li>Real-time updates via Supabase subscriptions</li>
+            <li>Interactive notification management</li>
+        </ul>
+    </div>
+
+    <div class="test-section">
+        <h2>✅ Live Data Features</h2>
+        <div class="feature-list">
+            <div class="feature-item">
+                <h4>💰 Live Earnings Data</h4>
+                <p>Real-time earnings calculated from actual bookings, commissions, and payments in the database</p>
+            </div>
+            <div class="feature-item">
+                <h4>🔔 Live Notifications</h4>
+                <p>Notifications generated from actual booking, payment, and review activity</p>
+            </div>
+            <div class="feature-item">
+                <h4>📊 Dynamic Metrics</h4>
+                <p>Percentage changes calculated based on current vs previous period data</p>
+            </div>
+            <div class="feature-item">
+                <h4>⚡ Real-time Updates</h4>
+                <p>Automatic refresh when bookings, payments, or reviews are updated</p>
+            </div>
+            <div class="feature-item">
+                <h4>🎯 Smart Notifications</h4>
+                <p>Notifications generated from recent bookings, payments, and reviews</p>
+            </div>
+            <div class="feature-item">
+                <h4>📱 Interactive Management</h4>
+                <p>Click to mark notifications as read, with real-time badge updates</p>
+            </div>
+        </div>
+    </div>
+
+    <div class="test-section">
+        <h2>🔧 Technical Implementation</h2>
+        
+        <h3>1. NotificationService.ts</h3>
+        <div class="code">
+// New service for handling live notifications
+export class NotificationService {
+  static async getOwnerNotifications(ownerId: string): Promise<Notification[]>
+  static async getNotificationStats(ownerId: string): Promise<NotificationStats>
+  static async markAsRead(notificationId: string): Promise<void>
+  static async createNotification(...): Promise<void>
+}
+        </div>
+
+        <h3>2. Live Data Sources</h3>
+        <ul>
+            <li><strong>Bookings Table:</strong> Real booking data for earnings calculations</li>
+            <li><strong>Commission Disbursements:</strong> Payment and commission data</li>
+            <li><strong>Reviews Table:</strong> Review data for notification generation</li>
+            <li><strong>Properties Table:</strong> Property information for context</li>
+        </ul>
+
+        <h3>3. Real-time Subscriptions</h3>
+        <div class="code">
+// Supabase real-time subscriptions
+.on('postgres_changes', { table: 'bookings' }, () => {
+  loadEarnings();
+  loadNotifications();
+})
+.on('postgres_changes', { table: 'reviews' }, () => {
+  loadNotifications();
+})
+.on('postgres_changes', { table: 'notifications' }, () => {
+  loadNotifications();
+})
+        </div>
+    </div>
+
+    <div class="test-section">
+        <h2>🧪 Test Steps</h2>
+        <ol>
+            <li><strong>Login as Property Owner:</strong> Use your owner credentials</li>
+            <li><strong>Navigate to Earnings Dashboard:</strong> Go to <code>/owner/view</code> and click on Earnings</li>
+            <li><strong>Check Live Earnings:</strong> Verify earnings show real data from your bookings</li>
+            <li><strong>Check Live Notifications:</strong> Click bell icon to see notifications based on actual activity</li>
+            <li><strong>Test Real-time Updates:</strong> Create a new booking or review in another tab</li>
+            <li><strong>Verify Auto-refresh:</strong> Dashboard should update automatically</li>
+            <li><strong>Test Notification Interaction:</strong> Click on unread notifications to mark as read</li>
+            <li><strong>Check Badge Updates:</strong> Notification badge should update when notifications are read</li>
+        </ol>
+    </div>
+
+    <div class="test-section">
+        <h2>🔍 Expected Behavior</h2>
+        
+        <h3>✅ Live Earnings Data</h3>
+        <div class="log success">
+Total Revenue: ₹[actual amount from bookings]
+Monthly Earnings: ₹[current month bookings]
+Pending Payments: ₹[confirmed but unpaid bookings]
+Completed Transactions: [actual count]
+Percentage Changes: [calculated from previous period]
+        </div>
+
+        <h3>✅ Live Notifications</h3>
+        <div class="log success">
+🔔 Notification Bell: Shows actual unread count
+📋 Notification List: Shows real notifications from:
+  - Recent bookings for your properties
+  - Payment confirmations
+  - New reviews received
+  - System notifications
+⏰ Timestamps: Real creation dates
+🎯 Interactive: Click to mark as read
+        </div>
+
+        <h3>✅ Real-time Updates</h3>
+        <div class="log success">
+📊 Earnings: Auto-refresh when bookings change
+🔔 Notifications: Auto-refresh when reviews added
+⚡ Instant: No page refresh needed
+🔄 Live: Updates happen in real-time
+        </div>
+    </div>
+
+    <div class="test-section">
+        <h2>📊 Data Flow</h2>
+        
+        <h3>Earnings Data Flow:</h3>
+        <ol>
+            <li>Fetch bookings for owner's properties</li>
+            <li>Calculate total revenue from confirmed bookings</li>
+            <li>Calculate monthly earnings from current month bookings</li>
+            <li>Calculate pending payments (confirmed but not paid out)</li>
+            <li>Count completed transactions</li>
+            <li>Calculate percentage changes vs previous period</li>
+        </ol>
+
+        <h3>Notifications Data Flow:</h3>
+        <ol>
+            <li>Check for existing notifications in database</li>
+            <li>If none, generate from recent activity (bookings, reviews)</li>
+            <li>Create notification objects with proper metadata</li>
+            <li>Display with read/unread status</li>
+            <li>Allow marking as read with real-time updates</li>
+        </ol>
+    </div>
+
+    <div class="test-section">
+        <h2>🎯 Key Benefits</h2>
+        <ul>
+            <li><strong>Real Data:</strong> No more placeholder values - shows actual earnings</li>
+            <li><strong>Live Updates:</strong> Dashboard reflects changes immediately</li>
+            <li><strong>Smart Notifications:</strong> Relevant notifications based on actual activity</li>
+            <li><strong>Interactive:</strong> Users can manage their notifications</li>
+            <li><strong>Accurate Metrics:</strong> Percentage changes based on real data</li>
+            <li><strong>Professional Feel:</strong> Dashboard feels like a real business tool</li>
+        </ul>
+    </div>
+
+    <div class="test-section">
+        <h2>🚀 Next Steps</h2>
+        <p>After confirming live data works:</p>
+        <ul>
+            <li>Test with different date ranges and property filters</li>
+            <li>Verify notifications work with different user roles</li>
+            <li>Test real-time updates with multiple users</li>
+            <li>Check performance with large amounts of data</li>
+            <li>Verify export functionality works with live data</li>
+            <li>Test notification management features</li>
+        </ul>
+    </div>
+
+    <div class="test-section">
+        <h2>📈 Performance Considerations</h2>
+        <ul>
+            <li><strong>Efficient Queries:</strong> Only fetch necessary data</li>
+            <li><strong>Real-time Subscriptions:</strong> Optimized for minimal bandwidth</li>
+            <li><strong>Caching:</strong> Smart caching of frequently accessed data</li>
+            <li><strong>Loading States:</strong> Proper loading indicators for better UX</li>
+            <li><strong>Error Handling:</strong> Graceful fallbacks when data unavailable</li>
+        </ul>
+    </div>
+
+    <script>
+        console.log('🔧 Live Data Implementation Test Page Loaded');
+        console.log('📋 This page documents the implementation of live data for earnings and notifications');
+        console.log('🎯 The dashboard now shows real data from Supabase with real-time updates');
+    </script>
+</body>
+</html>

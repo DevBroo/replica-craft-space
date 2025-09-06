@@ -107,7 +107,7 @@ export const AppearanceProvider: React.FC<{ children: React.ReactNode }> = ({ ch
 
   useEffect(() => {
     loadConfig();
-  }, []);
+  }, []); // Keep empty dependency array for initial load
 
   useEffect(() => {
     applyConfigToDOM(activeConfig);
@@ -115,38 +115,68 @@ export const AppearanceProvider: React.FC<{ children: React.ReactNode }> = ({ ch
 
   const loadConfig = async () => {
     try {
-      const { data, error } = await supabase
-        .from('app_settings')
-        .select('*')
-        .eq('key', 'appearance')
+      // Check if user is admin before trying to access app_settings
+      const { data: { user } } = await supabase.auth.getUser();
+      
+      // If no user or no user ID, use default config
+      if (!user || !user.id) {
+        console.log('No authenticated user, using default appearance config');
+        setConfig(defaultConfig);
+        return;
+      }
+      
+      const { data: profile, error: profileError } = await supabase
+        .from('profiles')
+        .select('role')
+        .eq('id', user.id)
         .single();
 
-      if (error) {
-        // Handle different error types gracefully
-        if (error.code === 'PGRST116') {
-          // No rows found - use default config
-          console.log('No appearance config found, using defaults');
-        } else if (error.code === 'PGRST301' || error.message?.includes('406')) {
-          // Table doesn't exist or permission denied - use default config
-          console.log('Appearance settings table not accessible, using defaults');
-        } else {
-          console.error('Error loading appearance config:', error);
-        }
-        // Always use default config on any error
+      // If profile fetch fails, use default config
+      if (profileError) {
+        console.log('Could not fetch user profile, using default appearance config:', profileError.message);
         setConfig(defaultConfig);
         return;
       }
 
-      if (data?.value) {
-        const savedConfig = { ...defaultConfig, ...(data.value as any) };
-        
-        // Merge extended config if available
-        if (data.extended_config) {
-          Object.assign(savedConfig, data.extended_config as any);
+      // Only try to load from app_settings if user is admin
+      if (profile?.role === 'admin' || profile?.role === 'super_admin') {
+        const { data, error } = await supabase
+          .from('app_settings')
+          .select('*')
+          .eq('key', 'appearance')
+          .single();
+
+        if (error) {
+          // Handle different error types gracefully
+          if (error.code === 'PGRST116') {
+            // No rows found - use default config
+            console.log('No appearance config found, using defaults');
+          } else if (error.code === 'PGRST301' || error.message?.includes('406')) {
+            // Table doesn't exist or permission denied - use default config
+            console.log('Appearance settings table not accessible, using defaults');
+          } else {
+            console.error('Error loading appearance config:', error);
+          }
+          // Always use default config on any error
+          setConfig(defaultConfig);
+          return;
         }
-        
-        setConfig(savedConfig);
+
+        if (data?.value) {
+          const savedConfig = { ...defaultConfig, ...(data.value as any) };
+          
+          // Merge extended config if available
+          if (data.extended_config) {
+            Object.assign(savedConfig, data.extended_config as any);
+          }
+          
+          setConfig(savedConfig);
+        } else {
+          setConfig(defaultConfig);
+        }
       } else {
+        // Non-admin users always use default config
+        console.log('Non-admin user, using default appearance config');
         setConfig(defaultConfig);
       }
     } catch (error) {

@@ -54,6 +54,8 @@ const OwnerLogin: React.FC = () => {
         const redirectTo = searchParams.get('redirect');
         const targetUrl = redirectTo || '/owner/view';
         navigate(targetUrl, { replace: true });
+      } else {
+        console.log('⚠️ User is not a property owner, role:', user.role);
       }
       // Don't redirect users with other roles - let them sign out if needed
     }

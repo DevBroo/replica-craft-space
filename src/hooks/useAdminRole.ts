@@ -22,10 +22,15 @@ export const useAdminRole = () => {
       setLoading(true);
       
       // Check basic admin role from profiles
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user?.id) {
+        return false;
+      }
+      
       const { data: profile } = await supabase
         .from('profiles')
         .select('role')
-        .eq('id', (await supabase.auth.getUser()).data.user?.id)
+        .eq('id', user.id)
         .single();
 
       const isBasicAdmin = profile?.role === 'admin';
@@ -34,7 +39,7 @@ export const useAdminRole = () => {
       const { data: userRoles } = await supabase
         .from('user_roles')
         .select('role')
-        .eq('user_id', (await supabase.auth.getUser()).data.user?.id);
+        .eq('user_id', user.id);
 
       const roleSet = new Set(userRoles?.map(r => r.role) || []);
 

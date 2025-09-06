@@ -133,13 +133,12 @@ export function useOwnerStats(ownerId: string) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    const fetchStats = async () => {
-      if (!ownerId) return;
-      
-      try {
-        setLoading(true);
-        setError(null);
+  const fetchStats = async () => {
+    if (!ownerId) return;
+    
+    try {
+      setLoading(true);
+      setError(null);
 
         // Get properties stats
         const { data: propertiesData, error: propertiesError } = await supabase
@@ -149,11 +148,18 @@ export function useOwnerStats(ownerId: string) {
 
         if (propertiesError) throw propertiesError;
 
-        // Get bookings stats
+        // Get bookings stats for owner's properties
         const { data: bookingsData, error: bookingsError } = await supabase
           .from('bookings')
-          .select('total_amount, status, created_at, check_in_date, check_out_date')
-          .in('property_id', propertiesData?.map(p => p.id) || []);
+          .select(`
+            total_amount, 
+            status, 
+            created_at, 
+            check_in_date, 
+            check_out_date,
+            properties!inner(owner_id)
+          `)
+          .eq('properties.owner_id', ownerId);
 
         if (bookingsError) throw bookingsError;
 
@@ -203,8 +209,14 @@ export function useOwnerStats(ownerId: string) {
       }
     };
 
+  useEffect(() => {
     fetchStats();
   }, [ownerId]);
 
-  return { stats, loading, error };
+  // Add a refresh function that can be called manually
+  const refreshStats = () => {
+    fetchStats();
+  };
+
+  return { stats, loading, error, refreshStats };
 }

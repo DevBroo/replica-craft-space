@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bookings Undefined Values Fix Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .test-section {
+            background: white;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .success { color: #22c55e; }
+        .error { color: #ef4444; }
+        .warning { color: #f59e0b; }
+        .info { color: #3b82f6; }
+        button {
+            background: #3b82f6;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        button:hover { background: #2563eb; }
+        .log {
+            background: #f8f9fa;
+            border: 1px solid #e9ecef;
+            padding: 10px;
+            border-radius: 4px;
+            font-family: monospace;
+            font-size: 12px;
+            max-height: 300px;
+            overflow-y: auto;
+            white-space: pre-wrap;
+        }
+        .code {
+            background: #f1f3f4;
+            border: 1px solid #e0e0e0;
+            padding: 10px;
+            border-radius: 4px;
+            font-family: monospace;
+            font-size: 12px;
+            margin: 10px 0;
+        }
+    </style>
+</head>
+<body>
+    <h1>🔧 Bookings Undefined Values Fix Test</h1>
+    
+    <div class="test-section">
+        <h2>📋 Test Overview</h2>
+        <p>This test verifies that the TypeError in the Bookings component has been fixed.</p>
+        <p><strong>Issue:</strong> <code>TypeError: Cannot read properties of undefined (reading 'toLowerCase')</code> at Bookings.tsx:78:46</p>
+        <p><strong>Root Cause:</strong> Booking data fields like <code>guest_name</code>, <code>property_title</code>, and <code>status</code> were undefined, causing errors when calling <code>toLowerCase()</code> or <code>charAt()</code>.</p>
+    </div>
+
+    <div class="test-section">
+        <h2>❌ Previous Error (Before Fix)</h2>
+        <div class="log error">
+Uncaught TypeError: Cannot read properties of undefined (reading 'toLowerCase')
+    at Bookings.tsx:78:46
+    at Array.filter (<anonymous>)
+    at Bookings (Bookings.tsx:76:37)
+        </div>
+        <p><strong>Problem:</strong> The filter function was trying to call <code>toLowerCase()</code> on undefined values.</p>
+    </div>
+
+    <div class="test-section">
+        <h2>🔧 Fixes Applied</h2>
+        
+        <h3>1. Bookings.tsx - Filter Function</h3>
+        <div class="code">
+// Before (Causing Error):
+const matchesSearch = booking.guest_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+  booking.id.toLowerCase().includes(searchQuery.toLowerCase()) ||
+  booking.property_title.toLowerCase().includes(searchQuery.toLowerCase());
+
+// After (Fixed):
+const matchesSearch = (booking.guest_name || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
+  (booking.id || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
+  (booking.property_title || '').toLowerCase().includes(searchQuery.toLowerCase());
+        </div>
+
+        <h3>2. Bookings.tsx - Status Display</h3>
+        <div class="code">
+// Before (Potential Error):
+{booking.status.charAt(0).toUpperCase() + booking.status.slice(1)}
+
+// After (Fixed):
+{(booking.status || 'unknown').charAt(0).toUpperCase() + (booking.status || 'unknown').slice(1)}
+        </div>
+
+        <h3>3. Bookings.tsx - Date Display</h3>
+        <div class="code">
+// Before (Potential Error):
+{new Date(booking.check_in_date).toLocaleDateString()}
+
+// After (Fixed):
+{booking.check_in_date ? new Date(booking.check_in_date).toLocaleDateString() : 'N/A'}
+        </div>
+
+        <h3>4. Bookings.tsx - Amount Display</h3>
+        <div class="code">
+// Before (Potential Error):
+₹{booking.total_amount.toLocaleString()}
+
+// After (Fixed):
+₹{(booking.total_amount || 0).toLocaleString()}
+        </div>
+
+        <h3>5. ownerService.ts - Data Mapping</h3>
+        <div class="code">
+// Before (Potential Undefined):
+guest_name: booking.guest_name,
+guest_email: booking.guest_email,
+guest_phone: booking.guest_phone,
+
+// After (Fixed):
+guest_name: booking.guest_name || 'Unknown Guest',
+guest_email: booking.guest_email || '',
+guest_phone: booking.guest_phone || '',
+        </div>
+    </div>
+
+    <div class="test-section">
+        <h2>✅ Expected Behavior (After Fix)</h2>
+        <ul>
+            <li><strong>No More TypeError:</strong> Filter function handles undefined values gracefully</li>
+            <li><strong>Safe String Operations:</strong> All <code>toLowerCase()</code> and <code>charAt()</code> calls are protected</li>
+            <li><strong>Fallback Values:</strong> Undefined fields show appropriate fallback text</li>
+            <li><strong>Robust Display:</strong> All booking data displays correctly even with missing fields</li>
+        </ul>
+    </div>
+
+    <div class="test-section">
+        <h2>🧪 Test Steps</h2>
+        <ol>
+            <li><strong>Login as Property Owner:</strong> Use your owner credentials</li>
+            <li><strong>Navigate to Owner Dashboard:</strong> Go to <code>/owner/view</code></li>
+            <li><strong>Check Bookings Tab:</strong> Click on the Bookings section</li>
+            <li><strong>Verify Display:</strong> All bookings should display without errors</li>
+            <li><strong>Test Search/Filter:</strong> Try searching and filtering bookings</li>
+            <li><strong>Check Console:</strong> No TypeError should appear</li>
+        </ol>
+    </div>
+
+    <div class="test-section">
+        <h2>🔍 Console Log Analysis</h2>
+        <p>Look for these specific log patterns:</p>
+        
+        <h3>✅ Good Pattern (Fixed):</h3>
+        <div class="log success">
+🔍 Fetching bookings for owner: [owner-id]
+✅ Owner bookings fetched: [count]
+✅ Bookings component renders without errors
+✅ Search and filter functions work properly
+        </div>
+
+        <h3>❌ Bad Pattern (Before Fix):</h3>
+        <div class="log error">
+🔍 Fetching bookings for owner: [owner-id]
+✅ Owner bookings fetched: [count]
+❌ Uncaught TypeError: Cannot read properties of undefined (reading 'toLowerCase')
+        </div>
+    </div>
+
+    <div class="test-section">
+        <h2>🎯 Key Benefits</h2>
+        <ul>
+            <li><strong>Error Prevention:</strong> All undefined value access is protected</li>
+            <li><strong>Better UX:</strong> Users see meaningful fallback text instead of crashes</li>
+            <li><strong>Robust Filtering:</strong> Search and filter functions work with incomplete data</li>
+            <li><strong>Data Integrity:</strong> Service layer provides fallback values</li>
+            <li><strong>Maintainable Code:</strong> Defensive programming prevents future issues</li>
+        </ul>
+    </div>
+
+    <div class="test-section">
+        <h2>🚀 Next Steps</h2>
+        <p>After confirming the fix works:</p>
+        <ul>
+            <li>Test with different booking data scenarios</li>
+            <li>Verify search and filter functionality</li>
+            <li>Check that all booking fields display correctly</li>
+            <li>Test with bookings that have missing optional fields</li>
+            <li>Verify the owner dashboard loads completely</li>
+        </ul>
+    </div>
+
+    <div class="test-section">
+        <h2>📊 Data Fields Protected</h2>
+        <p>The following booking fields are now protected against undefined values:</p>
+        <ul>
+            <li><strong>guest_name:</strong> Falls back to "Unknown Guest"</li>
+            <li><strong>guest_email:</strong> Falls back to empty string</li>
+            <li><strong>guest_phone:</strong> Falls back to empty string</li>
+            <li><strong>property_title:</strong> Falls back to "Unknown Property"</li>
+            <li><strong>status:</strong> Falls back to "unknown"</li>
+            <li><strong>check_in_date:</strong> Falls back to "N/A"</li>
+            <li><strong>check_out_date:</strong> Falls back to "N/A"</li>
+            <li><strong>total_amount:</strong> Falls back to 0</li>
+        </ul>
+    </div>
+
+    <script>
+        console.log('🔧 Bookings Undefined Values Fix Test Page Loaded');
+        console.log('📋 This page documents the fix for the TypeError in Bookings component');
+        console.log('🎯 The fix ensures all booking data fields are protected against undefined values');
+    </script>
+</body>
+</html>

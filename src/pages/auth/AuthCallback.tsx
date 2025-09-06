@@ -46,31 +46,55 @@ export default function AuthCallback() {
       if (type === 'signup' || accessToken) {
         console.log('✅ Email confirmation detected');
         setStatus('success');
-        setMessage('Your email has been confirmed! Redirecting you to your dashboard...');
+        setMessage('Your email has been confirmed! Welcome to Picnify! Redirecting you to your dashboard...');
         
         // Wait for auth state to update, then redirect based on role
         const checkAuthAndRedirect = () => {
           if (!loading && session && user) {
             console.log('🎭 User confirmed and ready:', { email: user.email, role: user.role });
             
-            // Role-based redirect
+            // Role-based redirect with better messaging
             setTimeout(() => {
               switch (user.role) {
                 case 'owner':
                   console.log('🏠 Redirecting owner to dashboard');
-                  navigate('/owner/view', { replace: true });
+                  navigate('/owner/view', { 
+                    replace: true,
+                    state: { 
+                      message: 'Welcome to Picnify! Your account is now verified and ready to use.',
+                      email: user.email 
+                    }
+                  });
                   break;
                 case 'admin':
                   console.log('👑 Redirecting admin to dashboard');
-                  navigate('/admin/dashboard', { replace: true });
+                  navigate('/admin/dashboard', { 
+                    replace: true,
+                    state: { 
+                      message: 'Welcome to Picnify Admin! Your account is now verified.',
+                      email: user.email 
+                    }
+                  });
                   break;
                 case 'agent':
                   console.log('🤝 Redirecting agent to dashboard');
-                  navigate('/agent/dashboard', { replace: true });
+                  navigate('/agent/dashboard', { 
+                    replace: true,
+                    state: { 
+                      message: 'Welcome to Picnify! Your agent account is now verified.',
+                      email: user.email 
+                    }
+                  });
                   break;
                 default:
                   console.log('👤 Redirecting customer to home');
-                  navigate('/', { replace: true });
+                  navigate('/', { 
+                    replace: true,
+                    state: { 
+                      message: 'Welcome to Picnify! Your account is now verified. Start exploring amazing properties!',
+                      email: user.email 
+                    }
+                  });
                   break;
               }
             }, 2000);
@@ -84,7 +108,13 @@ export default function AuthCallback() {
             // Fallback: redirect to login if no session after waiting
             console.log('⚠️ No session found, redirecting to login');
             setTimeout(() => {
-              navigate('/login', { replace: true });
+              navigate('/login', { 
+                replace: true,
+                state: { 
+                  message: 'Email verified! Please log in to access your account.',
+                  email: user?.email 
+                }
+              });
             }, 2000);
           }
         };

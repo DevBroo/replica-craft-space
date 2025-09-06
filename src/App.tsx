@@ -1,5 +1,5 @@
 import React, { Suspense } from "react";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { AdminAuthProvider } from "@/contexts/AdminAuthContext";
@@ -122,7 +122,12 @@ function App() {
         <AdminAuthProvider>
           <PropertyCacheProvider>
             <WishlistProvider>
-              <BrowserRouter>
+              <BrowserRouter
+                future={{
+                  v7_startTransition: true,
+                  v7_relativeSplatPath: true
+                }}
+              >
                 <div className="min-h-screen bg-background">
                   <Routes>
                     {/* Public Routes */}
@@ -356,9 +361,12 @@ function App() {
                         <HostSignup />
                       </Suspense>
                     } />
+                    <Route path="/owner" element={
+                      <Navigate to="/owner/view" replace />
+                    } />
                     <Route path="/owner/dashboard" element={
                       <Suspense fallback={<LoadingSpinner />}>
-                        <OwnerDashboard />
+                        <OwnerRoute><OwnerDashboard /></OwnerRoute>
                       </Suspense>
                     } />
                     <Route path="/owner/view" element={

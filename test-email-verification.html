@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Email Verification Test - Picnify</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .test-section {
+            margin: 20px 0;
+            padding: 20px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
+        .success { background-color: #d4edda; border-color: #c3e6cb; }
+        .info { background-color: #d1ecf1; border-color: #bee5eb; }
+        .warning { background-color: #fff3cd; border-color: #ffeaa7; }
+        .error { background-color: #f8d7da; border-color: #f5c6cb; }
+        button {
+            background-color: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        button:hover { background-color: #0056b3; }
+        .code {
+            background-color: #f8f9fa;
+            padding: 10px;
+            border-radius: 3px;
+            font-family: monospace;
+            margin: 10px 0;
+        }
+        .step {
+            margin: 10px 0;
+            padding: 10px;
+            background-color: #f8f9fa;
+            border-left: 4px solid #007bff;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🧪 Email Verification Test - Picnify</h1>
+        
+        <div class="test-section info">
+            <h2>📧 Email Verification Flow Test</h2>
+            <p>This test will help you verify that the email verification redirect is working correctly for new user signups.</p>
+        </div>
+
+        <div class="test-section">
+            <h3>🔧 Configuration Check</h3>
+            <div class="step">
+                <strong>Step 1:</strong> Verify Supabase configuration
+                <div class="code">
+                    ✅ Site URL: http://localhost:8080<br>
+                    ✅ Redirect URL: http://localhost:8080/auth/callback<br>
+                    ✅ Email confirmations: Enabled
+                </div>
+            </div>
+        </div>
+
+        <div class="test-section">
+            <h3>🧪 Test Steps</h3>
+            <div class="step">
+                <strong>Step 1:</strong> Go to signup page
+                <button onclick="window.open('http://localhost:8080/signup', '_blank')">Open Signup Page</button>
+            </div>
+            
+            <div class="step">
+                <strong>Step 2:</strong> Create a new account with a test email
+                <div class="code">
+                    Use a real email address you can access<br>
+                    Fill in all required fields<br>
+                    Select "Customer" role<br>
+                    Click "Create Account"
+                </div>
+            </div>
+            
+            <div class="step">
+                <strong>Step 3:</strong> Check for success message
+                <div class="code">
+                    Expected: "Account created successfully! Please check your email to verify your account. Click the verification link in your email to complete the setup."
+                </div>
+            </div>
+            
+            <div class="step">
+                <strong>Step 4:</strong> Check your email inbox
+                <div class="code">
+                    Look for email from Supabase/Picnify<br>
+                    Check spam/junk folder if not in inbox<br>
+                    Click the verification link in the email
+                </div>
+            </div>
+            
+            <div class="step">
+                <strong>Step 5:</strong> Verify redirect to callback page
+                <div class="code">
+                    Should redirect to: http://localhost:8080/auth/callback<br>
+                    Should show: "Your email has been confirmed! Welcome to Picnify!"<br>
+                    Should redirect to appropriate dashboard after 2 seconds
+                </div>
+            </div>
+        </div>
+
+        <div class="test-section">
+            <h3>🔗 Direct Test Links</h3>
+            <button onclick="window.open('http://localhost:8080/signup', '_blank')">Test Customer Signup</button>
+            <button onclick="window.open('http://localhost:8080/host/signup', '_blank')">Test Host Signup</button>
+            <button onclick="window.open('http://localhost:8080/auth/callback', '_blank')">Test Callback Page</button>
+        </div>
+
+        <div class="test-section warning">
+            <h3>⚠️ Troubleshooting</h3>
+            <p><strong>If email verification is not working:</strong></p>
+            <ul>
+                <li>Check Supabase dashboard email settings</li>
+                <li>Verify redirect URLs are configured</li>
+                <li>Check browser console for errors</li>
+                <li>Ensure email service is enabled in Supabase</li>
+                <li>Check spam/junk folder</li>
+            </ul>
+        </div>
+
+        <div class="test-section success">
+            <h3>✅ Expected Results</h3>
+            <p>After clicking the email verification link:</p>
+            <ul>
+                <li>User should be redirected to <code>/auth/callback</code></li>
+                <li>Success message should appear</li>
+                <li>User should be automatically logged in</li>
+                <li>User should be redirected to appropriate dashboard</li>
+                <li>Welcome message should be displayed</li>
+            </ul>
+        </div>
+
+        <div class="test-section">
+            <h3>📊 Test Results</h3>
+            <p>Use this section to track your test results:</p>
+            <div class="code">
+                [ ] Signup form works<br>
+                [ ] Success message appears<br>
+                [ ] Email is received<br>
+                [ ] Email link works<br>
+                [ ] Callback page loads<br>
+                [ ] User is redirected to dashboard<br>
+                [ ] User is logged in automatically
+            </div>
+        </div>
+    </div>
+
+    <script>
+        console.log('🧪 Email Verification Test Page Loaded');
+        console.log('📧 Testing email verification flow for Picnify');
+        console.log('🔗 Callback URL: http://localhost:8080/auth/callback');
+    </script>
+</body>
+</html>

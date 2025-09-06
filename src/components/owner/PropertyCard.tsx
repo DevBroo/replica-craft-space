@@ -37,14 +37,30 @@ export const PropertyCard: React.FC<PropertyCardProps> = ({
 }) => {
   const getStatusBadge = (status: string) => {
     const statusConfig = {
-      active: { variant: "default" as const, label: "Active" },
-      pending: { variant: "secondary" as const, label: "Pending" },
-      inactive: { variant: "outline" as const, label: "Inactive" },
-      rejected: { variant: "destructive" as const, label: "Rejected" }
+      active: { 
+        className: "bg-green-100 text-green-800 border-green-200", 
+        label: "Active" 
+      },
+      pending: { 
+        className: "bg-yellow-100 text-yellow-800 border-yellow-200", 
+        label: "Pending" 
+      },
+      inactive: { 
+        className: "bg-gray-100 text-gray-800 border-gray-200", 
+        label: "Inactive" 
+      },
+      rejected: { 
+        className: "bg-red-100 text-red-800 border-red-200", 
+        label: "Rejected" 
+      }
     };
 
     const config = statusConfig[status as keyof typeof statusConfig] || statusConfig.pending;
-    return <Badge variant={config.variant}>{config.label}</Badge>;
+    return (
+      <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium border ${config.className} shadow-sm`}>
+        {config.label}
+      </span>
+    );
   };
 
   const isDayPicnic = property.property_type === 'Day Picnic' || property.property_type === 'day-picnic';
@@ -66,12 +82,12 @@ export const PropertyCard: React.FC<PropertyCardProps> = ({
         )}
         
         {/* Status Badge - Top Right */}
-        <div className="absolute top-2 right-2">
+        <div className="absolute top-2 right-2 z-10">
           {getStatusBadge(property.status)}
         </div>
         
         {/* More Actions - Top Left */}
-        <div className="absolute top-2 left-2">
+        <div className="absolute top-2 left-2 z-10">
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button variant="secondary" size="sm" className="h-8 w-8 p-0">

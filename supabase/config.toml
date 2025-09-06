@@ -36,6 +36,7 @@ file_size_limit = "50MiB"
 [auth]
 site_url = "http://localhost:8080"
 additional_redirect_urls = [
+  "http://localhost:8080/auth/callback",
   "http://localhost:8080/confirm-email",
   "http://localhost:8080/login",
   "http://localhost:8080/signup",
@@ -59,6 +60,10 @@ double_confirm_changes = true
 enable_confirmations = true
 secure_password_change = false
 max_frequency = "1m0s"
+# Email template settings
+template_confirm_signup = "Welcome to Picnify! Please confirm your email address by clicking the link below: {{ .ConfirmationURL }}"
+template_confirm_email_change = "Please confirm your new email address: {{ .ConfirmationURL }}"
+template_reset_password = "Reset your password: {{ .ConfirmationURL }}"
 
 [auth.sms]
 enable_signup = false

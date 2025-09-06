@@ -9,6 +9,9 @@ export interface AuthUser {
   full_name?: string;
   avatar_url?: string;
   phone?: string;
+  about?: string;
+  location?: string;
+  languages?: string[];
   created_at?: string;
   updated_at?: string;
 }
@@ -38,6 +41,7 @@ interface AuthContextType {
   user: AuthUser | null;
   session: Session | null;
   loading: boolean;
+  profileLoading: boolean;
   error: AuthError | null;
   login: (credentials: LoginCredentials) => Promise<void>;
   register: (data: RegisterData) => Promise<void>;
@@ -64,6 +68,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const [user, setUser] = useState<AuthUser | null>(null);
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
+  const [profileLoading, setProfileLoading] = useState(false);
   const [error, setError] = useState<AuthError | null>(null);
   const [isInitialized, setIsInitialized] = useState(false);
 
@@ -71,37 +76,59 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const getUserProfile = async (userId: string): Promise<AuthUser | null> => {
     const maxRetries = 1; // Reduced retries for faster loading
     let retryCount = 0;
+    setProfileLoading(true);
     
-    while (retryCount <= maxRetries) {
-      try {
-        console.log(`📝 Fetching user profile (attempt ${retryCount + 1}/${maxRetries + 1})`);
-        
-        const { data, error } = await supabase
-          .from('profiles')
-          .select('*')
-          .eq('id', userId)
-          .single();
-
-        if (error) {
-          console.error(`❌ Error fetching user profile (attempt ${retryCount + 1}):`, error);
+    // Set a timeout to prevent infinite loading
+    const timeoutId = setTimeout(() => {
+      console.log('⏰ Profile loading timeout, clearing loading state');
+      setProfileLoading(false);
+    }, 10000); // 10 second timeout
+    
+    try {
+      while (retryCount <= maxRetries) {
+        try {
+          console.log(`📝 Fetching user profile (attempt ${retryCount + 1}/${maxRetries + 1})`);
           
-          // If it's a "not found" error, return null immediately
-          if (error.code === 'PGRST116') {
-            console.log('📝 User profile not found in database');
+          const { data, error } = await supabase
+            .from('profiles')
+            .select('*')
+            .eq('id', userId)
+            .single();
+
+          if (error) {
+            console.error(`❌ Error fetching user profile (attempt ${retryCount + 1}):`, error);
+            
+            // If it's a "not found" error or 406 error, return null immediately
+            if (error.code === 'PGRST116' || error.message?.includes('406')) {
+              console.log('📝 User profile not found in database');
+              clearTimeout(timeoutId);
+              setProfileLoading(false);
+              return null;
+            }
+            
+            // For 403 errors, check if it's an auth issue
+            if (error.message?.includes('403') || error.code === 'PGRST301') {
+              console.log('🔒 Authentication error, user may not be properly authenticated');
+              clearTimeout(timeoutId);
+              setProfileLoading(false);
+              return null;
+            }
+            
+            // For other errors, retry once with short delay
+            if (retryCount < maxRetries) {
+              retryCount++;
+              await new Promise(resolve => setTimeout(resolve, 500)); // Short delay
+              continue;
+            }
+            
+            clearTimeout(timeoutId);
+            setProfileLoading(false);
             return null;
           }
-          
-          // For other errors, retry once with short delay
-          if (retryCount < maxRetries) {
-            retryCount++;
-            await new Promise(resolve => setTimeout(resolve, 500)); // Short delay
-            continue;
-          }
-          
-          return null;
-        }
 
-        console.log('✅ User profile fetched successfully');
+          console.log('✅ User profile fetched successfully');
+          clearTimeout(timeoutId);
+          setProfileLoading(false);
           return {
             id: data.id,
             email: data.email || '',
@@ -109,23 +136,36 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
             full_name: data.full_name,
             avatar_url: data.avatar_url,
             phone: data.phone,
+            about: data.about,
+            location: data.location,
+            languages: data.languages,
             created_at: data.created_at,
             updated_at: data.updated_at,
           };
-      } catch (err) {
-        console.error(`❌ Exception in getUserProfile (attempt ${retryCount + 1}):`, err);
-        
-        if (retryCount < maxRetries) {
-          retryCount++;
-          await new Promise(resolve => setTimeout(resolve, 500)); // Short delay
-          continue;
+        } catch (err) {
+          console.error(`❌ Exception in getUserProfile (attempt ${retryCount + 1}):`, err);
+          
+          if (retryCount < maxRetries) {
+            retryCount++;
+            await new Promise(resolve => setTimeout(resolve, 500)); // Short delay
+            continue;
+          }
+          
+          clearTimeout(timeoutId);
+          setProfileLoading(false);
+          return null;
         }
-        
-        return null;
       }
+      
+      clearTimeout(timeoutId);
+      setProfileLoading(false);
+      return null;
+    } catch (err) {
+      console.error('❌ Outer exception in getUserProfile:', err);
+      clearTimeout(timeoutId);
+      setProfileLoading(false);
+      return null;
     }
-    
-    return null;
   };
 
   // Helper function to create or update user profile with fast execution
@@ -225,6 +265,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         } else {
           console.log('🚫 No session user, clearing user state');
           setUser(null);
+          setProfileLoading(false); // Clear profile loading state when signed out
         }
         
         // Set loading to false immediately for fast UI response
@@ -523,6 +564,9 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
           full_name: updates.full_name,
           avatar_url: updates.avatar_url,
           phone: updates.phone,
+          about: updates.about,
+          location: updates.location,
+          languages: updates.languages,
           updated_at: new Date().toISOString(),
         })
         .eq('id', user.id);
@@ -724,6 +768,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     user,
     session,
     loading,
+    profileLoading,
     error,
     login,
     register,
@@ -735,10 +780,10 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     loginWithOtp,
     verifyOtp,
     clearError,
-    isAuthenticated: !!user && !!session,
+    isAuthenticated: !!user && (!!session || !loading),
     hasRole,
     hasAnyRole,
-  }), [user, session, loading, error, login, register, logout, updateProfile, resetPassword, resendVerification, changePassword, loginWithOtp, verifyOtp, clearError, hasRole, hasAnyRole]);
+  }), [user, session, loading, profileLoading, error, login, register, logout, updateProfile, resetPassword, resendVerification, changePassword, loginWithOtp, verifyOtp, clearError, hasRole, hasAnyRole]);
 
   return (
     <AuthContext.Provider value={value}>

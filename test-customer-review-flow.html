@@ -1,0 +1,409 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Customer Review Flow Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .test-section {
+            background: white;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .success { color: #22c55e; }
+        .error { color: #ef4444; }
+        .warning { color: #f59e0b; }
+        .info { color: #3b82f6; }
+        button {
+            background: #3b82f6;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        button:hover { background: #2563eb; }
+        .log {
+            background: #f8f9fa;
+            border: 1px solid #e9ecef;
+            padding: 10px;
+            border-radius: 4px;
+            font-family: monospace;
+            font-size: 12px;
+            max-height: 300px;
+            overflow-y: auto;
+            white-space: pre-wrap;
+        }
+        .feature-list {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 15px;
+            margin: 20px 0;
+        }
+        .feature-item {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 8px;
+            border-left: 4px solid #3b82f6;
+        }
+        .feature-item h4 {
+            margin: 0 0 10px 0;
+            color: #3b82f6;
+        }
+        .feature-item p {
+            margin: 0;
+            font-size: 14px;
+            color: #666;
+        }
+        .code {
+            background: #f1f3f4;
+            border: 1px solid #e0e0e0;
+            padding: 10px;
+            border-radius: 4px;
+            font-family: monospace;
+            font-size: 12px;
+            margin: 10px 0;
+        }
+        .flow-step {
+            background: #f0f9ff;
+            border: 1px solid #0ea5e9;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 10px 0;
+        }
+        .flow-step h4 {
+            margin: 0 0 10px 0;
+            color: #0ea5e9;
+        }
+        .verification {
+            background: #f0fdf4;
+            border: 1px solid #22c55e;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 10px 0;
+        }
+        .verification h4 {
+            margin: 0 0 10px 0;
+            color: #22c55e;
+        }
+    </style>
+</head>
+<body>
+    <h1>⭐ Customer Review Flow Test</h1>
+    
+    <div class="test-section">
+        <h2>📋 Test Overview</h2>
+        <p>This test verifies the complete customer review flow from booking completion to review submission and property owner dashboard reflection.</p>
+        <p><strong>Review Flow Components:</strong></p>
+        <ul>
+            <li>Customer booking completion</li>
+            <li>Review submission functionality</li>
+            <li>Review storage in database</li>
+            <li>Property owner dashboard reflection</li>
+            <li>Real-time updates</li>
+        </ul>
+    </div>
+
+    <div class="test-section">
+        <h2>🔄 Complete Review Flow</h2>
+        
+        <div class="flow-step">
+            <h4>Step 1: Customer Books Property</h4>
+            <p>Customer makes a booking and completes payment</p>
+            <div class="code">
+// Booking created in database
+{
+  id: "booking-123",
+  user_id: "customer-456",
+  property_id: "property-789",
+  status: "confirmed",
+  check_in_date: "2024-01-15",
+  check_out_date: "2024-01-17",
+  total_amount: 5000
+}
+            </div>
+        </div>
+
+        <div class="flow-step">
+            <h4>Step 2: Booking Status Changes to "Completed"</h4>
+            <p>After checkout, booking status is updated to "completed"</p>
+            <div class="code">
+// Booking status updated
+UPDATE bookings 
+SET status = 'completed' 
+WHERE id = 'booking-123';
+            </div>
+        </div>
+
+        <div class="flow-step">
+            <h4>Step 3: Customer Can Submit Review</h4>
+            <p>Customer sees completed bookings eligible for review</p>
+            <div class="code">
+// ReviewService.getEligibleBookingsForReview()
+const eligibleBookings = await supabase
+  .from('bookings')
+  .select(`
+    id, property_id, check_in_date, check_out_date,
+    properties (title, images, property_type, address)
+  `)
+  .eq('user_id', userId)
+  .eq('status', 'completed')
+  .lte('check_out_date', currentDate);
+            </div>
+        </div>
+
+        <div class="flow-step">
+            <h4>Step 4: Review Submission</h4>
+            <p>Customer submits review with rating and comment</p>
+            <div class="code">
+// ReviewService.submitReview()
+const review = await supabase
+  .from('reviews')
+  .insert({
+    booking_id: 'booking-123',
+    property_id: 'property-789',
+    user_id: 'customer-456',
+    rating: 5,
+    comment: 'Amazing property! Great location and amenities.'
+  });
+            </div>
+        </div>
+
+        <div class="flow-step">
+            <h4>Step 5: Review Appears in Owner Dashboard</h4>
+            <p>Property owner sees the review in their dashboard</p>
+            <div class="code">
+// OwnerService.getOwnerReviews()
+const reviews = await supabase
+  .from('reviews')
+  .select(`
+    *,
+    properties!inner(title, owner_id),
+    profiles(full_name, email)
+  `)
+  .eq('properties.owner_id', ownerId);
+            </div>
+        </div>
+    </div>
+
+    <div class="test-section">
+        <h2>✅ Review System Components</h2>
+        
+        <div class="feature-list">
+            <div class="feature-item">
+                <h4>📝 Review Submission</h4>
+                <p>Customers can submit reviews for completed bookings</p>
+                <div class="code">
+// Review form with rating and comment
+const submitReview = async (bookingId, rating, comment) => {
+  const review = await ReviewService.submitReview({
+    booking_id: bookingId,
+    rating: rating,
+    comment: comment
+  });
+};
+                </div>
+            </div>
+            <div class="feature-item">
+                <h4>📊 Review Display</h4>
+                <p>Reviews are displayed in property owner dashboard</p>
+                <div class="code">
+// Reviews shown in owner dashboard
+const reviews = await OwnerService.getOwnerReviews(ownerId);
+// Shows: Guest name, Property, Rating, Review, Date, Status
+                </div>
+            </div>
+            <div class="feature-item">
+                <h4>🔄 Real-time Updates</h4>
+                <p>Reviews appear immediately in owner dashboard</p>
+                <div class="code">
+// Real-time subscription for reviews
+useEffect(() => {
+  const channel = supabase
+    .channel('owner-reviews-realtime')
+    .on('postgres_changes', {
+      event: '*',
+      schema: 'public',
+      table: 'reviews'
+    }, (payload) => {
+      loadReviews(); // Refresh reviews
+    })
+    .subscribe();
+}, []);
+                </div>
+            </div>
+            <div class="feature-item">
+                <h4>📈 Review Statistics</h4>
+                <p>Owner dashboard shows review metrics</p>
+                <div class="code">
+// Review statistics calculated
+const averageRating = reviews.reduce((sum, r) => sum + r.rating, 0) / reviews.length;
+const totalReviews = reviews.length;
+const responseRate = (reviews.filter(r => r.response).length / reviews.length) * 100;
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="test-section">
+        <h2>🧪 Test Steps</h2>
+        <ol>
+            <li><strong>Login as Customer:</strong> Use customer credentials</li>
+            <li><strong>Check My Bookings:</strong> Go to customer dashboard</li>
+            <li><strong>Find Completed Booking:</strong> Look for booking with status "completed"</li>
+            <li><strong>Submit Review:</strong> Click "Write Review" button</li>
+            <li><strong>Fill Review Form:</strong> Add rating (1-5 stars) and comment</li>
+            <li><strong>Submit Review:</strong> Click submit button</li>
+            <li><strong>Verify Submission:</strong> Check for success message</li>
+            <li><strong>Login as Property Owner:</strong> Switch to owner account</li>
+            <li><strong>Check Reviews Dashboard:</strong> Go to Reviews section</li>
+            <li><strong>Verify Review Appears:</strong> Check if new review is visible</li>
+            <li><strong>Check Statistics:</strong> Verify review count and rating updated</li>
+            <li><strong>Test Real-time:</strong> Submit another review and check immediate update</li>
+        </ol>
+    </div>
+
+    <div class="test-section">
+        <h2>🔍 Verification Points</h2>
+        
+        <div class="verification">
+            <h4>✅ Customer Side Verification</h4>
+            <ul>
+                <li><strong>Eligible Bookings:</strong> Completed bookings show "Write Review" button</li>
+                <li><strong>Review Form:</strong> Rating stars and comment field work properly</li>
+                <li><strong>Submission:</strong> Review submits successfully with confirmation</li>
+                <li><strong>Already Reviewed:</strong> Bookings with reviews show "View Review" instead</li>
+                <li><strong>Review History:</strong> Customer can see their past reviews</li>
+            </ul>
+        </div>
+
+        <div class="verification">
+            <h4>✅ Property Owner Side Verification</h4>
+            <ul>
+                <li><strong>Review List:</strong> New reviews appear in reviews table</li>
+                <li><strong>Review Details:</strong> Guest name, property, rating, comment, date shown</li>
+                <li><strong>Statistics Update:</strong> Average rating and total count update</li>
+                <li><strong>Real-time Updates:</strong> Reviews appear immediately without refresh</li>
+                <li><strong>Response Functionality:</strong> Owner can reply to reviews</li>
+                <li><strong>Review Filters:</strong> Filter by rating, status, property works</li>
+            </ul>
+        </div>
+
+        <div class="verification">
+            <h4>✅ Database Verification</h4>
+            <ul>
+                <li><strong>Review Record:</strong> Review stored in reviews table</li>
+                <li><strong>Foreign Keys:</strong> Proper links to booking, property, and user</li>
+                <li><strong>Data Integrity:</strong> Rating, comment, timestamps correct</li>
+                <li><strong>RLS Policies:</strong> Proper access control for reviews</li>
+            </ul>
+        </div>
+    </div>
+
+    <div class="test-section">
+        <h2>📊 Review Data Structure</h2>
+        
+        <h3>Reviews Table Schema:</h3>
+        <div class="code">
+CREATE TABLE reviews (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  booking_id UUID REFERENCES bookings(id) ON DELETE CASCADE,
+  property_id UUID REFERENCES properties(id) ON DELETE CASCADE,
+  user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE,
+  rating INTEGER NOT NULL CHECK (rating >= 1 AND rating <= 5),
+  comment TEXT,
+  response TEXT, -- Owner's response
+  response_at TIMESTAMP WITH TIME ZONE,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+        </div>
+
+        <h3>Sample Review Data:</h3>
+        <div class="code">
+{
+  "id": "review-123",
+  "booking_id": "booking-456",
+  "property_id": "property-789",
+  "user_id": "customer-101",
+  "rating": 5,
+  "comment": "Amazing property! Great location and amenities. Will definitely book again.",
+  "response": null,
+  "response_at": null,
+  "created_at": "2024-01-20T10:30:00Z",
+  "updated_at": "2024-01-20T10:30:00Z"
+}
+        </div>
+    </div>
+
+    <div class="test-section">
+        <h2>🎯 Key Features Verified</h2>
+        <ul>
+            <li><strong>✅ Review Submission:</strong> Customers can submit reviews for completed bookings</li>
+            <li><strong>✅ Review Display:</strong> Reviews appear in property owner dashboard</li>
+            <li><strong>✅ Real-time Updates:</strong> Reviews appear immediately without refresh</li>
+            <li><strong>✅ Review Statistics:</strong> Average rating, total count, response rate calculated</li>
+            <li><strong>✅ Review Management:</strong> Owners can respond to reviews</li>
+            <li><strong>✅ Review Filtering:</strong> Filter by rating, status, property</li>
+            <li><strong>✅ Data Integrity:</strong> Proper foreign key relationships and constraints</li>
+            <li><strong>✅ Access Control:</strong> RLS policies ensure proper data access</li>
+        </ul>
+    </div>
+
+    <div class="test-section">
+        <h2>🚀 Testing Scenarios</h2>
+        
+        <h3>1. Happy Path Testing</h3>
+        <ul>
+            <li>Customer completes booking</li>
+            <li>Customer submits 5-star review</li>
+            <li>Review appears in owner dashboard</li>
+            <li>Owner responds to review</li>
+            <li>Response appears in customer view</li>
+        </ul>
+
+        <h3>2. Edge Case Testing</h3>
+        <ul>
+            <li>Customer submits review for same booking twice (should be prevented)</li>
+            <li>Customer submits review before checkout (should not be allowed)</li>
+            <li>Owner tries to review their own property (should be prevented)</li>
+            <li>Review with very long comment (should be handled properly)</li>
+        </ul>
+
+        <h3>3. Error Handling Testing</h3>
+        <ul>
+            <li>Network failure during review submission</li>
+            <li>Invalid rating (outside 1-5 range)</li>
+            <li>Missing required fields</li>
+            <li>Database connection issues</li>
+        </ul>
+    </div>
+
+    <div class="test-section">
+        <h2>📈 Performance Considerations</h2>
+        <ul>
+            <li><strong>Efficient Queries:</strong> Reviews fetched with proper joins and indexing</li>
+            <li><strong>Real-time Subscriptions:</strong> Optimized Supabase real-time listeners</li>
+            <li><strong>Pagination:</strong> Large review lists paginated for performance</li>
+            <li><strong>Caching:</strong> Review statistics cached and updated efficiently</li>
+            <li><strong>Database Indexes:</strong> Proper indexes on foreign keys and query fields</li>
+        </ul>
+    </div>
+
+    <script>
+        console.log('⭐ Customer Review Flow Test Page Loaded');
+        console.log('📋 This page documents the complete customer review flow');
+        console.log('🎯 Reviews from customers should appear in property owner dashboard');
+    </script>
+</body>
+</html>

@@ -1,23 +1,166 @@
 
 import React, { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { useOwnerStats } from '@/hooks/useOwnerData';
+import { NotificationService } from '@/lib/notificationService';
+import { supabase } from '@/integrations/supabase/client';
+import { RefreshCw, Bell, X } from 'lucide-react';
+import { useToast } from '@/hooks/use-toast';
 import PropertiesNew from '@/components/owner/PropertiesNew';
 import Bookings from '@/components/owner/Bookings';
 import Earnings from '@/components/owner/Earnings';
 import Reviews from '@/components/owner/Reviews';
+import Messages from '@/components/owner/Messages';
 import Profile from '@/components/owner/Profile';
 import Settings from '@/components/owner/Settings';
 
 const OwnerDashboardView: React.FC = () => {
   const navigate = useNavigate();
   const { user, isAuthenticated, loading, logout } = useAuth();
-  const { stats, loading: statsLoading } = useOwnerStats(user?.id || '');
+  const { toast } = useToast();
+  const { stats, loading: statsLoading, refreshStats } = useOwnerStats(user?.id || '');
+  const [notifications, setNotifications] = useState<any[]>([]);
+  const [showNotifications, setShowNotifications] = useState(false);
+  const [notificationsLoading, setNotificationsLoading] = useState(false);
+  
+  // Load notifications
+  const loadNotifications = async () => {
+    if (!user?.id) return;
+    
+    try {
+      setNotificationsLoading(true);
+      const userNotifications = await NotificationService.getUserNotifications(user.id);
+      setNotifications(userNotifications);
+    } catch (error) {
+      console.error('❌ Error loading notifications:', error);
+    } finally {
+      setNotificationsLoading(false);
+    }
+  };
+
+  // Handle notification click
+  const handleNotificationClick = (notification: any) => {
+    // Mark notification as read
+    if (!notification.is_read) {
+      NotificationService.markAsRead(notification.id, user?.id);
+      loadNotifications();
+    }
+
+    // Handle notification action
+    if (notification.action_url) {
+      // Navigate to specific tab based on notification type
+      if (notification.action_url.includes('booking')) {
+        setActiveTab('bookings');
+      } else if (notification.action_url.includes('review')) {
+        setActiveTab('reviews');
+      } else if (notification.action_url.includes('property')) {
+        setActiveTab('properties');
+      }
+    }
+  };
+
+  // Handle mark all as read
+  const handleMarkAllAsRead = async () => {
+    try {
+      if (!user?.id) return;
+      
+      // Get all notification IDs
+      const allNotificationIds = notifications.map(n => n.id);
+      
+      // Mark all notifications as read in localStorage
+      await NotificationService.markAllAsRead(user.id, allNotificationIds);
+      
+      // Reload notifications to reflect the changes
+      loadNotifications();
+      
+      toast({
+        title: "All Notifications Marked as Read",
+        description: "All notifications have been marked as read.",
+      });
+    } catch (error) {
+      console.error('Error marking notifications as read:', error);
+      toast({
+        title: "Error",
+        description: "Failed to mark notifications as read.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  // Real-time updates for dashboard stats
+  useEffect(() => {
+    if (!user?.id) return;
+
+    const channel = supabase
+      .channel('owner-dashboard-realtime')
+      .on('postgres_changes', {
+        event: '*',
+        schema: 'public',
+        table: 'properties'
+      }, (payload) => {
+        console.log('🏠 Property updated:', payload);
+        // Refresh stats when properties change
+        refreshStats();
+        loadNotifications();
+      })
+      .on('postgres_changes', {
+        event: '*',
+        schema: 'public',
+        table: 'bookings'
+      }, (payload) => {
+        console.log('📅 Booking updated:', payload);
+        // Refresh stats when bookings change
+        refreshStats();
+        loadNotifications();
+      })
+      .on('postgres_changes', {
+        event: '*',
+        schema: 'public',
+        table: 'reviews'
+      }, (payload) => {
+        console.log('⭐ Review updated:', payload);
+        // Refresh stats when reviews change
+        refreshStats();
+        loadNotifications();
+      })
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [user?.id]);
+
+  // Load notifications on component mount
+  useEffect(() => {
+    if (user?.id) {
+      loadNotifications();
+    }
+  }, [user?.id]);
+
+  // Close notifications dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      const target = event.target as HTMLElement;
+      if (!target.closest('.notification-dropdown')) {
+        setShowNotifications(false);
+      }
+    };
+
+    if (showNotifications) {
+      document.addEventListener('mousedown', handleClickOutside);
+    }
+
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [showNotifications]);
   
   // Dashboard state
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [activeTab, setActiveTab] = useState('dashboard');
+  const [isRefreshing, setIsRefreshing] = useState(false);
 
   // Handle deep linking from URL parameters
   useEffect(() => {
@@ -131,10 +274,12 @@ const OwnerDashboardView: React.FC = () => {
         );
       case 'messages':
         return (
-          <div className="text-center py-16">
-            <h2 className="text-2xl font-bold text-gray-800 mb-4">Messages</h2>
-            <p className="text-gray-600">Messages management coming soon...</p>
-          </div>
+          <Messages 
+            sidebarCollapsed={sidebarCollapsed}
+            toggleSidebar={toggleSidebar}
+            activeTab={activeTab}
+            setActiveTab={setActiveTab}
+          />
         );
       case 'profile':
         return (
@@ -227,7 +372,7 @@ const OwnerDashboardView: React.FC = () => {
                     <i className="fas fa-calendar-plus text-gray-400 text-xl"></i>
                   </div>
                   <h4 className="text-lg font-medium text-gray-800 mb-2">
-                    {stats.totalProperties > 0 ? 'View your bookings' : 'No bookings yet'}
+                    {stats.activeBookings > 0 ? `You have ${stats.activeBookings} active bookings` : 'No bookings yet'}
                   </h4>
                   <p className="text-gray-600 mb-4">
                     {stats.totalProperties > 0 
@@ -245,36 +390,73 @@ const OwnerDashboardView: React.FC = () => {
                 </div>
               </div>
               <div className="bg-white rounded-lg shadow-sm p-6">
+                <h3 className="text-lg font-semibold text-gray-800 mb-4">Recent Messages</h3>
+                <div className="text-center py-8">
+                  <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <i className="fas fa-envelope text-gray-400 text-xl"></i>
+                  </div>
+                  <h4 className="text-lg font-medium text-gray-800 mb-2">
+                    {stats.activeBookings > 0 ? 'You have messages from guests' : 'No messages yet'}
+                  </h4>
+                  <p className="text-gray-600 mb-4">
+                    {stats.activeBookings > 0 
+                      ? 'Click the button below to view and respond to guest messages' 
+                      : 'You\'ll receive messages from guests once you have bookings'
+                    }
+                  </p>
+                  <button 
+                    onClick={() => setActiveTab('messages')}
+                    className="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition-colors"
+                  >
+                    <i className="fas fa-envelope mr-2"></i>
+                    View Messages
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <div className="mt-6">
+              <div className="bg-white rounded-lg shadow-sm p-6">
                 <h3 className="text-lg font-semibold text-gray-800 mb-4">Quick Actions</h3>
-                <div className="space-y-3">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
                   <button 
                     onClick={() => setActiveTab('properties')}
-                    className="w-full text-left p-3 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors flex items-center"
+                    className="p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors flex items-center"
                   >
-                    <i className="fas fa-home text-blue-600 mr-3"></i>
+                    <i className="fas fa-home text-blue-600 mr-3 text-xl"></i>
                     <div>
                       <p className="font-medium text-gray-800">Manage Properties</p>
-                      <p className="text-sm text-gray-600">View and edit your {stats.totalProperties} properties</p>
+                      <p className="text-sm text-gray-600">{stats.totalProperties} properties</p>
                     </div>
                   </button>
                   <button 
                     onClick={() => setActiveTab('earnings')}
-                    className="w-full text-left p-3 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors flex items-center"
+                    className="p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors flex items-center"
                   >
-                    <i className="fas fa-chart-line text-green-600 mr-3"></i>
+                    <i className="fas fa-chart-line text-green-600 mr-3 text-xl"></i>
                     <div>
                       <p className="font-medium text-gray-800">View Earnings</p>
-                      <p className="text-sm text-gray-600">Track your revenue and payouts</p>
+                      <p className="text-sm text-gray-600">₹{stats.revenueThisMonth} this month</p>
                     </div>
                   </button>
                   <button 
                     onClick={() => setActiveTab('reviews')}
-                    className="w-full text-left p-3 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors flex items-center"
+                    className="p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors flex items-center"
                   >
-                    <i className="fas fa-star text-yellow-600 mr-3"></i>
+                    <i className="fas fa-star text-yellow-600 mr-3 text-xl"></i>
                     <div>
                       <p className="font-medium text-gray-800">Manage Reviews</p>
-                      <p className="text-sm text-gray-600">View and respond to guest reviews</p>
+                      <p className="text-sm text-gray-600">{stats.averageRating > 0 ? `${stats.averageRating.toFixed(1)} avg rating` : 'No reviews yet'}</p>
+                    </div>
+                  </button>
+                  <button 
+                    onClick={() => setActiveTab('settings')}
+                    className="p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors flex items-center"
+                  >
+                    <i className="fas fa-cog text-purple-600 mr-3 text-xl"></i>
+                    <div>
+                      <p className="font-medium text-gray-800">Settings</p>
+                      <p className="text-sm text-gray-600">Account & preferences</p>
                     </div>
                   </button>
                 </div>
@@ -335,11 +517,120 @@ const OwnerDashboardView: React.FC = () => {
               </div>
             </div>
             <div className="flex items-center space-x-4">
-              <div className="relative">
-                <button className="p-2 rounded-lg hover:bg-gray-100">
-                  <i className="fas fa-bell text-gray-600"></i>
-                  <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">5</span>
+              <button 
+                onClick={async () => {
+                  setIsRefreshing(true);
+                  await refreshStats();
+                  setIsRefreshing(false);
+                }}
+                className="p-2 rounded-lg hover:bg-gray-100 cursor-pointer disabled:opacity-50"
+                title="Refresh Dashboard Data"
+                disabled={isRefreshing}
+              >
+                <RefreshCw className={`w-5 h-5 text-gray-600 ${isRefreshing ? 'animate-spin' : ''}`} />
+              </button>
+              <div className="relative notification-dropdown">
+                <button 
+                  onClick={() => setShowNotifications(!showNotifications)}
+                  className="p-2 rounded-lg hover:bg-gray-100 cursor-pointer"
+                >
+                  <Bell className="w-5 h-5 text-gray-600" />
+                  {notifications.filter(n => !n.is_read).length > 0 && (
+                    <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
+                      {notifications.filter(n => !n.is_read).length}
+                    </span>
+                  )}
                 </button>
+                
+                {/* Notifications Dropdown - Portal Based */}
+                {showNotifications && createPortal(
+                  <>
+                    {/* Backdrop */}
+                    <div 
+                      className="fixed inset-0 bg-black bg-opacity-25 z-[99998]"
+                      onClick={() => setShowNotifications(false)}
+                    />
+                    
+                    {/* Dropdown */}
+                    <div className="fixed top-20 right-4 w-80 bg-white border border-gray-200 rounded-lg shadow-2xl z-[99999] max-h-96 overflow-y-auto animate-in fade-in-0 zoom-in-95 duration-200">
+                      <div className="p-4 border-b">
+                        <div className="flex items-center justify-between">
+                          <h3 className="text-lg font-semibold text-gray-900">Notifications</h3>
+                          <div className="flex items-center space-x-2">
+                            {notifications.filter(n => !n.is_read).length > 0 && (
+                              <button
+                                onClick={handleMarkAllAsRead}
+                                className="text-sm text-blue-600 hover:text-blue-800 cursor-pointer"
+                              >
+                                Mark all as read
+                              </button>
+                            )}
+                            <button
+                              onClick={() => setShowNotifications(false)}
+                              className="text-gray-400 hover:text-gray-600 cursor-pointer"
+                            >
+                              <X className="h-4 w-4" />
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                      
+                      <div className="max-h-64 overflow-y-auto">
+                        {notificationsLoading ? (
+                          <div className="p-4 text-center">
+                            <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600 mx-auto"></div>
+                            <p className="text-sm text-gray-500 mt-2">Loading notifications...</p>
+                          </div>
+                        ) : notifications.length === 0 ? (
+                          <div className="p-4 text-center">
+                            <Bell className="h-8 w-8 text-gray-400 mx-auto mb-2" />
+                            <p className="text-sm text-gray-500">No notifications yet</p>
+                            <p className="text-xs text-gray-400 mt-1">You'll receive notifications about your properties and bookings here</p>
+                          </div>
+                        ) : (
+                          notifications.map((notification) => (
+                            <div
+                              key={notification.id}
+                              onClick={() => handleNotificationClick(notification)}
+                              className={`p-4 border-b hover:bg-gray-50 cursor-pointer ${
+                                !notification.is_read ? 'bg-blue-50' : ''
+                              }`}
+                            >
+                              <div className="flex items-start space-x-3">
+                                <div className={`w-2 h-2 rounded-full mt-2 ${
+                                  !notification.is_read ? 'bg-blue-500' : 'bg-gray-300'
+                                }`}></div>
+                                <div className="flex-1">
+                                  <h4 className="text-sm font-medium text-gray-900">
+                                    {notification.title}
+                                  </h4>
+                                  <p className="text-sm text-gray-600 mt-1">
+                                    {notification.message}
+                                  </p>
+                                  <p className="text-xs text-gray-500 mt-1">
+                                    {new Date(notification.created_at).toLocaleString()}
+                                  </p>
+                                </div>
+                              </div>
+                            </div>
+                          ))
+                        )}
+                      </div>
+                      
+                      {notifications.length > 0 && (
+                        <div className="p-4 border-t">
+                          <button
+                            onClick={() => setActiveTab('messages')}
+                            className="w-full text-center text-sm text-blue-600 hover:text-blue-800 cursor-pointer"
+                          >
+                            View all notifications
+                          </button>
+                        </div>
+                      )}
+                    </div>
+                  </>,
+                  document.body
+                )}
               </div>
               <div className="flex items-center space-x-2 relative group">
                 <div className="w-8 h-8 bg-blue-600 rounded-full flex items-center justify-center">

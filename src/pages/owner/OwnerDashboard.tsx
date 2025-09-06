@@ -6,6 +6,7 @@ import PropertiesNew from '../../components/owner/PropertiesNew';
 import Bookings from '../../components/owner/Bookings';
 import Earnings from '../../components/owner/Earnings';
 import Reviews from '../../components/owner/Reviews';
+import Messages from '../../components/owner/Messages';
 import Profile from '../../components/owner/Profile';
 import Settings from '../../components/owner/Settings';
 import NotificationDropdown from '../../components/owner/NotificationDropdown';
@@ -145,6 +146,14 @@ const OwnerDashboard: React.FC = () => {
         />;
       case 'reviews':
         return <Reviews 
+          sidebarCollapsed={sidebarCollapsed} 
+          toggleSidebar={toggleSidebar}
+          activeTab={activeTab}
+          setActiveTab={setActiveTab}
+          embedded={true}
+        />;
+      case 'messages':
+        return <Messages 
           sidebarCollapsed={sidebarCollapsed} 
           toggleSidebar={toggleSidebar}
           activeTab={activeTab}

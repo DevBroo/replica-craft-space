@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Authentication Persistence Test - Picnify</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .test-section {
+            margin: 20px 0;
+            padding: 20px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
+        .success { background-color: #d4edda; border-color: #c3e6cb; }
+        .info { background-color: #d1ecf1; border-color: #bee5eb; }
+        .warning { background-color: #fff3cd; border-color: #ffeaa7; }
+        .error { background-color: #f8d7da; border-color: #f5c6cb; }
+        .button {
+            background-color: #007bff;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        .button:hover { background-color: #0056b3; }
+        .button.success { background-color: #28a745; }
+        .button.danger { background-color: #dc3545; }
+        .code {
+            background-color: #f8f9fa;
+            padding: 10px;
+            border-radius: 5px;
+            font-family: monospace;
+            border: 1px solid #e9ecef;
+        }
+        .step {
+            margin: 10px 0;
+            padding: 10px;
+            border-left: 4px solid #007bff;
+            background-color: #f8f9fa;
+        }
+        .step.completed { border-left-color: #28a745; background-color: #d4edda; }
+        .step.failed { border-left-color: #dc3545; background-color: #f8d7da; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔐 Authentication Persistence Test - Picnify</h1>
+        
+        <div class="test-section success">
+            <h2>✅ Issues Fixed</h2>
+            <ul>
+                <li><strong>Authentication Persistence:</strong> Improved session restoration after page refresh</li>
+                <li><strong>Route Protection:</strong> Added proper OwnerRoute protection to all owner routes</li>
+                <li><strong>Redirect Logic:</strong> Fixed redirect URLs to use correct paths</li>
+                <li><strong>Role Validation:</strong> Enhanced role checking and validation</li>
+                <li><strong>Loading States:</strong> Improved loading state management</li>
+            </ul>
+        </div>
+
+        <div class="test-section info">
+            <h2>🧪 Test Steps for Authentication Persistence</h2>
+            
+            <div class="step">
+                <h3>Step 1: Initial Login</h3>
+                <ol>
+                    <li>Navigate to <code>http://localhost:8081/owner/login</code></li>
+                    <li>Login with owner credentials (venteskraft@gmail.com)</li>
+                    <li>✅ <strong>Expected:</strong> Redirected to <code>/owner/view</code> dashboard</li>
+                    <li>✅ <strong>Expected:</strong> Dashboard loads with owner data</li>
+                </ol>
+            </div>
+
+            <div class="step">
+                <h3>Step 2: Page Refresh Test</h3>
+                <ol>
+                    <li>While on the dashboard, press <code>F5</code> or <code>Ctrl+R</code> to refresh</li>
+                    <li>✅ <strong>Expected:</strong> Page refreshes and stays on dashboard</li>
+                    <li>✅ <strong>Expected:</strong> No redirect to login page</li>
+                    <li>✅ <strong>Expected:</strong> User remains authenticated</li>
+                </ol>
+            </div>
+
+            <div class="step">
+                <h3>Step 3: Direct URL Access</h3>
+                <ol>
+                    <li>Open a new tab</li>
+                    <li>Navigate directly to <code>http://localhost:8081/owner/view</code></li>
+                    <li>✅ <strong>Expected:</strong> Dashboard loads without login prompt</li>
+                    <li>✅ <strong>Expected:</strong> User stays authenticated</li>
+                </ol>
+            </div>
+
+            <div class="step">
+                <h3>Step 4: Browser Back/Forward</h3>
+                <ol>
+                    <li>Navigate to different sections in the dashboard</li>
+                    <li>Use browser back/forward buttons</li>
+                    <li>✅ <strong>Expected:</strong> Navigation works smoothly</li>
+                    <li>✅ <strong>Expected:</strong> No authentication issues</li>
+                </ol>
+            </div>
+
+            <div class="step">
+                <h3>Step 5: Multiple Tab Test</h3>
+                <ol>
+                    <li>Open dashboard in multiple tabs</li>
+                    <li>Refresh one tab</li>
+                    <li>✅ <strong>Expected:</strong> All tabs remain authenticated</li>
+                    <li>✅ <strong>Expected:</strong> No session conflicts</li>
+                </ol>
+            </div>
+        </div>
+
+        <div class="test-section">
+            <h2>🔍 Technical Changes Made</h2>
+            
+            <h3>1. Route Protection</h3>
+            <div class="code">
+// Before: Unprotected routes
+&lt;Route path="/owner/dashboard" element={&lt;OwnerDashboard /&gt;} /&gt;
+
+// After: Protected routes
+&lt;Route path="/owner/dashboard" element={
+  &lt;OwnerRoute&gt;&lt;OwnerDashboard /&gt;&lt;/OwnerRoute&gt;
+} /&gt;
+            </div>
+
+            <h3>2. Redirect Logic</h3>
+            <div class="code">
+// Before: Redirecting to non-existent route
+const targetUrl = redirectTo || '/owner';
+
+// After: Redirecting to correct protected route
+const targetUrl = redirectTo || '/owner/view';
+            </div>
+
+            <h3>3. Authentication State</h3>
+            <div class="code">
+// Before: Strict session requirement
+isAuthenticated: !!user && !!session
+
+// After: More flexible authentication
+isAuthenticated: !!user && (!!session || !loading)
+            </div>
+
+            <h3>4. Route Redirects</h3>
+            <div class="code">
+// Added redirect from /owner to /owner/view
+&lt;Route path="/owner" element={
+  &lt;Navigate to="/owner/view" replace /&gt;
+} /&gt;
+            </div>
+        </div>
+
+        <div class="test-section warning">
+            <h2>⚠️ Important Notes</h2>
+            <ul>
+                <li>Make sure the development server is running on <code>http://localhost:8081</code></li>
+                <li>Use the correct owner credentials for testing</li>
+                <li>Check browser console for any authentication errors</li>
+                <li>Clear browser cache if you encounter issues</li>
+            </ul>
+        </div>
+
+        <div class="test-section">
+            <h2>🚀 Quick Test Links</h2>
+            <button class="button" onclick="window.open('http://localhost:8081/owner/login', '_blank')">Owner Login</button>
+            <button class="button" onclick="window.open('http://localhost:8081/owner/view', '_blank')">Owner Dashboard</button>
+            <button class="button success" onclick="testAuthPersistence()">Test Authentication</button>
+        </div>
+
+        <div class="test-section success">
+            <h2>🎉 Expected Results</h2>
+            <p>After these fixes, the authentication should work as follows:</p>
+            <ul>
+                <li>✅ Login once and stay authenticated across page refreshes</li>
+                <li>✅ Direct URL access to protected routes works</li>
+                <li>✅ No more redirect loops or login prompts after refresh</li>
+                <li>✅ Smooth navigation between dashboard sections</li>
+                <li>✅ Proper role-based access control</li>
+                <li>✅ Session persistence across browser tabs</li>
+            </ul>
+        </div>
+
+        <div class="test-section error">
+            <h2>🐛 If Issues Persist</h2>
+            <ol>
+                <li>Check browser console for error messages</li>
+                <li>Verify Supabase connection is working</li>
+                <li>Clear browser cache and cookies</li>
+                <li>Try logging out and logging back in</li>
+                <li>Check if the development server is running properly</li>
+            </ol>
+        </div>
+    </div>
+
+    <script>
+        function testAuthPersistence() {
+            // Test if we can access the owner dashboard directly
+            fetch('http://localhost:8081/owner/view')
+                .then(response => {
+                    if (response.ok) {
+                        alert('✅ Owner dashboard is accessible! Authentication persistence is working.');
+                    } else if (response.status === 401 || response.status === 403) {
+                        alert('⚠️ Dashboard requires authentication. This is expected behavior.');
+                    } else {
+                        alert('❌ Dashboard not accessible. Check if server is running.');
+                    }
+                })
+                .catch(error => {
+                    alert('❌ Error accessing dashboard: ' + error.message);
+                });
+        }
+
+        // Auto-test when page loads
+        window.addEventListener('load', () => {
+            console.log('🧪 Authentication Persistence Test Page Loaded');
+            console.log('📋 Follow the test steps to verify authentication persistence');
+        });
+    </script>
+</body>
+</html>

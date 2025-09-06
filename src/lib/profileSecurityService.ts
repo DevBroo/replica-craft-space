@@ -206,10 +206,15 @@ export const profileSecurityService = {
    */
   async canAccessFullProfiles(): Promise<boolean> {
     try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user?.id) {
+        throw new Error('User not authenticated');
+      }
+      
       const { data: profile } = await supabase
         .from('profiles')
         .select('role')
-        .eq('id', (await supabase.auth.getUser()).data.user?.id)
+        .eq('id', user.id)
         .single();
       
       return profile?.role === 'admin';

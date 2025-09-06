@@ -44,7 +44,7 @@ const HostSignup: React.FC = () => {
         } else {
           navigate('/host/login', { 
             state: { 
-              message: 'Account created successfully! Please check your email to verify your account.',
+              message: 'Account created successfully! Please check your email to verify your account. Click the verification link in your email to complete the setup.',
               email: email 
             },
             replace: true 

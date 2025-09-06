@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Direct Email Test - Picnify</title>
+    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .form-group {
+            margin: 15px 0;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+        input[type="email"], input[type="text"] {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-size: 16px;
+        }
+        button {
+            background-color: #007bff;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            margin: 5px;
+        }
+        button:hover { background-color: #0056b3; }
+        button:disabled { background-color: #ccc; cursor: not-allowed; }
+        .result {
+            margin: 15px 0;
+            padding: 15px;
+            border-radius: 5px;
+        }
+        .success { background-color: #d4edda; border: 1px solid #c3e6cb; color: #155724; }
+        .error { background-color: #f8d7da; border: 1px solid #f5c6cb; color: #721c24; }
+        .info { background-color: #d1ecf1; border: 1px solid #bee5eb; color: #0c5460; }
+        .loading { background-color: #fff3cd; border: 1px solid #ffeaa7; color: #856404; }
+        .code {
+            background-color: #f8f9fa;
+            padding: 10px;
+            border-radius: 3px;
+            font-family: monospace;
+            margin: 10px 0;
+            white-space: pre-wrap;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>📧 Direct Email Test - Picnify</h1>
+        <p>This page allows you to test email functionality directly with Supabase.</p>
+
+        <div class="form-group">
+            <label for="email">Test Email Address:</label>
+            <input type="email" id="email" placeholder="Enter your email address" value="test@example.com">
+        </div>
+
+        <div class="form-group">
+            <label for="password">Password:</label>
+            <input type="password" id="password" placeholder="Enter a password" value="TestPassword123!">
+        </div>
+
+        <div class="form-group">
+            <button onclick="testSignup()">Test Signup & Email</button>
+            <button onclick="testResendEmail()">Test Resend Email</button>
+            <button onclick="checkConfiguration()">Check Configuration</button>
+        </div>
+
+        <div id="result"></div>
+
+        <div class="info">
+            <h3>📋 Instructions:</h3>
+            <ol>
+                <li>Enter a real email address you can access</li>
+                <li>Click "Test Signup & Email" to create an account and send verification email</li>
+                <li>Check your email inbox (and spam folder)</li>
+                <li>Click the verification link in the email</li>
+                <li>Use "Test Resend Email" if you need to resend the verification</li>
+            </ol>
+        </div>
+
+        <div class="info">
+            <h3>🔧 Configuration Check:</h3>
+            <p>If emails are not being sent, you need to configure the email service in Supabase:</p>
+            <div class="code">1. Go to: https://supabase.com/dashboard
+2. Select project: riqsgtuzccwpplbodwbd
+3. Navigate to: Authentication → Settings
+4. Enable "Enable email confirmations"
+5. Set Site URL: http://localhost:8080
+6. Add Redirect URLs: http://localhost:8080/auth/callback</div>
+        </div>
+    </div>
+
+    <script>
+        // Supabase configuration
+        const SUPABASE_URL = 'https://riqsgtuzccwpplbodwbd.supabase.co';
+        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJpcXNndHV6Y2N3cHBsYm9kd2JkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTQyOTY2NTUsImV4cCI6MjA2OTg3MjY1NX0.qkSVWoVi8cStB1WZdqtapc8O6jc_aAiYEm0Y5Lqp1-s';
+
+        // Create Supabase client
+        const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+        function showResult(message, type = 'info') {
+            const resultDiv = document.getElementById('result');
+            resultDiv.innerHTML = `<div class="${type}">${message}</div>`;
+        }
+
+        async function testSignup() {
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+
+            if (!email || !password) {
+                showResult('Please enter both email and password', 'error');
+                return;
+            }
+
+            showResult('Creating account and sending verification email...', 'loading');
+
+            try {
+                const { data, error } = await supabase.auth.signUp({
+                    email: email,
+                    password: password,
+                    options: {
+                        emailRedirectTo: 'http://localhost:8080/auth/callback'
+                    }
+                });
+
+                if (error) {
+                    showResult(`❌ Signup failed: ${error.message}`, 'error');
+                    return;
+                }
+
+                if (data.user && !data.user.email_confirmed_at) {
+                    showResult(`✅ Account created successfully!<br>
+                    📧 Verification email sent to: ${email}<br>
+                    📬 Please check your email inbox and spam folder<br>
+                    🔗 Click the verification link in the email to complete setup`, 'success');
+                } else {
+                    showResult(`✅ Account created and email confirmed!<br>
+                    📧 Email: ${email}<br>
+                    🎉 You can now log in`, 'success');
+                }
+            } catch (error) {
+                showResult(`❌ Error: ${error.message}`, 'error');
+            }
+        }
+
+        async function testResendEmail() {
+            const email = document.getElementById('email').value;
+
+            if (!email) {
+                showResult('Please enter an email address', 'error');
+                return;
+            }
+
+            showResult('Resending verification email...', 'loading');
+
+            try {
+                const { data, error } = await supabase.auth.resend({
+                    type: 'signup',
+                    email: email,
+                    options: {
+                        emailRedirectTo: 'http://localhost:8080/auth/callback'
+                    }
+                });
+
+                if (error) {
+                    showResult(`❌ Resend failed: ${error.message}`, 'error');
+                    return;
+                }
+
+                showResult(`✅ Verification email resent to: ${email}<br>
+                📬 Please check your email inbox and spam folder`, 'success');
+            } catch (error) {
+                showResult(`❌ Error: ${error.message}`, 'error');
+            }
+        }
+
+        async function checkConfiguration() {
+            showResult('Checking Supabase configuration...', 'loading');
+
+            try {
+                // Test basic connection
+                const { data, error } = await supabase.from('profiles').select('count').limit(1);
+                
+                if (error) {
+                    showResult(`❌ Supabase connection failed: ${error.message}`, 'error');
+                    return;
+                }
+
+                showResult(`✅ Supabase connection successful<br>
+                📧 Email service configuration needs to be checked in Supabase dashboard<br>
+                🔗 Go to: https://supabase.com/dashboard/project/riqsgtuzccwpplbodwbd/auth/settings`, 'info');
+            } catch (error) {
+                showResult(`❌ Configuration check failed: ${error.message}`, 'error');
+            }
+        }
+
+        // Initialize
+        console.log('📧 Direct Email Test Page Loaded');
+        console.log('🔗 Supabase URL:', SUPABASE_URL);
+    </script>
+</body>
+</html>

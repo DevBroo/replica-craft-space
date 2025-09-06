@@ -83,7 +83,7 @@ const Signup: React.FC = () => {
           console.log('🚀 Redirecting to login:', loginPath, 'for role:', role);
           navigate(loginPath, { 
             state: { 
-              message: 'Account created successfully! Please check your email to verify your account.',
+              message: 'Account created successfully! Please check your email to verify your account. Click the verification link in your email to complete the setup.',
               email: email 
             },
             replace: true 

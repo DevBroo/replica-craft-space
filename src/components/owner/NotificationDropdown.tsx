@@ -1,4 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { useNotifications } from '@/contexts/NotificationContext';
 import { Bell, Check, X, Trash2, ExternalLink } from 'lucide-react';
 import { Button } from '@/components/owner/ui/button';
@@ -11,19 +12,19 @@ const NotificationDropdown: React.FC = () => {
   const dropdownRef = useRef<HTMLDivElement>(null);
   const { notifications, unreadCount, loading, markAsRead, markAllAsRead, deleteNotification } = useNotifications();
 
-  // Close dropdown when clicking outside
+  // Close dropdown with escape key (backdrop handles click outside)
   useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+    const handleEscapeKey = (event: KeyboardEvent) => {
+      if (event.key === 'Escape' && isOpen) {
         setIsOpen(false);
       }
     };
 
-    document.addEventListener('mousedown', handleClickOutside);
+    document.addEventListener('keydown', handleEscapeKey);
     return () => {
-      document.removeEventListener('mousedown', handleClickOutside);
+      document.removeEventListener('keydown', handleEscapeKey);
     };
-  }, []);
+  }, [isOpen]);
 
   const handleNotificationClick = async (notification: any) => {
     if (!notification.is_read) {
@@ -95,8 +96,16 @@ const NotificationDropdown: React.FC = () => {
       </Button>
 
       {/* Dropdown Panel */}
-      {isOpen && (
-        <div className="absolute right-0 mt-2 w-80 bg-white rounded-lg shadow-lg border border-gray-200 z-50">
+      {isOpen && createPortal(
+        <>
+          {/* Backdrop */}
+          <div 
+            className="fixed inset-0 bg-black bg-opacity-25 z-[99998]"
+            onClick={() => setIsOpen(false)}
+          ></div>
+          
+          {/* Dropdown */}
+          <div className="fixed top-20 right-4 w-80 bg-white rounded-lg shadow-2xl border border-gray-200 z-[99999] max-h-96 overflow-y-auto animate-in fade-in-0 zoom-in-95 duration-200">
           {/* Header */}
           <div className="p-4 border-b border-gray-200">
             <div className="flex items-center justify-between">
@@ -217,7 +226,9 @@ const NotificationDropdown: React.FC = () => {
               </Button>
             </div>
           )}
-        </div>
+          </div>
+        </>,
+        document.body
       )}
     </div>
   );

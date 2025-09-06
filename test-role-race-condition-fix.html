@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Role Race Condition Fix Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .test-section {
+            background: white;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .success { color: #22c55e; }
+        .error { color: #ef4444; }
+        .warning { color: #f59e0b; }
+        .info { color: #3b82f6; }
+        button {
+            background: #3b82f6;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        button:hover { background: #2563eb; }
+        .log {
+            background: #f8f9fa;
+            border: 1px solid #e9ecef;
+            padding: 10px;
+            border-radius: 4px;
+            font-family: monospace;
+            font-size: 12px;
+            max-height: 300px;
+            overflow-y: auto;
+            white-space: pre-wrap;
+        }
+    </style>
+</head>
+<body>
+    <h1>🔧 Role Race Condition Fix Test</h1>
+    
+    <div class="test-section">
+        <h2>📋 Test Overview</h2>
+        <p>This test verifies that the race condition between authentication and profile loading has been fixed.</p>
+        <p><strong>Issue:</strong> ProtectedRoute was checking user roles before the profile was fully loaded, causing redirects to login even for valid owners.</p>
+        <p><strong>Fix:</strong> Added <code>profileLoading</code> state to wait for profile loading before checking roles.</p>
+    </div>
+
+    <div class="test-section">
+        <h2>🧪 Test Steps</h2>
+        <ol>
+            <li><strong>Login as Property Owner:</strong> Use your owner credentials</li>
+            <li><strong>Navigate to Owner Dashboard:</strong> Go to <code>/owner/view</code></li>
+            <li><strong>Refresh the Page:</strong> Press F5 or Ctrl+R</li>
+            <li><strong>Check Console:</strong> Look for the loading sequence</li>
+            <li><strong>Verify:</strong> Should stay on dashboard, not redirect to login</li>
+        </ol>
+    </div>
+
+    <div class="test-section">
+        <h2>🔍 Expected Behavior (After Fix)</h2>
+        <div class="log">
+✅ Initial loading state: false (initialization complete)
+✅ User profile fetched successfully
+✅ Enhanced user profile loaded in background: [email]
+🔍 OwnerLogin - loading: false isAuthenticated: true user: {role: 'owner', ...}
+✅ User stays on dashboard (no redirect to login)
+        </div>
+    </div>
+
+    <div class="test-section">
+        <h2>❌ Previous Behavior (Before Fix)</h2>
+        <div class="log">
+✅ Initial loading state: false (initialization complete)
+🔒 ProtectedRoute: User role mismatch. Required roles: ['owner'] User role: customer
+🔍 OwnerLogin - loading: false isAuthenticated: true user: {role: 'customer', ...}
+❌ User redirected to login (race condition)
+        </div>
+    </div>
+
+    <div class="test-section">
+        <h2>🔧 Technical Changes Made</h2>
+        <h3>1. AuthContext.tsx</h3>
+        <ul>
+            <li>Added <code>profileLoading</code> state</li>
+            <li>Set <code>profileLoading = true</code> when fetching profile</li>
+            <li>Set <code>profileLoading = false</code> when profile loaded</li>
+            <li>Exported <code>profileLoading</code> in context value</li>
+        </ul>
+
+        <h3>2. ProtectedRoute.tsx</h3>
+        <ul>
+            <li>Added <code>profileLoading</code> to useAuth destructuring</li>
+            <li>Updated loading condition: <code>if (loading || profileLoading)</code></li>
+            <li>Added "Loading profile..." message for profile loading state</li>
+        </ul>
+    </div>
+
+    <div class="test-section">
+        <h2>🎯 Key Benefits</h2>
+        <ul>
+            <li><strong>No More Race Conditions:</strong> ProtectedRoute waits for profile loading</li>
+            <li><strong>Better UX:</strong> Users see appropriate loading messages</li>
+            <li><strong>Accurate Role Checks:</strong> Role validation happens after profile is loaded</li>
+            <li><strong>Consistent Behavior:</strong> Same behavior on refresh and direct navigation</li>
+        </ul>
+    </div>
+
+    <div class="test-section">
+        <h2>🧪 Manual Testing</h2>
+        <p>To test the fix:</p>
+        <ol>
+            <li>Open your browser's Developer Tools (F12)</li>
+            <li>Go to the Console tab</li>
+            <li>Login as a property owner</li>
+            <li>Navigate to <code>http://localhost:8081/owner/view</code></li>
+            <li>Refresh the page (F5)</li>
+            <li>Watch the console logs</li>
+        </ol>
+        
+        <p><strong>Expected Result:</strong> You should see "Loading profile..." message briefly, then stay on the dashboard without being redirected to login.</p>
+    </div>
+
+    <div class="test-section">
+        <h2>📊 Console Log Analysis</h2>
+        <p>Look for these specific log patterns:</p>
+        
+        <h3>✅ Good Pattern (Fixed):</h3>
+        <div class="log success">
+Loading profile...
+✅ User profile fetched successfully
+✅ Enhanced user profile loaded in background
+🔍 OwnerLogin - role: 'owner'
+✅ User stays on dashboard
+        </div>
+
+        <h3>❌ Bad Pattern (Before Fix):</h3>
+        <div class="log error">
+🔒 ProtectedRoute: User role mismatch. Required roles: ['owner'] User role: customer
+❌ User redirected to login
+        </div>
+    </div>
+
+    <div class="test-section">
+        <h2>🚀 Next Steps</h2>
+        <p>After confirming the fix works:</p>
+        <ul>
+            <li>Test with different user roles (customer, admin, agent)</li>
+            <li>Test direct navigation to protected routes</li>
+            <li>Test page refresh on different protected routes</li>
+            <li>Verify loading states are appropriate for each scenario</li>
+        </ul>
+    </div>
+
+    <script>
+        console.log('🔧 Role Race Condition Fix Test Page Loaded');
+        console.log('📋 This page documents the fix for the authentication race condition');
+        console.log('🎯 The fix ensures ProtectedRoute waits for profile loading before checking roles');
+    </script>
+</body>
+</html>
