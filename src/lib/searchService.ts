@@ -24,6 +24,7 @@ export interface SearchFilters {
   date?: string;
   guests?: number;
   priceRange?: [number, number];
+  search?: string;
 }
 
 export interface PropertyLocation {
@@ -104,6 +105,14 @@ export class SearchService {
         .select('*')
         .eq('status', 'approved');
 
+      // Apply text search filter
+      if (filters.search && filters.search.trim()) {
+        const searchTerm = filters.search.trim();
+        query = query.or(
+          `title.ilike.%${searchTerm}%,description.ilike.%${searchTerm}%,general_location.ilike.%${searchTerm}%,location->>city.ilike.%${searchTerm}%,location->>state.ilike.%${searchTerm}%`
+        );
+      }
+
       // Apply location filter
       if (filters.location && filters.location !== 'all') {
         // Handle "City, State" format by splitting and searching both parts
@@ -125,7 +134,22 @@ export class SearchService {
 
       // Apply category filter
       if (filters.category && filters.category !== ('all' as any)) {
-        query = query.eq('property_type', filters.category);
+        if (filters.category === 'day-picnic') {
+          // Only show day picnic properties (handle all variations)
+          query = query.or('property_type.eq.day-picnic,property_type.eq.Day Picnic,property_type.eq.day_picnic,property_type.eq.daypicnic,property_type.ilike.%day%picnic%');
+        } else {
+          // Show regular properties but exclude day picnics (all variations)
+          query = query
+            .eq('property_type', filters.category)
+            .not('property_type', 'ilike', '%day%picnic%')
+            .not('property_type', 'ilike', '%picnic%');
+        }
+      } else {
+        // When no specific category is selected, exclude day picnics by default (all variations)
+        // Day picnics should only be shown when explicitly requested
+        query = query
+          .not('property_type', 'ilike', '%day%picnic%')
+          .not('property_type', 'ilike', '%picnic%');
       }
 
       // Apply guest capacity filter
@@ -182,7 +206,7 @@ export class SearchService {
         return [];
       }
 
-      // Count properties by category
+      // Count properties by category, excluding day picnics from regular property counts
       const categoryCount = new Map<string, number>();
       properties.forEach(property => {
         if (property.property_type) {
@@ -191,14 +215,38 @@ export class SearchService {
         }
       });
 
+      // Helper function to check if property is a day picnic (any variation)
+      const isDayPicnic = (propertyType: string) => {
+        if (!propertyType) return false;
+        const normalized = propertyType.toLowerCase().replace(/[_-]/g, ' ').trim();
+        return normalized === 'day picnic' || normalized === 'daypicnic';
+      };
+
       // Map to predefined categories with counts
       const categoriesWithCounts = PROPERTY_CATEGORIES
-        .map(category => ({
-          category: category.value,
-          label: category.label,
-          icon: category.icon,
-          count: categoryCount.get(category.value) || 0
-        }))
+        .map(category => {
+          if (category.value === 'day-picnic') {
+            // Count all day picnic variations
+            const dayPicnicCount = properties.filter(p => isDayPicnic(p.property_type)).length;
+            return {
+              category: category.value,
+              label: category.label,
+              icon: category.icon,
+              count: dayPicnicCount
+            };
+          } else {
+            // For regular property categories, exclude day picnic properties from count
+            const regularPropertyCount = properties.filter(p => 
+              p.property_type === category.value && !isDayPicnic(p.property_type)
+            ).length;
+            return {
+              category: category.value,
+              label: category.label,
+              icon: category.icon,
+              count: regularPropertyCount
+            };
+          }
+        })
         .filter(category => category.count > 0) // Only show categories with properties
         .sort((a, b) => b.count - a.count); // Sort by count desc
 

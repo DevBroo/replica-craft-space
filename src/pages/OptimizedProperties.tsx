@@ -82,8 +82,14 @@ const OptimizedProperties = () => {
     isLoading: isLoadingProperties,
     error: propertiesError 
   } = useQuery({
-    queryKey: ['properties_search', searchFilters, priceRange, currentPage],
-    queryFn: () => SearchService.searchProperties({ ...searchFilters, priceRange }),
+    queryKey: ['properties_search', searchFilters, priceRange, debouncedSearchTerm, selectedLocation, selectedType, currentPage],
+    queryFn: () => SearchService.searchProperties({ 
+      ...searchFilters, 
+      priceRange,
+      search: debouncedSearchTerm,
+      location: selectedLocation !== 'all' ? selectedLocation : undefined,
+      category: selectedType !== 'all' ? selectedType : undefined
+    }),
     staleTime: 2 * 60 * 1000,
     gcTime: 5 * 60 * 1000,
   });
@@ -164,7 +170,27 @@ const OptimizedProperties = () => {
   const handleCategoryChange = useCallback((category: string) => {
     setSelectedType(category);
     handleFilterChange({ category: category as any });
-  }, [handleFilterChange]);
+    
+    // Auto-switch to day picnics tab when day-picnic category is selected
+    if (category === 'day-picnic') {
+      setActiveTab('day-picnics');
+    } else if (activeTab === 'day-picnics') {
+      // Switch back to properties tab when selecting a regular property category
+      setActiveTab('properties');
+    }
+  }, [handleFilterChange, activeTab]);
+
+  // Handle search term change
+  const handleSearchChange = useCallback((search: string) => {
+    setSearchTerm(search);
+    setCurrentPage(1);
+  }, []);
+
+  // Handle price range change
+  const handlePriceRangeChange = useCallback((range: [number, number]) => {
+    setPriceRange(range);
+    setCurrentPage(1);
+  }, []);
 
   // Prefetch next page for instant pagination
   useEffect(() => {
@@ -196,37 +222,8 @@ const OptimizedProperties = () => {
     }
   }, [activeTab, queryClient]);
 
-  // Memoized filtered and sorted properties
-  const filteredProperties = useMemo(() => {
-    // Apply client-side filtering for search text, type, location, and price
-    // This ensures all filters work together properly
-    return properties.filter(property => {
-      // Search filter - check title and location
-      const searchLower = debouncedSearchTerm.toLowerCase().trim();
-      const matchesSearch = !searchLower || 
-        (property.title && property.title.toLowerCase().includes(searchLower)) ||
-        (property.general_location && property.general_location.toLowerCase().includes(searchLower)) ||
-        (property.location && typeof property.location === 'object' && (property.location as any).city && (property.location as any).city.toLowerCase().includes(searchLower)) ||
-        (property.location && typeof property.location === 'object' && (property.location as any).state && (property.location as any).state.toLowerCase().includes(searchLower));
-      
-      // Location filter - check general_location, city, and state
-      const locationLower = selectedLocation.toLowerCase();
-      const matchesLocation = selectedLocation === 'all' || 
-        (property.general_location && property.general_location.toLowerCase().includes(locationLower)) ||
-        (property.location && typeof property.location === 'object' && (property.location as any).city && (property.location as any).city.toLowerCase().includes(locationLower)) ||
-        (property.location && typeof property.location === 'object' && (property.location as any).state && (property.location as any).state.toLowerCase().includes(locationLower));
-      
-      // Property type filter
-      const matchesType = selectedType === ('all' as any) || 
-        (property.property_type && property.property_type.toLowerCase() === selectedType.toLowerCase());
-      
-      // Price filter - handle cases where pricing might be null
-      const propertyPrice = (property.pricing && typeof property.pricing === 'object' && (property.pricing as any).daily_rate) || 0;
-      const matchesPrice = propertyPrice >= priceRange[0] && propertyPrice <= priceRange[1];
-
-      return matchesSearch && matchesLocation && matchesType && matchesPrice;
-    });
-  }, [properties, debouncedSearchTerm, selectedLocation, selectedType, priceRange, searchFilters.location]);
+  // Properties are already filtered by SearchService, no need for additional client-side filtering
+  const filteredProperties = properties;
 
   // Memoized sorted properties
   const sortedProperties = useMemo(() => {
@@ -483,7 +480,7 @@ const OptimizedProperties = () => {
               <Input
                 placeholder="Search properties..."
                 value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
+                onChange={(e) => handleSearchChange(e.target.value)}
                 className="pl-10"
               />
             </div>
@@ -537,7 +534,7 @@ const OptimizedProperties = () => {
                 value={`${priceRange[0]}-${priceRange[1]}`} 
                 onValueChange={(value) => {
                   const [min, max] = value.split('-').map(Number);
-                  setPriceRange([min, max] as [number, number]);
+                  handlePriceRangeChange([min, max] as [number, number]);
                 }}
               >
                 <SelectTrigger className="w-full">
@@ -579,7 +576,17 @@ const OptimizedProperties = () => {
 
         {/* Tabs */}
         <div className="flex justify-between items-center mb-6">
-          <Tabs value={activeTab} onValueChange={setActiveTab} className="w-auto">
+          <Tabs value={activeTab} onValueChange={(tab) => {
+            setActiveTab(tab);
+            // Auto-set category filter based on tab
+            if (tab === 'day-picnics') {
+              setSelectedType('day-picnic');
+              handleFilterChange({ category: 'day-picnic' as any });
+            } else if (tab === 'properties' && selectedType === 'day-picnic') {
+              setSelectedType('all');
+              handleFilterChange({ category: 'all' as any });
+            }
+          }} className="w-auto">
             <TabsList>
               <TabsTrigger value="properties">Properties ({properties.length})</TabsTrigger>
               <TabsTrigger value="day-picnics">
@@ -590,7 +597,17 @@ const OptimizedProperties = () => {
         </div>
 
         {/* Content */}
-        <Tabs value={activeTab} onValueChange={setActiveTab}>
+        <Tabs value={activeTab} onValueChange={(tab) => {
+          setActiveTab(tab);
+          // Auto-set category filter based on tab
+          if (tab === 'day-picnics') {
+            setSelectedType('day-picnic');
+            handleFilterChange({ category: 'day-picnic' as any });
+          } else if (tab === 'properties' && selectedType === 'day-picnic') {
+            setSelectedType('all');
+            handleFilterChange({ category: 'all' as any });
+          }
+        }}>
           <TabsContent value="properties" className="mt-0">
             {/* Results count */}
             <div className="mb-6">

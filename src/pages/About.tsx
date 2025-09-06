@@ -536,10 +536,12 @@ const About: React.FC = () => {
               </div>)}
           </div>
           <div className="text-center">
-            <button className="bg-gradient-to-r from-red-600 to-orange-500 text-white px-8 py-4 rounded-xl hover:from-red-700 hover:to-orange-600 transition-all duration-300 cursor-pointer whitespace-nowrap !rounded-button font-bold text-lg shadow-xl hover:shadow-2xl transform hover:scale-105">
-              <i className="fas fa-handshake mr-3"></i>
-              Become a Partner
-            </button>
+            <Link to="/owner/signup">
+              <button className="bg-gradient-to-r from-red-600 to-orange-500 text-white px-8 py-4 rounded-xl hover:from-red-700 hover:to-orange-600 transition-all duration-300 cursor-pointer whitespace-nowrap !rounded-button font-bold text-lg shadow-xl hover:shadow-2xl transform hover:scale-105">
+                <i className="fas fa-handshake mr-3"></i>
+                Become a Partner
+              </button>
+            </Link>
           </div>
         </div>
       </section>
