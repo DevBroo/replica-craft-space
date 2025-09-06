@@ -36,6 +36,9 @@ import ResetPassword from "@/pages/ResetPassword";
 import ResendVerification from "@/pages/ResendVerification";
 import ManualEmailConfirmation from "@/pages/ManualEmailConfirmation";
 
+// Lazy load auth reset modal
+const AuthResetPasswordModal = React.lazy(() => import("@/pages/AuthResetPasswordModal"));
+
 // Customer Pages (immediate load)
 import CustomerDashboard from "@/pages/CustomerDashboard";
 import BookingDetails from "@/pages/BookingDetails";
@@ -223,6 +226,11 @@ function App() {
                     <Route path="/auth/callback" element={
                       <Suspense fallback={<LoadingSpinner />}>
                         <AuthCallback />
+                      </Suspense>
+                    } />
+                    <Route path="/auth/reset-password-modal" element={
+                      <Suspense fallback={<LoadingSpinner />}>
+                        <AuthResetPasswordModal />
                       </Suspense>
                     } />
 

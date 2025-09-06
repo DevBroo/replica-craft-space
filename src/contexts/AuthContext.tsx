@@ -71,11 +71,11 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const getUserProfile = async (userId: string): Promise<AuthUser | null> => {
     const maxRetries = 1; // Reduced retries for faster loading
     let retryCount = 0;
-    
+
     while (retryCount <= maxRetries) {
       try {
         console.log(`📝 Fetching user profile (attempt ${retryCount + 1}/${maxRetries + 1})`);
-        
+
         const { data, error } = await supabase
           .from('profiles')
           .select('*')
@@ -84,47 +84,47 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
         if (error) {
           console.error(`❌ Error fetching user profile (attempt ${retryCount + 1}):`, error);
-          
+
           // If it's a "not found" error, return null immediately
           if (error.code === 'PGRST116') {
             console.log('📝 User profile not found in database');
             return null;
           }
-          
+
           // For other errors, retry once with short delay
           if (retryCount < maxRetries) {
             retryCount++;
             await new Promise(resolve => setTimeout(resolve, 500)); // Short delay
             continue;
           }
-          
+
           return null;
         }
 
         console.log('✅ User profile fetched successfully');
-          return {
-            id: data.id,
-            email: data.email || '',
-            role: data.role === 'user' ? 'customer' : data.role === 'property_owner' ? 'owner' : (data.role || 'customer'), // Normalize 'user' to 'customer' and 'property_owner' to 'owner'
-            full_name: data.full_name,
-            avatar_url: data.avatar_url,
-            phone: data.phone,
-            created_at: data.created_at,
-            updated_at: data.updated_at,
-          };
+        return {
+          id: data.id,
+          email: data.email || '',
+          role: data.role === 'user' ? 'customer' : data.role === 'property_owner' ? 'owner' : (data.role || 'customer'), // Normalize 'user' to 'customer' and 'property_owner' to 'owner'
+          full_name: data.full_name,
+          avatar_url: data.avatar_url,
+          phone: data.phone,
+          created_at: data.created_at,
+          updated_at: data.updated_at,
+        };
       } catch (err) {
         console.error(`❌ Exception in getUserProfile (attempt ${retryCount + 1}):`, err);
-        
+
         if (retryCount < maxRetries) {
           retryCount++;
           await new Promise(resolve => setTimeout(resolve, 500)); // Short delay
           continue;
         }
-        
+
         return null;
       }
     }
-    
+
     return null;
   };
 
@@ -132,12 +132,12 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const ensureUserProfile = async (authUser: User, userRole?: string): Promise<void> => {
     try {
       console.log('🔧 Attempting to ensure user profile for:', authUser.email);
-      
+
       // Skip profile creation if we already have a basic user set
       // This prevents blocking the UI while profile operations are slow
       console.log('✅ Skipping profile creation for faster loading');
       return;
-      
+
       // Note: Profile creation is now handled in background after user is set
     } catch (err) {
       console.error('❌ Exception in ensureUserProfile:', err);
@@ -147,28 +147,28 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   };
 
   useEffect(() => {
-    
+
     // Set up auth state listener
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
         console.log('🔐 Auth state changed:', event, session?.user?.email);
-        
+
         // Only set loading if this is not the initial session check
         if (isInitialized) {
           setLoading(true);
         }
-        
+
         setSession(session);
-        
+
         if (session?.user) {
           try {
             console.log('👤 Ensuring user profile exists...');
-            
+
             // Get the role from user metadata (set during registration)
             const userRole = session.user.user_metadata?.role || 'customer';
             const normalizedRole = userRole === 'user' ? 'customer' : userRole === 'property_owner' ? 'owner' : userRole;
             console.log('🎭 User role from metadata:', userRole, '-> normalized:', normalizedRole);
-            
+
             // Set user immediately with basic data for fast loading
             const basicUser = {
               id: session.user.id,
@@ -180,11 +180,11 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
               created_at: new Date().toISOString(),
               updated_at: new Date().toISOString(),
             };
-            
+
             // Set user immediately for fast loading
             setUser(basicUser);
             console.log('✅ User set immediately with basic data for fast loading');
-            
+
             // Then try to enhance with profile data in background
             Promise.allSettled([
               // Profile creation with short timeout
@@ -226,7 +226,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
           console.log('🚫 No session user, clearing user state');
           setUser(null);
         }
-        
+
         // Set loading to false immediately for fast UI response
         if (isInitialized) {
           console.log('🔄 Auth loading state: false (user set immediately)');
@@ -239,14 +239,14 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     const initializeAuth = async () => {
       console.log('📋 Checking for existing session...');
       setLoading(true);
-      
+
       try {
         const { data: { session } } = await supabase.auth.getSession();
-        
+
         if (session) {
           console.log('✅ Existing session found:', session.user?.email);
           setSession(session);
-          
+
           try {
             // Set user immediately with basic data for fast loading
             const userRole = session.user.user_metadata?.role || 'customer';
@@ -261,11 +261,11 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
               created_at: new Date().toISOString(),
               updated_at: new Date().toISOString(),
             };
-            
+
             // Set user immediately for fast loading
             setUser(basicUser);
             console.log('✅ Initial user set immediately with basic data for fast loading');
-            
+
             // Then try to enhance with profile data in background
             Promise.allSettled([
               // Profile creation with short timeout
@@ -314,7 +314,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         console.log('🔄 Initial loading state: false (initialization complete)');
         setLoading(false);
         setIsInitialized(true);
-        
+
         // Ensure we always have a user state, even if authentication fails
         if (!user && session?.user) {
           console.log('🛡️ Setting fallback user state');
@@ -342,19 +342,19 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const login = useCallback(async (credentials: LoginCredentials) => {
     try {
       setError(null);
-      
+
       console.log('🔐 Attempting login for:', credentials.email);
       const { data, error } = await supabase.auth.signInWithPassword({
         email: credentials.email,
         password: credentials.password,
       });
-      
+
       if (error) {
         console.error('❌ Login error:', error.message);
-        
+
         // Handle specific error cases with user-friendly messages
         let userFriendlyMessage = error.message;
-        
+
         // Handle specific error cases with user-friendly messages
         if (error.message.includes('Email not confirmed') || error.message.includes('email_not_confirmed')) {
           userFriendlyMessage = 'Please check your email and click the confirmation link before signing in. If you haven\'t received the email, you can request a new one.';
@@ -366,7 +366,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         } else if (error.message.includes('User not found')) {
           userFriendlyMessage = 'No account found with this email address. Please check your email or sign up for a new account.';
         }
-        
+
         setError({
           message: userFriendlyMessage,
           code: error.name,
@@ -375,7 +375,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       }
 
       console.log('✅ User logged in successfully:', data.user?.email);
-      
+
       // Claim historical bookings after successful login
       try {
         console.log('🔗 Claiming historical bookings for user...');
@@ -387,7 +387,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         console.error('⚠️ Failed to claim historical bookings:', claimError);
         // Don't fail login if claiming bookings fails
       }
-      
+
       // Don't set loading to false here - let the auth state listener handle it
     } catch (err: unknown) {
       const errorMessage = err instanceof Error ? err.message : 'Login failed';
@@ -402,25 +402,25 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const register = useCallback(async (data: RegisterData) => {
     try {
       setError(null);
-      
-        const redirectUrl = `${window.location.origin}/auth/callback`;
-        
-        console.log('🔐 Attempting registration for:', data.email);
-        const { data: authData, error } = await supabase.auth.signUp({
-          email: data.email,
-          password: data.password,
-          options: {
-            emailRedirectTo: redirectUrl,
-            data: {
-              full_name: `${data.firstName || ''} ${data.lastName || ''}`.trim(),
-              role: data.role === 'user' ? 'customer' : data.role === 'property_owner' ? 'owner' : (data.role || 'customer'), // Normalize roles
+
+      const redirectUrl = `${window.location.origin}/auth/callback`;
+
+      console.log('🔐 Attempting registration for:', data.email);
+      const { data: authData, error } = await supabase.auth.signUp({
+        email: data.email,
+        password: data.password,
+        options: {
+          emailRedirectTo: redirectUrl,
+          data: {
+            full_name: `${data.firstName || ''} ${data.lastName || ''}`.trim(),
+            role: data.role === 'user' ? 'customer' : data.role === 'property_owner' ? 'owner' : (data.role || 'customer'), // Normalize roles
             phone: data.phone || '',
             first_name: data.firstName || '',
             last_name: data.lastName || '',
           }
         }
       });
-      
+
       // For local development, if user is created but needs email confirmation,
       // we'll show a helpful message instead of requiring actual email confirmation
       if (authData.user && !authData.user.email_confirmed_at && !error) {
@@ -428,26 +428,26 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         // In a real app, you'd want to show a message about checking email
         // For local development, we can proceed as if confirmed
       }
-      
+
       if (error) {
         console.error('❌ Registration error:', error.message);
-        
+
         // Check if this is a database error but registration actually succeeded
         if (error.message.includes('database') || error.message.includes('saving')) {
           console.log('🔄 Database error detected, performing resilience check...');
-          
+
           try {
             // Try to sign in with the same credentials to verify if user was actually created
             const { data: signInData, error: signInError } = await supabase.auth.signInWithPassword({
               email: data.email,
               password: data.password,
             });
-            
+
             if (signInData.user && !signInError) {
               console.log('✅ User was actually created successfully despite database error');
               return; // Success, let auth state handler take over
             }
-            
+
             if (signInError?.message.includes('Email not confirmed')) {
               console.log('✅ User was created but needs email confirmation, treating as success');
               return; // Success, email verification required
@@ -456,7 +456,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
             console.error('❌ Resilience check failed:', resilientCheckError);
           }
         }
-        
+
         setError({
           message: error.message,
           code: error.name,
@@ -465,7 +465,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       }
 
       console.log('✅ User registered successfully:', authData.user?.email);
-      
+
       // Profile creation will be handled by the auth state change listener
     } catch (err: unknown) {
       const errorMessage = err instanceof Error ? err.message : 'Registration failed';
@@ -481,16 +481,16 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     try {
       setLoading(true);
       setError(null);
-      
+
       console.log('🚪 Starting logout process...');
-      
+
       // Clear local state immediately for better UX
       setUser(null);
       setSession(null);
-      
+
       // Attempt Supabase logout
       const { error } = await supabase.auth.signOut();
-      
+
       // Handle session not found error gracefully (this is common and not a real error)
       if (error && error.message !== 'Session not found') {
         console.log('⚠️ Logout warning (continuing anyway):', error.message);
@@ -499,8 +499,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
       // Force clear all auth data from localStorage
       try {
-        const authKeys = Object.keys(localStorage).filter(key => 
-          key.startsWith('supabase.auth.token') || 
+        const authKeys = Object.keys(localStorage).filter(key =>
+          key.startsWith('supabase.auth.token') ||
           key.startsWith('sb-') ||
           key.includes('supabase')
         );
@@ -514,11 +514,11 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     } catch (err: unknown) {
       const errorMessage = err instanceof Error ? err.message : 'Logout failed';
       console.error('❌ Logout error:', errorMessage);
-      
+
       // Even if logout fails, clear local state
       setUser(null);
       setSession(null);
-      
+
       // Only set error for unexpected errors, not session issues
       if (!errorMessage.includes('Session not found')) {
         setError({
@@ -535,12 +535,12 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     try {
       setLoading(true);
       setError(null);
-      
+
       if (!user) {
         setError({ message: 'No user logged in' });
         return;
       }
-      
+
       const { error } = await supabase
         .from('profiles')
         .update({
@@ -550,7 +550,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
           updated_at: new Date().toISOString(),
         })
         .eq('id', user.id);
-      
+
       if (error) {
         setError({
           message: error.message,
@@ -558,11 +558,11 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         });
         return;
       }
-      
+
       // Refresh user data
       const updatedProfile = await getUserProfile(user.id);
       setUser(updatedProfile);
-      
+
       console.log('✅ Profile updated successfully');
     } catch (err: unknown) {
       const errorMessage = err instanceof Error ? err.message : 'Profile update failed';
@@ -575,15 +575,19 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     }
   }, [user]);
 
-  const resetPassword = useCallback(async (email: string) => {
+  const resetPassword = useCallback(async (email: string, useModal: boolean = false) => {
     try {
       setLoading(true);
       setError(null);
-      
+
+      const redirectTo = useModal
+        ? `${window.location.origin}/auth/reset-password-modal`
+        : `${window.location.origin}/reset-password`;
+
       const { error } = await supabase.auth.resetPasswordForEmail(email, {
-        redirectTo: `${window.location.origin}/reset-password`,
+        redirectTo,
       });
-      
+
       if (error) {
         const authError = {
           message: error.message,
@@ -592,7 +596,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         setError(authError);
         return { error: authError };
       }
-      
+
       return { error: null };
     } catch (err: unknown) {
       const errorMessage = err instanceof Error ? err.message : 'Password reset failed';
@@ -611,7 +615,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     try {
       setLoading(true);
       setError(null);
-      
+
       const { error } = await supabase.auth.resend({
         type: 'signup',
         email: email,
@@ -619,7 +623,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
           emailRedirectTo: `${window.location.origin}/auth/callback`
         }
       });
-      
+
       if (error) {
         const authError = {
           message: error.message,
@@ -628,7 +632,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         setError(authError);
         return { error: authError };
       }
-      
+
       return { error: null };
     } catch (err: unknown) {
       const errorMessage = err instanceof Error ? err.message : 'Failed to resend verification';
@@ -643,15 +647,15 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     }
   }, []);
 
-  const changePassword = useCallback(async (newPassword: string) => {
+  const changePassword = useCallback(async (currentPassword: string, newPassword: string) => {
     try {
       setLoading(true);
       setError(null);
-      
+
       const { error } = await supabase.auth.updateUser({
         password: newPassword
       });
-      
+
       if (error) {
         setError({
           message: error.message,
@@ -676,11 +680,11 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     try {
       setLoading(true);
       setError(null);
-      
+
       const { error } = await supabase.auth.signInWithOtp({
         phone: phone
       });
-      
+
       if (error) {
         setError({
           message: error.message,
@@ -705,13 +709,13 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     try {
       setLoading(true);
       setError(null);
-      
+
       const { error } = await supabase.auth.verifyOtp({
         phone: phone,
         token: token,
         type: 'sms'
       });
-      
+
       if (error) {
         setError({
           message: error.message,

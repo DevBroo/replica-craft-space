@@ -20,23 +20,75 @@ const ResetPassword = () => {
   const [error, setError] = useState<string | null>(null);
   const { changePassword } = useAuth();
 
-  // Get access token from URL params
+  // Get access token from URL params and hash
   const accessToken = searchParams.get('access_token');
   const refreshToken = searchParams.get('refresh_token');
 
+  // Also check URL hash (Supabase sometimes puts tokens there)
+  const hashParams = new URLSearchParams(window.location.hash.substring(1));
+  const hashAccessToken = hashParams.get('access_token');
+  const hashRefreshToken = hashParams.get('refresh_token');
+
+  // Use whichever tokens are available
+  const finalAccessToken = accessToken || hashAccessToken;
+  const finalRefreshToken = refreshToken || hashRefreshToken;
+
   useEffect(() => {
-    // If no tokens in URL, redirect to forgot password
-    if (!accessToken && !refreshToken) {
-      navigate('/forgot-password');
+    // Debug: Log the full URL to see what we received
+    console.log('🔍 Full URL:', window.location.href);
+    console.log('🔍 URL Search Params:', window.location.search);
+    console.log('🔍 URL Hash:', window.location.hash);
+
+    // Check for error parameters (Supabase auth errors)
+    const errorParam = searchParams.get('error');
+    const errorCode = searchParams.get('error_code');
+    const errorDescription = searchParams.get('error_description');
+
+    if (errorParam) {
+      console.log('🚨 Auth error detected:', { errorParam, errorCode, errorDescription });
+      if (errorCode === 'otp_expired') {
+        setError('This reset link has expired. Please request a new one.');
+        return;
+      }
+      setError(errorDescription || 'Invalid or expired reset link');
+      return;
     }
-  }, [accessToken, refreshToken, navigate]);
+
+    // Check for type=recovery (Supabase password recovery)
+    const type = searchParams.get('type') || hashParams.get('type');
+    if (type === 'recovery') {
+      console.log('✅ Password recovery flow detected');
+      // User is being auto-logged in by Supabase, show the reset form
+      return;
+    }
+
+    console.log('🔍 Parsed tokens:', {
+      accessToken: finalAccessToken ? 'FOUND' : 'MISSING',
+      refreshToken: finalRefreshToken ? 'FOUND' : 'MISSING',
+      type: type || 'MISSING'
+    });
+
+    // Log what we found for debugging
+    const hasTokens = finalAccessToken && finalRefreshToken;
+    const hasRecoveryType = type === 'recovery';
+
+    console.log('🔍 Reset password page loaded with:', {
+      hasTokens,
+      hasRecoveryType,
+      hasError: !!errorParam,
+      willShowForm: !errorParam
+    });
+
+    // No automatic redirect - let the user try to reset their password
+    // The form submission will handle validation
+  }, [finalAccessToken, finalRefreshToken, navigate, searchParams, hashParams]);
 
   const validatePassword = (password: string) => {
     const minLength = password.length >= 8;
     const hasUpperCase = /[A-Z]/.test(password);
     const hasLowerCase = /[a-z]/.test(password);
     const hasNumbers = /\d/.test(password);
-    
+
     return {
       isValid: minLength && hasUpperCase && hasLowerCase && hasNumbers,
       minLength,
@@ -69,7 +121,27 @@ const ResetPassword = () => {
     try {
       // Use Supabase client directly to update password
       const { supabase } = await import('@/integrations/supabase/client');
-      
+
+      // Check if user is already authenticated (Supabase auto-login from email)
+      const { data: { user } } = await supabase.auth.getUser();
+
+      if (!user) {
+        // If no user session, try to set session with tokens
+        if (finalAccessToken && finalRefreshToken) {
+          const { error: sessionError } = await supabase.auth.setSession({
+            access_token: finalAccessToken,
+            refresh_token: finalRefreshToken
+          });
+
+          if (sessionError) {
+            console.error('Session error:', sessionError);
+            throw sessionError;
+          }
+        } else {
+          throw new Error('No valid session found. Please request a new reset link.');
+        }
+      }
+
       const { error } = await supabase.auth.updateUser({
         password: password
       });
@@ -80,12 +152,12 @@ const ResetPassword = () => {
       }
 
       setSuccess(true);
-      
+
       // Redirect to login after 3 seconds
       setTimeout(() => {
         navigate('/login');
       }, 3000);
-      
+
     } catch (err) {
       setError("An unexpected error occurred. Please try again.");
     } finally {
@@ -112,7 +184,7 @@ const ResetPassword = () => {
             <Alert>
               <AlertDescription>
                 <p className="text-sm text-gray-600">
-                  You can now sign in with your new password. For security reasons, 
+                  You can now sign in with your new password. For security reasons,
                   you'll be redirected to the login page in a few seconds.
                 </p>
               </AlertDescription>
@@ -131,30 +203,14 @@ const ResetPassword = () => {
     );
   }
 
-  if (!accessToken && !refreshToken) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
-        <Card className="w-full max-w-md">
-          <CardHeader className="text-center">
-            <CardTitle className="text-2xl font-bold text-gray-900">
-              Invalid Reset Link
-            </CardTitle>
-            <CardDescription className="text-gray-600">
-              This password reset link is invalid or has expired.
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <Button
-              onClick={() => navigate('/forgot-password')}
-              className="w-full"
-            >
-              Request New Reset Link
-            </Button>
-          </CardContent>
-        </Card>
-      </div>
-    );
-  }
+  // More lenient validation - if we're on the reset password page, show the form
+  // Only redirect if there's an explicit error
+  const type = searchParams.get('type') || hashParams.get('type');
+  const isResetPasswordPage = window.location.pathname === '/reset-password';
+
+  // If we have an error, we already handled it above
+  // If we're on the reset password page and no error, show the form
+  // The form submission will handle session validation
 
   const validation = validatePassword(password);
 

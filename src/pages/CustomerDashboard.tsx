@@ -13,6 +13,9 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Calendar, Home, User, Heart, CreditCard, Bell, LogOut, MapPin, Star, ArrowLeft, Search, Plus, TrendingUp, Award, Shield, Settings2 } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
 import { ReviewYourStay } from '@/components/reviews/ReviewYourStay';
+import { EmailNotificationSettings } from '@/components/settings/EmailNotificationSettings';
+import { PaymentMethodsManager } from '@/components/settings/PaymentMethodsManager';
+import { SecuritySettings } from '@/components/settings/SecuritySettings';
 
 interface Booking {
   id: string;
@@ -38,8 +41,13 @@ export default function CustomerDashboard() {
   const navigate = useNavigate();
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [loading, setLoading] = useState(true);
-  
+
   const { savedProperties, savedCount, removeFromWishlist } = useWishlist();
+
+  // Modal states for settings
+  const [showEmailSettings, setShowEmailSettings] = useState(false);
+  const [showPaymentSettings, setShowPaymentSettings] = useState(false);
+  const [showSecuritySettings, setShowSecuritySettings] = useState(false);
 
   useEffect(() => {
     if (!user) {
@@ -56,7 +64,7 @@ export default function CustomerDashboard() {
         console.log('🔍 Fetching bookings for user:', { userId: user.id, email: user.email });
         const bookingsData = await BookingService.getUserBookings(user.id, user.email);
         console.log('📋 Raw bookings data:', bookingsData);
-        
+
         const formattedBookings = bookingsData.map(booking => ({
           id: booking.id,
           property_id: booking.property_id,
@@ -66,7 +74,7 @@ export default function CustomerDashboard() {
           status: booking.status,
           total_amount: booking.total_amount
         }));
-        
+
         console.log('✅ Formatted bookings:', formattedBookings);
         setBookings(formattedBookings);
       }
@@ -144,10 +152,10 @@ export default function CustomerDashboard() {
         <div className="container mx-auto px-4 py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-4">
-              <Button 
-                variant="ghost" 
-                size="sm" 
-                asChild 
+              <Button
+                variant="ghost"
+                size="sm"
+                asChild
                 className="hover:bg-white/20 transition-all duration-300"
               >
                 <Link to="/" className="flex items-center space-x-2">
@@ -184,10 +192,10 @@ export default function CustomerDashboard() {
                   <p className="text-xs text-muted-foreground">{user?.email}</p>
                 </div>
               </div>
-              <Button 
-                variant="outline" 
-                size="sm" 
-                onClick={handleLogout} 
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleLogout}
                 className="hover-lift glass-card bg-red-50/50 border-red-200/50 hover:bg-red-100/50 text-red-700 hover:text-red-800 transition-all duration-300"
               >
                 <LogOut className="h-4 w-4 mr-2" />
@@ -205,12 +213,12 @@ export default function CustomerDashboard() {
           <div className="absolute inset-0 bg-gradient-to-r from-primary/10 via-blue-600/10 to-purple-600/10 rounded-3xl blur-3xl animate-pulse"></div>
           <div className="absolute top-4 left-4 w-20 h-20 bg-gradient-to-r from-yellow-400/20 to-orange-500/20 rounded-full blur-xl animate-bounce"></div>
           <div className="absolute bottom-4 right-4 w-16 h-16 bg-gradient-to-r from-pink-400/20 to-red-500/20 rounded-full blur-xl animate-bounce animation-delay-1000"></div>
-          
+
           <div className="relative bg-white/60 backdrop-blur-xl rounded-3xl p-12 border border-white/30 shadow-2xl overflow-hidden">
             {/* Decorative elements */}
             <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-primary via-blue-600 to-purple-600"></div>
             <div className="absolute top-4 right-4 w-8 h-8 bg-gradient-to-r from-yellow-400 to-orange-500 rounded-full opacity-20 animate-ping"></div>
-            
+
             <div className="flex items-center justify-center mb-6">
               <div className="relative">
                 <div className="h-20 w-20 bg-gradient-to-r from-primary via-blue-600 to-purple-600 rounded-full flex items-center justify-center shadow-2xl animate-pulse">
@@ -221,12 +229,12 @@ export default function CustomerDashboard() {
                 </div>
               </div>
             </div>
-            
+
             <h2 className="text-6xl font-black mb-6 bg-gradient-to-r from-primary via-blue-600 to-purple-600 bg-clip-text text-transparent leading-tight">
               Welcome back,<br />
               <span className="text-4xl">{user?.full_name?.split(' ')[0] || 'Traveler'}! 👋</span>
             </h2>
-            
+
             <div className="max-w-4xl mx-auto mb-8">
               <p className="text-2xl text-gray-700 leading-relaxed font-medium mb-4">
                 Your personalized travel hub is ready.
@@ -235,7 +243,7 @@ export default function CustomerDashboard() {
                 Manage bookings, discover new destinations, and plan your next adventure with our advanced dashboard.
               </p>
             </div>
-            
+
             <div className="flex items-center justify-center space-x-8 mt-8">
               <div className="flex items-center space-x-3 bg-green-50 px-6 py-3 rounded-full border border-green-200 shadow-sm">
                 <div className="h-3 w-3 bg-green-500 rounded-full animate-pulse"></div>
@@ -456,7 +464,7 @@ export default function CustomerDashboard() {
                               className="w-full h-full object-cover rounded-t-lg"
                             />
                           )}
-                          <button 
+                          <button
                             className="absolute top-3 right-3 p-2 rounded-full bg-white/80 hover:bg-white transition-colors"
                             onClick={() => removeFromWishlist(property.id)}
                             title="Remove from saved properties"
@@ -542,7 +550,11 @@ export default function CustomerDashboard() {
                       Receive updates about your bookings and special offers
                     </p>
                   </div>
-                  <Button variant="outline" size="sm">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setShowEmailSettings(true)}
+                  >
                     <Bell className="h-4 w-4 mr-2" />
                     Configure
                   </Button>
@@ -555,7 +567,11 @@ export default function CustomerDashboard() {
                       Manage your saved payment methods
                     </p>
                   </div>
-                  <Button variant="outline" size="sm">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setShowPaymentSettings(true)}
+                  >
                     <CreditCard className="h-4 w-4 mr-2" />
                     Manage
                   </Button>
@@ -568,7 +584,11 @@ export default function CustomerDashboard() {
                       Change password and security settings
                     </p>
                   </div>
-                  <Button variant="outline" size="sm">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setShowSecuritySettings(true)}
+                  >
                     Change Password
                   </Button>
                 </div>
@@ -628,6 +648,22 @@ export default function CustomerDashboard() {
             </CardContent>
           </Card>
         </div>
+
+        {/* Settings Modals */}
+        <EmailNotificationSettings
+          isOpen={showEmailSettings}
+          onClose={() => setShowEmailSettings(false)}
+        />
+
+        <PaymentMethodsManager
+          isOpen={showPaymentSettings}
+          onClose={() => setShowPaymentSettings(false)}
+        />
+
+        <SecuritySettings
+          isOpen={showSecuritySettings}
+          onClose={() => setShowSecuritySettings(false)}
+        />
       </div>
     </div>
   );

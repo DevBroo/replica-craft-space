@@ -6,6 +6,7 @@ import { Label } from '@/components/ui/label';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
+import { SavedPaymentMethods } from './SavedPaymentMethods';
 import { PhonePeService, CreatePaymentData, PHONEPE_CONFIG } from '@/lib/phonePeService';
 import {
     CreditCard,
@@ -51,6 +52,8 @@ export const PhonePePayment: React.FC<PhonePePaymentProps> = ({
     const [customerPhone, setCustomerPhone] = useState(customerData.phone || '');
     const [customerName, setCustomerName] = useState(customerData.name || '');
     const [termsAccepted, setTermsAccepted] = useState(false);
+    const [selectedPaymentMethod, setSelectedPaymentMethod] = useState<any>(null);
+    const [showSavedMethods, setShowSavedMethods] = useState(true);
     const { toast } = useToast();
 
     // Validate amount
@@ -83,6 +86,17 @@ export const PhonePePayment: React.FC<PhonePePaymentProps> = ({
                     variant: "destructive"
                 });
                 return;
+            }
+
+            // Show payment method information in console
+            if (selectedPaymentMethod && selectedPaymentMethod !== 'new') {
+                console.log('🎯 Using saved payment method:', selectedPaymentMethod);
+                toast({
+                    title: "Using Saved Method",
+                    description: `Processing payment with your saved ${selectedPaymentMethod.type} method`,
+                });
+            } else {
+                console.log('🎯 Using new payment method');
             }
 
             setLoading(true);
@@ -188,6 +202,31 @@ export const PhonePePayment: React.FC<PhonePePaymentProps> = ({
                     </div>
                 </CardContent>
             </Card>
+
+            {/* Saved Payment Methods */}
+            {showSavedMethods && (
+                <SavedPaymentMethods
+                    onPaymentMethodSelect={(method) => {
+                        setSelectedPaymentMethod(method);
+                        if (method === 'new') {
+                            setShowSavedMethods(false);
+                        }
+                    }}
+                    onAddNewMethod={() => setShowSavedMethods(false)}
+                />
+            )}
+
+            {!showSavedMethods && (
+                <div className="mb-4">
+                    <Button
+                        variant="outline"
+                        onClick={() => setShowSavedMethods(true)}
+                        size="sm"
+                    >
+                        ← Back to Saved Methods
+                    </Button>
+                </div>
+            )}
 
             {/* Customer Information */}
             <Card>
