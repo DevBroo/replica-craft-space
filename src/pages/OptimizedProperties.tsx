@@ -127,8 +127,138 @@ const OptimizedProperties = () => {
   });
 
   const properties = searchedProperties || [];
+
+  // Calculate pagination early to avoid reference errors
   const totalCount = properties.length;
   const totalPages = Math.ceil(totalCount / ITEMS_PER_PAGE);
+
+  // Filter day picnics by location, search term, and category
+  const filteredDayPicnics = useMemo(() => {
+    return dayPicnics.filter(dayPicnic => {
+      const property = dayPicnic.properties_public || dayPicnic.property;
+      if (!property) return false;
+
+      // Search filter
+      const searchLower = debouncedSearchTerm.toLowerCase().trim();
+      const matchesSearch = !searchLower || 
+        (property.title && property.title.toLowerCase().includes(searchLower)) ||
+        (property.description && property.description.toLowerCase().includes(searchLower)) ||
+        (property.general_location && property.general_location.toLowerCase().includes(searchLower)) ||
+        (property.location && typeof property.location === 'object' && (property.location as any).city && (property.location as any).city.toLowerCase().includes(searchLower)) ||
+        (property.location && typeof property.location === 'object' && (property.location as any).state && (property.location as any).state.toLowerCase().includes(searchLower));
+
+      // Location filter
+      const matchesLocation = selectedLocation === 'all' || (() => {
+        if (selectedLocation.includes(',')) {
+          // Handle "City, State" format
+          const [searchCity, searchState] = selectedLocation.split(',').map(s => s.trim().toLowerCase());
+          return (property.location && typeof property.location === 'object' && 
+                  (property.location as any).city && (property.location as any).state &&
+                  (property.location as any).city.toLowerCase() === searchCity &&
+                  (property.location as any).state.toLowerCase() === searchState) ||
+                 (property.general_location && 
+                  property.general_location.toLowerCase().includes(searchCity) && 
+                  property.general_location.toLowerCase().includes(searchState));
+        } else {
+          // Handle single term search
+          const locationLower = selectedLocation.toLowerCase();
+          return (property.general_location && property.general_location.toLowerCase().includes(locationLower)) ||
+                 (property.location && typeof property.location === 'object' && (property.location as any).city && (property.location as any).city.toLowerCase().includes(locationLower)) ||
+                 (property.location && typeof property.location === 'object' && (property.location as any).state && (property.location as any).state.toLowerCase().includes(locationLower));
+        }
+      })();
+
+      // Category filter - only show day picnics that match the selected property type
+      const matchesCategory = selectedType === 'all' || selectedType === 'day-picnic' || (() => {
+        const propertyType = property.property_type || property.type || '';
+        const normalizedPropertyType = propertyType.toLowerCase().replace(/[^a-z0-9]/g, '');
+        const normalizedSelectedType = selectedType.toLowerCase().replace(/[^a-z0-9]/g, '');
+        
+        // Handle common type mappings
+        if (normalizedSelectedType === 'resort' && (normalizedPropertyType.includes('resort') || normalizedPropertyType.includes('hotel'))) {
+          return true;
+        }
+        if (normalizedSelectedType === 'villa' && normalizedPropertyType.includes('villa')) {
+          return true;
+        }
+        if (normalizedSelectedType === 'cottage' && normalizedPropertyType.includes('cottage')) {
+          return true;
+        }
+        if (normalizedSelectedType === 'farmhouse' && (normalizedPropertyType.includes('farm') || normalizedPropertyType.includes('house'))) {
+          return true;
+        }
+        
+        // Direct match
+        return normalizedPropertyType === normalizedSelectedType;
+      })();
+
+      return matchesSearch && matchesLocation && matchesCategory;
+    });
+  }, [dayPicnics, debouncedSearchTerm, selectedLocation, selectedType]);
+
+  // Filter owner day picnics by location, search term, and category
+  const filteredOwnerDayPicnics = useMemo(() => {
+    return ownerDayPicnics.filter(dayPicnic => {
+      const property = dayPicnic.properties_public || dayPicnic.property;
+      if (!property) return false;
+
+      // Search filter
+      const searchLower = debouncedSearchTerm.toLowerCase().trim();
+      const matchesSearch = !searchLower || 
+        (property.title && property.title.toLowerCase().includes(searchLower)) ||
+        (property.description && property.description.toLowerCase().includes(searchLower)) ||
+        (property.general_location && property.general_location.toLowerCase().includes(searchLower)) ||
+        (property.location && typeof property.location === 'object' && (property.location as any).city && (property.location as any).city.toLowerCase().includes(searchLower)) ||
+        (property.location && typeof property.location === 'object' && (property.location as any).state && (property.location as any).state.toLowerCase().includes(searchLower));
+
+      // Location filter
+      const matchesLocation = selectedLocation === 'all' || (() => {
+        if (selectedLocation.includes(',')) {
+          // Handle "City, State" format
+          const [searchCity, searchState] = selectedLocation.split(',').map(s => s.trim().toLowerCase());
+          return (property.location && typeof property.location === 'object' && 
+                  (property.location as any).city && (property.location as any).state &&
+                  (property.location as any).city.toLowerCase() === searchCity &&
+                  (property.location as any).state.toLowerCase() === searchState) ||
+                 (property.general_location && 
+                  property.general_location.toLowerCase().includes(searchCity) && 
+                  property.general_location.toLowerCase().includes(searchState));
+        } else {
+          // Handle single term search
+          const locationLower = selectedLocation.toLowerCase();
+          return (property.general_location && property.general_location.toLowerCase().includes(locationLower)) ||
+                 (property.location && typeof property.location === 'object' && (property.location as any).city && (property.location as any).city.toLowerCase().includes(locationLower)) ||
+                 (property.location && typeof property.location === 'object' && (property.location as any).state && (property.location as any).state.toLowerCase().includes(locationLower));
+        }
+      })();
+
+      // Category filter - only show day picnics that match the selected property type
+      const matchesCategory = selectedType === 'all' || selectedType === 'day-picnic' || (() => {
+        const propertyType = property.property_type || property.type || '';
+        const normalizedPropertyType = propertyType.toLowerCase().replace(/[^a-z0-9]/g, '');
+        const normalizedSelectedType = selectedType.toLowerCase().replace(/[^a-z0-9]/g, '');
+        
+        // Handle common type mappings
+        if (normalizedSelectedType === 'resort' && (normalizedPropertyType.includes('resort') || normalizedPropertyType.includes('hotel'))) {
+          return true;
+        }
+        if (normalizedSelectedType === 'villa' && normalizedPropertyType.includes('villa')) {
+          return true;
+        }
+        if (normalizedSelectedType === 'cottage' && normalizedPropertyType.includes('cottage')) {
+          return true;
+        }
+        if (normalizedSelectedType === 'farmhouse' && (normalizedPropertyType.includes('farm') || normalizedPropertyType.includes('house'))) {
+          return true;
+        }
+        
+        // Direct match
+        return normalizedPropertyType === normalizedSelectedType;
+      })();
+
+      return matchesSearch && matchesLocation && matchesCategory;
+    });
+  }, [ownerDayPicnics, debouncedSearchTerm, selectedLocation, selectedType]);
 
   // Handle search filter changes
   const handleFilterChange = useCallback((newFilters: Partial<SearchFilters>) => {
@@ -205,16 +335,32 @@ const OptimizedProperties = () => {
       const searchLower = debouncedSearchTerm.toLowerCase().trim();
       const matchesSearch = !searchLower || 
         (property.title && property.title.toLowerCase().includes(searchLower)) ||
+        (property.description && property.description.toLowerCase().includes(searchLower)) ||
         (property.general_location && property.general_location.toLowerCase().includes(searchLower)) ||
         (property.location && typeof property.location === 'object' && (property.location as any).city && (property.location as any).city.toLowerCase().includes(searchLower)) ||
-        (property.location && typeof property.location === 'object' && (property.location as any).state && (property.location as any).state.toLowerCase().includes(searchLower));
+        (property.location && typeof property.location === 'object' && (property.location as any).state && (property.location as any).state.toLowerCase().includes(searchLower)) ||
+        (property.property_type && property.property_type.toLowerCase().includes(searchLower));
       
       // Location filter - check general_location, city, and state
-      const locationLower = selectedLocation.toLowerCase();
-      const matchesLocation = selectedLocation === 'all' || 
-        (property.general_location && property.general_location.toLowerCase().includes(locationLower)) ||
-        (property.location && typeof property.location === 'object' && (property.location as any).city && (property.location as any).city.toLowerCase().includes(locationLower)) ||
-        (property.location && typeof property.location === 'object' && (property.location as any).state && (property.location as any).state.toLowerCase().includes(locationLower));
+      const matchesLocation = selectedLocation === 'all' || (() => {
+        if (selectedLocation.includes(',')) {
+          // Handle "City, State" format
+          const [searchCity, searchState] = selectedLocation.split(',').map(s => s.trim().toLowerCase());
+          return (property.location && typeof property.location === 'object' && 
+                  (property.location as any).city && (property.location as any).state &&
+                  (property.location as any).city.toLowerCase() === searchCity &&
+                  (property.location as any).state.toLowerCase() === searchState) ||
+                 (property.general_location && 
+                  property.general_location.toLowerCase().includes(searchCity) && 
+                  property.general_location.toLowerCase().includes(searchState));
+        } else {
+          // Handle single term search
+          const locationLower = selectedLocation.toLowerCase();
+          return (property.general_location && property.general_location.toLowerCase().includes(locationLower)) ||
+                 (property.location && typeof property.location === 'object' && (property.location as any).city && (property.location as any).city.toLowerCase().includes(locationLower)) ||
+                 (property.location && typeof property.location === 'object' && (property.location as any).state && (property.location as any).state.toLowerCase().includes(locationLower));
+        }
+      })();
       
       // Property type filter
       const matchesType = selectedType === ('all' as any) || 
@@ -246,6 +392,21 @@ const OptimizedProperties = () => {
         return sorted.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
     }
   }, [filteredProperties, sortBy]);
+
+  // Pagination calculations based on filtered and sorted results
+  const filteredTotalCount = sortedProperties.length;
+  const filteredTotalPages = Math.ceil(filteredTotalCount / ITEMS_PER_PAGE);
+  
+  // Reset to page 1 if current page is beyond available pages
+  useEffect(() => {
+    if (currentPage > filteredTotalPages && filteredTotalPages > 0) {
+      setCurrentPage(1);
+    }
+  }, [filteredTotalPages]); // Only depend on filteredTotalPages to avoid infinite loops
+  
+  const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
+  const endIndex = startIndex + ITEMS_PER_PAGE;
+  const paginatedProperties = sortedProperties.slice(startIndex, endIndex);
 
   // Navigation handlers
   const handleViewProperty = useCallback((propertyId: string) => {
@@ -462,6 +623,19 @@ const OptimizedProperties = () => {
     </Card>
   );
 
+  // Add error boundary for debugging
+  if (propertiesError) {
+    console.error('Properties error:', propertiesError);
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="text-center">
+          <h2 className="text-2xl font-bold mb-4">Error loading properties</h2>
+          <p className="text-muted-foreground">{propertiesError.message}</p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-background">
       {/* Header */}
@@ -495,7 +669,7 @@ const OptimizedProperties = () => {
               <SelectContent>
                 <SelectItem value="all">All Locations</SelectItem>
                 {availableLocations.map((location) => (
-                  <SelectItem key={`${location.city}-${location.state}`} value={location.city}>
+                  <SelectItem key={`${location.city}-${location.state}`} value={`${location.city}, ${location.state}`}>
                     {location.city}, {location.state} ({location.property_count})
                   </SelectItem>
                 ))}
@@ -581,9 +755,9 @@ const OptimizedProperties = () => {
         <div className="flex justify-between items-center mb-6">
           <Tabs value={activeTab} onValueChange={setActiveTab} className="w-auto">
             <TabsList>
-              <TabsTrigger value="properties">Properties ({properties.length})</TabsTrigger>
+              <TabsTrigger value="properties">Properties ({filteredTotalCount})</TabsTrigger>
               <TabsTrigger value="day-picnics">
-                Day Picnics ({dayPicnics.length}{ownerDayPicnics.length > 0 && dayPicnics.length === 0 ? ` + ${ownerDayPicnics.length} preview` : ''})
+                Day Picnics ({filteredDayPicnics.length}{filteredOwnerDayPicnics.length > 0 && filteredDayPicnics.length === 0 ? ` + ${filteredOwnerDayPicnics.length} preview` : ''})
               </TabsTrigger>
             </TabsList>
           </Tabs>
@@ -610,17 +784,25 @@ const OptimizedProperties = () => {
             ) : sortedProperties.length > 0 ? (
               <>
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 mb-8">
-                  {sortedProperties.map((property) => (
-                    <PropertyCard key={property.id} property={{
-                      ...property,
-                      location: property.location && typeof property.location === 'object' ? property.location as { city: string; state: string } : { city: '', state: '' },
-                      pricing: property.pricing && typeof property.pricing === 'object' ? property.pricing as { daily_rate: number; currency: string } : { daily_rate: 0, currency: 'INR' }
-                    }} />
-                  ))}
+                  {paginatedProperties.map((property) => {
+                    // Ensure property has required fields
+                    if (!property || !property.id) {
+                      console.warn('Invalid property data:', property);
+                      return null;
+                    }
+                    
+                    return (
+                      <PropertyCard key={property.id} property={{
+                        ...property,
+                        location: property.location && typeof property.location === 'object' ? property.location as { city: string; state: string } : { city: '', state: '' },
+                        pricing: property.pricing && typeof property.pricing === 'object' ? property.pricing as { daily_rate: number; currency: string } : { daily_rate: 0, currency: 'INR' }
+                      }} />
+                    );
+                  })}
                 </div>
 
                 {/* Pagination */}
-                {totalPages > 1 && (
+                {filteredTotalPages > 1 && (
                   <div className="flex justify-center items-center gap-2">
                     <Button
                       variant="outline"
@@ -631,13 +813,13 @@ const OptimizedProperties = () => {
                     </Button>
                     
                     <span className="px-4 py-2 text-sm">
-                      Page {currentPage} of {totalPages}
+                      Page {currentPage} of {filteredTotalPages}
                     </span>
                     
                     <Button
                       variant="outline"
-                      onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
-                      disabled={currentPage === totalPages}
+                      onClick={() => setCurrentPage(p => Math.min(filteredTotalPages, p + 1))}
+                      disabled={currentPage === filteredTotalPages}
                     >
                       Next
                     </Button>
@@ -670,25 +852,27 @@ const OptimizedProperties = () => {
                   <PropertySkeleton key={i} />
                 ))}
               </div>
-            ) : dayPicnics.length > 0 || ownerDayPicnics.length > 0 ? (
+            ) : filteredDayPicnics.length > 0 || filteredOwnerDayPicnics.length > 0 ? (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
                 {/* Approved day picnics */}
-                {dayPicnics.map((picnic: DayPicnicPackage) => (
+                {filteredDayPicnics.map((picnic: DayPicnicPackage) => (
                   <DayPicnicCard key={`approved-${picnic.id}`} dayPicnic={picnic} />
                 ))}
                 
                 {/* Owner preview day picnics (only if no approved ones) */}
-                {dayPicnics.length === 0 && ownerDayPicnics.map((picnic: DayPicnicPackage) => (
+                {filteredDayPicnics.length === 0 && filteredOwnerDayPicnics.map((picnic: DayPicnicPackage) => (
                   <DayPicnicCard key={`preview-${picnic.id}`} dayPicnic={picnic} isPreview={true} />
                 ))}
               </div>
             ) : (
               <div className="text-center py-12">
                 <div className="text-6xl mb-4">🌳</div>
-                <h3 className="text-xl font-semibold mb-2">No public day picnic spots found</h3>
+                <h3 className="text-xl font-semibold mb-2">No day picnic spots found</h3>
                 <p className="text-muted-foreground mb-4">
-                  {user && ownerDayPicnics.length > 0 
-                    ? `You have ${ownerDayPicnics.length} packages pending approval. Approve them to make them public.`
+                  {selectedLocation !== 'all' 
+                    ? `No day picnic spots found in ${selectedLocation}. Try selecting a different location or search term.`
+                    : user && filteredOwnerDayPicnics.length > 0 
+                      ? `You have ${filteredOwnerDayPicnics.length} packages pending approval. Approve them to make them public.`
                     : 'Try adjusting your filters or check back later for new day picnic spots.'
                   }
                 </p>

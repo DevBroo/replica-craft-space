@@ -1,9 +1,101 @@
-import React, { useState } from 'react';
-import { Link } from 'react-router-dom';
+import React, { useState, useEffect } from 'react';
+import { Link, useParams, useNavigate } from 'react-router-dom';
+import { useAuth } from '@/contexts/AuthContext';
+import { BookingService } from '@/lib/bookingService';
+import { toast } from '@/hooks/use-toast';
+
+interface Booking {
+  id: string;
+  property_id: string;
+  user_id: string;
+  check_in_date: string;
+  check_out_date: string;
+  guests: number;
+  total_amount: number;
+  status: string;
+  payment_status: string;
+  created_at: string;
+  properties?: {
+    title: string;
+    images: string[];
+    address: string;
+  };
+}
 
 const BookingDetails: React.FC = () => {
+  const { id } = useParams<{ id: string }>();
+  const navigate = useNavigate();
+  const { user } = useAuth();
+  const [booking, setBooking] = useState<Booking | null>(null);
+  const [loading, setLoading] = useState(true);
   const [showModifyModal, setShowModifyModal] = useState(false);
   const [showCancelModal, setShowCancelModal] = useState(false);
+
+  useEffect(() => {
+    if (!user) {
+      navigate('/login');
+      return;
+    }
+    
+    if (id) {
+      fetchBookingDetails();
+    }
+  }, [id, user, navigate]);
+
+  const fetchBookingDetails = async () => {
+    try {
+      setLoading(true);
+      const bookingData = await BookingService.getBookingById(id!);
+      
+      // Check if the booking belongs to the current user
+      if (bookingData.user_id !== user?.id) {
+        toast({
+          title: "Access Denied",
+          description: "You don't have permission to view this booking.",
+          variant: "destructive"
+        });
+        navigate('/dashboard');
+        return;
+      }
+      
+      setBooking(bookingData);
+    } catch (error) {
+      console.error('Error fetching booking details:', error);
+      toast({
+        title: "Error",
+        description: "Failed to load booking details.",
+        variant: "destructive"
+      });
+      navigate('/dashboard');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-red-600 mx-auto mb-4"></div>
+          <p className="text-gray-600">Loading booking details...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!booking) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <h1 className="text-2xl font-bold text-gray-900 mb-4">Booking Not Found</h1>
+          <p className="text-gray-600 mb-6">The booking you're looking for doesn't exist or has been removed.</p>
+          <Link to="/dashboard" className="bg-red-600 text-white px-6 py-3 rounded-lg hover:bg-red-700 transition-colors">
+            Back to Dashboard
+          </Link>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -11,9 +103,9 @@ const BookingDetails: React.FC = () => {
       <header className="fixed top-0 left-0 right-0 bg-white shadow-sm border-b border-gray-200 z-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
-            <Link to="/login" className="flex items-center text-gray-600 hover:text-gray-900 cursor-pointer">
+            <Link to="/dashboard" className="flex items-center text-gray-600 hover:text-gray-900 cursor-pointer">
               <i className="fas fa-arrow-left mr-2"></i>
-              <span className="text-sm font-medium">Back</span>
+              <span className="text-sm font-medium">Back to Dashboard</span>
             </Link>
             <h1 className="text-lg font-semibold text-gray-900">Booking Details</h1>
             <button className="text-gray-600 hover:text-gray-900 cursor-pointer whitespace-nowrap">
@@ -25,23 +117,23 @@ const BookingDetails: React.FC = () => {
 
       {/* Main Content */}
       <main className="pt-16 pb-32">
-        {/* Hotel Banner */}
+        {/* Property Banner */}
         <div className="relative h-64 overflow-hidden">
           <img
-            src="https://images.unsplash.com/photo-1566073771259-6a8506099945?w=1440&h=256&fit=crop&crop=center"
-            alt="Grand Palace Hotel"
+            src={booking.properties?.images?.[0] || "https://images.unsplash.com/photo-1566073771259-6a8506099945?w=1440&h=256&fit=crop&crop=center"}
+            alt={booking.properties?.title || "Property"}
             className="w-full h-full object-cover object-center"
           />
           <div className="absolute inset-0 bg-black bg-opacity-20"></div>
         </div>
 
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 -mt-8 relative z-10">
-          {/* Hotel Information Card */}
+          {/* Property Information Card */}
           <div className="bg-white rounded-xl shadow-lg border border-gray-200 mb-6">
             <div className="p-4 sm:p-6">
               <div className="flex flex-col sm:flex-row sm:items-start justify-between mb-4 gap-4">
                 <div>
-                  <h2 className="text-xl sm:text-2xl font-bold text-gray-900 mb-2">Grand Palace Hotel</h2>
+                  <h2 className="text-xl sm:text-2xl font-bold text-gray-900 mb-2">{booking.properties?.title || "Property"}</h2>
                   <div className="flex items-center mb-2">
                     <div className="flex text-yellow-400 mr-2">
                       <i className="fas fa-star"></i>
@@ -50,17 +142,17 @@ const BookingDetails: React.FC = () => {
                       <i className="fas fa-star"></i>
                       <i className="fas fa-star"></i>
                     </div>
-                    <span className="text-sm text-gray-600">5.0 (2,847 reviews)</span>
+                    <span className="text-sm text-gray-600">5.0 (Reviews)</span>
                   </div>
                   <p className="text-gray-600 flex items-center">
                     <i className="fas fa-map-marker-alt mr-2 text-red-500"></i>
-                    123 Fifth Avenue, Downtown, New York, NY 10001
+                    {booking.properties?.address || "Address not available"}
                   </p>
                 </div>
-                <button className="bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 cursor-pointer whitespace-nowrap">
+                <Link to={`/property/${booking.property_id}`} className="bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 cursor-pointer whitespace-nowrap">
                   <i className="fas fa-hotel mr-2"></i>
-                  View Hotel
-                </button>
+                  View Property
+                </Link>
               </div>
             </div>
           </div>
@@ -70,11 +162,21 @@ const BookingDetails: React.FC = () => {
             <div className="p-4 sm:p-6">
               <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-4 gap-4">
                 <div>
-                  <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-green-100 text-green-800">
-                    <i className="fas fa-check-circle mr-2"></i>
-                    Confirmed
+                  <span className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium ${
+                    booking.status === 'confirmed' ? 'bg-green-100 text-green-800' :
+                    booking.status === 'pending' ? 'bg-yellow-100 text-yellow-800' :
+                    booking.status === 'cancelled' ? 'bg-red-100 text-red-800' :
+                    'bg-gray-100 text-gray-800'
+                  }`}>
+                    <i className={`fas ${
+                      booking.status === 'confirmed' ? 'fa-check-circle' :
+                      booking.status === 'pending' ? 'fa-clock' :
+                      booking.status === 'cancelled' ? 'fa-times-circle' :
+                      'fa-question-circle'
+                    } mr-2`}></i>
+                    {booking.status.charAt(0).toUpperCase() + booking.status.slice(1)}
                   </span>
-                  <p className="text-sm text-gray-600 mt-2">Booking Reference: <span className="font-semibold text-gray-900">#GPH-2024-001234</span></p>
+                  <p className="text-sm text-gray-600 mt-2">Booking Reference: <span className="font-semibold text-gray-900">#{booking.id.slice(0, 8).toUpperCase()}</span></p>
                 </div>
                 <div className="text-center">
                   <div className="w-20 h-20 bg-gray-100 rounded-lg flex items-center justify-center mb-2 mx-auto">
@@ -100,7 +202,12 @@ const BookingDetails: React.FC = () => {
                     </div>
                     <div>
                       <p className="text-sm text-gray-500">Check-in</p>
-                      <p className="font-semibold text-gray-900">December 25, 2024</p>
+                      <p className="font-semibold text-gray-900">{new Date(booking.check_in_date).toLocaleDateString('en-US', { 
+                        weekday: 'long', 
+                        year: 'numeric', 
+                        month: 'long', 
+                        day: 'numeric' 
+                      })}</p>
                       <p className="text-sm text-gray-600">After 3:00 PM</p>
                     </div>
                   </div>
@@ -110,7 +217,12 @@ const BookingDetails: React.FC = () => {
                     </div>
                     <div>
                       <p className="text-sm text-gray-500">Check-out</p>
-                      <p className="font-semibold text-gray-900">December 27, 2024</p>
+                      <p className="font-semibold text-gray-900">{new Date(booking.check_out_date).toLocaleDateString('en-US', { 
+                        weekday: 'long', 
+                        year: 'numeric', 
+                        month: 'long', 
+                        day: 'numeric' 
+                      })}</p>
                       <p className="text-sm text-gray-600">Before 11:00 AM</p>
                     </div>
                   </div>
@@ -122,7 +234,9 @@ const BookingDetails: React.FC = () => {
                     </div>
                     <div>
                       <p className="text-sm text-gray-500">Duration</p>
-                      <p className="font-semibold text-gray-900">2 nights</p>
+                      <p className="font-semibold text-gray-900">
+                        {Math.ceil((new Date(booking.check_out_date).getTime() - new Date(booking.check_in_date).getTime()) / (1000 * 60 * 60 * 24))} nights
+                      </p>
                     </div>
                   </div>
                   <div className="flex items-center mb-4">
@@ -131,7 +245,7 @@ const BookingDetails: React.FC = () => {
                     </div>
                     <div>
                       <p className="text-sm text-gray-500">Guests</p>
-                      <p className="font-semibold text-gray-900">2 adults</p>
+                      <p className="font-semibold text-gray-900">{booking.guests} {booking.guests === 1 ? 'guest' : 'guests'}</p>
                     </div>
                   </div>
                 </div>
@@ -161,26 +275,37 @@ const BookingDetails: React.FC = () => {
             <div className="p-4 sm:p-6">
               <div className="space-y-3">
                 <div className="flex justify-between">
-                  <span className="text-gray-600">Room rate (2 nights)</span>
-                  <span className="text-gray-900">$398.00</span>
+                  <span className="text-gray-600">Room rate ({Math.ceil((new Date(booking.check_out_date).getTime() - new Date(booking.check_in_date).getTime()) / (1000 * 60 * 60 * 24))} nights)</span>
+                  <span className="text-gray-900">${(booking.total_amount * 0.8).toFixed(2)}</span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-gray-600">Taxes & fees</span>
-                  <span className="text-gray-900">$67.30</span>
+                  <span className="text-gray-900">${(booking.total_amount * 0.15).toFixed(2)}</span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-gray-600">Service charge</span>
-                  <span className="text-gray-900">$23.70</span>
+                  <span className="text-gray-900">${(booking.total_amount * 0.05).toFixed(2)}</span>
                 </div>
                 <div className="border-t border-gray-200 pt-3">
                   <div className="flex justify-between">
                     <span className="text-lg font-semibold text-gray-900">Total Amount</span>
-                    <span className="text-lg font-bold text-gray-900">$489.00</span>
+                    <span className="text-lg font-bold text-gray-900">${booking.total_amount.toFixed(2)}</span>
                   </div>
                 </div>
                 <div className="flex items-center mt-4">
-                  <i className="fas fa-check-circle text-green-500 mr-2"></i>
-                  <span className="text-sm text-green-600 font-medium">Payment Completed</span>
+                  <i className={`fas ${
+                    booking.payment_status === 'completed' ? 'fa-check-circle text-green-500' :
+                    booking.payment_status === 'pending' ? 'fa-clock text-yellow-500' :
+                    'fa-times-circle text-red-500'
+                  } mr-2`}></i>
+                  <span className={`text-sm font-medium ${
+                    booking.payment_status === 'completed' ? 'text-green-600' :
+                    booking.payment_status === 'pending' ? 'text-yellow-600' :
+                    'text-red-600'
+                  }`}>
+                    Payment {booking.payment_status === 'completed' ? 'Completed' : 
+                             booking.payment_status === 'pending' ? 'Pending' : 'Failed'}
+                  </span>
                 </div>
               </div>
             </div>

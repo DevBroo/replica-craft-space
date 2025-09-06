@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 import { toast } from 'sonner';
-import { LiveChatModal } from '@/components/support/LiveChatModal';
+import { AIChatModal } from '@/components/support/AIChatModal';
 
 // Scroll animation hook
 const useScrollAnimation = () => {
@@ -29,6 +29,7 @@ const useScrollAnimation = () => {
 const Contact: React.FC = () => {
   // Initialize scroll animations
   useScrollAnimation();
+  const location = useLocation();
   const [formData, setFormData] = useState({
     name: '',
     email: '',
@@ -43,6 +44,32 @@ const Contact: React.FC = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [currentTime, setCurrentTime] = useState(new Date());
   const [openChatModal, setOpenChatModal] = useState(false);
+
+  // Handle pre-filled data from About page
+  useEffect(() => {
+    if (location.state) {
+      const { prefillSubject, prefillMessage } = location.state as any;
+      if (prefillSubject || prefillMessage) {
+        setFormData(prev => ({
+          ...prev,
+          subject: prefillSubject || prev.subject,
+          message: prefillMessage || prev.message,
+          inquiryType: 'partnership'
+        }));
+        
+        // Show a toast notification
+        toast.success('Partnership inquiry form pre-filled! Please complete your details.');
+      }
+    }
+  }, [location.state]);
+
+  // Function to open Google Maps with directions
+  const handleGetDirections = (address: string) => {
+    const encodedAddress = encodeURIComponent(address);
+    // Use Google Maps Directions API to get directions from user's current location
+    const googleMapsUrl = `https://www.google.com/maps/dir/?api=1&destination=${encodedAddress}&travelmode=driving`;
+    window.open(googleMapsUrl, '_blank');
+  };
 
   const handleFormChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     setFormData({
@@ -208,7 +235,13 @@ const Contact: React.FC = () => {
               We're here to help you with any questions, concerns, or support you need. Our dedicated team is ready to assist you 24/7.
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
-              <button className="inline-flex items-center gap-3 bg-gradient-to-r from-red-600 to-orange-500 text-white px-8 py-4 rounded-xl hover:from-red-700 hover:to-orange-600 transition-all duration-300 cursor-pointer whitespace-nowrap !rounded-button font-bold text-lg shadow-xl hover:shadow-2xl transform hover:scale-105">
+              <button 
+                onClick={() => {
+                  // Open phone dialer with support number
+                  window.open('tel:+918012345678', '_self');
+                }}
+                className="inline-flex items-center gap-3 bg-gradient-to-r from-red-600 to-orange-500 text-white px-8 py-4 rounded-xl hover:from-red-700 hover:to-orange-600 transition-all duration-300 cursor-pointer whitespace-nowrap !rounded-button font-bold text-lg shadow-xl hover:shadow-2xl transform hover:scale-105"
+              >
                 <i className="fas fa-phone text-xl"></i>
                 <span>Call Us Now</span>
               </button>
@@ -260,7 +293,17 @@ const Contact: React.FC = () => {
                     </div>
                   </div>
                   <button 
-                    onClick={() => method.title === 'Live Chat' ? setOpenChatModal(true) : undefined}
+                    onClick={() => {
+                      if (method.title === 'Live Chat') {
+                        setOpenChatModal(true);
+                      } else if (method.title === 'Phone Support') {
+                        // Open phone dialer with the contact number
+                        window.open('tel:+918012345678', '_self');
+                      } else if (method.title === 'Email Support') {
+                        // Open email client
+                        window.open('mailto:support@picnify.in', '_self');
+                      }
+                    }}
                     className={`w-full py-3 rounded-xl transition-all duration-300 cursor-pointer whitespace-nowrap !rounded-button font-semibold ${
                       method.status === 'online' || method.status === 'always'
                         ? 'bg-gradient-to-r from-red-600 to-orange-500 text-white hover:from-red-700 hover:to-orange-600'
@@ -419,7 +462,10 @@ const Contact: React.FC = () => {
                         <span className="text-gray-600">{office.hours}</span>
                       </div>
                     </div>
-                    <button className="mt-4 w-full bg-gray-100 text-gray-700 py-2 rounded-lg hover:bg-gray-200 transition-colors duration-200 cursor-pointer whitespace-nowrap !rounded-button font-medium">
+                    <button 
+                      onClick={() => handleGetDirections(office.address)}
+                      className="mt-4 w-full bg-gray-100 text-gray-700 py-2 rounded-lg hover:bg-gray-200 transition-colors duration-200 cursor-pointer whitespace-nowrap !rounded-button font-medium"
+                    >
                       <i className="fas fa-directions mr-2"></i>
                       Get Directions
                     </button>
@@ -471,7 +517,15 @@ const Contact: React.FC = () => {
           </div>
           <div className="text-center mt-12">
             <p className="text-gray-600 mb-4">Still have questions?</p>
-            <button className="bg-gradient-to-r from-red-600 to-orange-500 text-white px-8 py-3 rounded-xl hover:from-red-700 hover:to-orange-600 transition-all duration-300 cursor-pointer whitespace-nowrap !rounded-button font-semibold">
+            <button 
+              onClick={() => {
+                const contactForm = document.getElementById('contact-form');
+                if (contactForm) {
+                  contactForm.scrollIntoView({ behavior: 'smooth' });
+                }
+              }}
+              className="bg-gradient-to-r from-red-600 to-orange-500 text-white px-8 py-3 rounded-xl hover:from-red-700 hover:to-orange-600 transition-all duration-300 cursor-pointer whitespace-nowrap !rounded-button font-semibold"
+            >
               <i className="fas fa-envelope mr-2"></i>
               Contact Support
             </button>
@@ -578,8 +632,8 @@ const Contact: React.FC = () => {
         </div>
         </section>
 
-      {/* Live Chat Modal */}
-      <LiveChatModal open={openChatModal} onOpenChange={setOpenChatModal} />
+      {/* AI Chat Modal */}
+      <AIChatModal open={openChatModal} onOpenChange={setOpenChatModal} />
     </div>
   );
 };

@@ -401,12 +401,15 @@ const HostSignup: React.FC = () => {
 
               {/* Terms Agreement */}
               <div className="flex items-center space-x-2">
-                <Checkbox
+                <input
+                  type="checkbox"
                   id="terms"
+                  title="I agree to the Terms of Service and Privacy Policy"
                   checked={agreeToTerms}
-                  onCheckedChange={(checked) => setAgreeToTerms(checked as boolean)}
+                  onChange={(e) => setAgreeToTerms(e.target.checked)}
+                  className="h-4 w-4 rounded border-2 border-primary text-primary focus:ring-2 focus:ring-primary focus:ring-offset-2"
                 />
-                <Label htmlFor="terms" className="text-sm leading-none">
+                <Label htmlFor="terms" className="text-sm leading-none cursor-pointer">
                   I agree to the{' '}
                   <Link to="/terms-of-service" className="text-blue-600 hover:text-blue-800">
                     Terms of Service

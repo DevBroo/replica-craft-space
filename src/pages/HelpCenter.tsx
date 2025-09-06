@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Search, HelpCircle, Book, CreditCard, MapPin, User, Phone, Mail } from 'lucide-react';
-import { LiveChatModal } from '@/components/support/LiveChatModal';
+import { AIChatModal } from '@/components/support/AIChatModal';
 
 const HelpCenter = () => {
   const [searchQuery, setSearchQuery] = useState('');
@@ -72,6 +72,18 @@ const HelpCenter = () => {
     const matchesCategory = selectedCategory === 'all' || faq.category === selectedCategory;
     const matchesSearch = faq.question.toLowerCase().includes(searchQuery.toLowerCase()) ||
                          faq.answer.toLowerCase().includes(searchQuery.toLowerCase());
+    
+    // Debug logging
+    if (selectedCategory === 'payment') {
+      console.log('🔍 Payment tab selected, filtering FAQs:', {
+        faqCategory: faq.category,
+        matchesCategory,
+        matchesSearch,
+        selectedCategory,
+        searchQuery
+      });
+    }
+    
     return matchesCategory && matchesSearch;
   });
 
@@ -109,11 +121,14 @@ const HelpCenter = () => {
           {faqCategories.map((category) => (
             <button
               key={category.id}
-              onClick={() => setSelectedCategory(category.id)}
+              onClick={() => {
+                console.log('🔍 Tab clicked:', category.id, 'Current selected:', selectedCategory);
+                setSelectedCategory(category.id);
+              }}
               className={`flex items-center px-6 py-3 rounded-lg font-medium transition-colors ${
                 selectedCategory === category.id
-                  ? 'bg-primary text-primary-foreground'
-                  : 'bg-muted hover:bg-muted/70'
+                  ? 'bg-blue-600 text-white shadow-md'
+                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200 border border-gray-200'
               }`}
             >
               <category.icon className="w-5 h-5 mr-2" />
@@ -125,6 +140,12 @@ const HelpCenter = () => {
         {/* FAQ Section */}
         <section className="mb-16">
           <h2 className="text-3xl font-bold mb-8 text-center">Frequently Asked Questions</h2>
+          
+          {/* Debug Info */}
+          <div className="text-center mb-4 text-sm text-gray-600 bg-gray-50 p-2 rounded-lg border">
+            Selected Category: <span className="font-semibold text-blue-600">{selectedCategory}</span> | Filtered FAQs: <span className="font-semibold text-green-600">{filteredFaqs.length}</span> | Total FAQs: <span className="font-semibold text-gray-800">{faqs.length}</span>
+          </div>
+          
           <div className="space-y-4 max-w-4xl mx-auto">
             {filteredFaqs.map((faq, index) => (
               <details key={index} className="border rounded-lg overflow-hidden">
@@ -161,7 +182,13 @@ const HelpCenter = () => {
               </div>
               <h3 className="text-xl font-semibold mb-2">Call Us</h3>
               <p className="text-muted-foreground mb-4">Available 24/7 for urgent assistance</p>
-              <p className="font-semibold">1800-XXX-XXXX</p>
+              <p className="font-semibold mb-4">+91 80 1234 5678</p>
+              <button 
+                onClick={() => window.open('tel:+918012345678', '_self')}
+                className="bg-blue-600 text-white px-6 py-2 rounded-lg font-semibold hover:bg-blue-700 transition-colors shadow-md"
+              >
+                Call Now
+              </button>
             </div>
             
             <div className="text-center">
@@ -181,7 +208,7 @@ const HelpCenter = () => {
               <p className="text-muted-foreground mb-4">Chat with our support agents</p>
               <button 
                 onClick={() => setOpenChatModal(true)}
-                className="bg-primary text-primary-foreground px-6 py-2 rounded-lg font-semibold hover:bg-primary/90 transition-colors"
+                className="bg-blue-600 text-white px-6 py-2 rounded-lg font-semibold hover:bg-blue-700 transition-colors shadow-md"
               >
                 Start Chat
               </button>
@@ -190,8 +217,8 @@ const HelpCenter = () => {
         </section>
       </main>
 
-      {/* Live Chat Modal */}
-      <LiveChatModal open={openChatModal} onOpenChange={setOpenChatModal} />
+      {/* AI Chat Modal */}
+      <AIChatModal open={openChatModal} onOpenChange={setOpenChatModal} />
     </div>
   );
 };

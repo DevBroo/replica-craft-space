@@ -37,12 +37,14 @@ export const LiveChatModal: React.FC<LiveChatModalProps> = ({ open, onOpenChange
 
   // Open chat when modal opens
   useEffect(() => {
-    if (open) {
+    if (open && user) {
+      console.log('Modal opened, starting chat session...');
       openChat();
-    } else {
+    } else if (!open) {
+      console.log('Modal closed, cleaning up...');
       closeChat();
     }
-  }, [open, openChat, closeChat]);
+  }, [open, user, openChat, closeChat]);
 
   const handleSendMessage = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -71,7 +73,7 @@ export const LiveChatModal: React.FC<LiveChatModalProps> = ({ open, onOpenChange
 
   const handleSignIn = () => {
     onOpenChange(false);
-    navigate('/auth');
+    navigate('/login');
   };
 
   const formatMessageTime = (timestamp: string) => {
@@ -111,15 +113,10 @@ export const LiveChatModal: React.FC<LiveChatModalProps> = ({ open, onOpenChange
             <p className="text-muted-foreground mb-6">
               Please sign in to your account to start a live chat with our support team.
             </p>
-            <div className="flex gap-2">
-              <Button onClick={handleSignIn} className="flex-1">
-                <LogIn className="w-4 h-4 mr-2" />
-                Sign In
-              </Button>
-              <Button variant="outline" onClick={() => onOpenChange(false)} className="flex-1">
-                Cancel
-              </Button>
-            </div>
+            <Button onClick={handleSignIn} className="w-full">
+              <LogIn className="w-4 h-4 mr-2" />
+              Sign In to Start Chat
+            </Button>
           </div>
         </DialogContent>
       </Dialog>
@@ -173,8 +170,9 @@ export const LiveChatModal: React.FC<LiveChatModalProps> = ({ open, onOpenChange
               size="sm"
               onClick={handleEndChat}
               className="text-muted-foreground hover:text-destructive"
+              title="End Chat"
             >
-              <X className="w-4 h-4" />
+              End Chat
             </Button>
           </div>
           {currentTicket && (
@@ -239,15 +237,16 @@ export const LiveChatModal: React.FC<LiveChatModalProps> = ({ open, onOpenChange
               <Input
                 value={messageText}
                 onChange={(e) => setMessageText(e.target.value)}
-                placeholder="Type your message..."
-                disabled={isSending || !currentTicket}
+                placeholder={currentTicket ? "Type your message..." : "Creating chat session..."}
+                disabled={isSending || isCreatingTicket}
                 className="flex-1"
                 maxLength={1000}
               />
               <Button
                 type="submit"
-                disabled={!messageText.trim() || isSending || !currentTicket}
+                disabled={!messageText.trim() || isSending || isCreatingTicket}
                 size="sm"
+                title={!currentTicket ? "Creating chat session..." : "Send message"}
               >
                 <Send className="w-4 h-4" />
               </Button>

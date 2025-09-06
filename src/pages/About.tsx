@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
 
 // Scroll animation hook
@@ -25,6 +25,7 @@ const picnifyLogo = '/lovable-uploads/f7960b1f-407a-4738-b8f6-067ea4600889.png';
 const About: React.FC = () => {
   // Initialize scroll animations
   useScrollAnimation();
+  const navigate = useNavigate();
   const [activeSection, setActiveSection] = useState('');
   const [formData, setFormData] = useState({
     name: '',
@@ -45,6 +46,11 @@ const About: React.FC = () => {
       ...formData,
       [e.target.name]: e.target.value
     });
+  };
+
+  const handleBecomePartner = () => {
+    // Navigate directly to owner signup page
+    navigate('/host-signup');
   };
   // Animate statistics on component mount
   useEffect(() => {
@@ -536,7 +542,10 @@ const About: React.FC = () => {
               </div>)}
           </div>
           <div className="text-center">
-            <button className="bg-gradient-to-r from-red-600 to-orange-500 text-white px-8 py-4 rounded-xl hover:from-red-700 hover:to-orange-600 transition-all duration-300 cursor-pointer whitespace-nowrap !rounded-button font-bold text-lg shadow-xl hover:shadow-2xl transform hover:scale-105">
+            <button 
+              onClick={handleBecomePartner}
+              className="bg-gradient-to-r from-red-600 to-orange-500 text-white px-8 py-4 rounded-xl hover:from-red-700 hover:to-orange-600 transition-all duration-300 cursor-pointer whitespace-nowrap !rounded-button font-bold text-lg shadow-xl hover:shadow-2xl transform hover:scale-105"
+            >
               <i className="fas fa-handshake mr-3"></i>
               Become a Partner
             </button>
@@ -647,10 +656,14 @@ const About: React.FC = () => {
 
 
       {/* Back to Top Button */}
-      <button onClick={() => window.scrollTo({
-      top: 0,
-      behavior: 'smooth'
-    })} className="fixed bottom-8 right-8 w-14 h-14 bg-gradient-to-r from-red-600 to-orange-500 text-white rounded-full flex items-center justify-center hover:from-red-700 hover:to-orange-600 transition-all duration-300 cursor-pointer shadow-xl hover:shadow-2xl transform hover:scale-110 z-40">
+      <button 
+        onClick={() => window.scrollTo({
+          top: 0,
+          behavior: 'smooth'
+        })} 
+        className="fixed bottom-8 right-8 w-14 h-14 bg-gradient-to-r from-red-600 to-orange-500 text-white rounded-full flex items-center justify-center hover:from-red-700 hover:to-orange-600 transition-all duration-300 cursor-pointer shadow-xl hover:shadow-2xl transform hover:scale-110 z-40"
+        title="Scroll to top"
+      >
         <i className="fas fa-arrow-up text-xl"></i>
       </button>
     </div>;

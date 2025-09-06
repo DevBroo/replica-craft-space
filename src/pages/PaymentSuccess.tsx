@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { useToast } from '@/hooks/use-toast';
 import { PhonePeService } from '@/lib/phonePeService';
+import { BookingService } from '@/lib/bookingService';
 import { supabase } from '@/integrations/supabase/client';
 import {
     CheckCircle,
@@ -91,6 +92,51 @@ const PaymentSuccess: React.FC = () => {
             // Determine payment status
             const isSuccess = paymentResponse.success && paymentResponse.data?.state === 'COMPLETED';
             const amount = paymentResponse.data?.amount ? paymentResponse.data.amount / 100 : 0; // Convert from paise
+
+            // If payment is successful and no booking exists, create one
+            if (isSuccess && !booking) {
+                try {
+                    console.log('🔍 Payment successful, creating booking...');
+                    
+                    // Get pending booking data from session storage
+                    const pendingBookingData = sessionStorage.getItem('pending_booking_data');
+                    if (pendingBookingData) {
+                        const bookingRequest = JSON.parse(pendingBookingData);
+                        
+                        // Create the booking
+                        const newBooking = await BookingService.createBooking({
+                            ...bookingRequest,
+                            status: 'confirmed',
+                            payment_status: 'completed',
+                            transaction_id: transactionId
+                        });
+                        
+                        console.log('✅ Booking created successfully:', newBooking);
+                        
+                        // Update booking variable for display
+                        booking = newBooking;
+                        setBookingDetails(newBooking);
+                        
+                        // Clear session storage
+                        sessionStorage.removeItem('pending_booking_data');
+                        sessionStorage.removeItem('temp_booking_id');
+                        
+                        toast({
+                            title: "Booking Confirmed!",
+                            description: "Your booking has been successfully created.",
+                        });
+                    } else {
+                        console.warn('⚠️ No pending booking data found in session storage');
+                    }
+                } catch (bookingError) {
+                    console.error('❌ Error creating booking:', bookingError);
+                    toast({
+                        title: "Booking Error",
+                        description: "Payment was successful but there was an issue creating your booking. Please contact support.",
+                        variant: "destructive"
+                    });
+                }
+            }
 
             setPaymentStatus({
                 success: isSuccess,
@@ -345,11 +391,12 @@ const PaymentSuccess: React.FC = () => {
                 {/* Actions */}
                 <div className="space-y-4">
                     {paymentStatus.status === 'success' && (
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            <Button onClick={downloadReceipt} variant="outline" className="w-full">
+                        <div className="grid grid-cols-1 gap-4">
+                            {/* Download Receipt button temporarily hidden - downloads JSON instead of PDF */}
+                            {/* <Button onClick={downloadReceipt} variant="outline" className="w-full">
                                 <Download className="w-4 h-4 mr-2" />
                                 Download Receipt
-                            </Button>
+                            </Button> */}
 
                             <Button
                                 onClick={() => navigate('/dashboard')}

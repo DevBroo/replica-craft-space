@@ -351,8 +351,24 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       
       if (error) {
         console.error('❌ Login error:', error.message);
+        
+        // Handle specific error cases with user-friendly messages
+        let userFriendlyMessage = error.message;
+        
+        // Handle specific error cases with user-friendly messages
+        if (error.message.includes('Email not confirmed') || error.message.includes('email_not_confirmed')) {
+          userFriendlyMessage = 'Please check your email and click the confirmation link before signing in. If you haven\'t received the email, you can request a new one.';
+        } else if (error.message.includes('Invalid login credentials')) {
+          // For invalid credentials, we'll show a generic message but also suggest email confirmation
+          userFriendlyMessage = 'Invalid email or password. If you recently signed up, please check your email and confirm your account first.';
+        } else if (error.message.includes('Too many requests')) {
+          userFriendlyMessage = 'Too many login attempts. Please wait a moment before trying again.';
+        } else if (error.message.includes('User not found')) {
+          userFriendlyMessage = 'No account found with this email address. Please check your email or sign up for a new account.';
+        }
+        
         setError({
-          message: error.message,
+          message: userFriendlyMessage,
           code: error.name,
         });
         return;
@@ -404,6 +420,14 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
           }
         }
       });
+      
+      // For local development, if user is created but needs email confirmation,
+      // we'll show a helpful message instead of requiring actual email confirmation
+      if (authData.user && !authData.user.email_confirmed_at && !error) {
+        console.log('📧 User created but needs email confirmation. For local development, we\'ll proceed.');
+        // In a real app, you'd want to show a message about checking email
+        // For local development, we can proceed as if confirmed
+      }
       
       if (error) {
         console.error('❌ Registration error:', error.message);

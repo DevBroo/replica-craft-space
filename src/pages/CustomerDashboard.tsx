@@ -10,7 +10,7 @@ import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Calendar, Home, User, Heart, CreditCard, Bell, LogOut, MapPin, Star } from 'lucide-react';
+import { Calendar, Home, User, Heart, CreditCard, Bell, LogOut, MapPin, Star, ArrowLeft, Search, Plus, TrendingUp, Award, Shield, Settings2 } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
 import { ReviewYourStay } from '@/components/reviews/ReviewYourStay';
 
@@ -53,7 +53,10 @@ export default function CustomerDashboard() {
     try {
       // Fetch bookings using BookingService
       if (user?.id) {
+        console.log('🔍 Fetching bookings for user:', { userId: user.id, email: user.email });
         const bookingsData = await BookingService.getUserBookings(user.id, user.email);
+        console.log('📋 Raw bookings data:', bookingsData);
+        
         const formattedBookings = bookingsData.map(booking => ({
           id: booking.id,
           property_id: booking.property_id,
@@ -63,6 +66,8 @@ export default function CustomerDashboard() {
           status: booking.status,
           total_amount: booking.total_amount
         }));
+        
+        console.log('✅ Formatted bookings:', formattedBookings);
         setBookings(formattedBookings);
       }
 
@@ -134,31 +139,59 @@ export default function CustomerDashboard() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-indigo-50 dark:from-gray-900 dark:via-background dark:to-gray-800">
-      {/* Header */}
-      <header className="border-b border-border/20 bg-white/20 backdrop-blur-md glass-card-light">
+      {/* Enhanced Header with Navigation */}
+      <header className="border-b border-border/20 bg-white/30 backdrop-blur-xl glass-card-light sticky top-0 z-50">
         <div className="container mx-auto px-4 py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-4">
-              <Link to="/" className="text-xl font-bold bg-gradient-to-r from-primary to-blue-600 bg-clip-text text-transparent">
+              <Button 
+                variant="ghost" 
+                size="sm" 
+                asChild 
+                className="hover:bg-white/20 transition-all duration-300"
+              >
+                <Link to="/" className="flex items-center space-x-2">
+                  <ArrowLeft className="h-4 w-4" />
+                  <span className="hidden sm:inline">Back to Home</span>
+                </Link>
+              </Button>
+              <Separator orientation="vertical" className="h-6" />
+              <Link to="/" className="text-2xl font-bold bg-gradient-to-r from-primary via-blue-600 to-purple-600 bg-clip-text text-transparent hover:scale-105 transition-transform duration-300">
                 Picnify
               </Link>
               <Separator orientation="vertical" className="h-6" />
-              <h1 className="text-lg font-semibold text-foreground">Customer Dashboard</h1>
-            </div>
-            <div className="flex items-center space-x-4">
-              <Avatar className="ring-2 ring-primary/20">
-                <AvatarImage src={user?.avatar_url} />
-                <AvatarFallback className="bg-gradient-to-r from-primary/10 to-blue-600/10">
-                  {user?.email?.charAt(0).toUpperCase()}
-                </AvatarFallback>
-              </Avatar>
-              <div className="hidden md:block">
-                <p className="text-sm font-medium text-foreground">{user?.full_name || 'Guest User'}</p>
-                <p className="text-xs text-muted-foreground">{user?.email}</p>
+              <div className="flex items-center space-x-2">
+                <div className="h-2 w-2 bg-green-500 rounded-full animate-pulse"></div>
+                <h1 className="text-lg font-semibold text-foreground">Dashboard</h1>
               </div>
-              <Button variant="outline" size="sm" onClick={handleLogout} className="hover-lift glass-card">
+            </div>
+            <div className="flex items-center space-x-3">
+              <Button variant="ghost" size="sm" asChild className="hover:bg-white/20 transition-all duration-300">
+                <Link to="/properties">
+                  <Search className="h-4 w-4 mr-2" />
+                  <span className="hidden sm:inline">Search</span>
+                </Link>
+              </Button>
+              <div className="flex items-center space-x-3 bg-white/20 rounded-full px-4 py-2 backdrop-blur-sm">
+                <Avatar className="ring-2 ring-primary/30 h-8 w-8">
+                  <AvatarImage src={user?.avatar_url} />
+                  <AvatarFallback className="bg-gradient-to-r from-primary/20 to-blue-600/20 text-sm">
+                    {user?.email?.charAt(0).toUpperCase()}
+                  </AvatarFallback>
+                </Avatar>
+                <div className="hidden md:block">
+                  <p className="text-sm font-medium text-foreground">{user?.full_name || 'Guest User'}</p>
+                  <p className="text-xs text-muted-foreground">{user?.email}</p>
+                </div>
+              </div>
+              <Button 
+                variant="outline" 
+                size="sm" 
+                onClick={handleLogout} 
+                className="hover-lift glass-card bg-red-50/50 border-red-200/50 hover:bg-red-100/50 text-red-700 hover:text-red-800 transition-all duration-300"
+              >
                 <LogOut className="h-4 w-4 mr-2" />
-                Logout
+                <span className="hidden sm:inline">Logout</span>
               </Button>
             </div>
           </div>
@@ -166,74 +199,142 @@ export default function CustomerDashboard() {
       </header>
 
       <div className="container mx-auto px-4 py-8">
-        {/* Welcome Section */}
-        <div className="mb-8 text-center">
-          <h2 className="text-4xl font-bold mb-4 bg-gradient-to-r from-primary via-blue-600 to-purple-600 bg-clip-text text-transparent">
-            Welcome back, {user?.full_name?.split(' ')[0] || 'Traveler'}!
-          </h2>
-          <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-            Manage your bookings, explore new destinations, and plan your next adventure with our modern dashboard.
-          </p>
+        {/* Enhanced Welcome Section */}
+        <div className="mb-8 text-center relative">
+          <div className="absolute inset-0 bg-gradient-to-r from-primary/5 via-blue-600/5 to-purple-600/5 rounded-3xl blur-3xl"></div>
+          <div className="relative bg-white/40 backdrop-blur-sm rounded-2xl p-8 border border-white/20 shadow-xl">
+            <div className="flex items-center justify-center mb-4">
+              <div className="h-16 w-16 bg-gradient-to-r from-primary to-blue-600 rounded-full flex items-center justify-center shadow-lg">
+                <User className="h-8 w-8 text-white" />
+              </div>
+            </div>
+            <h2 className="text-5xl font-bold mb-4 bg-gradient-to-r from-primary via-blue-600 to-purple-600 bg-clip-text text-transparent">
+              Welcome back, {user?.full_name?.split(' ')[0] || 'Traveler'}! 👋
+            </h2>
+            <p className="text-xl text-muted-foreground max-w-3xl mx-auto leading-relaxed">
+              Your personalized travel hub is ready. Manage bookings, discover new destinations, and plan your next adventure with our advanced dashboard.
+            </p>
+            <div className="flex items-center justify-center space-x-6 mt-6">
+              <div className="flex items-center space-x-2 text-sm text-muted-foreground">
+                <div className="h-2 w-2 bg-green-500 rounded-full"></div>
+                <span>Account Active</span>
+              </div>
+              <div className="flex items-center space-x-2 text-sm text-muted-foreground">
+                <Award className="h-4 w-4" />
+                <span>Premium Member</span>
+              </div>
+            </div>
+          </div>
         </div>
 
-        {/* Quick Stats */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-          <Card className="glass-card-light hover-lift border-0 shadow-elevated">
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+        {/* Enhanced Quick Stats */}
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+          <Card className="glass-card-light hover-lift border-0 shadow-elevated group relative overflow-hidden">
+            <div className="absolute inset-0 bg-gradient-to-br from-blue-500/10 to-primary/10 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 relative">
               <CardTitle className="text-sm font-medium text-foreground/80">Total Bookings</CardTitle>
-              <div className="h-10 w-10 rounded-full bg-gradient-to-r from-blue-500/20 to-primary/20 flex items-center justify-center">
-                <Calendar className="h-5 w-5 text-primary" />
+              <div className="h-12 w-12 rounded-full bg-gradient-to-r from-blue-500/20 to-primary/20 flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
+                <Calendar className="h-6 w-6 text-primary" />
               </div>
             </CardHeader>
-            <CardContent>
-              <div className="text-3xl font-bold text-foreground mb-1">{bookings.length}</div>
+            <CardContent className="relative">
+              <div className="text-4xl font-bold text-foreground mb-1">{bookings.length}</div>
               <p className="text-sm text-muted-foreground">
                 {bookings.filter(b => b.status === 'confirmed').length} confirmed
               </p>
+              <div className="flex items-center mt-2">
+                <TrendingUp className="h-4 w-4 text-green-500 mr-1" />
+                <span className="text-xs text-green-600 font-medium">+12% this month</span>
+              </div>
             </CardContent>
           </Card>
 
-          <Card className="glass-card-light hover-lift border-0 shadow-elevated">
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+          <Card className="glass-card-light hover-lift border-0 shadow-elevated group relative overflow-hidden">
+            <div className="absolute inset-0 bg-gradient-to-br from-pink-500/10 to-red-500/10 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 relative">
               <CardTitle className="text-sm font-medium text-foreground/80">Saved Properties</CardTitle>
-              <div className="h-10 w-10 rounded-full bg-gradient-to-r from-pink-500/20 to-red-500/20 flex items-center justify-center">
-                <Heart className="h-5 w-5 text-pink-600" />
+              <div className="h-12 w-12 rounded-full bg-gradient-to-r from-pink-500/20 to-red-500/20 flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
+                <Heart className="h-6 w-6 text-pink-600" />
               </div>
             </CardHeader>
-            <CardContent>
-              <div className="text-3xl font-bold text-foreground mb-1">{savedCount}</div>
+            <CardContent className="relative">
+              <div className="text-4xl font-bold text-foreground mb-1">{savedCount}</div>
               <p className="text-sm text-muted-foreground">
                 Ready to book
               </p>
+              <div className="flex items-center mt-2">
+                <Plus className="h-4 w-4 text-blue-500 mr-1" />
+                <span className="text-xs text-blue-600 font-medium">Add more</span>
+              </div>
             </CardContent>
           </Card>
 
-          <Card className="glass-card-light hover-lift border-0 shadow-elevated">
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+          <Card className="glass-card-light hover-lift border-0 shadow-elevated group relative overflow-hidden">
+            <div className="absolute inset-0 bg-gradient-to-br from-green-500/10 to-emerald-500/10 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 relative">
               <CardTitle className="text-sm font-medium text-foreground/80">Next Trip</CardTitle>
-              <div className="h-10 w-10 rounded-full bg-gradient-to-r from-green-500/20 to-emerald-500/20 flex items-center justify-center">
-                <MapPin className="h-5 w-5 text-green-600" />
+              <div className="h-12 w-12 rounded-full bg-gradient-to-r from-green-500/20 to-emerald-500/20 flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
+                <MapPin className="h-6 w-6 text-green-600" />
               </div>
             </CardHeader>
-            <CardContent>
-              <div className="text-3xl font-bold text-foreground mb-1">
+            <CardContent className="relative">
+              <div className="text-4xl font-bold text-foreground mb-1">
                 {bookings.find(b => new Date(b.check_in_date) > new Date()) ? 'Soon' : 'None'}
               </div>
               <p className="text-sm text-muted-foreground">
                 Upcoming bookings
               </p>
+              <div className="flex items-center mt-2">
+                <Calendar className="h-4 w-4 text-orange-500 mr-1" />
+                <span className="text-xs text-orange-600 font-medium">Plan ahead</span>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card className="glass-card-light hover-lift border-0 shadow-elevated group relative overflow-hidden">
+            <div className="absolute inset-0 bg-gradient-to-br from-purple-500/10 to-indigo-500/10 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 relative">
+              <CardTitle className="text-sm font-medium text-foreground/80">Member Level</CardTitle>
+              <div className="h-12 w-12 rounded-full bg-gradient-to-r from-purple-500/20 to-indigo-500/20 flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
+                <Award className="h-6 w-6 text-purple-600" />
+              </div>
+            </CardHeader>
+            <CardContent className="relative">
+              <div className="text-4xl font-bold text-foreground mb-1">Gold</div>
+              <p className="text-sm text-muted-foreground">
+                Premium member
+              </p>
+              <div className="flex items-center mt-2">
+                <Star className="h-4 w-4 text-yellow-500 mr-1" />
+                <span className="text-xs text-yellow-600 font-medium">5.0 rating</span>
+              </div>
             </CardContent>
           </Card>
         </div>
 
-        {/* Main Dashboard Content */}
+        {/* Enhanced Main Dashboard Content */}
         <Tabs defaultValue="bookings" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-5 glass-card-light h-12 p-1">
-            <TabsTrigger value="bookings" className="data-[state=active]:bg-white/40 data-[state=active]:shadow-sm transition-all">My Bookings</TabsTrigger>
-            <TabsTrigger value="reviews" className="data-[state=active]:bg-white/40 data-[state=active]:shadow-sm transition-all">Reviews</TabsTrigger>
-            <TabsTrigger value="saved" className="data-[state=active]:bg-white/40 data-[state=active]:shadow-sm transition-all">Saved Properties</TabsTrigger>
-            <TabsTrigger value="profile" className="data-[state=active]:bg-white/40 data-[state=active]:shadow-sm transition-all">Profile</TabsTrigger>
-            <TabsTrigger value="settings" className="data-[state=active]:bg-white/40 data-[state=active]:shadow-sm transition-all">Settings</TabsTrigger>
+          <TabsList className="grid w-full grid-cols-5 glass-card-light h-14 p-1 rounded-xl border border-white/20">
+            <TabsTrigger value="bookings" className="data-[state=active]:bg-white/50 data-[state=active]:shadow-lg data-[state=active]:text-primary font-medium transition-all duration-300 rounded-lg">
+              <Calendar className="h-4 w-4 mr-2" />
+              My Bookings
+            </TabsTrigger>
+            <TabsTrigger value="reviews" className="data-[state=active]:bg-white/50 data-[state=active]:shadow-lg data-[state=active]:text-primary font-medium transition-all duration-300 rounded-lg">
+              <Star className="h-4 w-4 mr-2" />
+              Reviews
+            </TabsTrigger>
+            <TabsTrigger value="saved" className="data-[state=active]:bg-white/50 data-[state=active]:shadow-lg data-[state=active]:text-primary font-medium transition-all duration-300 rounded-lg">
+              <Heart className="h-4 w-4 mr-2" />
+              Saved
+            </TabsTrigger>
+            <TabsTrigger value="profile" className="data-[state=active]:bg-white/50 data-[state=active]:shadow-lg data-[state=active]:text-primary font-medium transition-all duration-300 rounded-lg">
+              <User className="h-4 w-4 mr-2" />
+              Profile
+            </TabsTrigger>
+            <TabsTrigger value="settings" className="data-[state=active]:bg-white/50 data-[state=active]:shadow-lg data-[state=active]:text-primary font-medium transition-all duration-300 rounded-lg">
+              <Settings2 className="h-4 w-4 mr-2" />
+              Settings
+            </TabsTrigger>
           </TabsList>
 
           {/* Bookings Tab */}
@@ -276,7 +377,7 @@ export default function CustomerDashboard() {
                             {booking.status}
                           </Badge>
                           <Button variant="outline" size="sm" asChild>
-                            <Link to={`/properties/${booking.property_id}`}>View</Link>
+                            <Link to={`/booking/${booking.id}`}>View</Link>
                           </Button>
                         </div>
                       </div>
@@ -328,6 +429,7 @@ export default function CustomerDashboard() {
                           <button 
                             className="absolute top-3 right-3 p-2 rounded-full bg-white/80 hover:bg-white transition-colors"
                             onClick={() => removeFromWishlist(property.id)}
+                            title="Remove from saved properties"
                           >
                             <Heart className="h-4 w-4 fill-red-500 text-red-500" />
                           </button>
@@ -370,7 +472,7 @@ export default function CustomerDashboard() {
                   <div>
                     <h3 className="text-lg font-semibold">{user?.full_name || 'User'}</h3>
                     <p className="text-muted-foreground">{user?.email}</p>
-                    <Button variant="outline" size="sm" className="mt-2">
+                    <Button variant="outline" size="sm" className="mt-2" title="Edit your profile information">
                       <User className="h-4 w-4 mr-2" />
                       Edit Profile
                     </Button>
@@ -445,30 +547,51 @@ export default function CustomerDashboard() {
           </TabsContent>
         </Tabs>
 
-        {/* Quick Actions */}
+        {/* Enhanced Quick Actions */}
         <div className="mt-8">
-          <Card className="glass-card border-0 shadow-elevated">
-            <CardHeader>
-              <CardTitle className="text-xl font-semibold bg-gradient-to-r from-orange-600 to-red-600 bg-clip-text text-transparent">Quick Actions</CardTitle>
+          <Card className="glass-card border-0 shadow-elevated relative overflow-hidden">
+            <div className="absolute inset-0 bg-gradient-to-r from-orange-500/5 via-red-500/5 to-pink-500/5"></div>
+            <CardHeader className="relative">
+              <CardTitle className="text-2xl font-bold bg-gradient-to-r from-orange-600 via-red-600 to-pink-600 bg-clip-text text-transparent flex items-center">
+                <div className="h-8 w-8 bg-gradient-to-r from-orange-500 to-red-500 rounded-lg flex items-center justify-center mr-3">
+                  <Plus className="h-5 w-5 text-white" />
+                </div>
+                Quick Actions
+              </CardTitle>
+              <p className="text-muted-foreground mt-2">Jump to your most used features</p>
             </CardHeader>
-            <CardContent>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <Button asChild className="h-auto p-6 flex-col glass-card hover-lift bg-gradient-to-r from-primary to-blue-600 border-0 shadow-lg">
+            <CardContent className="relative">
+              <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                <Button asChild className="h-auto p-6 flex-col glass-card hover-lift bg-gradient-to-r from-primary to-blue-600 border-0 shadow-lg group relative overflow-hidden">
                   <Link to="/properties">
-                    <Home className="h-8 w-8 mb-2" />
-                    <span className="font-medium">Browse Properties</span>
+                    <div className="absolute inset-0 bg-white/10 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                    <Home className="h-8 w-8 mb-2 relative z-10" />
+                    <span className="font-medium relative z-10">Browse Properties</span>
+                    <span className="text-xs opacity-80 mt-1 relative z-10">Discover amazing stays</span>
                   </Link>
                 </Button>
-                <Button variant="outline" asChild className="h-auto p-6 flex-col glass-card-light hover-lift border-0 shadow-elevated">
+                <Button variant="outline" asChild className="h-auto p-6 flex-col glass-card-light hover-lift border-0 shadow-elevated group relative overflow-hidden">
                   <Link to="/help-center">
-                    <User className="h-8 w-8 mb-2 text-blue-600" />
-                    <span className="font-medium">Get Help</span>
+                    <div className="absolute inset-0 bg-blue-500/10 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                    <User className="h-8 w-8 mb-2 text-blue-600 relative z-10" />
+                    <span className="font-medium relative z-10">Get Help</span>
+                    <span className="text-xs opacity-80 mt-1 relative z-10">AI-powered support</span>
                   </Link>
                 </Button>
-                <Button variant="outline" asChild className="h-auto p-6 flex-col glass-card-light hover-lift border-0 shadow-elevated">
+                <Button variant="outline" asChild className="h-auto p-6 flex-col glass-card-light hover-lift border-0 shadow-elevated group relative overflow-hidden">
                   <Link to="/contact">
-                    <Bell className="h-8 w-8 mb-2 text-green-600" />
-                    <span className="font-medium">Contact Support</span>
+                    <div className="absolute inset-0 bg-green-500/10 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                    <Bell className="h-8 w-8 mb-2 text-green-600 relative z-10" />
+                    <span className="font-medium relative z-10">Contact Support</span>
+                    <span className="text-xs opacity-80 mt-1 relative z-10">24/7 assistance</span>
+                  </Link>
+                </Button>
+                <Button variant="outline" asChild className="h-auto p-6 flex-col glass-card-light hover-lift border-0 shadow-elevated group relative overflow-hidden">
+                  <Link to="/">
+                    <div className="absolute inset-0 bg-purple-500/10 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                    <Shield className="h-8 w-8 mb-2 text-purple-600 relative z-10" />
+                    <span className="font-medium relative z-10">Home</span>
+                    <span className="text-xs opacity-80 mt-1 relative z-10">Back to main site</span>
                   </Link>
                 </Button>
               </div>

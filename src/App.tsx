@@ -34,6 +34,7 @@ import Signup from "@/pages/Signup";
 import ForgotPassword from "@/pages/ForgotPassword";
 import ResetPassword from "@/pages/ResetPassword";
 import ResendVerification from "@/pages/ResendVerification";
+import ManualEmailConfirmation from "@/pages/ManualEmailConfirmation";
 
 // Customer Pages (immediate load)
 import CustomerDashboard from "@/pages/CustomerDashboard";
@@ -218,6 +219,7 @@ function App() {
                     <Route path="/forgot-password" element={<ForgotPassword />} />
                     <Route path="/reset-password" element={<ResetPassword />} />
                     <Route path="/resend-verification" element={<ResendVerification />} />
+                    <Route path="/manual-email-confirmation" element={<ManualEmailConfirmation />} />
                     <Route path="/auth/callback" element={
                       <Suspense fallback={<LoadingSpinner />}>
                         <AuthCallback />

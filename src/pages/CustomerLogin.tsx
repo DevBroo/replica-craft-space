@@ -12,12 +12,14 @@ import picnifyLogo from '/lovable-uploads/f7960b1f-407a-4738-b8f6-067ea4600889.p
 const CustomerLogin: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
-  const { login, loading, error, clearError, isAuthenticated, user } = useAuth();
+  const { login, loading, error, clearError, isAuthenticated, user, resendVerification } = useAuth();
   
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
+  const [resendLoading, setResendLoading] = useState(false);
+  const [resendMessage, setResendMessage] = useState<string | null>(null);
 
   // Check for success message from signup
   useEffect(() => {
@@ -88,6 +90,9 @@ const CustomerLogin: React.FC = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    clearError();
+    setSuccessMessage(null);
+    setResendMessage(null);
     
     if (!email.trim() || !password.trim()) {
       return;
@@ -98,6 +103,30 @@ const CustomerLogin: React.FC = () => {
       // The redirect will be handled by the useEffect above
     } catch (err) {
       console.error('Login error:', err);
+    }
+  };
+
+  const handleResendConfirmation = async () => {
+    if (!email.trim()) {
+      setResendMessage('Please enter your email address first.');
+      return;
+    }
+
+    setResendLoading(true);
+    setResendMessage(null);
+    clearError();
+
+    try {
+      const result = await resendVerification(email);
+      if (result.error) {
+        setResendMessage(result.error.message || 'Failed to resend confirmation email.');
+      } else {
+        setResendMessage('Confirmation email sent! Please check your inbox and spam folder.');
+      }
+    } catch (err) {
+      setResendMessage('Failed to resend confirmation email. Please try again.');
+    } finally {
+      setResendLoading(false);
     }
   };
 
@@ -133,6 +162,14 @@ const CustomerLogin: React.FC = () => {
               <Alert className="mb-6 border-green-200 bg-green-50">
                 <AlertDescription className="text-green-800">
                   {successMessage}
+                </AlertDescription>
+              </Alert>
+            )}
+
+            {resendMessage && (
+              <Alert className={`mb-6 ${resendMessage.includes('sent') ? 'border-green-200 bg-green-50' : 'border-red-200 bg-red-50'}`}>
+                <AlertDescription className={resendMessage.includes('sent') ? 'text-green-800' : 'text-red-800'}>
+                  {resendMessage}
                 </AlertDescription>
               </Alert>
             )}
@@ -203,6 +240,28 @@ const CustomerLogin: React.FC = () => {
                 )}
               </Button>
             </form>
+
+            {/* Resend Confirmation Button */}
+            {error && (error.message.includes('confirmation') || error.message.includes('confirm')) && (
+              <div className="mt-4 text-center">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={handleResendConfirmation}
+                  disabled={resendLoading || !email.trim()}
+                  className="w-full"
+                >
+                  {resendLoading ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      Sending...
+                    </>
+                  ) : (
+                    'Resend Confirmation Email'
+                  )}
+                </Button>
+              </div>
+            )}
 
             <div className="mt-6 text-center">
               <p className="text-muted-foreground">

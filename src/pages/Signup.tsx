@@ -528,16 +528,21 @@ const Signup: React.FC = () => {
 
               {/* Terms and Conditions */}
               <div className="flex items-start space-x-2">
-                <Checkbox
+                <input
+                  type="checkbox"
                   id="terms"
+                  title="I agree to the Terms of Service and Privacy Policy"
                   checked={agreeToTerms}
-                  onCheckedChange={(checked) => setAgreeToTerms(checked as boolean)}
-                  className="mt-1"
+                  onChange={(e) => {
+                    console.log('Checkbox clicked, new value:', e.target.checked);
+                    setAgreeToTerms(e.target.checked);
+                  }}
+                  className="mt-1 h-4 w-4 rounded border-2 border-primary text-primary focus:ring-2 focus:ring-primary focus:ring-offset-2"
                 />
                 <div className="grid gap-1.5 leading-none">
                   <Label
                     htmlFor="terms"
-                    className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                    className="text-sm font-medium leading-none cursor-pointer"
                   >
                     I agree to the{' '}
                     <Link to="/terms" className="text-red-600 hover:text-red-500 underline">

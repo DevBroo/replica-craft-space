@@ -987,11 +987,21 @@ const PropertyDetails = () => {
                   {/* Quick Contact */}
                   {property.contact_phone && (
                     <div className="flex gap-2 pt-4">
-                      <Button variant="outline" className="flex-1" size="sm">
+                      <Button 
+                        variant="outline" 
+                        className="flex-1" 
+                        size="sm"
+                        onClick={() => window.open(`tel:${property.contact_phone}`, '_self')}
+                      >
                         <Phone className="h-4 w-4 mr-2" />
                         Call
                       </Button>
-                      <Button variant="outline" className="flex-1" size="sm">
+                      <Button 
+                        variant="outline" 
+                        className="flex-1" 
+                        size="sm"
+                        onClick={() => window.open(`https://wa.me/${property.contact_phone?.replace(/[^0-9]/g, '')}`, '_blank')}
+                      >
                         <MessageCircle className="h-4 w-4 mr-2" />
                         WhatsApp
                       </Button>

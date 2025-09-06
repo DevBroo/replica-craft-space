@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Book, CreditCard, Calendar, Users, MapPin, CheckCircle, Phone, Mail, MessageCircle } from 'lucide-react';
-import { LiveChatModal } from '@/components/support/LiveChatModal';
+import { AIChatModal } from '@/components/support/AIChatModal';
 
 const BookingAssistance = () => {
   const [openChatModal, setOpenChatModal] = useState(false);
@@ -192,7 +192,13 @@ const BookingAssistance = () => {
               <Phone className="w-12 h-12 text-primary mx-auto mb-4" />
               <h3 className="font-semibold mb-2">Call Us</h3>
               <p className="text-sm text-muted-foreground mb-3">Speak with a booking expert</p>
-              <p className="font-semibold">1800-XXX-XXXX</p>
+              <p className="font-semibold mb-3">+91 80 1234 5678</p>
+              <button 
+                onClick={() => window.open('tel:+918012345678', '_self')}
+                className="bg-primary text-primary-foreground px-4 py-2 rounded-lg text-sm font-semibold hover:bg-primary/90 transition-colors"
+              >
+                Call Now
+              </button>
             </div>
             
             <div className="text-center">
@@ -217,8 +223,8 @@ const BookingAssistance = () => {
         </section>
       </main>
 
-      {/* Live Chat Modal */}
-      <LiveChatModal open={openChatModal} onOpenChange={setOpenChatModal} />
+      {/* AI Chat Modal */}
+      <AIChatModal open={openChatModal} onOpenChange={setOpenChatModal} />
     </div>
   );
 };

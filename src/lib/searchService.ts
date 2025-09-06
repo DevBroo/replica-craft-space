@@ -113,18 +113,22 @@ export class SearchService {
           // Search for exact city and state match
           const [city, state] = locationParts;
           query = query
-            .ilike('location->>city', city)
-            .ilike('location->>state', state);
+            .ilike('location->>city', `%${city}%`)
+            .ilike('location->>state', `%${state}%`);
         } else {
           // Search in both city and state fields for single term
           query = query.or(
-            `location->>city.ilike.%${filters.location}%,location->>state.ilike.%${filters.location}%`
+            `location->>city.ilike.%${filters.location}%,location->>state.ilike.%${filters.location}%,general_location.ilike.%${filters.location}%`
           );
         }
       }
 
       // Apply category filter
       if (filters.category && filters.category !== ('all' as any)) {
+        // If category is 'day-picnic', return empty array since day picnics are handled separately
+        if (filters.category === 'day-picnic') {
+          return [];
+        }
         query = query.eq('property_type', filters.category);
       }
 

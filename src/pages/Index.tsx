@@ -348,7 +348,10 @@ const Index: React.FC = () => {
                       />
                       <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
                       <div className="absolute top-4 right-4">
-                        <button className="w-12 h-12 bg-white/90 backdrop-blur-sm rounded-full flex items-center justify-center shadow-lg hover:bg-red-500 hover:text-white transition-all duration-300 group">
+                        <button 
+                          className="w-12 h-12 bg-white/90 backdrop-blur-sm rounded-full flex items-center justify-center shadow-lg hover:bg-red-500 hover:text-white transition-all duration-300 group"
+                          title="Add to favorites"
+                        >
                           <i className="fas fa-heart text-gray-600 group-hover:text-white"></i>
                         </button>
                       </div>
@@ -523,10 +526,6 @@ const Index: React.FC = () => {
                 >
                   <i className="fas fa-plus-circle"></i>
                   List Your Property
-                </button>
-                <button className="border-2 border-white text-white px-8 py-4 rounded-xl font-bold text-lg hover:bg-white hover:text-gray-900 transition-all duration-300 cursor-pointer whitespace-nowrap rounded-button flex items-center justify-center gap-3">
-                  <i className="fas fa-play-circle"></i>
-                  Watch Demo
                 </button>
               </div>
               <div className="mt-8 flex items-center gap-8">
