@@ -233,14 +233,10 @@ export class MessageService {
       // Extract booking ID from thread ID
       const bookingId = threadId.replace('thread-', '');
       
-      // Try to get real messages from database
+      // Try to get real messages from database using separate queries
       const { data: messages, error } = await supabase
-        .from('messages' as any)
-        .select(`
-          *,
-          sender:profiles!messages_sender_id_fkey(full_name),
-          property:properties!messages_property_id_fkey(title)
-        `)
+        .from('messages')
+        .select('*')
         .eq('booking_id', bookingId)
         .order('created_at', { ascending: true });
 
@@ -255,6 +251,21 @@ export class MessageService {
         return [];
       }
 
+      // Get sender and property info separately
+      const senderIds = [...new Set(messages.map(m => m.sender_id))];
+      const { data: profiles } = await supabase
+        .from('profiles')
+        .select('id, full_name')
+        .in('id', senderIds);
+
+      const { data: property } = await supabase
+        .from('properties')
+        .select('id, title')
+        .eq('id', messages[0]?.property_id)
+        .single();
+
+      const profileMap = new Map(profiles?.map(p => [p.id, p.full_name]) || []);
+
       // Convert database messages to Message format
       const formattedMessages: Message[] = messages.map((msg: any) => ({
         id: msg.id,
@@ -268,8 +279,8 @@ export class MessageService {
         read_at: msg.read_at,
         created_at: msg.created_at,
         updated_at: msg.updated_at,
-        sender_name: msg.sender?.full_name || 'Unknown User',
-        property_title: msg.property?.title || 'Property'
+        sender_name: profileMap.get(msg.sender_id) || 'Unknown User',
+        property_title: property?.title || 'Property'
       }));
 
       console.log('✅ Real messages loaded:', formattedMessages.length);
@@ -295,7 +306,7 @@ export class MessageService {
 
       // Try to save to messages table
       const { data: savedMessage, error } = await supabase
-        .from('messages' as any)
+        .from('messages')
         .insert({
           booking_id: messageData.booking_id,
           property_id: messageData.property_id,
@@ -305,11 +316,7 @@ export class MessageService {
           message_type: messageData.message_type || 'text',
           is_read: false
         })
-        .select(`
-          *,
-          sender:profiles!messages_sender_id_fkey(full_name),
-          property:properties!messages_property_id_fkey(title)
-        `)
+        .select('*')
         .single();
 
       if (error) {
@@ -333,6 +340,19 @@ export class MessageService {
         return localMessage;
       }
 
+      // Get sender and property info separately
+      const { data: senderProfile } = await supabase
+        .from('profiles')
+        .select('full_name')
+        .eq('id', user.id)
+        .single();
+
+      const { data: property } = await supabase
+        .from('properties')
+        .select('title')
+        .eq('id', messageData.property_id)
+        .single();
+
       // Convert saved message to Message format
       const message = savedMessage as any;
       const formattedMessage: Message = {
@@ -347,8 +367,8 @@ export class MessageService {
         read_at: message.read_at,
         created_at: message.created_at,
         updated_at: message.updated_at,
-        sender_name: message.sender?.full_name || 'You',
-        property_title: message.property?.title || 'Property'
+        sender_name: senderProfile?.full_name || 'You',
+        property_title: property?.title || 'Property'
       };
 
       console.log('✅ Message saved to database successfully');
