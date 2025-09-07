@@ -181,6 +181,9 @@ const Profile: React.FC<ProfileProps> = ({ sidebarCollapsed, toggleSidebar, acti
   const handleSave = async () => {
     if (!user?.id) return;
     
+    const saveButton = document.querySelector('[data-save-button]') as HTMLButtonElement;
+    if (saveButton) saveButton.disabled = true;
+    
     try {
       // Update profile with new data including bio fields
       await updateProfile({
@@ -197,24 +200,15 @@ const Profile: React.FC<ProfileProps> = ({ sidebarCollapsed, toggleSidebar, acti
         title: "Success",
         description: "Profile updated successfully!",
       });
-      
-      // Update the profile data state to reflect the saved changes
-      setProfileData(prev => ({
-        ...prev,
-        name: profileData.name,
-        email: profileData.email,
-        phone: profileData.phone,
-        location: profileData.location,
-        about: profileData.about,
-        languages: profileData.languages,
-      }));
     } catch (error) {
       console.error('Profile update error:', error);
       toast({
         title: "Error",
-        description: "Failed to update profile",
+        description: error instanceof Error ? error.message : "Failed to update profile",
         variant: "destructive",
       });
+    } finally {
+      if (saveButton) saveButton.disabled = false;
     }
   };
 
@@ -422,7 +416,8 @@ const Profile: React.FC<ProfileProps> = ({ sidebarCollapsed, toggleSidebar, acti
                   <>
                     <button
                       onClick={handleSave}
-                      className="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition-colors cursor-pointer flex items-center space-x-2"
+                      data-save-button
+                      className="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition-colors cursor-pointer flex items-center space-x-2 disabled:opacity-50 disabled:cursor-not-allowed"
                     >
                       <Save className="h-4 w-4" />
                       <span>Save</span>

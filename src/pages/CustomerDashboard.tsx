@@ -140,7 +140,11 @@ export default function CustomerDashboard() {
 
     setEditLoading(true);
     try {
-      await updateProfile(profileForm);
+      await updateProfile({
+        full_name: profileForm.full_name,
+        phone: profileForm.phone,
+        about: profileForm.bio
+      });
       setShowEditProfile(false);
       toast({
         title: "Profile Updated",

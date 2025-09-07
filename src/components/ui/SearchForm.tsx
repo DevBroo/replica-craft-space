@@ -24,7 +24,7 @@ const SearchForm: React.FC<SearchFormProps> = ({
   const navigate = useNavigate();
   const [filters, setFilters] = useState<SearchFilters>({
     location: 'all',
-    category: 'all',
+    category: 'day-picnic',
     date: '',
     guests: 2,
     search: '',

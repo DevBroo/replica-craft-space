@@ -554,10 +554,20 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       setError(null);
       
       if (!user) {
-        setError({ message: 'No user logged in' });
-        return;
+        throw new Error('No user logged in');
       }
       
+      // Handle email change via auth
+      if (updates.email && updates.email !== user.email) {
+        const { error: emailError } = await supabase.auth.updateUser({
+          email: updates.email
+        });
+        if (emailError) {
+          throw new Error(`Failed to update email: ${emailError.message}`);
+        }
+      }
+      
+      // Update profile in database
       const { error } = await supabase
         .from('profiles')
         .update({
@@ -572,24 +582,26 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         .eq('id', user.id);
       
       if (error) {
-        setError({
-          message: error.message,
-          code: error.code,
-        });
-        return;
+        throw new Error(`Failed to update profile: ${error.message}`);
       }
       
-      // Refresh user data
-      const updatedProfile = await getUserProfile(user.id);
-      setUser(updatedProfile);
+      // Update local user state immediately
+      const updatedUser = { 
+        ...user, 
+        ...updates,
+        updated_at: new Date().toISOString()
+      };
+      setUser(updatedUser);
       
       console.log('✅ Profile updated successfully');
     } catch (err: unknown) {
       const errorMessage = err instanceof Error ? err.message : 'Profile update failed';
+      console.error('❌ Profile update error:', errorMessage);
       setError({
         message: errorMessage,
         code: 'UPDATE_ERROR',
       });
+      throw err; // Re-throw to allow callers to handle
     } finally {
       setLoading(false);
     }
