@@ -1722,6 +1722,7 @@ export type Database = {
       }
       profiles: {
         Row: {
+          about: string | null
           avatar_url: string | null
           commission_rate: number
           created_at: string
@@ -1730,11 +1731,14 @@ export type Database = {
           full_name: string | null
           id: string
           is_active: boolean
+          languages: string[] | null
+          location: string | null
           phone: string | null
           role: string | null
           updated_at: string
         }
         Insert: {
+          about?: string | null
           avatar_url?: string | null
           commission_rate?: number
           created_at?: string
@@ -1743,11 +1747,14 @@ export type Database = {
           full_name?: string | null
           id: string
           is_active?: boolean
+          languages?: string[] | null
+          location?: string | null
           phone?: string | null
           role?: string | null
           updated_at?: string
         }
         Update: {
+          about?: string | null
           avatar_url?: string | null
           commission_rate?: number
           created_at?: string
@@ -1756,6 +1763,8 @@ export type Database = {
           full_name?: string | null
           id?: string
           is_active?: boolean
+          languages?: string[] | null
+          location?: string | null
           phone?: string | null
           role?: string | null
           updated_at?: string
