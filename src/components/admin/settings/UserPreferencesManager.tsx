@@ -353,7 +353,7 @@ export const UserPreferencesManager: React.FC = () => {
                   <SelectItem value="all">All Roles</SelectItem>
                   <SelectItem value="user">Users</SelectItem>
                   <SelectItem value="agent">Agents</SelectItem>
-                  <SelectItem value="property_owner">Property Owners</SelectItem>
+                  <SelectItem value="property_owner">Hosts</SelectItem>
                   <SelectItem value="admin">Admins</SelectItem>
                 </SelectContent>
               </Select>

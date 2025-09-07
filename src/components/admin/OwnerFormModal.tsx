@@ -3,13 +3,13 @@ import React, { useState, useEffect } from 'react';
 import { X, Upload, Loader2, Save, User, Building, CreditCard, FileText, Bell, Key, RotateCcw } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { bankingService } from '@/lib/bankingService';
-import { PropertyOwner, adminService } from '@/lib/adminService';
+import { Host, adminService } from '@/lib/adminService';
 import { toast } from 'sonner';
 
 interface OwnerFormModalProps {
   isOpen: boolean;
   onClose: () => void;
-  owner?: PropertyOwner | null;
+  owner?: Host | null;
   mode: 'add' | 'edit' | 'view';
   onSave: () => void;
 }
@@ -267,7 +267,7 @@ const OwnerFormModal: React.FC<OwnerFormModalProps> = ({
     try {
       if (mode === 'add') {
         // Create new owner via admin service
-        await adminService.addPropertyOwner({
+        await adminService.addHost({
           email: basicData.email,
           full_name: basicData.full_name,
           phone: basicData.phone

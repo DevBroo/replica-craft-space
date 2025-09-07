@@ -43,7 +43,7 @@ const Header: React.FC = () => {
                       onClick={(e) => {
                         e.preventDefault();
                         e.stopPropagation();
-                        console.log('🚀 Property Owner Portal clicked');
+                        console.log('🚀 Host Portal clicked');
                         console.log('🔍 Current auth state:', { 
                           loading,
                           isAuthenticated, 
@@ -74,8 +74,10 @@ const Header: React.FC = () => {
                       className="w-full text-left px-4 py-3 text-sm text-gray-700 hover:bg-gray-50 hover:text-orange-500 transition-colors duration-200 border-b border-gray-100"
                     >
                       <i className="fas fa-home mr-3 text-orange-500"></i>
-                      Property Owner Portal
+                      Host Portal
                     </button>
+                    {/* Travel Agent Portal - Hidden */}
+                    {false && (
                     <button 
                       onClick={(e) => {
                         e.preventDefault();
@@ -104,6 +106,7 @@ const Header: React.FC = () => {
                       <i className="fas fa-handshake mr-3 text-orange-500"></i>
                       Travel Agent Portal
                     </button>
+                    )}
                     <Link to="/admin/login" className="block px-4 py-3 text-sm text-gray-700 hover:bg-gray-50 hover:text-orange-500 transition-colors duration-200">
                       <i className="fas fa-cog mr-3 text-orange-500"></i>
                       Admin Panel
@@ -235,7 +238,7 @@ const Header: React.FC = () => {
                     onClick={(e) => {
                       e.preventDefault();
                       e.stopPropagation();
-                      console.log('🚀 Mobile: Property Owner Portal clicked');
+                      console.log('🚀 Mobile: Host Portal clicked');
                       console.log('🔍 Current user state:', { 
                         isAuthenticated, 
                         user: user ? { email: user.email, role: user.role } : null 
@@ -261,7 +264,7 @@ const Header: React.FC = () => {
                     className="flex items-center w-full text-left text-base text-muted-foreground hover:text-orange-500 transition-colors duration-200 py-3 px-3 rounded-lg hover:bg-orange-50"
                   >
                     <i className="fas fa-home mr-4 text-orange-500 w-5 text-center"></i>
-                    Property Owner Portal
+                    Host Portal
                   </button>
                   <Link 
                     to="/agent/login"

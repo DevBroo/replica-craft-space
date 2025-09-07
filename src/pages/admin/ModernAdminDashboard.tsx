@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
+import picnifyLogo from '/lovable-uploads/f7960b1f-407a-4738-b8f6-067ea4600889.png';
 import { 
   Users, 
   Building, 
@@ -24,7 +25,7 @@ import {
   Plus
 } from 'lucide-react';
 import SharedSidebar from '@/components/admin/SharedSidebar';
-import { adminService, PropertyOwner } from '@/lib/adminService';
+import { adminService, Host } from '@/lib/adminService';
 import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -45,7 +46,7 @@ interface Property {
 const ModernAdminDashboard: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
-  const [owners, setOwners] = useState<PropertyOwner[]>([]);
+  const [owners, setOwners] = useState<Host[]>([]);
   const [properties, setProperties] = useState<Property[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
@@ -92,8 +93,8 @@ const ModernAdminDashboard: React.FC = () => {
     try {
       console.log('🔍 Loading modern admin dashboard data...');
       
-      const ownersData = await adminService.getPropertyOwners();
-      console.log('✅ Property owners loaded:', ownersData);
+      const ownersData = await adminService.getHosts();
+      console.log('✅ Hosts loaded:', ownersData);
 
       const { data: propertiesData, error: propertiesError } = await supabase
         .from('properties')
@@ -185,6 +186,11 @@ const ModernAdminDashboard: React.FC = () => {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
         <div className="text-center">
+          <img 
+            src={picnifyLogo} 
+            alt="Picnify Logo" 
+            className="h-16 w-auto object-contain mx-auto mb-6"
+          />
           <div className="animate-spin rounded-full h-12 w-12 border-4 border-primary border-t-transparent mx-auto"></div>
           <p className="mt-4 text-muted-foreground">Loading modern dashboard...</p>
         </div>
@@ -207,8 +213,13 @@ const ModernAdminDashboard: React.FC = () => {
           <div className="container flex h-16 items-center justify-between">
             <div className="flex items-center space-x-4">
               <div className="flex items-center space-x-2">
-                <h1 className="text-xl font-bold bg-gradient-to-r from-primary to-primary-glow bg-clip-text text-transparent">
-                  Dashboard
+                <img 
+                  src={picnifyLogo} 
+                  alt="Picnify Logo" 
+                  className="h-8 w-auto object-contain"
+                />
+                <h1 className="text-xl font-bold text-gray-900">
+                  Admin Dashboard
                 </h1>
               </div>
             </div>
@@ -239,7 +250,7 @@ const ModernAdminDashboard: React.FC = () => {
       <div className="flex space-x-8">
         {[
           { id: 'overview', label: 'Overview', icon: BarChart3, path: '/admin/dashboard' },
-          { id: 'owners', label: 'Property Owners', icon: Users, path: '/admin/owner-management' },
+          { id: 'owners', label: 'Hosts', icon: Users, path: '/admin/owner-management' },
           { id: 'properties', label: 'Properties', icon: Building, path: '/admin/property-approval' },
           { id: 'bookings', label: 'Bookings', icon: Calendar, path: '/admin/booking-management' },
           { id: 'analytics', label: 'Analytics', icon: TrendingUp, path: '/admin/analytics' },
@@ -276,7 +287,7 @@ const ModernAdminDashboard: React.FC = () => {
               </CardHeader>
               <CardContent>
                 <div className="text-2xl font-bold">{stats.totalOwners}</div>
-                <p className="text-xs text-muted-foreground">Property owners registered</p>
+                <p className="text-xs text-muted-foreground">Hosts registered</p>
               </CardContent>
             </Card>
 
@@ -327,7 +338,7 @@ const ModernAdminDashboard: React.FC = () => {
                   </div>
                   <div>
                     <h3 className="font-semibold">Active Owners</h3>
-                    <p className="text-sm text-muted-foreground">{stats.activeOwners} property owners</p>
+                    <p className="text-sm text-muted-foreground">{stats.activeOwners} hosts</p>
                   </div>
                 </div>
               </CardContent>

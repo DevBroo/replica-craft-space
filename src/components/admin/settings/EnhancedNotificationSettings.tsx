@@ -447,7 +447,7 @@ export const EnhancedNotificationSettings: React.FC = () => {
                       <SelectItem value="all">All Users</SelectItem>
                       <SelectItem value="users">Customers Only</SelectItem>
                       <SelectItem value="agents">Agents Only</SelectItem>
-                      <SelectItem value="owners">Property Owners Only</SelectItem>
+                      <SelectItem value="owners">Hosts Only</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>

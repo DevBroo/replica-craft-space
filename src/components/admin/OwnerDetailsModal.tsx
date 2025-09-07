@@ -20,10 +20,10 @@ import {
   Loader2
 } from 'lucide-react';
 import IconButton from './ui/IconButton';
-import { PropertyOwner } from '../../lib/adminService';
+import { Host } from '../../lib/adminService';
 
 interface OwnerDetailsModalProps {
-  owner: PropertyOwner;
+  owner: Host;
   isOpen: boolean;
   onClose: () => void;
   onStatusUpdate: (ownerId: string, isActive: boolean) => Promise<void>;

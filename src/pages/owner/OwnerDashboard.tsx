@@ -48,8 +48,8 @@ const OwnerDashboard: React.FC = () => {
         console.log('❌ User not authenticated, redirecting to owner login');
         navigate('/owner/login', { replace: true });
       } else if (!['property_owner', 'owner'].includes(user.role)) {
-        // User is authenticated but not a property owner, redirect to appropriate page
-        console.log('⚠️ User not property owner, role:', user.role);
+        // User is authenticated but not a host, redirect to appropriate page
+        console.log('⚠️ User not host, role:', user.role);
         console.log('🔍 User details:', { id: user.id, email: user.email, role: user.role });
         
         if (user.role === 'admin') {
@@ -57,7 +57,7 @@ const OwnerDashboard: React.FC = () => {
         } else if (user.role === 'agent') {
           navigate('/agent/dashboard');  
         } else {
-          console.log('❌ User role is not property owner, redirecting to homepage');
+          console.log('❌ User role is not host, redirecting to homepage');
           navigate('/'); // Other roles go to main page
         }
       } else {
@@ -312,9 +312,9 @@ const OwnerDashboard: React.FC = () => {
         <header className="bg-white shadow-sm border-b px-6 py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-4">
-              <h1 className="text-2xl font-semibold text-gray-800">Property Owner Dashboard</h1>
+              <h1 className="text-2xl font-semibold text-gray-800">Host Dashboard</h1>
               <div className="text-sm text-gray-500">
-                <span>Welcome back, {user?.email || 'Property Owner'}</span>
+                <span>Welcome back, {user?.email || 'Host'}</span>
               </div>
             </div>
             <div className="flex items-center space-x-4">
@@ -327,13 +327,22 @@ const OwnerDashboard: React.FC = () => {
               </button>
               <NotificationDropdown />
               <div className="flex items-center space-x-2 relative group">
-                <div className="w-8 h-8 bg-blue-600 rounded-full flex items-center justify-center">
-                  <span className="text-white text-sm font-medium">
-                    {user?.email?.charAt(0).toUpperCase() || 'O'}
-                  </span>
-                </div>
+                {user?.avatar_url ? (
+                  <img
+                    key={user.avatar_url}
+                    src={user.avatar_url}
+                    alt="Profile"
+                    className="w-8 h-8 rounded-full object-cover border-2 border-gray-200"
+                  />
+                ) : (
+                  <div className="w-8 h-8 bg-blue-600 rounded-full flex items-center justify-center">
+                    <span className="text-white text-sm font-medium">
+                      {user?.email?.charAt(0).toUpperCase() || 'O'}
+                    </span>
+                  </div>
+                )}
                 <span className="text-sm font-medium text-gray-700">
-                  {user?.email || 'Property Owner'}
+                  {user?.email || 'Host'}
                 </span>
                 <i className="fas fa-chevron-down text-gray-400 text-xs"></i>
                 

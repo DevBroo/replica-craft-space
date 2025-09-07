@@ -91,7 +91,7 @@ const PrivacyPolicy = () => {
 
             <h3 className="text-xl font-semibold mb-4">Limited Sharing Circumstances</h3>
             <ul className="space-y-3 text-muted-foreground">
-              <li>• <strong>Property Owners:</strong> Necessary booking details to facilitate your stay</li>
+              <li>• <strong>Hosts:</strong> Necessary booking details to facilitate your stay</li>
               <li>• <strong>Payment Processors:</strong> Secure payment processing (encrypted data only)</li>
               <li>• <strong>Legal Requirements:</strong> When required by law or to protect our users</li>
               <li>• <strong>Service Providers:</strong> Trusted partners who help operate our platform (under strict confidentiality)</li>

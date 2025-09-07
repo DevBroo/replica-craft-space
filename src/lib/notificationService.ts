@@ -134,7 +134,7 @@ export class NotificationService {
       notifications.push({
         id: 'system-welcome',
         title: 'Welcome to Picnify!',
-        message: 'Your property owner dashboard is now active. Start managing your bookings and earnings.',
+        message: 'Your host dashboard is now active. Start managing your bookings and earnings.',
         type: 'system',
         is_read: true,
         created_at: new Date().toISOString(),
@@ -280,9 +280,9 @@ export class NotificationService {
   }
 
   /**
-   * Notify all property owners
+   * Notify all hosts
    */
-  static async notifyPropertyOwners(
+  static async notifyHosts(
     title: string, 
     message: string, 
     senderId?: string, 
@@ -290,7 +290,7 @@ export class NotificationService {
     actionUrl?: string
   ): Promise<{ success: boolean; count: number }> {
     try {
-      // Get all property owners
+      // Get all hosts
       const { data: owners } = await supabase
         .from('profiles')
         .select('id')
@@ -301,11 +301,11 @@ export class NotificationService {
       }
 
       // Create notifications for each owner (this would typically use a notifications table)
-      console.log(`📢 Notifying ${owners.length} property owners:`, title);
+      console.log(`📢 Notifying ${owners.length} hosts:`, title);
       
       return { success: true, count: owners.length };
     } catch (error) {
-      console.error('❌ Failed to notify property owners:', error);
+      console.error('❌ Failed to notify hosts:', error);
       return { success: false, count: 0 };
     }
   }

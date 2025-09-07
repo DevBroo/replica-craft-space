@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import picnifyLogo from '/lovable-uploads/f7960b1f-407a-4738-b8f6-067ea4600889.png';
 import { 
   Users, 
   Building, 
@@ -14,7 +15,7 @@ import {
   BarChart3,
   Shield
 } from 'lucide-react';
-import { adminService, PropertyOwner } from '@/lib/adminService';
+import { adminService, Host } from '@/lib/adminService';
 import { supabase } from '@/integrations/supabase/client';
 
 interface Property {
@@ -30,7 +31,7 @@ interface Property {
 
 const AdminDashboard: React.FC = () => {
   const navigate = useNavigate();
-  const [owners, setOwners] = useState<PropertyOwner[]>([]);
+  const [owners, setOwners] = useState<Host[]>([]);
   const [properties, setProperties] = useState<Property[]>([]);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('owners');
@@ -52,9 +53,9 @@ const AdminDashboard: React.FC = () => {
     try {
       console.log('🔍 Loading admin dashboard data...');
       
-      // Use adminService to get property owners
-      const ownersData = await adminService.getPropertyOwners();
-      console.log('✅ Property owners loaded:', ownersData);
+      // Use adminService to get hosts
+      const ownersData = await adminService.getHosts();
+      console.log('✅ Hosts loaded:', ownersData);
 
       // Load all properties using supabase
       const { data: propertiesData, error: propertiesError } = await supabase
@@ -201,6 +202,11 @@ const AdminDashboard: React.FC = () => {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
+          <img 
+            src={picnifyLogo} 
+            alt="Picnify Logo" 
+            className="h-16 w-auto object-contain mx-auto mb-6"
+          />
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
           <p className="mt-4 text-gray-600">Loading admin dashboard...</p>
         </div>
@@ -215,8 +221,12 @@ const AdminDashboard: React.FC = () => {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
             <div className="flex items-center">
-              <Shield className="h-8 w-8 text-blue-600 mr-3" />
-              <h1 className="text-xl font-semibold text-gray-900">Picnify Admin Panel</h1>
+              <img 
+                src={picnifyLogo} 
+                alt="Picnify Logo" 
+                className="h-8 w-auto object-contain mr-3"
+              />
+              <h1 className="text-xl font-semibold text-gray-900">Admin Panel</h1>
             </div>
             <div className="flex items-center space-x-4">
               <span className="text-sm text-gray-600">Welcome, Admin</span>
@@ -289,7 +299,7 @@ const AdminDashboard: React.FC = () => {
                 }`}
               >
                 <Users className="h-4 w-4 inline mr-2" />
-                Property Owners
+                Hosts
               </button>
               <button
                 onClick={() => setActiveTab('properties')}
@@ -506,7 +516,7 @@ const AdminDashboard: React.FC = () => {
               No {activeTab === 'owners' ? 'owners' : 'properties'} found
             </h3>
             <p className="text-gray-500">
-              {searchTerm ? 'Try adjusting your search terms.' : `No ${activeTab === 'owners' ? 'property owners' : 'properties'} available yet.`}
+              {searchTerm ? 'Try adjusting your search terms.' : `No ${activeTab === 'owners' ? 'hosts' : 'properties'} available yet.`}
             </p>
           </div>
         )}

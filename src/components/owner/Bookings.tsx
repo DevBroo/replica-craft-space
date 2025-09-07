@@ -591,12 +591,23 @@ Date: ${invoiceData.date}
                 )}
               </div>
               <div className="flex items-center space-x-2">
-                <img
-                  src="https://readdy.ai/api/search-image?query=professional%20Indian%20property%20owner%20businessman%20avatar%20headshot%20with%20traditional%20modern%20fusion%20style%20confident%20expression&width=40&height=40&seq=owner-avatar-001&orientation=squarish"
-                  alt="Owner Avatar"
-                  className="w-8 h-8 rounded-full object-cover"
-                />
-                <span className="text-sm font-medium text-gray-700">Rajesh Patel</span>
+                {user?.avatar_url ? (
+                  <img
+                    key={user.avatar_url}
+                    src={user.avatar_url}
+                    alt="Profile"
+                    className="w-8 h-8 rounded-full object-cover"
+                  />
+                ) : (
+                  <div className="w-8 h-8 rounded-full bg-orange-500 flex items-center justify-center">
+                    <span className="text-white text-sm font-medium">
+                      {user?.email?.charAt(0).toUpperCase() || 'H'}
+                    </span>
+                  </div>
+                )}
+                <span className="text-sm font-medium text-gray-700">
+                  {user?.full_name || user?.email || 'Host'}
+                </span>
                 <i className="fas fa-chevron-down text-gray-400 text-xs"></i>
               </div>
             </div>

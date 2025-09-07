@@ -223,7 +223,7 @@ const CustomerLogin: React.FC = () => {
                   to="/owner/login" 
                   className="block w-full text-center py-2 px-4 border border-border rounded-md text-sm text-foreground hover:bg-secondary transition-colors"
                 >
-                  Property Owner Login
+                  Host Login
                 </Link>
                 <Link 
                   to="/agent/login" 

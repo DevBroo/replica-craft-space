@@ -161,7 +161,7 @@ const CustomerMessages: React.FC<CustomerMessagesProps> = ({ className }) => {
 
       toast({
         title: "Message Sent",
-        description: "Your message has been sent to the property owner.",
+        description: "Your message has been sent to the host.",
       });
     } catch (error) {
       console.error('Error sending message:', error);
@@ -226,7 +226,7 @@ const CustomerMessages: React.FC<CustomerMessagesProps> = ({ className }) => {
               <MessageCircle className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
               <h3 className="text-lg font-semibold mb-2">No conversations yet</h3>
               <p className="text-muted-foreground text-sm mb-4">
-                You can only message property owners for properties you have booked.
+                You can only message hosts for properties you have booked.
               </p>
               <p className="text-muted-foreground text-xs mb-4">
                 💡 Go to "My Bookings" tab and click "Message Host" to start a conversation.
@@ -256,7 +256,7 @@ const CustomerMessages: React.FC<CustomerMessagesProps> = ({ className }) => {
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center justify-between">
                       <h4 className="font-medium truncate">
-                        {thread.owner_name || 'Property Owner'}
+                        {thread.owner_name || 'Host'}
                       </h4>
                       {thread.unread_count && thread.unread_count > 0 && (
                         <Badge variant="destructive" className="text-xs">
@@ -301,7 +301,7 @@ const CustomerMessages: React.FC<CustomerMessagesProps> = ({ className }) => {
                 </AvatarFallback>
               </Avatar>
               <div>
-                <h4 className="font-medium">{selectedThread.owner_name || 'Property Owner'}</h4>
+                <h4 className="font-medium">{selectedThread.owner_name || 'Host'}</h4>
                 <p className="text-sm text-muted-foreground">{selectedThread.property_title}</p>
               </div>
             </div>

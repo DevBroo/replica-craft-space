@@ -315,7 +315,7 @@ export default function NotificationsManagement() {
                         <SelectContent>
                           <SelectItem value="all">All Users</SelectItem>
                           <SelectItem value="admin">Admins</SelectItem>
-                          <SelectItem value="owner">Property Owners</SelectItem>
+                          <SelectItem value="owner">Hosts</SelectItem>
                           <SelectItem value="agent">Agents</SelectItem>
                           <SelectItem value="user">Regular Users</SelectItem>
                         </SelectContent>

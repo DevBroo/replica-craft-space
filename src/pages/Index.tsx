@@ -153,27 +153,27 @@ const Index: React.FC = () => {
       {/* Secondary Banner */}
       <SecondaryBanner />
 
-      {/* Property Owner CTA Section */}
+      {/* Host CTA Section */}
       <section className="py-16 bg-gradient-to-r from-orange-500 to-red-500 relative overflow-hidden">
         <div className="absolute inset-0 bg-black/10"></div>
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative">
           <div className="text-center text-white">
             <div className="mb-6">
               <span className="inline-block bg-white/20 backdrop-blur-md px-6 py-2 rounded-full text-sm font-bold border border-white/30 mb-4">
-                🏠 Property Owners
+                🏠 Hosts
               </span>
               <h2 className="text-2xl sm:text-3xl md:text-4xl font-black mb-4 font-poppins text-shadow">
                 Ready to List Your Property?
               </h2>
               <p className="text-lg opacity-90 mb-8 max-w-2xl mx-auto">
-                Join thousands of successful property owners earning premium
+                Join thousands of successful hosts earning premium
                 income. Access your dashboard and start listing today!
               </p>
             </div>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
               <button
                 onClick={() => {
-                  console.log("🚀 Property Owner CTA clicked");
+                  console.log("🚀 Host CTA clicked");
                   if (isAuthenticated && user) {
                     console.log(
                       "✅ User is authenticated, navigating to dashboard"

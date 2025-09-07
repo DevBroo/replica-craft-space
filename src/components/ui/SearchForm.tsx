@@ -191,11 +191,6 @@ const SearchForm: React.FC<SearchFormProps> = ({
             >
               <i className={`${category.icon} mr-2 text-lg`}></i>
               {category.label}
-              {category.count > 0 && (
-                <span className="ml-2 text-sm opacity-75 bg-white/20 px-2 py-1 rounded-full">
-                  {category.count}
-                </span>
-              )}
             </button>
           ))}
         </div>

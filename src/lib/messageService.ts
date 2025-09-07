@@ -126,9 +126,9 @@ export class MessageService {
           created_at: booking.created_at,
           updated_at: booking.created_at,
           guest_name: 'You',
-          owner_name: ownerMap.get(property.owner_id) || 'Property Owner',
+          owner_name: ownerMap.get(property.owner_id) || 'Host',
           property_title: property.title,
-          last_message: 'Start a conversation with the property owner',
+          last_message: 'Start a conversation with the host',
           unread_count: 0
         };
       });
@@ -136,7 +136,7 @@ export class MessageService {
       allThreads.push(...guestThreads);
     }
 
-    // Get bookings where user is the property owner
+    // Get bookings where user is the host
     const { data: ownerBookings, error: ownerError } = await supabase
       .from('bookings')
       .select(`
@@ -514,9 +514,9 @@ export class MessageService {
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString(),
         guest_name: 'You',
-        owner_name: propertyData.profiles?.full_name || 'Property Owner',
+        owner_name: propertyData.profiles?.full_name || 'Host',
         property_title: propertyData.title,
-        last_message: 'Start a conversation with the property owner',
+        last_message: 'Start a conversation with the host',
         unread_count: 0
       };
 

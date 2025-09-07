@@ -2,7 +2,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { avatarService } from '@/lib/avatarService';
 import { NotificationService } from '@/lib/notificationService';
-import { toast } from 'sonner';
+import { useToast } from '@/hooks/use-toast';
 import { Bell, ChevronDown, Save, X, Edit, Camera, Home, Calendar, Star } from 'lucide-react';
 
 interface ProfileProps {
@@ -15,6 +15,7 @@ interface ProfileProps {
 
 const Profile: React.FC<ProfileProps> = ({ sidebarCollapsed, toggleSidebar, activeTab, setActiveTab, embedded = false }) => {
   const { user, updateProfile } = useAuth();
+  const { toast } = useToast();
   const [isEditing, setIsEditing] = useState(false);
   const [isUploadingAvatar, setIsUploadingAvatar] = useState(false);
   const [showNotifications, setShowNotifications] = useState(false);
@@ -115,7 +116,10 @@ const Profile: React.FC<ProfileProps> = ({ sidebarCollapsed, toggleSidebar, acti
       await NotificationService.markAllAsRead(user.id);
       setNotifications(prev => prev.map(n => ({ ...n, is_read: true })));
       setUnreadCount(0);
-      toast.success('All notifications marked as read');
+      toast({
+        title: "Success",
+        description: "All notifications marked as read",
+      });
     } catch (error) {
       console.error('Failed to mark all notifications as read:', error);
     }
@@ -143,13 +147,24 @@ const Profile: React.FC<ProfileProps> = ({ sidebarCollapsed, toggleSidebar, acti
       if (result.success && result.url) {
         // Update user profile with new avatar URL
         await updateProfile({ avatar_url: result.url });
-        toast.success('Profile picture updated successfully!');
+        toast({
+          title: "Success",
+          description: "Profile picture updated successfully!",
+        });
       } else {
-        toast.error(result.error || 'Failed to upload image');
+        toast({
+          title: "Error",
+          description: result.error || 'Failed to upload image',
+          variant: "destructive",
+        });
       }
     } catch (error) {
       console.error('Avatar upload error:', error);
-      toast.error('An unexpected error occurred while uploading');
+      toast({
+        title: "Error",
+        description: "An unexpected error occurred while uploading",
+        variant: "destructive",
+      });
     } finally {
       setIsUploadingAvatar(false);
       // Reset file input
@@ -178,7 +193,10 @@ const Profile: React.FC<ProfileProps> = ({ sidebarCollapsed, toggleSidebar, acti
       });
       
       setIsEditing(false);
-      toast.success('Profile updated successfully!');
+      toast({
+        title: "Success",
+        description: "Profile updated successfully!",
+      });
       
       // Update the profile data state to reflect the saved changes
       setProfileData(prev => ({
@@ -192,7 +210,11 @@ const Profile: React.FC<ProfileProps> = ({ sidebarCollapsed, toggleSidebar, acti
       }));
     } catch (error) {
       console.error('Profile update error:', error);
-      toast.error('Failed to update profile');
+      toast({
+        title: "Error",
+        description: "Failed to update profile",
+        variant: "destructive",
+      });
     }
   };
 
@@ -231,6 +253,8 @@ const Profile: React.FC<ProfileProps> = ({ sidebarCollapsed, toggleSidebar, acti
             <button
               onClick={toggleSidebar}
               className="p-2 rounded-lg hover:bg-gray-100 cursor-pointer"
+              title="Toggle sidebar"
+              aria-label="Toggle sidebar"
             >
               <i className="fas fa-bars text-gray-600"></i>
             </button>
@@ -355,6 +379,7 @@ const Profile: React.FC<ProfileProps> = ({ sidebarCollapsed, toggleSidebar, acti
               <div className="flex items-center space-x-6">
                 <div className="relative">
                   <img
+                    key={user?.avatar_url || 'default-avatar'}
                     src={user?.avatar_url || 'https://readdy.ai/api/search-image?query=professional%20Indian%20property%20owner%20businessman%20avatar%20headshot%20with%20traditional%20modern%20fusion%20style%20confident%20expression&width=120&height=120&seq=owner-avatar-large&orientation=squarish'}
                     alt="Profile Picture"
                     className="w-24 h-24 rounded-full object-cover"
@@ -377,6 +402,8 @@ const Profile: React.FC<ProfileProps> = ({ sidebarCollapsed, toggleSidebar, acti
                     accept="image/*"
                     onChange={handleAvatarUpload}
                     className="hidden"
+                    title="Upload profile picture"
+                    aria-label="Upload profile picture"
                   />
                 </div>
                 <div>
@@ -498,6 +525,8 @@ const Profile: React.FC<ProfileProps> = ({ sidebarCollapsed, toggleSidebar, acti
                       onChange={(e) => setProfileData({...profileData, email: e.target.value})}
                       className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                       placeholder="Enter your email"
+                      title="Email address"
+                      aria-label="Email address"
                     />
                   ) : (
                     <p className="text-gray-900">{profileData.email || 'Not provided'}</p>

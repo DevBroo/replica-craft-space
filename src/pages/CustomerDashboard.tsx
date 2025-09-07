@@ -176,7 +176,7 @@ export default function CustomerDashboard() {
     if (!user?.id) {
       toast({
         title: "Login Required",
-        description: "Please login to message the property owner.",
+        description: "Please login to message the host.",
         variant: "destructive",
       });
       return;
@@ -198,7 +198,7 @@ export default function CustomerDashboard() {
       if (propertyError || !propertyData) {
         toast({
           title: "Error",
-          description: "Unable to find property owner. Please try again.",
+          description: "Unable to find host. Please try again.",
           variant: "destructive",
         });
         return;
@@ -473,7 +473,7 @@ export default function CustomerDashboard() {
               <CardHeader>
                 <CardTitle className="text-xl font-semibold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">Messages</CardTitle>
                 <CardDescription className="text-muted-foreground/80">
-                  Chat with property owners about your bookings and inquiries
+                  Chat with hosts about your bookings and inquiries
                 </CardDescription>
               </CardHeader>
               <CardContent className="p-0">

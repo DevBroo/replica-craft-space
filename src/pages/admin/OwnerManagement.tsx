@@ -22,20 +22,20 @@ import OwnerDetailsModal from '../../components/admin/OwnerDetailsModal';
 import OwnerFilters from '../../components/admin/OwnerFilters';
 import OwnerInsightsModal from '../../components/admin/OwnerInsightsModal';
 import SendNotificationModal from '../../components/admin/SendNotificationModal';
-import { adminService, PropertyOwner, OwnerFilters as FilterType } from '../../lib/adminService';
+import { adminService, Host, OwnerFilters as FilterType } from '../../lib/adminService';
 
 const OwnerManagement: React.FC = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [rowsPerPage, setRowsPerPage] = useState(10);
-  const [owners, setOwners] = useState<PropertyOwner[]>([]);
-  const [filteredOwners, setFilteredOwners] = useState<PropertyOwner[]>([]);
+  const [owners, setOwners] = useState<Host[]>([]);
+  const [filteredOwners, setFilteredOwners] = useState<Host[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   
   // Modal states
-  const [showOwnerDetails, setShowOwnerDetails] = useState<PropertyOwner | null>(null);
-  const [showOwnerInsights, setShowOwnerInsights] = useState<PropertyOwner | null>(null);
-  const [showSendNotification, setShowSendNotification] = useState<PropertyOwner | null>(null);
+  const [showOwnerDetails, setShowOwnerDetails] = useState<Host | null>(null);
+  const [showOwnerInsights, setShowOwnerInsights] = useState<Host | null>(null);
+  const [showSendNotification, setShowSendNotification] = useState<Host | null>(null);
   
   // Filter states
   const [adminUsers, setAdminUsers] = useState<Array<{ id: string; full_name: string }>>([]);
@@ -43,10 +43,10 @@ const OwnerManagement: React.FC = () => {
   const [activeDropdown, setActiveDropdown] = useState<string | null>(null);
   const [debouncedSearchTerm, setDebouncedSearchTerm] = useState('');
 
-  // Fetch property owners on component mount
+  // Fetch hosts on component mount
   useEffect(() => {
     console.log('🏠 OwnerManagement component mounted');
-    fetchPropertyOwners();
+    fetchHosts();
     fetchAdminUsers();
   }, []);
 
@@ -64,18 +64,18 @@ const OwnerManagement: React.FC = () => {
     applyFilters();
   }, [owners, debouncedSearchTerm, currentFilters.status, currentFilters.startDate, currentFilters.endDate, currentFilters.createdBy, currentFilters.propertiesCount, adminUsers]);
 
-  const fetchPropertyOwners = async (filters?: FilterType) => {
+  const fetchHosts = async (filters?: FilterType) => {
     try {
       setLoading(true);
       setError(null);
-      console.log('🔄 Fetching property owners...', filters);
+      console.log('🔄 Fetching hosts...', filters);
       
-      const ownersData = await adminService.getPropertyOwners(filters);
+      const ownersData = await adminService.getHosts(filters);
       setOwners(ownersData);
-      console.log('✅ Property owners loaded:', ownersData.length);
+      console.log('✅ Hosts loaded:', ownersData.length);
     } catch (err) {
-      console.error('❌ Error fetching property owners:', err);
-      setError(err instanceof Error ? err.message : 'Failed to fetch property owners');
+      console.error('❌ Error fetching hosts:', err);
+      setError(err instanceof Error ? err.message : 'Failed to fetch hosts');
     } finally {
       setLoading(false);
     }
@@ -158,20 +158,20 @@ const OwnerManagement: React.FC = () => {
   const handleFiltersChange = async (filters: FilterType) => {
     setCurrentFilters(filters);
     // For better performance, we could debounce this call
-    await fetchPropertyOwners(filters);
+    await fetchHosts(filters);
   };
 
   const handleStatusUpdate = async (ownerId: string, isActive: boolean) => {
     try {
       await adminService.updateOwnerStatus(ownerId, isActive);
       // Refresh the owners list
-      await fetchPropertyOwners(currentFilters);
+      await fetchHosts(currentFilters);
     } catch (err) {
       throw err; // Let the modal handle the error display
     }
   };
 
-  const handleDeleteOwner = async (owner: PropertyOwner) => {
+  const handleDeleteOwner = async (owner: Host) => {
     if (!confirm(`Are you sure you want to delete owner "${owner.full_name || owner.email}"? This action cannot be undone.`)) {
       return;
     }
@@ -179,7 +179,7 @@ const OwnerManagement: React.FC = () => {
     try {
       await adminService.deleteOwner(owner.id);
       alert('Owner deleted successfully!');
-      await fetchPropertyOwners(currentFilters);
+      await fetchHosts(currentFilters);
     } catch (err) {
       alert('Failed to delete owner: ' + (err instanceof Error ? err.message : 'Unknown error'));
     }
@@ -214,7 +214,7 @@ const OwnerManagement: React.FC = () => {
               <IconButton
                 icon={RefreshCw}
                 variant="secondary"
-                onClick={() => fetchPropertyOwners(currentFilters)}
+                onClick={() => fetchHosts(currentFilters)}
                 disabled={loading}
                 loading={loading}
                 tooltip="Refresh owner list"
@@ -262,14 +262,14 @@ const OwnerManagement: React.FC = () => {
                   <h3 className="text-sm font-medium text-red-800">
                     {error.includes('Authentication') || error.includes('401') ? 'Authentication Error' : 
                      error.includes('Access denied') || error.includes('403') ? 'Access Denied' : 
-                     'Error loading property owners'}
+                     'Error loading hosts'}
                   </h3>
                   <div className="mt-2 text-sm text-red-700">
                     <p>{error}</p>
                   </div>
                   <div className="mt-4 flex space-x-2">
                     <button
-                      onClick={() => fetchPropertyOwners(currentFilters)}
+                      onClick={() => fetchHosts(currentFilters)}
                       className="bg-red-100 text-red-800 px-3 py-2 rounded-md text-sm font-medium hover:bg-red-200"
                     >
                       Try Again
@@ -293,7 +293,7 @@ const OwnerManagement: React.FC = () => {
             <div className="bg-white rounded-lg shadow-sm border p-8">
               <div className="flex items-center justify-center">
                 <Loader2 className="h-8 w-8 animate-spin text-blue-600" />
-                <span className="ml-3 text-gray-600">Loading property owners...</span>
+                <span className="ml-3 text-gray-600">Loading hosts...</span>
               </div>
             </div>
           )}
@@ -492,12 +492,12 @@ const OwnerManagement: React.FC = () => {
                             <h3 className="text-lg font-medium text-gray-900 mb-2">No owners found</h3>
                             <p className="text-gray-500 mb-4">
                               {Object.keys(currentFilters).length > 0 
-                                ? 'No property owners match your current filters.' 
-                                : 'No property owners available yet.'
+                                ? 'No hosts match your current filters.' 
+                                : 'No hosts available yet.'
                               }
                             </p>
                             <button
-                              onClick={() => fetchPropertyOwners(currentFilters)}
+                              onClick={() => fetchHosts(currentFilters)}
                               className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors"
                             >
                               Refresh
@@ -606,7 +606,7 @@ const OwnerManagement: React.FC = () => {
           isOpen={!!showOwnerDetails}
           onClose={() => setShowOwnerDetails(null)}
           onStatusUpdate={handleStatusUpdate}
-          onRefresh={() => fetchPropertyOwners(currentFilters)}
+          onRefresh={() => fetchHosts(currentFilters)}
         />
       )}
     </AdminLayout>

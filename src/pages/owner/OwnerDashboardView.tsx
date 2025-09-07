@@ -510,9 +510,9 @@ const OwnerDashboardView: React.FC = () => {
         <header className="bg-white shadow-sm border-b px-6 py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-4">
-              <h1 className="text-2xl font-semibold text-gray-800">Property Owner Dashboard</h1>
+              <h1 className="text-2xl font-semibold text-gray-800">Host Dashboard</h1>
               <div className="text-sm text-gray-500">
-                <span>Welcome back, {user?.email || 'Property Owner'}</span>
+                <span>Welcome back, {user?.email || 'Host'}</span>
                 <span className="ml-2 text-blue-600">(Role: {user?.role || 'Unknown'})</span>
               </div>
             </div>
@@ -633,13 +633,22 @@ const OwnerDashboardView: React.FC = () => {
                 )}
               </div>
               <div className="flex items-center space-x-2 relative group">
-                <div className="w-8 h-8 bg-blue-600 rounded-full flex items-center justify-center">
-                  <span className="text-white text-sm font-medium">
-                    {user?.email?.charAt(0).toUpperCase() || 'O'}
-                  </span>
-                </div>
+                {user?.avatar_url ? (
+                  <img
+                    key={user.avatar_url}
+                    src={user.avatar_url}
+                    alt="Profile"
+                    className="w-8 h-8 rounded-full object-cover border-2 border-gray-200"
+                  />
+                ) : (
+                  <div className="w-8 h-8 bg-blue-600 rounded-full flex items-center justify-center">
+                    <span className="text-white text-sm font-medium">
+                      {user?.email?.charAt(0).toUpperCase() || 'O'}
+                    </span>
+                  </div>
+                )}
                 <span className="text-sm font-medium text-gray-700">
-                  {user?.email || 'Property Owner'}
+                  {user?.email || 'Host'}
                 </span>
                 <i className="fas fa-chevron-down text-gray-400 text-xs"></i>
                 

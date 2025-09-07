@@ -16,12 +16,12 @@ import {
   Bell
 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
-import { PropertyOwner, adminService } from '@/lib/adminService';
+import { Host, adminService } from '@/lib/adminService';
 
 interface OwnerInsightsModalProps {
   isOpen: boolean;
   onClose: () => void;
-  owner: PropertyOwner;
+  owner: Host;
 }
 
 interface OwnerInsights {

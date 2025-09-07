@@ -99,7 +99,7 @@ export default function ComposeNotificationModal({ isOpen, onClose, onSent }: Co
       setRecipientGroups([
         { type: 'user', count: counts.user || 0, label: 'Regular Users' },
         { type: 'agent', count: counts.agent || 0, label: 'Agents' },
-        { type: 'owner', count: counts.property_owner || 0, label: 'Property Owners' },
+        { type: 'owner', count: counts.property_owner || 0, label: 'Hosts' },
       ]);
     } catch (error) {
       console.error('Error loading recipient counts:', error);

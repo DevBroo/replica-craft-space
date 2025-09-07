@@ -48,7 +48,7 @@ const SafetyGuidelines = () => {
               </ul>
             </div>
             <div className="space-y-4">
-              <h3 className="text-xl font-semibold">For Property Owners</h3>
+              <h3 className="text-xl font-semibold">For Hosts</h3>
               <ul className="space-y-3 text-muted-foreground">
                 <li className="flex items-start">
                   <CheckCircle className="w-5 h-5 text-secondary mr-3 mt-0.5 flex-shrink-0" />
@@ -98,7 +98,7 @@ const SafetyGuidelines = () => {
               <h3 className="text-xl font-semibold mb-3">Medical Emergencies</h3>
               <ul className="text-muted-foreground text-sm space-y-2">
                 <li>• Contact local emergency services immediately</li>
-                <li>• Notify property owner and Picnify support</li>
+                <li>• Notify host and Picnify support</li>
                 <li>• Provide first aid if trained to do so</li>
                 <li>• Follow local hospital directions</li>
               </ul>

@@ -26,7 +26,7 @@ const roleConfig = {
     badge: "Admin"
   },
   "property-owner": {
-    title: "Property Owner Portal",
+    title: "Host Portal",
     description: "Manage properties & maximize revenue", 
     icon: Building,
     color: "text-orange-600",

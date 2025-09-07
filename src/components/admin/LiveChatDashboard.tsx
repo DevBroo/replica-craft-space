@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
-
+import SharedSidebar from './SharedSidebar';
+import SharedHeader from './SharedHeader';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -34,6 +35,7 @@ interface ChatSession extends DatabaseTicket {
 }
 
 export const LiveChatDashboard: React.FC = () => {
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [chatSessions, setChatSessions] = useState<ChatSession[]>([]);
   const [selectedSession, setSelectedSession] = useState<ChatSession | null>(null);
   const [messages, setMessages] = useState<any[]>([]);
@@ -190,12 +192,25 @@ export const LiveChatDashboard: React.FC = () => {
   });
 
   return (
-    <div className="container mx-auto p-6 space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold">Live Chat Dashboard</h1>
-          <p className="text-muted-foreground">Manage customer support chat sessions</p>
-        </div>
+    <div className="min-h-screen bg-gray-50">
+      <SharedSidebar 
+        sidebarCollapsed={sidebarCollapsed} 
+        setSidebarCollapsed={setSidebarCollapsed} 
+      />
+      
+      <div className={`transition-all duration-300 ${sidebarCollapsed ? 'ml-16' : 'ml-64'}`}>
+        <SharedHeader 
+          title="Live Chat Dashboard" 
+          breadcrumb="Live Chat"
+          searchPlaceholder="Search sessions..."
+        />
+        
+        <main className="p-6 space-y-6">
+          <div className="flex items-center justify-between">
+            <div>
+              <h1 className="text-3xl font-bold">Live Chat Dashboard</h1>
+              <p className="text-muted-foreground">Manage customer support chat sessions</p>
+            </div>
         <div className="flex items-center gap-2">
           <Badge variant="outline" className="flex items-center gap-1">
             <MessageCircle className="w-3 h-3" />
@@ -493,6 +508,8 @@ export const LiveChatDashboard: React.FC = () => {
             </CardContent>
           </Card>
         </div>
+      </div>
+        </main>
       </div>
     </div>
   );

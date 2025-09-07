@@ -309,27 +309,27 @@ serve(async (req) => {
     }
 
     if (action === 'list') {
-      console.log('📋 Fetching all property owners...');
+      console.log('📋 Fetching all hosts...');
       
       const filters: FilterOwnerRequest = requestBody.filters || {};
       
       // First, get all unique owner IDs from properties table
-      const { data: propertyOwners, error: propOwnersError } = await supabaseAdmin
+      const { data: hosts, error: hostsError } = await supabaseAdmin
         .from('properties')
         .select('owner_id, created_at')
         .order('created_at', { ascending: false });
 
-      if (propOwnersError) {
-        console.error('❌ Error fetching property owners:', propOwnersError);
-        return new Response(JSON.stringify({ error: propOwnersError.message }), {
+      if (hostsError) {
+        console.error('❌ Error fetching hosts:', hostsError);
+        return new Response(JSON.stringify({ error: hostsError.message }), {
           status: 500,
           headers: { ...corsHeaders, 'Content-Type': 'application/json' }
         });
       }
 
       // Get unique owner IDs
-      const uniqueOwnerIds = [...new Set(propertyOwners?.map(p => p.owner_id) || [])];
-      console.log(`📊 Found ${uniqueOwnerIds.length} unique property owners`);
+      const uniqueOwnerIds = [...new Set(hosts?.map(p => p.owner_id) || [])];
+      console.log(`📊 Found ${uniqueOwnerIds.length} unique hosts`);
 
       if (uniqueOwnerIds.length === 0) {
         return new Response(JSON.stringify({ owners: [] }), {

@@ -131,9 +131,9 @@ const TermsOfService = () => {
             </div>
           </section>
 
-          {/* Property Owner Terms */}
+          {/* Host Terms */}
           <section className="mb-12">
-            <h2 className="text-2xl font-bold mb-6">Property Owner Obligations</h2>
+            <h2 className="text-2xl font-bold mb-6">Host Obligations</h2>
             
             <div className="grid md:grid-cols-2 gap-8">
               <div>
@@ -164,7 +164,7 @@ const TermsOfService = () => {
             <div className="bg-red-50 dark:bg-red-950/20 border border-red-200 dark:border-red-800 rounded-lg p-6 mb-6">
               <h3 className="text-lg font-semibold mb-3">Platform Liability</h3>
               <p className="text-muted-foreground text-sm">
-                Picnify acts as an intermediary platform. We are not responsible for the actions of property owners or guests, property conditions, or incidents that occur during stays.
+                Picnify acts as an intermediary platform. We are not responsible for the actions of hosts or guests, property conditions, or incidents that occur during stays.
               </p>
             </div>
 
@@ -173,7 +173,7 @@ const TermsOfService = () => {
               <li>• Verify property details independently</li>
               <li>• Maintain appropriate travel insurance</li>
               <li>• Follow property rules and local laws</li>
-              <li>• Report issues promptly to property owners</li>
+              <li>• Report issues promptly to hosts</li>
             </ul>
           </section>
 

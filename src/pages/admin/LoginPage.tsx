@@ -1,6 +1,6 @@
 import React, { useState } from "react";
-import { useNavigate } from "react-router-dom";
-import { Eye, EyeOff, Lock, Mail } from "lucide-react";
+import { useNavigate, Link } from "react-router-dom";
+import { Eye, EyeOff, Lock, Mail, ArrowLeft, Home } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 
 const LoginPage: React.FC = () => {
@@ -77,8 +77,17 @@ const LoginPage: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center p-4">
-      <div className="bg-white rounded-lg shadow-xl w-full max-w-md p-8">
-        <div className="text-center mb-8">
+      <div className="bg-white rounded-lg shadow-xl w-full max-w-md p-8 relative">
+        {/* Back to Home Button */}
+        <Link
+          to="/"
+          className="absolute top-4 left-4 flex items-center text-gray-600 hover:text-gray-800 transition-colors group"
+        >
+          <ArrowLeft className="h-4 w-4 mr-1 group-hover:-translate-x-1 transition-transform" />
+          <span className="text-sm font-medium">Back to Home</span>
+        </Link>
+
+        <div className="text-center mb-8 mt-8">
           <img
             src="/lovable-uploads/f5331113-f11c-4b8a-93ba-4f472bf22f0a.png"
             alt="Picnify Logo"
@@ -155,10 +164,20 @@ const LoginPage: React.FC = () => {
           </button>
         </form>
 
-        <div className="mt-6 text-center">
+        <div className="mt-6 text-center space-y-4">
           <p className="text-xs text-gray-500">
             Use your admin credentials to access the dashboard
           </p>
+          
+          <div className="border-t pt-4">
+            <Link
+              to="/"
+              className="inline-flex items-center text-sm text-blue-600 hover:text-blue-800 transition-colors font-medium"
+            >
+              <Home className="h-4 w-4 mr-2" />
+              Return to Main Website
+            </Link>
+          </div>
         </div>
       </div>
     </div>

@@ -21,7 +21,7 @@ const SuperAdminDashboard: React.FC = () => {
 
   const dashboardStats = [
     { title: 'Total Properties', value: '0', description: 'Properties in system', icon: Home, color: 'bg-purple-500' },
-    { title: 'Property Owners', value: '0', description: 'Registered owners', icon: Calendar, color: 'bg-blue-500' },
+    { title: 'Hosts', value: '0', description: 'Registered hosts', icon: Calendar, color: 'bg-blue-500' },
     { title: 'Pending Approvals', value: '0', description: 'Awaiting review', icon: Clock, color: 'bg-orange-500' },
   ];
 

@@ -128,7 +128,7 @@ const HostDashboard: React.FC = () => {
           Welcome back, {user.email}!
         </h1>
           <p className="text-gray-600 mt-1">
-            {user.role === 'owner' ? 'Property Owner' : 'Property Agent'} Dashboard
+            {user.role === 'owner' ? 'Host' : 'Property Agent'} Dashboard
           </p>
         </div>
         <div className="flex items-center space-x-2">
@@ -374,7 +374,7 @@ const HostDashboard: React.FC = () => {
                 {user.email}
               </p>
               <p className="text-xs text-gray-500">
-                {user.role === 'owner' ? 'Property Owner' : 'Property Agent'}
+                {user.role === 'owner' ? 'Host' : 'Property Agent'}
               </p>
             </div>
           )}

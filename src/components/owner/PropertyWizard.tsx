@@ -287,10 +287,10 @@ const PropertyWizard: React.FC<PropertyWizardProps> = ({ onBack, propertyId, ini
       // More flexible role checking - allow both property_owner and owner roles
       const validRoles = ['property_owner', 'owner', 'user', 'customer']; // Added more fallback roles
       if (!validRoles.includes(user.role)) {
-        console.log('❌ PropertyWizard: User not property owner, role:', user.role);
+        console.log('❌ PropertyWizard: User not host, role:', user.role);
         toast({
           title: "Access Denied",
-          description: "Only property owners can create properties.",
+          description: "Only hosts can create properties.",
           variant: "destructive"
         });
         onBack();

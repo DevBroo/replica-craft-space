@@ -1,5 +1,6 @@
 import React from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
+import picnifyLogo from '/lovable-uploads/f7960b1f-407a-4738-b8f6-067ea4600889.png';
 import { 
   Menu, 
   Gauge, 
@@ -52,13 +53,14 @@ const SharedSidebar: React.FC<SharedSidebarProps> = ({ sidebarCollapsed, setSide
 
   return (
     <div className={`fixed left-0 top-0 h-full sidebar-modern transition-all duration-300 z-40 ${sidebarCollapsed ? 'w-16' : 'w-64'}`}>
-      <div className="flex items-center justify-between p-4 border-b border-sidebar-border">
+      <div className="flex items-center p-4 border-b border-sidebar-border">
         {!sidebarCollapsed && (
-          <div className="flex items-center space-x-2">
-            <div className="w-8 h-8 bg-gradient-to-r from-primary to-primary-glow rounded-lg flex items-center justify-center">
-              <span className="text-sm font-bold text-primary-foreground">P</span>
-            </div>
-            <span className="font-bold text-sidebar-foreground">Picnify Admin</span>
+          <div className="flex items-center space-x-2 flex-1 min-w-0">
+            <img 
+              src={picnifyLogo} 
+              alt="Picnify Logo" 
+              className="h-7 w-auto object-contain flex-shrink-0"
+            />
           </div>
         )}
         <IconButton
@@ -67,7 +69,7 @@ const SharedSidebar: React.FC<SharedSidebarProps> = ({ sidebarCollapsed, setSide
           onClick={toggleSidebar}
           tooltip={sidebarCollapsed ? "Expand sidebar" : "Collapse sidebar"}
           aria-label={sidebarCollapsed ? "Expand sidebar" : "Collapse sidebar"}
-          className="hover:bg-sidebar-accent text-sidebar-foreground"
+          className="hover:bg-sidebar-accent text-sidebar-foreground flex-shrink-0 ml-2"
         />
       </div>
       <nav className="mt-4 space-y-1 px-2">

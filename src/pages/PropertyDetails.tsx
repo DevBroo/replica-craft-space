@@ -379,7 +379,7 @@ const PropertyDetails = () => {
       
       toast({
         title: "Message Sent! 📨",
-        description: "Your message has been sent to the property owner. They will respond soon.",
+        description: "Your message has been sent to the host. They will respond soon.",
       });
     } catch (error) {
       console.error('Error sending message:', error);
@@ -1101,10 +1101,10 @@ const PropertyDetails = () => {
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <MessageCircle className="h-5 w-5" />
-              Message Property Owner
+              Message Host
             </DialogTitle>
             <DialogDescription>
-              Send a message to the property owner about this listing. They'll respond to you directly.
+              Send a message to the host about this listing. They'll respond to you directly.
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4 py-4">

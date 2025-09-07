@@ -321,7 +321,7 @@ export const SecuritySettings: React.FC = () => {
                     <SelectContent>
                       <SelectItem value="user">User</SelectItem>
                       <SelectItem value="agent">Agent</SelectItem>
-                      <SelectItem value="owner">Property Owner</SelectItem>
+                      <SelectItem value="owner">Host</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>

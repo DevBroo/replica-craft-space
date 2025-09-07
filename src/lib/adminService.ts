@@ -2,7 +2,7 @@ import { supabase } from '../integrations/supabase/client';
 import { bankingService } from './bankingService';
 import { profileSecurityService } from './profileSecurityService';
 
-export interface PropertyOwner {
+export interface Host {
   id: string;
   email: string | null;
   full_name: string | null;
@@ -49,10 +49,10 @@ export const adminService = {
     };
   },
 
-  // Fetch all property owners with their property counts and optional filters
-  async getPropertyOwners(filters?: OwnerFilters): Promise<PropertyOwner[]> {
+  // Fetch all hosts with their property counts and optional filters
+  async getHosts(filters?: OwnerFilters): Promise<Host[]> {
     try {
-      console.log('🔍 Fetching property owners using edge function...', filters);
+      console.log('🔍 Fetching hosts using edge function...', filters);
       
       // Get current session and verify authorization
       const { data: { session } } = await supabase.auth.getSession();
@@ -74,7 +74,7 @@ export const adminService = {
       });
 
       if (error) {
-        console.error('❌ Error fetching property owners:', error);
+        console.error('❌ Error fetching hosts:', error);
         
         // Handle specific error types
         if (error.message?.includes('401') || error.message?.includes('Unauthorized')) {
@@ -87,18 +87,18 @@ export const adminService = {
         throw error;
       }
 
-      console.log('✅ Property owners loaded:', data.owners?.length || 0);
+      console.log('✅ Hosts loaded:', data.owners?.length || 0);
       return data.owners || [];
     } catch (error) {
-      console.error('💥 Error in getPropertyOwners:', error);
+      console.error('💥 Error in getHosts:', error);
       throw error;
     }
   },
 
-  // Add new property owner
-  async addPropertyOwner(ownerData: { email: string; full_name: string; phone?: string }): Promise<void> {
+  // Add new host
+  async addHost(ownerData: { email: string; full_name: string; phone?: string }): Promise<void> {
     try {
-      console.log('👤 Adding new property owner:', ownerData.email);
+      console.log('👤 Adding new host:', ownerData.email);
       
       // Get current session and verify authorization
       const { data: { session } } = await supabase.auth.getSession();
@@ -108,7 +108,7 @@ export const adminService = {
 
       // Simple client-side check to prevent admin from inviting themselves
       if (session.user?.email === ownerData.email.toLowerCase()) {
-        throw new Error('You cannot invite yourself as a property owner.');
+        throw new Error('You cannot invite yourself as a host.');
       }
       
       const { data, error } = await supabase.functions.invoke('admin-owners', {
@@ -128,7 +128,7 @@ export const adminService = {
       });
 
       if (error) {
-        console.error('❌ Error adding property owner:', error);
+        console.error('❌ Error adding host:', error);
         
         // Handle specific error types
         if (error.message?.includes('401') || error.message?.includes('Unauthorized')) {
@@ -143,12 +143,12 @@ export const adminService = {
 
       // Check for success/failure in the response data
       if (data && data.success === false) {
-        throw new Error(data.message || 'Failed to add property owner');
+        throw new Error(data.message || 'Failed to add host');
       }
 
-      console.log('✅ Property owner added successfully:', data);
+      console.log('✅ Host added successfully:', data);
     } catch (error) {
-      console.error('💥 Error in addPropertyOwner:', error);
+      console.error('💥 Error in addHost:', error);
       throw error;
     }
   },
@@ -517,7 +517,7 @@ export const adminService = {
   },
 
   // Get owner details with properties
-  async getOwnerDetails(ownerId: string): Promise<PropertyOwner & { properties: any[] }> {
+  async getOwnerDetails(ownerId: string): Promise<Host & { properties: any[] }> {
     try {
       console.log('🔍 Fetching owner details:', ownerId);
       
@@ -557,7 +557,7 @@ export const adminService = {
         created_by: profile.created_by,
         properties: properties || [],
         properties_count: properties?.length || 0
-      } as PropertyOwner & { properties: any[] };
+      } as Host & { properties: any[] };
 
       console.log('✅ Owner details fetched:', ownerDetails);
       return ownerDetails;

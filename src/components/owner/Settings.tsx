@@ -600,7 +600,7 @@ const Settings: React.FC<SettingsProps> = ({ sidebarCollapsed, toggleSidebar, ac
                   className="w-8 h-8 rounded-full object-cover"
                 />
                 <span className="text-sm font-medium text-gray-700">
-                  {user?.full_name || user?.email || 'Property Owner'}
+                  {user?.full_name || user?.email || 'Host'}
                 </span>
                 <ChevronDown className="h-4 w-4 text-gray-400" />
               </div>
@@ -746,7 +746,8 @@ const Settings: React.FC<SettingsProps> = ({ sidebarCollapsed, toggleSidebar, ac
               </div>
             </div>
 
-            {/* Account Actions */}
+            {/* Account Actions - Hidden for hosts */}
+            {false && (
             <div className="bg-white rounded-lg shadow-sm border">
               <div className="p-6 border-b">
                 <h3 className="text-lg font-semibold text-gray-800">Account</h3>
@@ -795,6 +796,7 @@ const Settings: React.FC<SettingsProps> = ({ sidebarCollapsed, toggleSidebar, ac
                 </div>
               </div>
             </div>
+            )}
           </div>
         </main>
       </div>

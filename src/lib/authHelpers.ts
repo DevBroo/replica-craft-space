@@ -59,7 +59,7 @@ export const checkOwnerAuth = async () => {
       .single();
 
     if (profileError || !profile || (profile.role !== 'property_owner' && profile.role !== 'owner')) {
-      return { isAuthenticated: false, error: 'Property owner access required' };
+      return { isAuthenticated: false, error: 'Host access required' };
     }
 
     return { isAuthenticated: true, user: session.user, role: profile.role };

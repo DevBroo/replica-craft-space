@@ -548,7 +548,7 @@ ${dateRange},${earnings?.total_revenue || 0},${earnings?.monthly_earnings || 0},
                 <span className="text-sm font-medium">Back to Home</span>
               </button>
               <div className="h-6 w-px bg-gray-300"></div>
-              <h1 className="text-2xl font-semibold text-gray-800">Property Owner Dashboard</h1>
+              <h1 className="text-2xl font-semibold text-gray-800">Host Dashboard</h1>
             </div>
             <div className="flex items-center space-x-4">
               <div className="text-sm text-gray-500">
@@ -858,7 +858,8 @@ ${dateRange},${earnings?.total_revenue || 0},${earnings?.monthly_earnings || 0},
             </div>
           </div>
 
-          {/* Revenue Charts */}
+          {/* Revenue Charts - Hidden */}
+          {false && (
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
             <div className="bg-white rounded-lg shadow-sm border p-6">
               <div className="flex items-center justify-between mb-4">
@@ -887,6 +888,7 @@ ${dateRange},${earnings?.total_revenue || 0},${earnings?.monthly_earnings || 0},
               <div id="weekly-chart" className="w-full h-80"></div>
             </div>
           </div>
+          )}
 
           {/* Property-wise Earnings and Payment Status */}
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">

@@ -36,7 +36,7 @@ const NotificationPanel: React.FC = () => {
 
       switch (formData.target) {
         case 'property_owners':
-          result = await NotificationService.notifyPropertyOwners(
+          result = await NotificationService.notifyHosts(
             formData.title,
             formData.message,
             user?.id,
@@ -214,7 +214,7 @@ const NotificationPanel: React.FC = () => {
                   <SelectItem value="property_owners">
                     <div className="flex items-center space-x-2">
                       <UserCheck className="h-4 w-4" />
-                      <span>Property Owners</span>
+                      <span>Hosts</span>
                     </div>
                   </SelectItem>
                   <SelectItem value="all_users">
@@ -246,7 +246,7 @@ const NotificationPanel: React.FC = () => {
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="user">User</SelectItem>
-                    <SelectItem value="property_owner">Property Owner</SelectItem>
+                    <SelectItem value="property_owner">Host</SelectItem>
                     <SelectItem value="agent">Agent</SelectItem>
                     <SelectItem value="admin">Admin</SelectItem>
                   </SelectContent>

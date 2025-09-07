@@ -520,7 +520,7 @@ const OptimizedProperties = () => {
                   .filter((category) => category.category !== 'day-picnic')
                   .map((category) => (
                     <SelectItem key={category.category} value={category.category}>
-                      {category.label} ({category.count})
+                      {category.label}
                     </SelectItem>
                   ))}
               </SelectContent>

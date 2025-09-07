@@ -938,7 +938,7 @@ const PropertyApproval: React.FC = () => {
               recipientName={
                 showSendNotification.owner?.full_name ||
                 showSendNotification.owner?.email ||
-                "Property Owner"
+                "Host"
               }
               onSent={() => {
                 setShowSendNotification(null);

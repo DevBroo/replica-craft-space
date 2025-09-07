@@ -20,7 +20,7 @@ const TrustSafety = () => {
           <h2 className="text-3xl font-bold mb-8">Our Safety Commitment</h2>
           <p className="text-lg text-muted-foreground max-w-3xl mx-auto mb-12">
             At Picnify, trust and safety are fundamental to our mission. We're committed to creating a secure platform 
-            where property owners and guests can connect with confidence.
+            where hosts and guests can connect with confidence.
           </p>
           
           <div className="grid md:grid-cols-3 gap-8">
@@ -100,7 +100,7 @@ const TrustSafety = () => {
                   <CheckCircle className="w-5 h-5 text-blue-500 mr-3 mt-1 flex-shrink-0" />
                   <div>
                     <h4 className="font-semibold">Government ID Verification</h4>
-                    <p className="text-sm text-muted-foreground">Mandatory ID verification for all property owners and guests</p>
+                    <p className="text-sm text-muted-foreground">Mandatory ID verification for all hosts and guests</p>
                   </div>
                 </div>
                 <div className="flex items-start">
@@ -228,7 +228,7 @@ const TrustSafety = () => {
           
           <div className="grid md:grid-cols-2 gap-8">
             <div>
-              <h3 className="text-xl font-semibold mb-4">For Property Owners</h3>
+              <h3 className="text-xl font-semibold mb-4">For Hosts</h3>
               <ul className="space-y-3 text-muted-foreground">
                 <li>• Property damage protection up to ₹10 lakhs</li>
                 <li>• Liability coverage for guest injuries</li>

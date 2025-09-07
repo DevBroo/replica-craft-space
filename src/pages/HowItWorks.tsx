@@ -43,7 +43,7 @@ const HowItWorks = () => {
 
         {/* For Hosts */}
         <section className="mb-20 bg-muted/30 rounded-2xl p-12">
-          <h2 className="text-3xl font-bold text-center mb-12">For Property Owners</h2>
+          <h2 className="text-3xl font-bold text-center mb-12">For Hosts</h2>
           <div className="grid md:grid-cols-3 gap-8">
             <div className="text-center">
               <div className="bg-secondary/20 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">

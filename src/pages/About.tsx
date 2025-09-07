@@ -116,7 +116,7 @@ const About: React.FC = () => {
     id: 2,
     name: 'Priya Sharma',
     position: 'Head of Operations',
-    bio: 'Operations expert ensuring seamless experiences for both travelers and property owners across India.',
+    bio: 'Operations expert ensuring seamless experiences for both travelers and hosts across India.',
     image: 'https://readdy.ai/api/search-image?query=professional%20indian%20businesswoman%20operations%20manager%20in%20modern%20office%20confident%20professional%20attire%20clean%20background%20corporate%20headshot%20style&width=300&height=300&seq=ops1&orientation=squarish',
     social: {
       linkedin: '#',
@@ -163,7 +163,7 @@ const About: React.FC = () => {
   const values = [{
     icon: 'fas fa-heart',
     title: 'Trust & Safety',
-    description: 'We prioritize the safety and security of our travelers and property owners through verified listings and secure transactions.'
+    description: 'We prioritize the safety and security of our travelers and hosts through verified listings and secure transactions.'
   }, {
     icon: 'fas fa-star',
     title: 'Excellence',
@@ -211,7 +211,7 @@ const About: React.FC = () => {
       name: 'Rajesh Kumar',
       location: 'Delhi, NCR',
       rating: 5,
-      text: 'As a property owner, Picnify has helped me reach more travelers and increase my bookings by 300%. The platform is user-friendly and the support team is excellent.',
+      text: 'As a host, Picnify has helped me reach more travelers and increase my bookings by 300%. The platform is user-friendly and the support team is excellent.',
       image: 'https://readdy.ai/api/search-image?query=professional%20indian%20man%20property%20owner%20smiling%20confident%20business%20owner%20testimonial%20style&width=100&height=100&seq=test2&orientation=squarish'
     },
     {
@@ -286,7 +286,7 @@ const About: React.FC = () => {
               About <span className="bg-gradient-to-r from-red-600 to-orange-500 bg-clip-text text-transparent">Picnify.in</span>
             </h1>
             <p className="text-base sm:text-lg md:text-xl text-gray-600 max-w-3xl mx-auto mb-8 leading-relaxed">
-              We're revolutionizing vacation rentals in India by connecting travelers with authentic experiences and empowering property owners to maximize their potential.
+              We're revolutionizing vacation rentals in India by connecting travelers with authentic experiences and empowering hosts to maximize their potential.
             </p>
             <a href="/" className="inline-flex items-center gap-3 bg-gradient-to-r from-red-600 to-orange-500 text-white px-8 py-4 rounded-xl hover:from-red-700 hover:to-orange-600 transition-all duration-300 cursor-pointer whitespace-nowrap !rounded-button font-bold text-lg shadow-xl hover:shadow-2xl transform hover:scale-105">
               <i className="fas fa-arrow-left text-xl"></i>
@@ -348,7 +348,7 @@ const About: React.FC = () => {
                 <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold text-gray-900 font-poppins">Our Mission</h2>
               </div>
               <p className="text-lg text-gray-600 leading-relaxed mb-6">
-                To democratize travel in India by making authentic, safe, and affordable vacation rentals accessible to everyone while empowering local property owners to build sustainable businesses.
+                To democratize travel in India by making authentic, safe, and affordable vacation rentals accessible to everyone while empowering local hosts to build sustainable businesses.
               </p>
               <p className="text-lg text-gray-600 leading-relaxed">
                 We believe that travel should be transformative, connecting people with local cultures, communities, and experiences that create lasting memories and meaningful relationships.
@@ -502,7 +502,7 @@ const About: React.FC = () => {
                 <i className="fas fa-calendar-check text-green-600 text-2xl"></i>
               </div>
               <h3 className="text-xl font-bold text-gray-900 mb-4 group-hover:text-red-600 transition-colors duration-300">Book Securely</h3>
-              <p className="text-gray-600 leading-relaxed">Make secure payments through our platform. Get instant confirmation and connect directly with property owners.</p>
+              <p className="text-gray-600 leading-relaxed">Make secure payments through our platform. Get instant confirmation and connect directly with hosts.</p>
             </div>
             <div className="text-center group cursor-pointer">
               <div className="relative mb-8">

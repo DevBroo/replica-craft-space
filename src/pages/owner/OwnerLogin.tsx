@@ -48,14 +48,14 @@ const OwnerLogin: React.FC = () => {
     if (!loading && isAuthenticated && user && !isSwitchMode) {
       console.log('✅ User is authenticated, checking role...');
       
-      // Only redirect if user is actually a property owner
+      // Only redirect if user is actually a host
       if (user.role === 'property_owner' || user.role === 'owner') {
-        console.log('✅ User is property owner, redirecting to dashboard');
+        console.log('✅ User is host, redirecting to dashboard');
         const redirectTo = searchParams.get('redirect');
         const targetUrl = redirectTo || '/owner/view';
         navigate(targetUrl, { replace: true });
       } else {
-        console.log('⚠️ User is not a property owner, role:', user.role);
+        console.log('⚠️ User is not a host, role:', user.role);
       }
       // Don't redirect users with other roles - let them sign out if needed
     }
@@ -152,7 +152,7 @@ const OwnerLogin: React.FC = () => {
             alt="Picnify Logo" 
             className="h-12 mx-auto mb-4" 
           />
-          <h1 className="text-2xl font-bold text-gray-900">Property Owner Login</h1>
+          <h1 className="text-2xl font-bold text-gray-900">Host Login</h1>
           <p className="text-gray-600 mt-2">Access your property management dashboard</p>
         </div>
 
@@ -174,7 +174,7 @@ const OwnerLogin: React.FC = () => {
               <Alert className="mb-6" variant="default">
                 <AlertDescription>
                   You are currently signed in as <strong>{user.email}</strong> ({user.role}). 
-                  To add a property as an owner, please sign out and sign in with a property owner account.
+                  To add a property as an owner, please sign out and sign in with a host account.
                 </AlertDescription>
                 <div className="mt-3">
                   <Button 
@@ -373,7 +373,7 @@ const OwnerLogin: React.FC = () => {
               <div className="text-sm text-gray-600">
                 Don't have an account?{' '}
                 <Link to="/owner/signup" className="text-blue-600 hover:text-blue-800 font-medium">
-                  Sign up as Property Owner
+                  Sign up as Host
                 </Link>
               </div>
             </div>

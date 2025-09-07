@@ -250,7 +250,7 @@ const HostSignup: React.FC = () => {
                     <SelectItem value="owner">
                       <div className="flex items-center">
                         <Home className="w-4 h-4 mr-2" />
-                        Property Owner
+                        Host
                       </div>
                     </SelectItem>
                     <SelectItem value="agent">

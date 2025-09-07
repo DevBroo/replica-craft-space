@@ -209,7 +209,7 @@ export class AIChatService {
       } else {
         return {
           message: `I found your booking reference ${customerDetails.booking_reference}. Let me check the details for you. What specific issue are you experiencing with your booking?`,
-          suggested_actions: ['Check booking status', 'Modify booking', 'Cancel booking', 'Contact property owner']
+          suggested_actions: ['Check booking status', 'Modify booking', 'Cancel booking', 'Contact host']
         };
       }
     }
@@ -224,7 +224,7 @@ export class AIChatService {
     if (customerDetails.issue_type === 'property') {
       return {
         message: "I'd be happy to help you with property-related questions. Are you looking for information about a specific property, having issues with a current booking, or interested in booking a new venue?",
-        suggested_actions: ['Search properties', 'Check availability', 'View property details', 'Contact property owner']
+        suggested_actions: ['Search properties', 'Check availability', 'View property details', 'Contact host']
       };
     }
 
