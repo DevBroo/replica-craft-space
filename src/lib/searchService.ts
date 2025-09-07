@@ -108,9 +108,17 @@ export class SearchService {
       // Apply text search filter
       if (filters.search && filters.search.trim()) {
         const searchTerm = filters.search.trim();
-        query = query.or(
-          `title.ilike.%${searchTerm}%,description.ilike.%${searchTerm}%,general_location.ilike.%${searchTerm}%,location->>city.ilike.%${searchTerm}%,location->>state.ilike.%${searchTerm}%`
-        );
+        
+        // Auto-detect day picnic searches
+        if (searchTerm.toLowerCase().includes('day picnic') || searchTerm.toLowerCase().includes('daypicnic')) {
+          // If searching for day picnic, ensure we only show day picnic properties - be more strict
+          query = query.or('property_type.eq.day-picnic,property_type.eq.Day Picnic,property_type.eq.day_picnic,property_type.eq.daypicnic');
+        } else {
+          // Regular text search
+          query = query.or(
+            `title.ilike.%${searchTerm}%,description.ilike.%${searchTerm}%,general_location.ilike.%${searchTerm}%,location->>city.ilike.%${searchTerm}%,location->>state.ilike.%${searchTerm}%`
+          );
+        }
       }
 
       // Apply location filter
@@ -135,8 +143,8 @@ export class SearchService {
       // Apply category filter
       if (filters.category && filters.category !== ('all' as any)) {
         if (filters.category === 'day-picnic') {
-          // Only show day picnic properties (handle all variations)
-          query = query.or('property_type.eq.day-picnic,property_type.eq.Day Picnic,property_type.eq.day_picnic,property_type.eq.daypicnic,property_type.ilike.%day%picnic%');
+          // Only show day picnic properties (handle all variations) - be more strict
+          query = query.or('property_type.eq.day-picnic,property_type.eq.Day Picnic,property_type.eq.day_picnic,property_type.eq.daypicnic');
         } else {
           // Show regular properties but exclude day picnics (all variations)
           query = query
@@ -145,11 +153,22 @@ export class SearchService {
             .not('property_type', 'ilike', '%picnic%');
         }
       } else {
-        // When no specific category is selected, exclude day picnics by default (all variations)
-        // Day picnics should only be shown when explicitly requested
-        query = query
-          .not('property_type', 'ilike', '%day%picnic%')
-          .not('property_type', 'ilike', '%picnic%');
+        // Check if search term indicates day picnic search
+        const isDayPicnicSearch = filters.search && (
+          filters.search.toLowerCase().includes('day picnic') || 
+          filters.search.toLowerCase().includes('daypicnic')
+        );
+        
+        if (isDayPicnicSearch) {
+          // If searching for day picnic, only show day picnic properties - be more strict
+          query = query.or('property_type.eq.day-picnic,property_type.eq.Day Picnic,property_type.eq.day_picnic,property_type.eq.daypicnic');
+        } else {
+          // When no specific category is selected, exclude day picnics by default (all variations)
+          // Day picnics should only be shown when explicitly requested
+          query = query
+            .not('property_type', 'ilike', '%day%picnic%')
+            .not('property_type', 'ilike', '%picnic%');
+        }
       }
 
       // Apply guest capacity filter

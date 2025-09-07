@@ -1,6 +1,6 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Search, Bell, ChevronDown, LogOut } from 'lucide-react';
+import { Search, Bell, ChevronDown, LogOut, Home } from 'lucide-react';
 import IconButton from './ui/IconButton';
 
 interface SharedHeaderProps {
@@ -43,6 +43,15 @@ const SharedHeader: React.FC<SharedHeaderProps> = ({
     <header className="bg-white shadow-sm border-b px-6 py-4">
       <div className="flex items-center justify-between">
         <div className="flex items-center space-x-4">
+          <button
+            onClick={() => navigate('/')}
+            className="flex items-center space-x-2 px-3 py-2 text-sm font-medium text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors"
+            title="Back to Home"
+          >
+            <Home className="h-4 w-4" />
+            <span>Back to Home</span>
+          </button>
+          <div className="h-6 w-px bg-gray-300"></div>
           <h1 className="text-2xl font-semibold text-gray-800">{title}</h1>
           <div className="text-sm text-gray-500">
             <span>Super Admin Panel</span> / <span className="text-blue-600">{breadcrumb}</span>
@@ -78,7 +87,11 @@ const SharedHeader: React.FC<SharedHeaderProps> = ({
             />
             <span className="text-sm font-medium text-gray-700">Super Admin</span>
             <div className="relative group">
-              <button className="flex items-center space-x-1 hover:bg-gray-100 rounded-lg px-2 py-1 transition-colors">
+              <button 
+                className="flex items-center space-x-1 hover:bg-gray-100 rounded-lg px-2 py-1 transition-colors"
+                aria-label="Admin menu"
+                title="Admin menu"
+              >
                 <ChevronDown className="w-4 h-4 text-gray-400" />
               </button>
               <div className="absolute right-0 top-full mt-1 w-48 bg-white border border-gray-200 rounded-lg shadow-lg z-10 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200">

@@ -24,9 +24,10 @@ const SearchForm: React.FC<SearchFormProps> = ({
   const navigate = useNavigate();
   const [filters, setFilters] = useState<SearchFilters>({
     location: 'all',
-    category: 'day-picnic',
+    category: 'all',
     date: '',
     guests: 2,
+    search: '',
     ...initialFilters
   });
   const [selectedDate, setSelectedDate] = useState<Date | undefined>();
@@ -74,23 +75,32 @@ const SearchForm: React.FC<SearchFormProps> = ({
   const handleSearch = () => {
     console.log('🔍 Search triggered with filters:', filters);
     
+    // Auto-detect day picnic searches
+    let finalFilters = { ...filters };
+    if (filters.search && filters.search.toLowerCase().includes('day picnic')) {
+      finalFilters.category = 'day-picnic';
+    }
+    
     if (onSearch) {
-      onSearch(filters);
+      onSearch(finalFilters);
     } else {
       // Navigate to properties page with search params
       const searchParams = new URLSearchParams();
       
-      if (filters.location && filters.location !== 'all') {
-        searchParams.set('location', filters.location);
+      if (finalFilters.location && finalFilters.location !== 'all') {
+        searchParams.set('location', finalFilters.location);
       }
-      if (filters.category && filters.category !== 'all' as any) {
-        searchParams.set('category', filters.category);
+      if (finalFilters.category && finalFilters.category !== 'all' as any) {
+        searchParams.set('category', finalFilters.category);
       }
-      if (filters.date) {
-        searchParams.set('date', filters.date);
+      if (finalFilters.date) {
+        searchParams.set('date', finalFilters.date);
       }
-      if (filters.guests && filters.guests > 0) {
-        searchParams.set('guests', filters.guests.toString());
+      if (finalFilters.guests && finalFilters.guests > 0) {
+        searchParams.set('guests', finalFilters.guests.toString());
+      }
+      if (finalFilters.search) {
+        searchParams.set('search', finalFilters.search);
       }
 
       const queryString = searchParams.toString();
@@ -126,6 +136,18 @@ const SearchForm: React.FC<SearchFormProps> = ({
 
           {/* Search Fields */}
           <div className="flex flex-1 gap-2">
+            {/* Search Term */}
+            <div className="relative flex-1">
+              <input
+                type="text"
+                placeholder="Search..."
+                value={filters.search || ''}
+                onChange={(e) => setFilters(prev => ({ ...prev, search: e.target.value }))}
+                className="w-full h-10 pl-10 pr-3 text-sm border border-gray-300 rounded-lg hover:border-gray-400 focus:border-gray-400 focus:ring-1 focus:ring-gray-300"
+              />
+              <i className="fas fa-search absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 text-sm"></i>
+            </div>
+
             {/* Location */}
             <Select value={filters.location} onValueChange={handleLocationChange}>
               <SelectTrigger className="flex-1">
@@ -145,7 +167,7 @@ const SearchForm: React.FC<SearchFormProps> = ({
 
             {/* Guests */}
             <Select value={filters.guests?.toString()} onValueChange={handleGuestsChange}>
-              <SelectTrigger className="w-32">
+              <SelectTrigger className="w-24">
                 <UsersIcon className="w-4 h-4 mr-2 text-orange-500" />
                 <SelectValue />
               </SelectTrigger>
@@ -204,7 +226,21 @@ const SearchForm: React.FC<SearchFormProps> = ({
       </div>
 
       {/* Search Form */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-7 gap-4 md:gap-6 items-center">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-8 gap-4 md:gap-6 items-center">
+        {/* Search Term */}
+        <div className="lg:col-span-2">
+          <div className="relative">
+            <input
+              type="text"
+              placeholder="Search properties..."
+              value={filters.search || ''}
+              onChange={(e) => setFilters(prev => ({ ...prev, search: e.target.value }))}
+              className="w-full h-14 pl-12 pr-4 text-base border border-gray-300 rounded-lg hover:border-gray-400 focus:border-gray-400 focus:ring-1 focus:ring-gray-300"
+            />
+            <i className="fas fa-search absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400"></i>
+          </div>
+        </div>
+
         {/* Location */}
         <div className="lg:col-span-2">
           <Select value={filters.location} onValueChange={handleLocationChange} disabled={locationsLoading}>
@@ -239,7 +275,7 @@ const SearchForm: React.FC<SearchFormProps> = ({
         </div>
 
         {/* Date */}
-        <div className="lg:col-span-2">
+        <div className="lg:col-span-1">
           <Popover>
             <PopoverTrigger asChild>
               <Button

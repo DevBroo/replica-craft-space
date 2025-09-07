@@ -591,7 +591,10 @@ const OptimizedProperties = () => {
         <div className="flex justify-between items-center mb-6">
           <Tabs value={activeTab} onValueChange={handleTabChange} className="w-auto">
             <TabsList>
-              <TabsTrigger value="properties">Properties ({properties.length})</TabsTrigger>
+              {/* Only show Properties tab when NOT day-picnic category */}
+              {selectedType !== 'day-picnic' && (
+                <TabsTrigger value="properties">Properties ({properties.length})</TabsTrigger>
+              )}
               {/* Only show Day Picnics tab when day-picnic category is selected or no specific property type is selected */}
               {(selectedType === 'day-picnic' || selectedType === 'all') && (
                 <TabsTrigger value="day-picnics">
@@ -604,7 +607,9 @@ const OptimizedProperties = () => {
 
         {/* Content */}
         <Tabs value={activeTab} onValueChange={handleTabChange}>
-          <TabsContent value="properties" className="mt-0">
+          {/* Only show Properties tab content when NOT day-picnic category */}
+          {selectedType !== 'day-picnic' && (
+            <TabsContent value="properties" className="mt-0">
             {/* Results count */}
             <div className="mb-6">
               <p className="text-muted-foreground">
@@ -675,6 +680,7 @@ const OptimizedProperties = () => {
               </div>
             )}
           </TabsContent>
+          )}
 
           <TabsContent value="day-picnics" className="mt-0">
             {isLoadingDayPicnics ? (

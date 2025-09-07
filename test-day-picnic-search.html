@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Day Picnic Search Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .test-section {
+            margin: 20px 0;
+            padding: 20px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+        }
+        .test-result {
+            margin: 10px 0;
+            padding: 10px;
+            border-radius: 4px;
+        }
+        .success {
+            background-color: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        .error {
+            background-color: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        .info {
+            background-color: #d1ecf1;
+            color: #0c5460;
+            border: 1px solid #bee5eb;
+        }
+    </style>
+</head>
+<body>
+    <h1>Day Picnic Search Test</h1>
+    
+    <div class="test-section">
+        <h2>Test Instructions</h2>
+        <p>This test verifies that searching for "day picnic" from the home page correctly filters to show only day picnic properties.</p>
+        
+        <h3>Steps to Test:</h3>
+        <ol>
+            <li>Go to the home page</li>
+            <li>In the search form, type "day picnic" in the search field</li>
+            <li>Click the Search button</li>
+            <li>Verify that only day picnic properties are shown in the results</li>
+        </ol>
+        
+        <h3>Expected Behavior:</h3>
+        <ul>
+            <li>Search results should only show properties with property_type containing "day picnic" variations</li>
+            <li>No regular vacation rental properties should appear</li>
+            <li>The category filter should automatically be set to "day-picnic"</li>
+        </ul>
+    </div>
+
+    <div class="test-section">
+        <h2>Search Variations to Test</h2>
+        <ul>
+            <li>"day picnic"</li>
+            <li>"daypicnic"</li>
+            <li>"Day Picnic"</li>
+            <li>"DAY PICNIC"</li>
+            <li>"picnic day"</li>
+        </ul>
+    </div>
+
+    <div class="test-section">
+        <h2>Technical Implementation</h2>
+        <div class="info">
+            <h4>Changes Made:</h4>
+            <ul>
+                <li><strong>SearchForm.tsx:</strong> Added search input field and auto-detection of "day picnic" searches</li>
+                <li><strong>SearchService.ts:</strong> Enhanced search logic to handle day picnic text searches</li>
+                <li><strong>Category Filter:</strong> Automatically sets category to 'day-picnic' when searching for day picnic terms</li>
+            </ul>
+        </div>
+    </div>
+
+    <div class="test-section">
+        <h2>Database Query Logic</h2>
+        <div class="info">
+            <p>When searching for "day picnic", the system now:</p>
+            <ol>
+                <li>Detects "day picnic" in the search term</li>
+                <li>Applies property_type filter: <code>property_type.eq.day-picnic,property_type.eq.Day Picnic,property_type.eq.day_picnic,property_type.eq.daypicnic,property_type.ilike.%day%picnic%</code></li>
+                <li>Excludes all other property types</li>
+            </ol>
+        </div>
+    </div>
+
+    <script>
+        // Simple test to verify the search form behavior
+        console.log('Day Picnic Search Test Page Loaded');
+        
+        // Test the search term detection logic
+        function testSearchTermDetection() {
+            const testTerms = ['day picnic', 'daypicnic', 'Day Picnic', 'DAY PICNIC', 'picnic day'];
+            
+            testTerms.forEach(term => {
+                const isDayPicnic = term.toLowerCase().includes('day picnic') || term.toLowerCase().includes('daypicnic');
+                console.log(`Term: "${term}" -> Is Day Picnic: ${isDayPicnic}`);
+            });
+        }
+        
+        testSearchTermDetection();
+    </script>
+</body>
+</html>
