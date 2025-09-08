@@ -72,7 +72,7 @@ export const useLiveChat = () => {
     if (!currentTicket?.id) return;
 
     console.log('Setting up realtime subscription for ticket:', currentTicket.id);
-    
+
     const channel = supabase
       .channel(`support_chat_${currentTicket.id}`)
       .on(
@@ -107,7 +107,7 @@ export const useLiveChat = () => {
 
   const getOrCreateChatTicketForUser = async (): Promise<ChatTicket> => {
     console.log('Getting or creating chat ticket for user:', user?.id);
-    
+
     // First, try to find an existing open chat ticket
     const existingTickets = await supportTicketService.getTickets({
       status: 'open',
@@ -151,10 +151,10 @@ export const useLiveChat = () => {
     try {
       setIsLoading(true);
       console.log('Loading ticket:', ticketId);
-      
+
       const ticket = await supportTicketService.getTicketById(ticketId);
       console.log('Loaded ticket:', ticket);
-      
+
       if (ticket.status === 'closed') {
         console.log('Ticket is closed, creating new one');
         localStorage.removeItem(`liveChat_${user.id}`);
@@ -187,7 +187,7 @@ export const useLiveChat = () => {
     try {
       setIsCreatingTicket(true);
       console.log('Getting or creating chat ticket');
-      
+
       if (!user) {
         // Create guest session
         console.log('Creating guest chat session');
@@ -198,7 +198,7 @@ export const useLiveChat = () => {
           created_at: new Date().toISOString()
         };
         setCurrentTicket(guestTicket);
-        
+
         // Add welcome message for guest
         const welcomeMessage: ChatMessage = {
           id: `welcome-${Date.now()}`,
@@ -216,10 +216,10 @@ export const useLiveChat = () => {
         setMessages([welcomeMessage]);
         return;
       }
-      
+
       const ticket = await getOrCreateChatTicketForUser();
       setCurrentTicket(ticket);
-      
+
       // Save to localStorage
       localStorage.setItem(`liveChat_${user.id}`, ticket.id);
       console.log('Saved ticket ID to localStorage:', ticket.id);
@@ -230,7 +230,7 @@ export const useLiveChat = () => {
       setMessages(ticketMessages as any);
     } catch (error) {
       console.error('Error creating chat ticket:', error);
-      
+
       // Fallback to guest mode if database fails
       console.log('Falling back to guest mode due to error');
       const guestTicket = {
@@ -240,7 +240,7 @@ export const useLiveChat = () => {
         created_at: new Date().toISOString()
       };
       setCurrentTicket(guestTicket);
-      
+
       const errorMessage: ChatMessage = {
         id: `error-${Date.now()}`,
         content: "Hello! I'm here to help you. Due to a temporary issue, we're running in guest mode. I can still assist you with general questions about Picnify. How can I help you today?",
@@ -268,7 +268,7 @@ export const useLiveChat = () => {
 
     try {
       console.log('Sending message:', content);
-      
+
       // Add user message to local state immediately
       const userMessage: ChatMessage = {
         id: `temp-${Date.now()}`,
@@ -283,9 +283,9 @@ export const useLiveChat = () => {
           role: 'customer'
         }
       };
-      
+
       setMessages(prev => [...prev, userMessage]);
-      
+
       // Save user message to database (only if authenticated)
       if (user && !currentTicket.id.startsWith('guest-')) {
         try {
@@ -295,13 +295,13 @@ export const useLiveChat = () => {
           // Continue with AI processing even if database save fails
         }
       }
-      
+
       // Process with AI if in AI mode
       if (isAIMode) {
         try {
           const aiResponse = await AIChatService.processMessage(content, currentTicket.id);
           setCustomerDetails(AIChatService.getCustomerDetails());
-          
+
           // Add AI response message
           const aiMessage: ChatMessage = {
             id: `ai-${Date.now()}`,
@@ -316,9 +316,9 @@ export const useLiveChat = () => {
               role: 'agent'
             }
           };
-          
+
           setMessages(prev => [...prev, aiMessage]);
-          
+
           // Save AI response to database (only if authenticated)
           if (user && !currentTicket.id.startsWith('guest-')) {
             try {
@@ -327,14 +327,14 @@ export const useLiveChat = () => {
               console.warn('Failed to save AI response to database:', dbError);
             }
           }
-          
+
           // Check if should escalate to human
           if (aiResponse.should_escalate || AIChatService.shouldEscalateToHuman(
-            AIChatService.getCustomerDetails(), 
+            AIChatService.getCustomerDetails(),
             messages.length + 2
           )) {
             setIsAIMode(false);
-            
+
             // Add escalation message
             const escalationMessage: ChatMessage = {
               id: `escalation-${Date.now()}`,
@@ -349,20 +349,20 @@ export const useLiveChat = () => {
                 role: 'system'
               }
             };
-            
+
             setMessages(prev => [...prev, escalationMessage]);
-            
+
             // Save escalation message and update ticket (only if authenticated)
             if (user && !currentTicket.id.startsWith('guest-')) {
               try {
                 await supportTicketService.addMessage(currentTicket.id, escalationMessage.content, false, 'system');
-                
+
                 // Update ticket to request human agent
                 await supportTicketService.updateTicket(currentTicket.id, {
                   priority: 'high',
-                  category: customerDetails.issue_type === 'booking' ? 'Booking' : 
-                           customerDetails.issue_type === 'payment' ? 'Payment' : 
-                           customerDetails.issue_type === 'property' ? 'Property' : 'Other'
+                  category: customerDetails.issue_type === 'booking' ? 'Booking' :
+                    customerDetails.issue_type === 'payment' ? 'Payment' :
+                      customerDetails.issue_type === 'property' ? 'Property' : 'Other'
                 });
               } catch (dbError) {
                 console.warn('Failed to save escalation to database:', dbError);
@@ -371,7 +371,7 @@ export const useLiveChat = () => {
           }
         } catch (aiError) {
           console.error('❌ AI processing error:', aiError);
-          
+
           // Add error message to chat instead of failing silently
           const errorMessage: ChatMessage = {
             id: `error-${Date.now()}`,
@@ -386,18 +386,18 @@ export const useLiveChat = () => {
               role: 'agent'
             }
           };
-          
+
           setMessages(prev => [...prev, errorMessage]);
-          
+
           // Don't immediately switch to human mode, give AI another chance
           console.log('⚠️ AI error handled, continuing in AI mode');
         }
       }
-      
+
       console.log('✅ Message sent successfully');
     } catch (error) {
       console.error('❌ Critical error sending message:', error);
-      
+
       // Add error message to chat instead of just showing toast
       const criticalErrorMessage: ChatMessage = {
         id: `critical-error-${Date.now()}`,
@@ -412,9 +412,9 @@ export const useLiveChat = () => {
           role: 'system'
         }
       };
-      
+
       setMessages(prev => [...prev, criticalErrorMessage]);
-      
+
       // Still show toast for user awareness
       toast({
         title: "Connection Issue",
@@ -429,7 +429,7 @@ export const useLiveChat = () => {
 
     try {
       console.log('🔚 Ending chat session for ticket:', currentTicket.id);
-      
+
       // Only update database if not guest session
       if (user && !currentTicket.id.startsWith('guest-')) {
         try {
@@ -441,31 +441,31 @@ export const useLiveChat = () => {
           // Continue with cleanup even if database update fails
         }
       }
-      
+
       // Reset AI service
       AIChatService.resetConversation();
-      
+
       // Reset state
       setCurrentTicket(null);
       setMessages([]);
       setCustomerDetails({});
       setIsAIMode(true);
       setIsOpen(false);
-      
+
       toast({
         title: "Chat Ended",
         description: "Your chat session has been ended. You can start a new one anytime.",
       });
     } catch (error) {
       console.error('❌ Error ending chat:', error);
-      
+
       // Force cleanup even if there's an error
       setCurrentTicket(null);
       setMessages([]);
       setCustomerDetails({});
       setIsAIMode(true);
       setIsOpen(false);
-      
+
       toast({
         title: "Chat Session Ended",
         description: "The chat session has been closed. You can start a new one anytime.",

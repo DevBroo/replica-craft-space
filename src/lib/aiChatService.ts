@@ -31,14 +31,14 @@ export class AIChatService {
   static async processMessage(userMessage: string, ticketId: string): Promise<AIResponse> {
     try {
       console.log('🤖 Processing AI message:', userMessage);
-      
+
       // Add user message to conversation history
       this.conversationHistory.push({ role: 'user', content: userMessage });
 
       // Extract information from the message
       const extractedInfo = this.extractCustomerInfo(userMessage);
       console.log('📊 Extracted info:', extractedInfo);
-      
+
       // Update customer details
       this.customerDetails = { ...this.customerDetails, ...extractedInfo };
       console.log('👤 Updated customer details:', this.customerDetails);
@@ -147,11 +147,11 @@ export class AIChatService {
    */
   private static async generateAIResponse(userMessage: string, customerDetails: CustomerDetails): Promise<AIResponse> {
     const lowerMessage = userMessage.toLowerCase();
-    
+
     // Greeting responses - more engaging and helpful
     if (this.conversationHistory.length <= 2 && (
-      lowerMessage.includes('hello') || 
-      lowerMessage.includes('hi') || 
+      lowerMessage.includes('hello') ||
+      lowerMessage.includes('hi') ||
       lowerMessage.includes('hey') ||
       lowerMessage.includes('good') ||
       lowerMessage.includes('help')
@@ -322,7 +322,7 @@ export class AIChatService {
    */
   private static generateSpecificHelp(customerDetails: CustomerDetails, userMessage: string): AIResponse {
     const { name, issue_type, booking_reference } = customerDetails;
-    
+
     switch (issue_type) {
       case 'booking':
         if (booking_reference) {
@@ -336,19 +336,19 @@ export class AIChatService {
             suggested_actions: ['Find booking reference', 'Describe issue', 'Check email confirmation']
           };
         }
-      
+
       case 'payment':
         return {
           message: `I understand you're having a payment-related issue, ${name}. I can help you with:\n\n• Refund requests and processing\n• Payment failures or errors\n• Duplicate charges\n• Payment method updates\n• Transaction status checks\n\nWhat specific payment issue are you experiencing? If you have a booking reference or transaction ID, that would be helpful too!`,
           suggested_actions: ['Request refund', 'Report duplicate charge', 'Check payment status', 'Update payment method']
         };
-      
+
       case 'property':
         return {
           message: `Happy to help with property-related questions, ${name}! Are you:\n\n• Looking for a specific type of venue?\n• Having issues with a property you booked?\n• Interested in listing your own property?\n• Need help with property amenities or policies?\n\nLet me know what you need and I'll provide detailed assistance!`,
           suggested_actions: ['Search properties', 'Property requirements', 'List property', 'Check amenities']
         };
-      
+
       default:
         return {
           message: `Thanks for providing your details, ${name}! I'm ready to help you. Could you tell me more about what you need assistance with? Whether it's booking a venue, resolving an issue, or getting information about our services, I'm here to help!`,
@@ -363,25 +363,25 @@ export class AIChatService {
   private static getHelpContext(userMessage: string, customerDetails: CustomerDetails): { message: string; actions: string[] } {
     const lowerMessage = userMessage.toLowerCase();
     const name = customerDetails.name || 'there';
-    
+
     // Detect frustration or urgency
-    if (lowerMessage.includes('urgent') || lowerMessage.includes('emergency') || lowerMessage.includes('asap') || 
-        lowerMessage.includes('help') && lowerMessage.includes('now')) {
+    if (lowerMessage.includes('urgent') || lowerMessage.includes('emergency') || lowerMessage.includes('asap') ||
+      lowerMessage.includes('help') && lowerMessage.includes('now')) {
       return {
         message: `I understand this is urgent, ${name}! I'm here to help you right away. Please tell me exactly what's happening so I can prioritize your issue and get it resolved quickly. If it's about a booking, payment, or property issue, I can escalate this to our priority support team.`,
         actions: ['Escalate to priority support', 'Immediate assistance', 'Emergency contact']
       };
     }
-    
+
     // Detect confusion or frustration
-    if (lowerMessage.includes('confused') || lowerMessage.includes('don\'t understand') || 
-        lowerMessage.includes('frustrated') || lowerMessage.includes('problem')) {
+    if (lowerMessage.includes('confused') || lowerMessage.includes('don\'t understand') ||
+      lowerMessage.includes('frustrated') || lowerMessage.includes('problem')) {
       return {
         message: `I'm sorry you're having trouble, ${name}. Let me help clear things up! I'm here to make this as simple as possible. Could you tell me in your own words what you're trying to do or what issue you're facing? I'll guide you through it step by step.`,
         actions: ['Step-by-step guidance', 'Simplify process', 'Direct assistance']
       };
     }
-    
+
     // Default helpful response
     return {
       message: `Thank you for the information, ${name}! I'm here to help you with whatever you need. Could you tell me more about what brings you to Picnify today? I can assist with bookings, payments, property questions, or any other concerns you might have.`,
@@ -395,7 +395,7 @@ export class AIChatService {
   private static calculateConfidenceScore(details: CustomerDetails): number {
     let score = 0;
     const fields = Object.keys(details);
-    
+
     if (details.name) score += 20;
     if (details.email) score += 20;
     if (details.phone) score += 15;
@@ -410,20 +410,45 @@ export class AIChatService {
    */
   private static async saveCustomerDetails(ticketId: string, details: CustomerDetails): Promise<void> {
     try {
+      // Get the current user's profile to get their real name
+      const { data: { user } } = await supabase.auth.getUser();
+      let realName = details.name;
+
+      if (user && !realName) {
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('full_name')
+          .eq('id', user.id)
+          .single();
+
+        if (profile?.full_name) {
+          realName = profile.full_name;
+          details.name = realName; // Update the details with real name
+        }
+      }
+
+      // Update the ticket subject to include the customer name
+      const updatedSubject = realName ?
+        `Live Chat Session - ${realName}` :
+        'Live Chat Session';
+
       const { error } = await supabase
         .from('support_tickets')
         .update({
+          subject: updatedSubject,
           customer_email: details.email,
           customer_phone: details.phone,
           description: JSON.stringify({
             customer_details: details,
-            conversation_summary: this.conversationHistory.slice(-5) // Keep last 5 messages
+            conversation_summary: this.conversationHistory.slice(-10) // Keep last 10 messages
           })
         })
         .eq('id', ticketId);
 
       if (error) {
         console.error('Error saving customer details:', error);
+      } else {
+        console.log('✅ Updated ticket with customer name:', realName);
       }
     } catch (error) {
       console.error('Error updating ticket with customer details:', error);
@@ -458,13 +483,13 @@ export class AIChatService {
   static shouldEscalateToHuman(details: CustomerDetails, messageCount: number): boolean {
     // Escalate if high urgency
     if (details.urgency_level === 'high') return true;
-    
+
     // Escalate if conversation is getting long without resolution
     if (messageCount > 10) return true;
-    
+
     // Escalate if complex booking issues
     if (details.issue_type === 'booking' && details.booking_reference && messageCount > 5) return true;
-    
+
     return false;
   }
 }

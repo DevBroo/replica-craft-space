@@ -119,56 +119,83 @@ class SupportTicketService {
     limit?: number;
     offset?: number;
   }): Promise<DatabaseTicket[]> {
+    console.log('🎫 SupportTicketService.getTickets called with params:', params);
+
+    // Check current user authentication
+    const { data: { user }, error: authError } = await supabase.auth.getUser();
+    if (authError) {
+      console.error('❌ Auth error in getTickets:', authError);
+      throw new Error(`Authentication error: ${authError.message}`);
+    }
+
+    if (!user) {
+      console.error('❌ No authenticated user in getTickets');
+      throw new Error('No authenticated user');
+    }
+
+    console.log('👤 Current user:', user.id, user.email);
+
+    // Test admin access
+    try {
+      const { data: adminTest, error: adminError } = await supabase.rpc('test_admin_access');
+      if (adminError) {
+        console.warn('⚠️ Admin access test failed:', adminError);
+      } else {
+        console.log('🔐 Admin access test result:', adminTest);
+      }
+    } catch (testError) {
+      console.warn('⚠️ Could not run admin access test:', testError);
+    }
+
     let query = supabase
       .from('support_tickets')
-      .select(`
-        *,
-        assigned_agent_profile:profiles!support_tickets_assigned_agent_fkey(full_name, email),
-        created_by_profile:profiles!support_tickets_created_by_fkey(full_name, email)
-      `)
+      .select('*')
       .order('created_at', { ascending: false });
 
     if (params?.status && params.status !== 'all') {
       query = query.eq('status', params.status);
     }
-    
+
     if (params?.priority && params.priority !== 'all') {
       query = query.eq('priority', params.priority);
     }
-    
+
     if (params?.category && params.category !== 'all') {
       query = query.eq('category', params.category);
     }
-    
+
     if (params?.assigned_agent) {
       query = query.eq('assigned_agent', params.assigned_agent);
     }
-    
+
     if (params?.search) {
       query = query.or(`subject.ilike.%${params.search}%,description.ilike.%${params.search}%`);
     }
-    
+
     if (params?.limit) {
       query = query.limit(params.limit);
     }
-    
+
     if (params?.offset) {
       query = query.range(params.offset, params.offset + (params.limit || 50) - 1);
     }
 
+    console.log('📝 Executing query...');
     const { data, error } = await query;
-    if (error) throw error;
+
+    if (error) {
+      console.error('❌ Query error:', error);
+      throw new Error(`Database error: ${error.message} (${error.code})`);
+    }
+
+    console.log('✅ Query successful, returned', data?.length || 0, 'tickets');
     return data as DatabaseTicket[];
   }
 
   async getTicketById(ticketId: string): Promise<DatabaseTicket> {
     const { data, error } = await supabase
       .from('support_tickets')
-      .select(`
-        *,
-        assigned_agent_profile:profiles!support_tickets_assigned_agent_fkey(full_name, email),
-        created_by_profile:profiles!support_tickets_created_by_fkey(full_name, email)
-      `)
+      .select('*')
       .eq('id', ticketId)
       .single();
 
@@ -204,9 +231,9 @@ class SupportTicketService {
   }
 
   async updateStatus(ticketId: string, status: string, reason?: string) {
-    return this.updateTicket(ticketId, { 
-      status: status as any, 
-      status_change_reason: reason 
+    return this.updateTicket(ticketId, {
+      status: status as any,
+      status_change_reason: reason
     });
   }
 
@@ -259,10 +286,7 @@ class SupportTicketService {
   async getTicketMessages(ticketId: string) {
     const { data, error } = await supabase
       .from('support_ticket_messages')
-      .select(`
-        *,
-        author_profile:profiles!support_ticket_messages_author_id_fkey(full_name, email, role)
-      `)
+      .select('*')
       .eq('ticket_id', ticketId)
       .order('created_at', { ascending: true });
 
@@ -278,11 +302,16 @@ class SupportTicketService {
     let actualAuthorId = user?.id;
 
     if (authorId) {
-      actualAuthorId = authorId;
       if (authorId === 'ai-assistant') {
-        authorRole = 'agent';
+        // For AI assistant, use NULL author_id and special author_role
+        actualAuthorId = null;
+        authorRole = 'ai_assistant';
       } else if (authorId === 'system') {
+        actualAuthorId = null;
         authorRole = 'system';
+      } else {
+        // Regular user ID (should be a valid UUID)
+        actualAuthorId = authorId;
       }
     } else if (user) {
       // Get user role
@@ -291,7 +320,7 @@ class SupportTicketService {
         .select('role')
         .eq('id', user.id)
         .single();
-      
+
       authorRole = profile?.role || 'customer';
     }
 
@@ -366,7 +395,7 @@ class SupportTicketService {
     });
 
     if (error) throw error;
-    
+
     // Handle the response data and convert to proper types
     const result = data[0];
     return {
@@ -391,7 +420,7 @@ class SupportTicketService {
 
   async bulkUpdateStatus(ticketIds: string[], status: string, reason?: string) {
     // Use individual updates instead of upsert for better type safety
-    const promises = ticketIds.map(id => 
+    const promises = ticketIds.map(id =>
       supabase
         .from('support_tickets')
         .update({
@@ -404,7 +433,7 @@ class SupportTicketService {
     );
 
     const results = await Promise.all(promises);
-    
+
     // Check for errors
     const errors = results.filter(result => result.error);
     if (errors.length > 0) {
@@ -446,6 +475,15 @@ class SupportTicketService {
     const user = (await supabase.auth.getUser()).data.user;
     if (!user) throw new Error('Not authenticated');
 
+    // Get user's real name from profile
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('full_name, email')
+      .eq('id', user.id)
+      .single();
+
+    const customerName = profile?.full_name || user.email?.split('@')[0] || 'Customer';
+
     // First, try to find an existing open chat ticket
     const { data: existingTickets, error: searchError } = await supabase
       .from('support_tickets')
@@ -459,16 +497,35 @@ class SupportTicketService {
     if (searchError) throw searchError;
 
     if (existingTickets && existingTickets.length > 0) {
+      // Update existing ticket with customer name if it doesn't have it
+      if (!existingTickets[0].subject.includes(customerName)) {
+        await supabase
+          .from('support_tickets')
+          .update({
+            subject: `Live Chat Session - ${customerName}`,
+            customer_email: profile?.email || user.email
+          })
+          .eq('id', existingTickets[0].id);
+
+        existingTickets[0].subject = `Live Chat Session - ${customerName}`;
+      }
       return existingTickets[0];
     }
 
-    // Create new chat ticket
+    // Create new chat ticket with customer name
     return this.createTicket({
       created_by: user.id,
-      subject: 'Live Chat Session',
-      description: 'Live chat conversation initiated by user',
+      subject: `Live Chat Session - ${customerName}`,
+      description: JSON.stringify({
+        customer_details: {
+          name: customerName,
+          email: profile?.email || user.email
+        },
+        conversation_summary: []
+      }),
       priority: 'medium',
-      category: 'Technical'
+      category: 'Technical',
+      customer_email: profile?.email || user.email
     });
   }
 }
