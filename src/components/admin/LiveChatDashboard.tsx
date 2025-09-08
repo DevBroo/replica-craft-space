@@ -353,9 +353,9 @@ export const LiveChatDashboard: React.FC = () => {
                           <div className="flex items-center gap-2">
                             <div className="flex items-center gap-1">
                               {session.is_ai_handled ? (
-                                <Bot className="w-4 h-4 text-blue-600" />
+                                <Bot className="w-4 h-4 text-blue-600" title="AI Handled" />
                               ) : (
-                                <User className="w-4 h-4 text-gray-600" />
+                                <User className="w-4 h-4 text-gray-600" title="Human Needed" />
                               )}
                               <span className="font-medium">
                                 {session.customer_details?.name || 'Customer'}

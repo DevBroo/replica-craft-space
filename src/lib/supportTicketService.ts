@@ -137,14 +137,14 @@ class SupportTicketService {
 
     // Test admin access
     try {
-      const { data: adminTest, error: adminError } = await supabase.rpc('is_admin');
+      const { data: adminTest, error: adminError } = await supabase.rpc('test_admin_access');
       if (adminError) {
-        console.warn('⚠️ Admin access check failed:', adminError);
+        console.warn('⚠️ Admin access test failed:', adminError);
       } else {
-        console.log('🔐 Admin access result:', adminTest);
+        console.log('🔐 Admin access test result:', adminTest);
       }
     } catch (testError) {
-      console.warn('⚠️ Could not run admin access check:', testError);
+      console.warn('⚠️ Could not run admin access test:', testError);
     }
 
     let query = supabase

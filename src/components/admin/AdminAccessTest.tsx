@@ -35,27 +35,19 @@ export const AdminAccessTest: React.FC = () => {
             console.log('👤 Current user:', user?.id, user?.email);
 
             // Test admin access function
-            const { data: isAdminData, error: adminError } = await supabase.rpc('is_admin');
-            if (adminError) {
-                console.error('❌ Admin check error:', adminError);
-                throw adminError;
+            const { data, error: testError } = await supabase.rpc('test_admin_access');
+            if (testError) {
+                console.error('❌ Test function error:', testError);
+                throw testError;
             }
 
-            console.log('📊 Admin check result:', isAdminData);
+            console.log('📊 Test results:', data);
 
-            // Create mock test result since we don't have test_admin_access
-            const mockResult: AdminTestResult = {
-                user_id: user?.id || '',
-                email: user?.email || '',
-                profile_role: 'admin', 
-                has_admin_in_profiles: isAdminData || false,
-                has_admin_in_user_roles: isAdminData || false,
-                is_admin_result: isAdminData || false,
-                total_tickets: 0,
-                live_chat_tickets: 0
-            };
-
-            setTestResult(mockResult);
+            if (data && data.length > 0) {
+                setTestResult(data[0]);
+            } else {
+                throw new Error('No test results returned');
+            }
 
         } catch (err: any) {
             console.error('❌ Admin test error:', err);

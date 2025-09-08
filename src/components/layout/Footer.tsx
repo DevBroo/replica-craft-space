@@ -1,19 +1,8 @@
 import React from 'react';
-import { Link, useLocation } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import picnifyLogo from '/lovable-uploads/f7960b1f-407a-4738-b8f6-067ea4600889.png';
 
 const Footer: React.FC = () => {
-  const location = useLocation();
-  
-  const handleLinkClick = (to: string) => {
-    if (location.pathname === to) {
-      window.scrollTo({
-        top: 0,
-        behavior: 'smooth'
-      });
-    }
-  };
-
   return (
     <footer className="bg-gray-900 text-white py-20 relative overflow-hidden">
       <div className="absolute inset-0 opacity-10">
@@ -53,21 +42,21 @@ const Footer: React.FC = () => {
           <div>
             <h3 className="text-xl font-bold mb-6 text-white">Quick Links</h3>
             <ul className="space-y-4">
-              <li><Link to="/about" onClick={() => handleLinkClick('/about')} className="text-gray-300 hover:text-white transition-colors duration-200 cursor-pointer flex items-center gap-2"><i className="fas fa-chevron-right text-xs text-brand-red"></i>About Picnify</Link></li>
-              <li><Link to="/how-it-works" onClick={() => handleLinkClick('/how-it-works')} className="text-gray-300 hover:text-white transition-colors duration-200 cursor-pointer flex items-center gap-2"><i className="fas fa-chevron-right text-xs text-brand-red"></i>How It Works</Link></li>
-              <li><Link to="/safety-guidelines" onClick={() => handleLinkClick('/safety-guidelines')} className="text-gray-300 hover:text-white transition-colors duration-200 cursor-pointer flex items-center gap-2"><i className="fas fa-chevron-right text-xs text-brand-red"></i>Safety Guidelines</Link></li>
-              <li><Link to="/privacy-policy" onClick={() => handleLinkClick('/privacy-policy')} className="text-gray-300 hover:text-white transition-colors duration-200 cursor-pointer flex items-center gap-2"><i className="fas fa-chevron-right text-xs text-brand-red"></i>Privacy Policy</Link></li>
-              <li><Link to="/terms-of-service" onClick={() => handleLinkClick('/terms-of-service')} className="text-gray-300 hover:text-white transition-colors duration-200 cursor-pointer flex items-center gap-2"><i className="fas fa-chevron-right text-xs text-brand-red"></i>Terms of Service</Link></li>
+              <li><Link to="/about" className="text-gray-300 hover:text-white transition-colors duration-200 cursor-pointer flex items-center gap-2"><i className="fas fa-chevron-right text-xs text-brand-red"></i>About Picnify</Link></li>
+              <li><Link to="/how-it-works" className="text-gray-300 hover:text-white transition-colors duration-200 cursor-pointer flex items-center gap-2"><i className="fas fa-chevron-right text-xs text-brand-red"></i>How It Works</Link></li>
+              <li><Link to="/safety-guidelines" className="text-gray-300 hover:text-white transition-colors duration-200 cursor-pointer flex items-center gap-2"><i className="fas fa-chevron-right text-xs text-brand-red"></i>Safety Guidelines</Link></li>
+              <li><Link to="/privacy-policy" className="text-gray-300 hover:text-white transition-colors duration-200 cursor-pointer flex items-center gap-2"><i className="fas fa-chevron-right text-xs text-brand-red"></i>Privacy Policy</Link></li>
+              <li><Link to="/terms-of-service" className="text-gray-300 hover:text-white transition-colors duration-200 cursor-pointer flex items-center gap-2"><i className="fas fa-chevron-right text-xs text-brand-red"></i>Terms of Service</Link></li>
             </ul>
           </div>
           <div>
             <h3 className="text-xl font-bold mb-6 text-white">Support & Help</h3>
             <ul className="space-y-4">
-              <li><Link to="/help-center" onClick={() => handleLinkClick('/help-center')} className="text-gray-300 hover:text-white transition-colors duration-200 cursor-pointer flex items-center gap-2"><i className="fas fa-chevron-right text-xs text-brand-red"></i>24/7 Help Center</Link></li>
-              <li><Link to="/contact" onClick={() => handleLinkClick('/contact')} className="text-gray-300 hover:text-white transition-colors duration-200 cursor-pointer flex items-center gap-2"><i className="fas fa-chevron-right text-xs text-brand-red"></i>Contact Support</Link></li>
-              <li><Link to="/booking-assistance" onClick={() => handleLinkClick('/booking-assistance')} className="text-gray-300 hover:text-white transition-colors duration-200 cursor-pointer flex items-center gap-2"><i className="fas fa-chevron-right text-xs text-brand-red"></i>Booking Assistance</Link></li>
-              <li><Link to="/host-resources" onClick={() => handleLinkClick('/host-resources')} className="text-gray-300 hover:text-white transition-colors duration-200 cursor-pointer flex items-center gap-2"><i className="fas fa-chevron-right text-xs text-brand-red"></i>Host Resources</Link></li>
-              <li><Link to="/trust-safety" onClick={() => handleLinkClick('/trust-safety')} className="text-gray-300 hover:text-white transition-colors duration-200 cursor-pointer flex items-center gap-2"><i className="fas fa-chevron-right text-xs text-brand-red"></i>Trust & Safety</Link></li>
+              <li><Link to="/help-center" className="text-gray-300 hover:text-white transition-colors duration-200 cursor-pointer flex items-center gap-2"><i className="fas fa-chevron-right text-xs text-brand-red"></i>24/7 Help Center</Link></li>
+              <li><Link to="/contact" className="text-gray-300 hover:text-white transition-colors duration-200 cursor-pointer flex items-center gap-2"><i className="fas fa-chevron-right text-xs text-brand-red"></i>Contact Support</Link></li>
+              <li><Link to="/booking-assistance" className="text-gray-300 hover:text-white transition-colors duration-200 cursor-pointer flex items-center gap-2"><i className="fas fa-chevron-right text-xs text-brand-red"></i>Booking Assistance</Link></li>
+              <li><Link to="/host-resources" className="text-gray-300 hover:text-white transition-colors duration-200 cursor-pointer flex items-center gap-2"><i className="fas fa-chevron-right text-xs text-brand-red"></i>Host Resources</Link></li>
+              <li><Link to="/trust-safety" className="text-gray-300 hover:text-white transition-colors duration-200 cursor-pointer flex items-center gap-2"><i className="fas fa-chevron-right text-xs text-brand-red"></i>Trust & Safety</Link></li>
             </ul>
           </div>
         </div>
