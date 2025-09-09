@@ -23,31 +23,31 @@ const HostResources = () => {
               <Camera className="w-12 h-12 text-primary mx-auto mb-4" />
               <h3 className="text-xl font-semibold mb-3">Create Your Listing</h3>
               <p className="text-muted-foreground mb-4">Upload high-quality photos and write compelling descriptions</p>
-              <button className="text-primary font-semibold hover:underline">
+              <a href="#listing-optimization" className="text-primary font-semibold hover:underline">
                 Listing Guide →
-              </button>
+              </a>
             </div>
             <div className="text-center p-6 border rounded-lg">
               <DollarSign className="w-12 h-12 text-primary mx-auto mb-4" />
               <h3 className="text-xl font-semibold mb-3">Set Competitive Pricing</h3>
               <p className="text-muted-foreground mb-4">Use our pricing tools to maximize your earnings</p>
-              <button className="text-primary font-semibold hover:underline">
+              <a href="#pricing-strategy" className="text-primary font-semibold hover:underline">
                 Pricing Strategy →
-              </button>
+              </a>
             </div>
             <div className="text-center p-6 border rounded-lg">
               <Users className="w-12 h-12 text-primary mx-auto mb-4" />
               <h3 className="text-xl font-semibold mb-3">Welcome Guests</h3>
               <p className="text-muted-foreground mb-4">Learn best practices for guest communication</p>
-              <button className="text-primary font-semibold hover:underline">
+              <a href="#guest-communication" className="text-primary font-semibold hover:underline">
                 Host Tips →
-              </button>
+              </a>
             </div>
           </div>
         </section>
 
         {/* Listing Optimization */}
-        <section className="mb-20 bg-muted/30 rounded-2xl p-12">
+        <section id="listing-optimization" className="mb-20 bg-muted/30 rounded-2xl p-12 scroll-mt-28">
           <h2 className="text-3xl font-bold mb-8 text-center">Optimize Your Listing</h2>
           
           <div className="grid md:grid-cols-2 gap-12">
@@ -84,7 +84,7 @@ const HostResources = () => {
         </section>
 
         {/* Pricing Strategy */}
-        <section className="mb-20">
+        <section id="pricing-strategy" className="mb-20 scroll-mt-28">
           <h2 className="text-3xl font-bold mb-8 text-center flex items-center justify-center">
             <TrendingUp className="w-8 h-8 text-primary mr-3" />
             Pricing Strategy
@@ -124,7 +124,7 @@ const HostResources = () => {
         </section>
 
         {/* Guest Communication */}
-        <section className="mb-20">
+        <section id="guest-communication" className="mb-20 scroll-mt-28">
           <h2 className="text-3xl font-bold mb-8 text-center">Excellent Guest Communication</h2>
           
           <div className="grid md:grid-cols-2 gap-8">
