@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { useToast } from '@/hooks/use-toast';
 import { PhonePeService } from '@/lib/phonePeService';
+import { BookingService } from '@/lib/bookingService';
 import { supabase } from '@/integrations/supabase/client';
 import {
     CheckCircle,
@@ -35,6 +36,7 @@ const PaymentSuccess: React.FC = () => {
     const [paymentStatus, setPaymentStatus] = useState<PaymentStatus | null>(null);
     const [loading, setLoading] = useState(true);
     const [bookingDetails, setBookingDetails] = useState<any>(null);
+    const [error, setError] = useState<string | null>(null);
 
     const transactionId = searchParams.get('transactionId') ||
         sessionStorage.getItem('phonepe_transaction_id');
@@ -94,36 +96,50 @@ const PaymentSuccess: React.FC = () => {
                         const bookingRequest = JSON.parse(pendingBookingData);
                         console.log('📝 Creating missing booking after successful payment...');
 
-                        const { data: newBooking, error: createError } = await supabase
-                            .from('bookings')
-                            .insert({
-                                ...bookingRequest,
-                                status: 'confirmed',
-                                payment_status: 'paid',
-                                booking_details: {
-                                    ...bookingRequest.booking_details,
-                                    payment_transaction_id: transactionId,
-                                    payment_completed_at: new Date().toISOString()
-                                }
-                            })
-                            .select(`
-                                *,
-                                properties (
-                                  title,
-                                  images
-                                )
-                              `)
-                            .single();
+                        // Use BookingService to create booking with proper validation
+                        const bookingData = {
+                            ...bookingRequest,
+                            status: 'confirmed',
+                            payment_status: 'paid',
+                            // Ensure required guest fields are present
+                            guest_name: bookingRequest.guest_name || 'Guest',
+                            guest_phone: bookingRequest.guest_phone || '0000000000',
+                            guest_date_of_birth: bookingRequest.guest_date_of_birth || '1990-01-01',
+                            booking_details: {
+                                ...bookingRequest.booking_details,
+                                payment_transaction_id: transactionId,
+                                payment_completed_at: new Date().toISOString()
+                            }
+                        };
 
-                        if (!createError && newBooking) {
-                            booking = newBooking;
-                            setBookingDetails(booking);
-                            sessionStorage.setItem('booking_id', newBooking.id);
-                            sessionStorage.removeItem('pending_booking_data');
-                            console.log('✅ Booking created successfully:', newBooking.id);
+                        const newBooking = await BookingService.createBooking(bookingData);
+                        
+                        if (newBooking) {
+                            // Fetch complete booking details with property info
+                            const { data: fullBooking, error: fetchError } = await supabase
+                                .from('bookings')
+                                .select(`
+                                    *,
+                                    properties (
+                                      title,
+                                      images
+                                    )
+                                  `)
+                                .eq('id', newBooking.id)
+                                .single();
+
+                            if (!fetchError && fullBooking) {
+                                booking = fullBooking;
+                                setBookingDetails(booking);
+                                sessionStorage.setItem('booking_id', newBooking.id);
+                                sessionStorage.removeItem('pending_booking_data');
+                                console.log('✅ Booking created successfully:', newBooking.id);
+                            }
                         }
                     } catch (error) {
                         console.error('❌ Error creating fallback booking:', error);
+                        // Show user-friendly error message
+                        setError('Failed to create booking after payment. Please contact support with your transaction ID: ' + transactionId);
                     }
                 }
             }
@@ -307,6 +323,13 @@ const PaymentSuccess: React.FC = () => {
                                         Your booking for "{paymentStatus.propertyTitle}" has been confirmed!
                                     </p>
                                 </div>
+                            )}
+
+                            {error && (
+                                <Alert variant="destructive">
+                                    <AlertTriangle className="h-4 w-4" />
+                                    <AlertDescription>{error}</AlertDescription>
+                                </Alert>
                             )}
                         </div>
                     </CardContent>

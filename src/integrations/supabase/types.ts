@@ -361,6 +361,9 @@ export type Database = {
           check_out_date: string
           created_at: string
           customer_email: string | null
+          guest_date_of_birth: string
+          guest_name: string
+          guest_phone: string
           guests: number
           id: string
           last_modified_by: string | null
@@ -387,6 +390,9 @@ export type Database = {
           check_out_date: string
           created_at?: string
           customer_email?: string | null
+          guest_date_of_birth: string
+          guest_name: string
+          guest_phone: string
           guests?: number
           id?: string
           last_modified_by?: string | null
@@ -413,6 +419,9 @@ export type Database = {
           check_out_date?: string
           created_at?: string
           customer_email?: string | null
+          guest_date_of_birth?: string
+          guest_name?: string
+          guest_phone?: string
           guests?: number
           id?: string
           last_modified_by?: string | null
@@ -2559,14 +2568,14 @@ export type Database = {
         }
         Relationships: [
           {
-            foreignKeyName: "fk_support_tickets_assigned_agent"
+            foreignKeyName: "support_tickets_assigned_agent_fkey"
             columns: ["assigned_agent"]
             isOneToOne: false
             referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "fk_support_tickets_created_by"
+            foreignKeyName: "support_tickets_created_by_fkey"
             columns: ["created_by"]
             isOneToOne: false
             referencedRelation: "profiles"
@@ -3622,6 +3631,19 @@ export type Database = {
       reject_commission: {
         Args: { p_commission_id: string; p_reason: string }
         Returns: boolean
+      }
+      test_admin_access: {
+        Args: Record<PropertyKey, never>
+        Returns: {
+          email: string
+          has_admin_in_profiles: boolean
+          has_admin_in_user_roles: boolean
+          is_admin_result: boolean
+          live_chat_tickets: number
+          profile_role: string
+          total_tickets: number
+          user_id: string
+        }[]
       }
       update_owner_property_count_fn: {
         Args: { p_owner_id: string }
