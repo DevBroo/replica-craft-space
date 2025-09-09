@@ -9,6 +9,7 @@ import { OwnerRoute } from "@/components/auth/ProtectedRoute";
 import { Toaster } from "@/components/ui/toaster";
 import { Skeleton } from "@/components/ui/skeleton";
 import PublicLayout from "@/components/layout/PublicLayout";
+import ScrollToTop from "@/components/ScrollToTop";
 
 // Public Pages (immediate load)
 import Index from "@/pages/Index";
@@ -129,6 +130,7 @@ function App() {
                   v7_relativeSplatPath: true
                 }}
               >
+                <ScrollToTop />
                 <div className="min-h-screen bg-background">
                   <Routes>
                     {/* Public Routes */}
