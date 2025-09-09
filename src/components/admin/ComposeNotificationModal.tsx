@@ -8,7 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Label } from '@/components/admin/ui/label';
 import { Checkbox } from '@/components/admin/ui/checkbox';
 import { Badge } from '@/components/admin/ui/badge';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/admin/ui/card';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/admin/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/admin/ui/tabs';
 import { Send, Users, Mail, MessageSquare, Clock, FileText } from 'lucide-react';
 import { toast } from 'sonner';
@@ -145,7 +145,7 @@ export default function ComposeNotificationModal({ isOpen, onClose, onSent }: Co
     setLoading(true);
 
     try {
-      // Prepare recipients list
+      // Prepare recipients list with preference filtering
       const recipients = [];
       for (const type of selectedRecipients) {
         const roleMapping = {
@@ -153,19 +153,48 @@ export default function ComposeNotificationModal({ isOpen, onClose, onSent }: Co
           agent: 'agent',
           owner: 'property_owner'
         };
-        
+
+        // Get all users of this role
         const { data: profiles } = await supabase
           .from('profiles')
-          .select('id, email, phone')
+          .select('id, email, phone, full_name')
           .eq('role', roleMapping[type as keyof typeof roleMapping]);
 
         if (profiles) {
-          recipients.push(...profiles.map(profile => ({
-            type: type as 'user' | 'agent' | 'owner',
-            id: profile.id,
-            email: profile.email,
-            phone: profile.phone,
-          })));
+          // For each profile, check their notification preferences for selected delivery methods
+          for (const profile of profiles) {
+            const recipient = {
+              type: type as 'user' | 'agent' | 'owner',
+              id: profile.id,
+              email: profile.email,
+              phone: profile.phone,
+              name: profile.full_name || 'User'
+            };
+
+            // Check user preferences for email and SMS (in-app is always allowed)
+            if (selectedMethods.includes('email') || selectedMethods.includes('sms')) {
+              const { data: preferences } = await supabase
+                .from('user_notification_preferences')
+                .select('channel, enabled')
+                .eq('user_id', profile.id)
+                .in('channel', selectedMethods.filter(m => m !== 'in_app'));
+
+              // Create preference map
+              const preferenceMap = preferences?.reduce((acc, pref) => {
+                acc[pref.channel] = pref.enabled;
+                return acc;
+              }, {} as Record<string, boolean>) || {};
+
+              // If user hasn't set preferences, default to enabled for email, disabled for SMS
+              recipient.email_allowed = preferenceMap.email !== false; // Default true
+              recipient.sms_allowed = preferenceMap.sms === true; // Default false
+            } else {
+              recipient.email_allowed = true;
+              recipient.sms_allowed = true;
+            }
+
+            recipients.push(recipient);
+          }
         }
       }
 
@@ -364,43 +393,74 @@ export default function ComposeNotificationModal({ isOpen, onClose, onSent }: Co
             <Card>
               <CardHeader>
                 <CardTitle>Delivery Methods</CardTitle>
+                <CardDescription>
+                  Choose how to deliver notifications. Users can opt-out of email/SMS in their preferences.
+                </CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
-                <div className="flex items-center space-x-3">
-                  <Checkbox
-                    checked={formData.delivery_methods.email}
-                    onCheckedChange={(checked) =>
-                      setFormData(prev => ({
-                        ...prev,
-                        delivery_methods: { ...prev.delivery_methods, email: !!checked }
-                      }))
-                    }
-                  />
-                  <Label>Email</Label>
+                <div className="grid grid-cols-1 gap-4">
+                  <div className="flex items-center justify-between p-4 border rounded-lg">
+                    <div className="flex items-center space-x-3">
+                      <Checkbox
+                        checked={formData.delivery_methods.in_app}
+                        onCheckedChange={(checked) =>
+                          setFormData(prev => ({
+                            ...prev,
+                            delivery_methods: { ...prev.delivery_methods, in_app: !!checked }
+                          }))
+                        }
+                      />
+                      <div className="flex items-center gap-2">
+                        <MessageSquare className="h-4 w-4 text-blue-500" />
+                        <Label className="font-medium">In-App Notification</Label>
+                      </div>
+                    </div>
+                    <Badge variant="secondary">Always available</Badge>
+                  </div>
+
+                  <div className="flex items-center justify-between p-4 border rounded-lg">
+                    <div className="flex items-center space-x-3">
+                      <Checkbox
+                        checked={formData.delivery_methods.email}
+                        onCheckedChange={(checked) =>
+                          setFormData(prev => ({
+                            ...prev,
+                            delivery_methods: { ...prev.delivery_methods, email: !!checked }
+                          }))
+                        }
+                      />
+                      <div className="flex items-center gap-2">
+                        <Mail className="h-4 w-4 text-green-500" />
+                        <Label className="font-medium">Email Notification</Label>
+                      </div>
+                    </div>
+                    <Badge variant="outline">Respects user preferences</Badge>
+                  </div>
+
+                  <div className="flex items-center justify-between p-4 border rounded-lg">
+                    <div className="flex items-center space-x-3">
+                      <Checkbox
+                        checked={formData.delivery_methods.sms}
+                        onCheckedChange={(checked) =>
+                          setFormData(prev => ({
+                            ...prev,
+                            delivery_methods: { ...prev.delivery_methods, sms: !!checked }
+                          }))
+                        }
+                      />
+                      <div className="flex items-center gap-2">
+                        <MessageSquare className="h-4 w-4 text-orange-500" />
+                        <Label className="font-medium">SMS Notification</Label>
+                      </div>
+                    </div>
+                    <Badge variant="outline">Respects user preferences</Badge>
+                  </div>
                 </div>
-                <div className="flex items-center space-x-3">
-                  <Checkbox
-                    checked={formData.delivery_methods.sms}
-                    onCheckedChange={(checked) =>
-                      setFormData(prev => ({
-                        ...prev,
-                        delivery_methods: { ...prev.delivery_methods, sms: !!checked }
-                      }))
-                    }
-                  />
-                  <Label>SMS</Label>
-                </div>
-                <div className="flex items-center space-x-3">
-                  <Checkbox
-                    checked={formData.delivery_methods.in_app}
-                    onCheckedChange={(checked) =>
-                      setFormData(prev => ({
-                        ...prev,
-                        delivery_methods: { ...prev.delivery_methods, in_app: !!checked }
-                      }))
-                    }
-                  />
-                  <Label>In-App</Label>
+
+                <div className="bg-blue-50 p-3 rounded-lg">
+                  <p className="text-sm text-blue-700">
+                    <strong>Note:</strong> Email and SMS notifications will only be sent to users who have opted-in to receive them in their notification preferences. In-app notifications are always delivered.
+                  </p>
                 </div>
               </CardContent>
             </Card>
@@ -426,7 +486,7 @@ export default function ComposeNotificationModal({ isOpen, onClose, onSent }: Co
                     <Label>Schedule for Later</Label>
                   </div>
                 </div>
-                
+
                 {sendingMode === 'scheduled' && (
                   <div className="space-y-2">
                     <Label>Schedule Date & Time</Label>

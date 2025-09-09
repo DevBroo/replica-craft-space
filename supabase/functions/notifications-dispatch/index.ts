@@ -23,6 +23,7 @@ interface NotificationRequest {
   variables?: Record<string, string>;
   scheduled_for?: string;
   scheduled_id?: string;
+  test_mode?: boolean;
 }
 
 const supabase = createClient(
@@ -31,6 +32,12 @@ const supabase = createClient(
 );
 
 const resend = new Resend(Deno.env.get("RESEND_API_KEY"));
+
+// Helper function to validate UUID format
+function isValidUUID(uuid: string): boolean {
+  const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+  return uuidRegex.test(uuid);
+}
 
 const handler = async (req: Request): Promise<Response> => {
   if (req.method === "OPTIONS") {
@@ -60,7 +67,7 @@ const handler = async (req: Request): Promise<Response> => {
         .from('notification_schedules')
         .update({ status: 'processing' })
         .eq('id', body.scheduled_id);
-      
+
       if (scheduleError) {
         console.error("Error updating schedule status:", scheduleError);
       }
@@ -75,17 +82,22 @@ const handler = async (req: Request): Promise<Response> => {
 
     // Process each recipient
     const deliveryPromises = [];
-    
+
     for (const recipient of body.recipients) {
+      console.log(`👤 Processing recipient:`, JSON.stringify(recipient, null, 2));
+
       // Get recipient details if only ID provided
       let recipientData = recipient;
       if (recipient.id && (!recipient.email || !recipient.phone)) {
+        console.log(`🔍 Looking up profile for user ID: ${recipient.id}`);
         const { data: profile } = await supabase
           .from('profiles')
           .select('email, phone')
           .eq('id', recipient.id)
           .single();
-        
+
+        console.log(`📇 Profile lookup result:`, JSON.stringify(profile, null, 2));
+
         if (profile) {
           recipientData = {
             ...recipient,
@@ -95,12 +107,61 @@ const handler = async (req: Request): Promise<Response> => {
         }
       }
 
-      // Process each delivery method
+      console.log(`✨ Final recipient data:`, JSON.stringify(recipientData, null, 2));
+
+      // Check user notification preferences for each delivery method
+      const allowedMethods = [];
       for (const method of body.delivery_methods) {
+        if (method === 'in-app') {
+          // In-app notifications are always allowed
+          allowedMethods.push(method);
+        } else if (body.test_mode) {
+          // In test mode, allow all methods
+          allowedMethods.push(method);
+          console.log(`✅ ${method} allowed (test mode)`);
+        } else if (recipient.id && isValidUUID(recipient.id)) {
+          try {
+            // Check user preferences for email and SMS
+            const { data: preferences, error: prefError } = await supabase
+              .from('user_notification_preferences')
+              .select('enabled')
+              .eq('user_id', recipient.id)
+              .eq('channel', method)
+              .eq('category', 'system') // Default to system category for admin notifications
+              .single();
+
+            // If error or no preference found, use defaults: email = true, sms = false
+            const isEnabled = (prefError || !preferences) ? (method === 'email') : preferences.enabled;
+
+            if (isEnabled) {
+              allowedMethods.push(method);
+              console.log(`✅ ${method} allowed for user ${recipient.id}`);
+            } else {
+              console.log(`❌ Skipping ${method} for user ${recipient.id} - disabled in preferences`);
+            }
+          } catch (error) {
+            console.warn(`Warning checking preferences for ${recipient.id}:`, error);
+            // Fallback: allow email, deny SMS
+            if (method === 'email') {
+              allowedMethods.push(method);
+            }
+          }
+        } else {
+          // If no user ID or invalid UUID, allow the method (fallback for testing)
+          allowedMethods.push(method);
+          console.log(`✅ ${method} allowed (no valid user ID - test mode)`);
+        }
+      }
+
+      // Process allowed delivery methods
+      for (const method of allowedMethods) {
+        // Normalize method name for consistency
+        const normalizedMethod = method === 'in_app' ? 'in-app' : method;
+
         const deliveryPromise = createDeliveryRecord(
           notification.id,
           recipientData,
-          method,
+          normalizedMethod,
           body.content,
           body.subject || 'System Notification',
           body.variables
@@ -120,8 +181,8 @@ const handler = async (req: Request): Promise<Response> => {
       const finalStatus = failureCount > 0 ? 'failed' : 'sent';
       await supabase
         .from('notification_schedules')
-        .update({ 
-          status: finalStatus, 
+        .update({
+          status: finalStatus,
           sent_at: new Date().toISOString(),
           error_message: failureCount > 0 ? `${failureCount} delivery failures` : null
         })
@@ -166,7 +227,7 @@ async function createDeliveryRecord(
     // Replace variables in content and subject
     let processedContent = content;
     let processedSubject = subject;
-    
+
     if (variables) {
       Object.entries(variables).forEach(([key, value]) => {
         const placeholder = `{${key}}`;
@@ -180,7 +241,7 @@ async function createDeliveryRecord(
       .from('notification_deliveries')
       .insert({
         notification_id: notificationId,
-        recipient_id: recipient.id,
+        recipient_id: (recipient.id && isValidUUID(recipient.id)) ? recipient.id : null,
         recipient_type: recipient.type,
         delivery_method: method,
         recipient_email: recipient.email,
@@ -205,55 +266,70 @@ async function createDeliveryRecord(
         deliveryResult = await sendSMS(recipient.phone, processedContent);
         break;
       case 'in-app':
-        deliveryResult = { success: true, message: 'In-app notification created' };
+      case 'in_app':
+        // In-app notifications are just stored in the database
+        deliveryResult = { success: true, message: 'In-app notification created', method: 'in-app' };
         break;
       default:
-        throw new Error(`Unsupported delivery method: ${method}`);
+        console.error(`Unsupported delivery method: ${method}`);
+        deliveryResult = { success: false, error: `Unsupported delivery method: ${method}` };
+        break;
     }
 
     // Update delivery status
-    await supabase
-      .from('notification_deliveries')
-      .update({
-        status: deliveryResult.success ? 'sent' : 'failed',
-        sent_at: deliveryResult.success ? new Date().toISOString() : null,
-        error_message: deliveryResult.success ? null : deliveryResult.error,
-        external_id: deliveryResult.external_id
-      })
-      .eq('id', delivery.id);
-
-    // Create notification event for tracking
-    if (deliveryResult.success) {
+    try {
       await supabase
-        .from('notification_events')
-        .insert({
-          delivery_id: delivery.id,
-          event_type: 'sent',
-          event_data: { external_id: deliveryResult.external_id }
-        });
+        .from('notification_deliveries')
+        .update({
+          status: deliveryResult.success ? 'sent' : 'failed',
+          sent_at: deliveryResult.success ? new Date().toISOString() : null,
+          error_message: deliveryResult.success ? null : deliveryResult.error,
+          external_id: deliveryResult.external_id
+        })
+        .eq('id', delivery.id);
+
+      // Create notification event for tracking
+      if (deliveryResult.success) {
+        await supabase
+          .from('notification_events')
+          .insert({
+            delivery_id: delivery.id,
+            event_type: 'sent',
+            event_data: { external_id: deliveryResult.external_id }
+          });
+      }
+    } catch (updateError) {
+      console.error("Error updating delivery status:", updateError);
+      // Don't throw, just log the error
     }
 
-    console.log(`${method} delivery ${deliveryResult.success ? 'successful' : 'failed'} for recipient ${recipient.id}`);
+    console.log(`${method} delivery ${deliveryResult.success ? 'successful' : 'failed'} for recipient ${recipient.email || recipient.id || 'unknown'}`);
     return deliveryResult;
 
   } catch (error) {
     console.error(`Error processing ${method} delivery:`, error);
-    throw error;
+    return { success: false, error: error.message || 'Unknown error occurred' };
   }
 }
 
 async function sendEmail(email: string, subject: string, content: string) {
+  console.log(`📧 Attempting to send email to: "${email}" with subject: "${subject}"`);
+
   if (!email) {
+    console.error("❌ No email address provided");
     return { success: false, error: 'No email address provided' };
   }
 
-  if (!Deno.env.get("RESEND_API_KEY")) {
-    console.warn("RESEND_API_KEY not configured, skipping email");
+  const resendApiKey = Deno.env.get("RESEND_API_KEY");
+  if (!resendApiKey) {
+    console.warn("❌ RESEND_API_KEY not configured, skipping email");
     return { success: false, error: 'Email service not configured' };
   }
 
+  console.log(`🔑 Using Resend API key: ${resendApiKey.substring(0, 10)}...`);
+
   try {
-    const emailResult = await resend.emails.send({
+    const emailPayload = {
       from: "Picnify <notifications@resend.dev>",
       to: [email],
       subject: subject,
@@ -269,15 +345,21 @@ async function sendEmail(email: string, subject: string, content: string) {
           </p>
         </div>
       `,
-    });
+    };
 
-    return { 
-      success: true, 
+    console.log(`📨 Sending email payload:`, JSON.stringify(emailPayload, null, 2));
+
+    const emailResult = await resend.emails.send(emailPayload);
+
+    console.log(`✅ Resend API response:`, JSON.stringify(emailResult, null, 2));
+
+    return {
+      success: true,
       external_id: emailResult.data?.id,
-      message: 'Email sent successfully' 
+      message: 'Email sent successfully'
     };
   } catch (error) {
-    console.error("Email sending failed:", error);
+    console.error("❌ Email sending failed:", error);
     return { success: false, error: error.message };
   }
 }
@@ -298,7 +380,7 @@ async function sendSMS(phone: string, content: string) {
 
   try {
     const auth = btoa(`${twilioSid}:${twilioToken}`);
-    
+
     const response = await fetch(
       `https://api.twilio.com/2010-04-01/Accounts/${twilioSid}/Messages.json`,
       {
@@ -321,10 +403,10 @@ async function sendSMS(phone: string, content: string) {
     }
 
     const result = await response.json();
-    return { 
-      success: true, 
+    return {
+      success: true,
       external_id: result.sid,
-      message: 'SMS sent successfully' 
+      message: 'SMS sent successfully'
     };
   } catch (error) {
     console.error("SMS sending failed:", error);

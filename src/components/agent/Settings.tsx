@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { NotificationPreferences } from '@/components/shared/NotificationPreferences';
 
 const Settings: React.FC = () => {
   const [activeTab, setActiveTab] = useState('account');
@@ -77,11 +78,10 @@ const Settings: React.FC = () => {
               <button
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id)}
-                className={`flex items-center space-x-2 py-4 px-2 border-b-2 font-medium text-sm cursor-pointer ${
-                  activeTab === tab.id
+                className={`flex items-center space-x-2 py-4 px-2 border-b-2 font-medium text-sm cursor-pointer ${activeTab === tab.id
                     ? 'border-blue-500 text-blue-600'
                     : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-                }`}
+                  }`}
               >
                 <span>{tab.icon}</span>
                 <span>{tab.label}</span>
@@ -164,82 +164,7 @@ const Settings: React.FC = () => {
         )}
 
         {activeTab === 'notifications' && (
-          <div className="bg-white rounded-lg shadow-sm border p-6">
-            <h3 className="text-lg font-semibold text-gray-800 mb-6">Notification Preferences</h3>
-            <div className="space-y-6">
-              <div>
-                <h4 className="text-md font-medium text-gray-800 mb-4">Booking Notifications</h4>
-                <div className="space-y-3">
-                  <label className="flex items-center justify-between">
-                    <span className="text-gray-700">Email notifications for new bookings</span>
-                    <input
-                      type="checkbox"
-                      className="rounded"
-                      checked={notifications.emailBookings}
-                      onChange={(e) => handleNotificationChange('emailBookings', e.target.checked)}
-                    />
-                  </label>
-                  <label className="flex items-center justify-between">
-                    <span className="text-gray-700">SMS notifications for urgent matters</span>
-                    <input
-                      type="checkbox"
-                      className="rounded"
-                      checked={notifications.smsUrgent}
-                      onChange={(e) => handleNotificationChange('smsUrgent', e.target.checked)}
-                    />
-                  </label>
-                  <label className="flex items-center justify-between">
-                    <span className="text-gray-700">Push notifications on mobile</span>
-                    <input
-                      type="checkbox"
-                      className="rounded"
-                      checked={notifications.pushNotifications}
-                      onChange={(e) => handleNotificationChange('pushNotifications', e.target.checked)}
-                    />
-                  </label>
-                </div>
-              </div>
-
-              <div>
-                <h4 className="text-md font-medium text-gray-800 mb-4">Reports & Updates</h4>
-                <div className="space-y-3">
-                  <label className="flex items-center justify-between">
-                    <span className="text-gray-700">Weekly performance reports</span>
-                    <input
-                      type="checkbox"
-                      className="rounded"
-                      checked={notifications.weeklyReports}
-                      onChange={(e) => handleNotificationChange('weeklyReports', e.target.checked)}
-                    />
-                  </label>
-                  <label className="flex items-center justify-between">
-                    <span className="text-gray-700">Marketing emails and promotions</span>
-                    <input
-                      type="checkbox"
-                      className="rounded"
-                      checked={notifications.marketingEmails}
-                      onChange={(e) => handleNotificationChange('marketingEmails', e.target.checked)}
-                    />
-                  </label>
-                </div>
-              </div>
-
-              <div>
-                <h4 className="text-md font-medium text-gray-800 mb-4">Sound & Alerts</h4>
-                <div className="space-y-3">
-                  <label className="flex items-center justify-between">
-                    <span className="text-gray-700">Sound alerts for notifications</span>
-                    <input
-                      type="checkbox"
-                      className="rounded"
-                      checked={notifications.soundAlerts}
-                      onChange={(e) => handleNotificationChange('soundAlerts', e.target.checked)}
-                    />
-                  </label>
-                </div>
-              </div>
-            </div>
-          </div>
+          <NotificationPreferences />
         )}
 
         {activeTab === 'privacy' && (
@@ -467,7 +392,7 @@ const Settings: React.FC = () => {
             <div className="bg-white rounded-lg shadow-sm border p-6">
               <h3 className="text-lg font-semibold text-gray-800 mb-6">Quick Actions</h3>
               <div className="space-y-3">
-                <a 
+                <a
                   href="mailto:support@picnify.in?subject=Bug%20Report&body=Please%20describe%20the%20issue%20you%20encountered%2C%20including%20steps%20to%20reproduce%20it%3A%0A%0A"
                   target="_blank"
                   rel="noopener noreferrer"

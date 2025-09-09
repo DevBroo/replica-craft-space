@@ -25,7 +25,7 @@ export interface ChatTicket {
   created_at: string;
 }
 
-export const useLiveChat = () => {
+export const useLiveChat = (initialTicketId?: string | null) => {
   const [isOpen, setIsOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [isCreatingTicket, setIsCreatingTicket] = useState(false);
@@ -86,6 +86,14 @@ export const useLiveChat = () => {
         (payload) => {
           console.log('Realtime message received:', payload);
           const newMessage = payload.new as ChatMessage;
+
+          // Check if this is a human agent joining
+          if (newMessage.author_role === 'agent' && newMessage.author_id !== 'ai-assistant' && newMessage.author_id) {
+            // Switch off AI mode when human agent joins
+            setIsAIMode(false);
+            console.log('🤝 Human agent has joined the chat - AI mode disabled');
+          }
+
           setMessages(prev => {
             // Avoid duplicates by checking if message already exists
             if (prev.some(msg => msg.id === newMessage.id)) {
@@ -107,6 +115,23 @@ export const useLiveChat = () => {
 
   const getOrCreateChatTicketForUser = async (): Promise<ChatTicket> => {
     console.log('Getting or creating chat ticket for user:', user?.id);
+
+    // If initialTicketId is provided, try to load that specific ticket
+    if (initialTicketId) {
+      try {
+        const specificTicket = await supportTicketService.getTicketById(initialTicketId);
+        console.log('Loading specific ticket:', initialTicketId);
+        return {
+          id: specificTicket.id,
+          subject: specificTicket.subject,
+          status: specificTicket.status,
+          created_at: specificTicket.created_at
+        };
+      } catch (error) {
+        console.warn('Failed to load specific ticket:', initialTicketId, error);
+        // Continue with normal flow if specific ticket can't be loaded
+      }
+    }
 
     // First, try to find an existing open chat ticket
     const existingTickets = await supportTicketService.getTickets({
@@ -266,6 +291,16 @@ export const useLiveChat = () => {
       return;
     }
 
+    // Check if the ticket is closed - prevent sending messages
+    if (currentTicket.status === 'closed') {
+      toast({
+        title: 'Chat Closed',
+        description: 'This chat is closed. Please start a new chat to continue.',
+        variant: 'destructive'
+      });
+      return;
+    }
+
     try {
       console.log('Sending message:', content);
 
@@ -286,6 +321,13 @@ export const useLiveChat = () => {
 
       setMessages(prev => [...prev, userMessage]);
 
+      // Show notification for sent message
+      toast({
+        title: "Message Sent",
+        description: "Your message has been delivered.",
+        duration: 2000,
+      });
+
       // Save user message to database (only if authenticated)
       if (user && !currentTicket.id.startsWith('guest-')) {
         try {
@@ -296,35 +338,63 @@ export const useLiveChat = () => {
         }
       }
 
-      // Process with AI if in AI mode
+      // Check if ticket is assigned to a human agent
+      try {
+        const ticket = await supportTicketService.getTicketById(currentTicket.id);
+        if (ticket.assigned_agent && ticket.status === 'in-progress') {
+          setIsAIMode(false);
+          console.log('🤝 Ticket is assigned to human agent - AI mode disabled');
+        }
+      } catch (error) {
+        console.warn('Could not check ticket assignment:', error);
+      }
+
+      // Process with AI if in AI mode and not assigned to human agent
       if (isAIMode) {
         try {
           const aiResponse = await AIChatService.processMessage(content, currentTicket.id);
           setCustomerDetails(AIChatService.getCustomerDetails());
 
-          // Add AI response message
-          const aiMessage: ChatMessage = {
-            id: `ai-${Date.now()}`,
-            content: aiResponse.message,
-            author_id: 'ai-assistant',
-            author_role: 'agent',
-            created_at: new Date().toISOString(),
-            is_internal: false,
-            author_profile: {
-              full_name: 'AI Assistant',
-              email: 'ai@picnify.com',
-              role: 'agent'
-            }
-          };
+          // Check if admin has joined - if so, don't add AI message
+          if (aiResponse.adminJoined) {
+            console.log('👮‍♂️ Admin has taken over chat - AI will not respond');
+            setIsAIMode(false);
+            return;
+          }
 
-          setMessages(prev => [...prev, aiMessage]);
+          // Only add AI message if there's content
+          if (aiResponse.message && aiResponse.message.trim()) {
+            // Add AI response message
+            const aiMessage: ChatMessage = {
+              id: `ai-${Date.now()}`,
+              content: aiResponse.message,
+              author_id: 'ai-assistant',
+              author_role: 'agent',
+              created_at: new Date().toISOString(),
+              is_internal: false,
+              author_profile: {
+                full_name: 'AI Assistant',
+                email: 'ai@picnify.com',
+                role: 'agent'
+              }
+            };
 
-          // Save AI response to database (only if authenticated)
-          if (user && !currentTicket.id.startsWith('guest-')) {
-            try {
-              await supportTicketService.addMessage(currentTicket.id, aiResponse.message, false, 'ai-assistant');
-            } catch (dbError) {
-              console.warn('Failed to save AI response to database:', dbError);
+            setMessages(prev => [...prev, aiMessage]);
+
+            // Show notification for AI response
+            toast({
+              title: "AI Assistant Response",
+              description: "AI has replied to your message.",
+              duration: 3000,
+            });
+
+            // Save AI response to database (only if authenticated)
+            if (user && !currentTicket.id.startsWith('guest-')) {
+              try {
+                await supportTicketService.addMessage(currentTicket.id, aiResponse.message, false, 'ai-assistant');
+              } catch (dbError) {
+                console.warn('Failed to save AI response to database:', dbError);
+              }
             }
           }
 

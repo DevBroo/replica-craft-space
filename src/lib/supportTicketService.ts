@@ -155,27 +155,28 @@ class SupportTicketService {
     if (params?.status && params.status !== 'all') {
       query = query.eq('status', params.status);
     }
-
+    
     if (params?.priority && params.priority !== 'all') {
       query = query.eq('priority', params.priority);
     }
-
+    
     if (params?.category && params.category !== 'all') {
+      console.log('🔍 Filtering by category:', params.category);
       query = query.eq('category', params.category);
     }
-
+    
     if (params?.assigned_agent) {
       query = query.eq('assigned_agent', params.assigned_agent);
     }
-
+    
     if (params?.search) {
       query = query.or(`subject.ilike.%${params.search}%,description.ilike.%${params.search}%`);
     }
-
+    
     if (params?.limit) {
       query = query.limit(params.limit);
     }
-
+    
     if (params?.offset) {
       query = query.range(params.offset, params.offset + (params.limit || 50) - 1);
     }
@@ -189,6 +190,7 @@ class SupportTicketService {
     }
 
     console.log('✅ Query successful, returned', data?.length || 0, 'tickets');
+    console.log('📋 Tickets found:', data?.map(t => ({ id: t.id, subject: t.subject, category: t.category })));
     return data as DatabaseTicket[];
   }
 
@@ -231,9 +233,9 @@ class SupportTicketService {
   }
 
   async updateStatus(ticketId: string, status: string, reason?: string) {
-    return this.updateTicket(ticketId, {
-      status: status as any,
-      status_change_reason: reason
+    return this.updateTicket(ticketId, { 
+      status: status as any, 
+      status_change_reason: reason 
     });
   }
 
@@ -320,7 +322,7 @@ class SupportTicketService {
         .select('role')
         .eq('id', user.id)
         .single();
-
+      
       authorRole = profile?.role || 'customer';
     }
 
@@ -395,7 +397,7 @@ class SupportTicketService {
     });
 
     if (error) throw error;
-
+    
     // Handle the response data and convert to proper types
     const result = data[0];
     return {
@@ -420,7 +422,7 @@ class SupportTicketService {
 
   async bulkUpdateStatus(ticketIds: string[], status: string, reason?: string) {
     // Use individual updates instead of upsert for better type safety
-    const promises = ticketIds.map(id =>
+    const promises = ticketIds.map(id => 
       supabase
         .from('support_tickets')
         .update({
@@ -433,7 +435,7 @@ class SupportTicketService {
     );
 
     const results = await Promise.all(promises);
-
+    
     // Check for errors
     const errors = results.filter(result => result.error);
     if (errors.length > 0) {
@@ -475,41 +477,58 @@ class SupportTicketService {
     const user = (await supabase.auth.getUser()).data.user;
     if (!user) throw new Error('Not authenticated');
 
-    // Get user's real name from profile
+    // Get user's real name and role from profile
     const { data: profile } = await supabase
       .from('profiles')
-      .select('full_name, email')
+      .select('full_name, email, role')
       .eq('id', user.id)
       .single();
 
     const customerName = profile?.full_name || user.email?.split('@')[0] || 'Customer';
 
-    // First, try to find an existing open chat ticket
+    // Only look for truly active (open) chat tickets, not in-progress ones
+    // This ensures each "Start New Chat" creates a fresh conversation
     const { data: existingTickets, error: searchError } = await supabase
       .from('support_tickets')
       .select('*')
       .eq('created_by', user.id)
-      .in('status', ['open', 'in-progress'])
-      .ilike('subject', '%Live Chat%')
+      .eq('status', 'open')  // Only open tickets, not in-progress
+      .or('subject.ilike.%Live Chat%,category.eq.live_chat')
       .order('created_at', { ascending: false })
       .limit(1);
 
     if (searchError) throw searchError;
 
+    // For new chat requests, always create a new ticket unless there's an active open one
     if (existingTickets && existingTickets.length > 0) {
-      // Update existing ticket with customer name if it doesn't have it
-      if (!existingTickets[0].subject.includes(customerName)) {
-        await supabase
-          .from('support_tickets')
-          .update({
-            subject: `Live Chat Session - ${customerName}`,
-            customer_email: profile?.email || user.email
-          })
-          .eq('id', existingTickets[0].id);
+      const ticket = existingTickets[0];
+      // Only return existing ticket if it's truly open and recent (within last hour)
+      const ticketAge = Date.now() - new Date(ticket.created_at).getTime();
+      const oneHour = 60 * 60 * 1000;
 
-        existingTickets[0].subject = `Live Chat Session - ${customerName}`;
+      if (ticketAge < oneHour) {
+        // Update existing recent ticket with customer name if it doesn't have it
+        if (!ticket.subject.includes(customerName)) {
+          await supabase
+            .from('support_tickets')
+            .update({
+              subject: `Live Chat Session - ${customerName}`,
+              customer_email: profile?.email || user.email,
+              description: JSON.stringify({
+                customer_details: {
+                  name: customerName,
+                  email: profile?.email || user.email
+                },
+                user_role: profile?.role || 'customer',
+                conversation_summary: []
+              })
+            })
+            .eq('id', ticket.id);
+
+          ticket.subject = `Live Chat Session - ${customerName}`;
+        }
+        return ticket;
       }
-      return existingTickets[0];
     }
 
     // Create new chat ticket with customer name
@@ -521,10 +540,11 @@ class SupportTicketService {
           name: customerName,
           email: profile?.email || user.email
         },
+        user_role: profile?.role || 'customer',
         conversation_summary: []
       }),
       priority: 'medium',
-      category: 'Technical',
+      category: 'live_chat',
       customer_email: profile?.email || user.email
     });
   }

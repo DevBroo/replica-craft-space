@@ -11,9 +11,10 @@ import { format } from 'date-fns';
 interface LiveChatModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  ticketId?: string | null;
 }
 
-export const LiveChatModal: React.FC<LiveChatModalProps> = ({ open, onOpenChange }) => {
+export const LiveChatModal: React.FC<LiveChatModalProps> = ({ open, onOpenChange, ticketId }) => {
   const {
     user,
     currentTicket,
@@ -26,8 +27,8 @@ export const LiveChatModal: React.FC<LiveChatModalProps> = ({ open, onOpenChange
     closeChat,
     customerDetails,
     isAIMode
-  } = useLiveChat();
-  
+  } = useLiveChat(ticketId);
+
   const [messageText, setMessageText] = useState('');
   const [isSending, setIsSending] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -49,7 +50,7 @@ export const LiveChatModal: React.FC<LiveChatModalProps> = ({ open, onOpenChange
 
   const handleSendMessage = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (!messageText.trim() || isSending || !currentTicket) return;
 
     const text = messageText.trim();
@@ -110,7 +111,7 @@ export const LiveChatModal: React.FC<LiveChatModalProps> = ({ open, onOpenChange
               Live Chat
             </DialogTitle>
           </DialogHeader>
-          
+
           <div className="text-center py-8">
             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
             <p className="text-muted-foreground">
@@ -140,11 +141,10 @@ export const LiveChatModal: React.FC<LiveChatModalProps> = ({ open, onOpenChange
                 Human Agent
               </Badge>}
               {currentTicket?.status && (
-                <span className={`text-xs px-2 py-1 rounded-full ${
-                  currentTicket.status === 'open' ? 'bg-green-100 text-green-800' :
-                  currentTicket.status === 'in-progress' ? 'bg-blue-100 text-blue-800' :
-                  'bg-gray-100 text-gray-800'
-                }`}>
+                <span className={`text-xs px-2 py-1 rounded-full ${currentTicket.status === 'open' ? 'bg-green-100 text-green-800' :
+                    currentTicket.status === 'in-progress' ? 'bg-blue-100 text-blue-800' :
+                      'bg-gray-100 text-gray-800'
+                  }`}>
                   {currentTicket.status}
                 </span>
               )}
@@ -192,7 +192,7 @@ export const LiveChatModal: React.FC<LiveChatModalProps> = ({ open, onOpenChange
             <div className="text-center py-8">
               <MessageCircle className="w-12 h-12 text-muted-foreground mx-auto mb-4 opacity-50" />
               <p className="text-muted-foreground">
-                {isGuestMode 
+                {isGuestMode
                   ? "Welcome to Picnify support! Our AI assistant is ready to help. Send a message to get started."
                   : "Welcome to live chat! Send a message to get started."
                 }
@@ -206,18 +206,16 @@ export const LiveChatModal: React.FC<LiveChatModalProps> = ({ open, onOpenChange
                   className={`flex ${isUserMessage(message) ? 'justify-end' : 'justify-start'}`}
                 >
                   <div
-                    className={`max-w-[80%] rounded-lg px-3 py-2 ${
-                      isUserMessage(message)
+                    className={`max-w-[80%] rounded-lg px-3 py-2 ${isUserMessage(message)
                         ? 'bg-primary text-primary-foreground'
                         : 'bg-muted'
-                    }`}
+                      }`}
                   >
                     <div className="text-sm">
                       {message.content}
                     </div>
-                    <div className={`text-xs mt-1 flex items-center gap-1 ${
-                      isUserMessage(message) ? 'text-primary-foreground/70' : 'text-muted-foreground'
-                    }`}>
+                    <div className={`text-xs mt-1 flex items-center gap-1 ${isUserMessage(message) ? 'text-primary-foreground/70' : 'text-muted-foreground'
+                      }`}>
                       <span>{getMessageAuthorName(message)}</span>
                       <span>•</span>
                       <span>{formatMessageTime(message.created_at)}</span>

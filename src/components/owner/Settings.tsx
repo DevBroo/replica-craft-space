@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { NotificationService } from '@/lib/notificationService';
+import { NotificationPreferences } from '@/components/shared/NotificationPreferences';
 import { OwnerService } from '@/lib/ownerService';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
@@ -64,7 +65,7 @@ const Settings: React.FC<SettingsProps> = ({ sidebarCollapsed, toggleSidebar, ac
       try {
         // Load stored settings from localStorage
         loadStoredSettings();
-        
+
         // Simulate API call
         await new Promise(resolve => setTimeout(resolve, 1000));
         // In real app, load from API
@@ -76,7 +77,7 @@ const Settings: React.FC<SettingsProps> = ({ sidebarCollapsed, toggleSidebar, ac
         setIsLoading(false);
       }
     };
-    
+
     if (user) {
       loadSettings();
     }
@@ -85,7 +86,7 @@ const Settings: React.FC<SettingsProps> = ({ sidebarCollapsed, toggleSidebar, ac
   // Load notifications
   const loadNotifications = async () => {
     if (!user?.id) return;
-    
+
     try {
       setIsLoadingNotifications(true);
       const notificationsData = await NotificationService.getUserNotifications(user.id);
@@ -126,7 +127,7 @@ const Settings: React.FC<SettingsProps> = ({ sidebarCollapsed, toggleSidebar, ac
     try {
       if (!notification.is_read) {
         await NotificationService.markAsRead(notification.id);
-        setNotificationList(prev => prev.map(n => 
+        setNotificationList(prev => prev.map(n =>
           n.id === notification.id ? { ...n, is_read: true } : n
         ));
         setUnreadCount(prev => Math.max(0, prev - 1));
@@ -139,7 +140,7 @@ const Settings: React.FC<SettingsProps> = ({ sidebarCollapsed, toggleSidebar, ac
   // Mark all notifications as read
   const markAllAsRead = async () => {
     if (!user?.id) return;
-    
+
     try {
       await NotificationService.markAllAsRead(user.id);
       setNotificationList(prev => prev.map(n => ({ ...n, is_read: true })));
@@ -156,11 +157,11 @@ const Settings: React.FC<SettingsProps> = ({ sidebarCollapsed, toggleSidebar, ac
     try {
       // Simulate API call
       await new Promise(resolve => setTimeout(resolve, 500));
-      
+
       // Store in localStorage for persistence
       const settingsKey = `picnify_${settingsType}_settings`;
       localStorage.setItem(settingsKey, JSON.stringify(data));
-      
+
       toast.success(`${settingsType.charAt(0).toUpperCase() + settingsType.slice(1)} settings saved successfully!`);
       console.log(`Saving ${settingsType}:`, data);
     } catch (error) {
@@ -176,12 +177,12 @@ const Settings: React.FC<SettingsProps> = ({ sidebarCollapsed, toggleSidebar, ac
     try {
       const notificationSettings = localStorage.getItem('picnify_notification_settings');
       const privacySettings = localStorage.getItem('picnify_privacy_settings');
-      
+
       if (notificationSettings) {
         const parsed = JSON.parse(notificationSettings);
         setNotificationSettings(prev => ({ ...prev, ...parsed }));
       }
-      
+
       if (privacySettings) {
         const parsed = JSON.parse(privacySettings);
         setPrivacy(prev => ({ ...prev, ...parsed }));
@@ -229,7 +230,7 @@ const Settings: React.FC<SettingsProps> = ({ sidebarCollapsed, toggleSidebar, ac
   const handlePasswordChange = async () => {
     try {
       setPasswordErrors([]);
-      
+
       // Validate form
       if (!passwordForm.currentPassword || !passwordForm.newPassword || !passwordForm.confirmPassword) {
         setPasswordErrors(['All fields are required']);
@@ -295,7 +296,7 @@ const Settings: React.FC<SettingsProps> = ({ sidebarCollapsed, toggleSidebar, ac
   const handleDataExport = async () => {
     try {
       setIsLoading(true);
-      
+
       if (!user?.id) {
         toast.error('User not authenticated');
         return;
@@ -393,7 +394,7 @@ const Settings: React.FC<SettingsProps> = ({ sidebarCollapsed, toggleSidebar, ac
 
       // Convert to JSON with proper formatting
       const jsonData = JSON.stringify(exportData, null, 2);
-      
+
       // Create and download the file
       const blob = new Blob([jsonData], { type: 'application/json' });
       const url = window.URL.createObjectURL(blob);
@@ -407,7 +408,7 @@ const Settings: React.FC<SettingsProps> = ({ sidebarCollapsed, toggleSidebar, ac
 
       toast.success(`Data export downloaded successfully! Exported ${exportData.export_metadata.total_records} records.`);
       console.log('Complete data export completed for:', user?.email);
-      
+
     } catch (error) {
       console.error('Data export error:', error);
       toast.error('Failed to export data. Please try again.');
@@ -424,18 +425,18 @@ const Settings: React.FC<SettingsProps> = ({ sidebarCollapsed, toggleSidebar, ac
           // Open password change modal
           setShowPasswordModal(true);
           break;
-          
+
         case 'exportData':
           // Create and download actual data export
           await handleDataExport();
           break;
-          
+
         case 'deleteAccount':
           // Show confirmation dialog
           const confirmed = window.confirm(
             'Are you sure you want to delete your account? This action cannot be undone and will permanently remove all your data, properties, and bookings.'
           );
-          
+
           if (confirmed) {
             await new Promise(resolve => setTimeout(resolve, 1000));
             toast.error('Account deletion requires additional verification. Please contact support at support@picnify.com for assistance.');
@@ -444,7 +445,7 @@ const Settings: React.FC<SettingsProps> = ({ sidebarCollapsed, toggleSidebar, ac
             toast.info('Account deletion cancelled.');
           }
           break;
-          
+
         default:
           toast.error('Unknown action requested');
       }
@@ -493,9 +494,8 @@ const Settings: React.FC<SettingsProps> = ({ sidebarCollapsed, toggleSidebar, ac
               <button
                 key={item.id}
                 onClick={() => setActiveTab(item.id)}
-                className={`w-full flex items-center px-4 py-3 text-left hover:bg-blue-50 transition-colors cursor-pointer ${
-                  activeTab === item.id ? 'bg-blue-50 border-r-2 border-blue-600 text-blue-600' : 'text-gray-600'
-                }`}
+                className={`w-full flex items-center px-4 py-3 text-left hover:bg-blue-50 transition-colors cursor-pointer ${activeTab === item.id ? 'bg-blue-50 border-r-2 border-blue-600 text-blue-600' : 'text-gray-600'
+                  }`}
               >
                 <i className={`${item.icon} w-5 text-center`}></i>
                 {!sidebarCollapsed && <span className="ml-3">{item.label}</span>}
@@ -524,7 +524,7 @@ const Settings: React.FC<SettingsProps> = ({ sidebarCollapsed, toggleSidebar, ac
             </div>
             <div className="flex items-center space-x-4">
               <div className="relative notification-dropdown">
-                <button 
+                <button
                   onClick={() => setShowNotifications(!showNotifications)}
                   className="p-2 rounded-lg hover:bg-gray-100 cursor-pointer"
                 >
@@ -535,7 +535,7 @@ const Settings: React.FC<SettingsProps> = ({ sidebarCollapsed, toggleSidebar, ac
                     </span>
                   )}
                 </button>
-                
+
                 {showNotifications && (
                   <div className="absolute right-0 top-12 w-80 bg-white border border-gray-200 rounded-lg shadow-lg z-50 max-h-96 overflow-y-auto">
                     <div className="p-4 border-b">
@@ -551,7 +551,7 @@ const Settings: React.FC<SettingsProps> = ({ sidebarCollapsed, toggleSidebar, ac
                         )}
                       </div>
                     </div>
-                    
+
                     <div className="max-h-80 overflow-y-auto">
                       {isLoadingNotifications ? (
                         <div className="p-4 text-center text-gray-500">
@@ -566,14 +566,12 @@ const Settings: React.FC<SettingsProps> = ({ sidebarCollapsed, toggleSidebar, ac
                           <div
                             key={notification.id}
                             onClick={() => handleNotificationClick(notification)}
-                            className={`p-4 border-b hover:bg-gray-50 cursor-pointer ${
-                              !notification.is_read ? 'bg-blue-50' : ''
-                            }`}
+                            className={`p-4 border-b hover:bg-gray-50 cursor-pointer ${!notification.is_read ? 'bg-blue-50' : ''
+                              }`}
                           >
                             <div className="flex items-start space-x-3">
-                              <div className={`w-2 h-2 rounded-full mt-2 ${
-                                !notification.is_read ? 'bg-blue-500' : 'bg-gray-300'
-                              }`}></div>
+                              <div className={`w-2 h-2 rounded-full mt-2 ${!notification.is_read ? 'bg-blue-500' : 'bg-gray-300'
+                                }`}></div>
                               <div className="flex-1">
                                 <p className="text-sm font-medium text-gray-900">
                                   {notification.title}
@@ -613,89 +611,7 @@ const Settings: React.FC<SettingsProps> = ({ sidebarCollapsed, toggleSidebar, ac
           {/* Settings Sections */}
           <div className="space-y-6">
             {/* Notifications */}
-            <div className="bg-white rounded-lg shadow-sm border">
-              <div className="p-6 border-b">
-                <h3 className="text-lg font-semibold text-gray-800">Notifications</h3>
-                <p className="text-sm text-gray-600 mt-1">Manage how you receive notifications</p>
-              </div>
-              <div className="p-6 space-y-4">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <h4 className="font-medium text-gray-900">Email Notifications</h4>
-                  </div>
-                </div>
-                <div className="space-y-3 ml-4">
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm text-gray-700">New bookings</span>
-                    <input
-                      type="checkbox"
-                      checked={notificationSettings.emailBookings}
-                      onChange={(e) => handleNotificationChange('emailBookings', e.target.checked)}
-                      className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-                      disabled={isLoading}
-                    />
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm text-gray-700">Reviews and ratings</span>
-                    <input
-                      type="checkbox"
-                      checked={notificationSettings.emailReviews}
-                      onChange={(e) => handleNotificationChange('emailReviews', e.target.checked)}
-                      className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-                      disabled={isLoading}
-                    />
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm text-gray-700">Payment confirmations</span>
-                    <input
-                      type="checkbox"
-                      checked={notificationSettings.emailPayments}
-                      onChange={(e) => handleNotificationChange('emailPayments', e.target.checked)}
-                      className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-                      disabled={isLoading}
-                    />
-                  </div>
-                </div>
-                
-                <div className="flex items-center justify-between mt-6">
-                  <div>
-                    <h4 className="font-medium text-gray-900">Push Notifications</h4>
-                  </div>
-                </div>
-                <div className="space-y-3 ml-4">
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm text-gray-700">New bookings</span>
-                    <input
-                      type="checkbox"
-                      checked={notificationSettings.pushBookings}
-                      onChange={(e) => handleNotificationChange('pushBookings', e.target.checked)}
-                      className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-                      disabled={isLoading}
-                    />
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm text-gray-700">Reviews and ratings</span>
-                    <input
-                      type="checkbox"
-                      checked={notificationSettings.pushReviews}
-                      onChange={(e) => handleNotificationChange('pushReviews', e.target.checked)}
-                      className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-                      disabled={isLoading}
-                    />
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm text-gray-700">Payment confirmations</span>
-                    <input
-                      type="checkbox"
-                      checked={notificationSettings.pushPayments}
-                      onChange={(e) => handleNotificationChange('pushPayments', e.target.checked)}
-                      className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-                      disabled={isLoading}
-                    />
-                  </div>
-                </div>
-              </div>
-            </div>
+            <NotificationPreferences />
 
             {/* Privacy & Security */}
             <div className="bg-white rounded-lg shadow-sm border">
@@ -748,54 +664,54 @@ const Settings: React.FC<SettingsProps> = ({ sidebarCollapsed, toggleSidebar, ac
 
             {/* Account Actions - Hidden for hosts */}
             {false && (
-            <div className="bg-white rounded-lg shadow-sm border">
-              <div className="p-6 border-b">
-                <h3 className="text-lg font-semibold text-gray-800">Account</h3>
-                <p className="text-sm text-gray-600 mt-1">Manage your account settings</p>
-              </div>
-              <div className="p-6 space-y-4">
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                  <button 
-                    onClick={() => handleAccountAction('changePassword')}
-                    disabled={isLoading}
-                    className="bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center space-x-2 shadow-sm hover:shadow-md"
-                  >
-                    <Key className="h-4 w-4" />
-                    <span className="font-medium">{isLoading ? 'Processing...' : 'Change Password'}</span>
-                  </button>
-                  
-                  <button 
-                    onClick={() => handleAccountAction('exportData')}
-                    disabled={isLoading}
-                    className="bg-gray-600 text-white px-6 py-3 rounded-lg hover:bg-gray-700 transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center space-x-2 shadow-sm hover:shadow-md"
-                  >
-                    <Download className="h-4 w-4" />
-                    <span className="font-medium">{isLoading ? 'Processing...' : 'Export Data'}</span>
-                  </button>
-                  
-                  <button 
-                    onClick={() => handleAccountAction('deleteAccount')}
-                    disabled={isLoading}
-                    className="bg-red-600 text-white px-6 py-3 rounded-lg hover:bg-red-700 transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center space-x-2 shadow-sm hover:shadow-md"
-                  >
-                    <Trash2 className="h-4 w-4" />
-                    <span className="font-medium">{isLoading ? 'Processing...' : 'Delete Account'}</span>
-                  </button>
+              <div className="bg-white rounded-lg shadow-sm border">
+                <div className="p-6 border-b">
+                  <h3 className="text-lg font-semibold text-gray-800">Account</h3>
+                  <p className="text-sm text-gray-600 mt-1">Manage your account settings</p>
                 </div>
-                
-                <div className="mt-4 p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
-                  <div className="flex items-start space-x-2">
-                    <div className="w-2 h-2 bg-yellow-500 rounded-full mt-2"></div>
-                    <div>
-                      <p className="text-sm text-yellow-800 font-medium">Important Notice</p>
-                      <p className="text-sm text-yellow-700 mt-1">
-                        Account actions may take time to process. You will receive email confirmations for all actions.
-                      </p>
+                <div className="p-6 space-y-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                    <button
+                      onClick={() => handleAccountAction('changePassword')}
+                      disabled={isLoading}
+                      className="bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center space-x-2 shadow-sm hover:shadow-md"
+                    >
+                      <Key className="h-4 w-4" />
+                      <span className="font-medium">{isLoading ? 'Processing...' : 'Change Password'}</span>
+                    </button>
+
+                    <button
+                      onClick={() => handleAccountAction('exportData')}
+                      disabled={isLoading}
+                      className="bg-gray-600 text-white px-6 py-3 rounded-lg hover:bg-gray-700 transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center space-x-2 shadow-sm hover:shadow-md"
+                    >
+                      <Download className="h-4 w-4" />
+                      <span className="font-medium">{isLoading ? 'Processing...' : 'Export Data'}</span>
+                    </button>
+
+                    <button
+                      onClick={() => handleAccountAction('deleteAccount')}
+                      disabled={isLoading}
+                      className="bg-red-600 text-white px-6 py-3 rounded-lg hover:bg-red-700 transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center space-x-2 shadow-sm hover:shadow-md"
+                    >
+                      <Trash2 className="h-4 w-4" />
+                      <span className="font-medium">{isLoading ? 'Processing...' : 'Delete Account'}</span>
+                    </button>
+                  </div>
+
+                  <div className="mt-4 p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
+                    <div className="flex items-start space-x-2">
+                      <div className="w-2 h-2 bg-yellow-500 rounded-full mt-2"></div>
+                      <div>
+                        <p className="text-sm text-yellow-800 font-medium">Important Notice</p>
+                        <p className="text-sm text-yellow-700 mt-1">
+                          Account actions may take time to process. You will receive email confirmations for all actions.
+                        </p>
+                      </div>
                     </div>
                   </div>
                 </div>
               </div>
-            </div>
             )}
           </div>
         </main>

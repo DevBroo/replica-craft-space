@@ -14,11 +14,13 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } f
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { Calendar, Home, User, Heart, CreditCard, Bell, LogOut, MapPin, Star, Edit, Save, X, MessageCircle } from 'lucide-react';
+import { Calendar, Home, User, Heart, CreditCard, Bell, LogOut, MapPin, Star, Edit, Save, X, MessageCircle, HelpCircle, Eye } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
 import { ReviewYourStay } from '@/components/reviews/ReviewYourStay';
 import CustomerMessages from '@/components/customer/CustomerMessages';
 import { MessageService } from '@/lib/messageService';
+import { supportTicketService } from '@/lib/supportTicketService';
+import { LiveChatModal } from '@/components/support/LiveChatModal';
 
 interface Booking {
   id: string;
@@ -52,6 +54,10 @@ export default function CustomerDashboard() {
     phone: '',
     bio: ''
   });
+  const [supportTickets, setSupportTickets] = useState<any[]>([]);
+  const [loadingSupportTickets, setLoadingSupportTickets] = useState(false);
+  const [openChatModal, setOpenChatModal] = useState(false);
+  const [selectedTicketId, setSelectedTicketId] = useState<string | null>(null);
   
   const { savedProperties, savedCount, removeFromWishlist } = useWishlist();
 
@@ -61,6 +67,7 @@ export default function CustomerDashboard() {
       return;
     }
     fetchUserData();
+    loadSupportTickets();
   }, [user, navigate]);
 
   // Initialize profile form with user data
@@ -130,6 +137,35 @@ export default function CustomerDashboard() {
       setLoading(false);
     }
   };
+
+  const loadSupportTickets = async () => {
+    if (!user) return;
+
+    setLoadingSupportTickets(true);
+    try {
+      // Get user's support tickets using created_by instead of customer_id
+      const { data, error } = await supabase
+        .from('support_tickets')
+        .select('*')
+        .eq('created_by', user.id)
+        .or('category.eq.live_chat,subject.ilike.%Live Chat%')
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+      setSupportTickets(data || []);
+    } catch (error) {
+      console.error('Error loading support tickets:', error);
+      toast({
+        title: "Error",
+        description: "Failed to load support tickets",
+        variant: "destructive"
+      });
+    } finally {
+      setLoadingSupportTickets(false);
+    }
+  };
+
+  // Removed reopenTicket function - customers can only view closed chats, not reopen them
 
   const handleEditProfile = () => {
     setShowEditProfile(true);
@@ -379,9 +415,10 @@ export default function CustomerDashboard() {
 
         {/* Main Dashboard Content */}
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-          <TabsList className="grid w-full grid-cols-6 glass-card-light h-12 p-1">
+          <TabsList className="grid w-full grid-cols-7 glass-card-light h-12 p-1">
             <TabsTrigger value="bookings" className="data-[state=active]:bg-white/40 data-[state=active]:shadow-sm transition-all">My Bookings</TabsTrigger>
             <TabsTrigger value="messages" className="data-[state=active]:bg-white/40 data-[state=active]:shadow-sm transition-all">Messages</TabsTrigger>
+            <TabsTrigger value="support" className="data-[state=active]:bg-white/40 data-[state=active]:shadow-sm transition-all">Support Tickets</TabsTrigger>
             <TabsTrigger value="reviews" className="data-[state=active]:bg-white/40 data-[state=active]:shadow-sm transition-all">Reviews</TabsTrigger>
             <TabsTrigger value="saved" className="data-[state=active]:bg-white/40 data-[state=active]:shadow-sm transition-all">Saved Properties</TabsTrigger>
             <TabsTrigger value="profile" className="data-[state=active]:bg-white/40 data-[state=active]:shadow-sm transition-all">Profile</TabsTrigger>
@@ -482,6 +519,103 @@ export default function CustomerDashboard() {
               </CardHeader>
               <CardContent className="p-0">
                 <CustomerMessages className="rounded-b-lg" />
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          {/* Support Tickets Tab */}
+          <TabsContent value="support" className="space-y-4">
+            <Card className="glass-card border-0 shadow-elevated">
+              <CardHeader>
+                <div className="flex items-center justify-between">
+                  <div>
+                    <CardTitle className="text-xl font-semibold bg-gradient-to-r from-green-600 to-blue-600 bg-clip-text text-transparent">Support Tickets</CardTitle>
+                    <CardDescription className="text-muted-foreground/80">
+                      View your chat history and reopen conversations
+                    </CardDescription>
+                  </div>
+                  <Button onClick={() => setOpenChatModal(true)} className="bg-gradient-to-r from-green-600 to-blue-600">
+                    <MessageCircle className="w-4 h-4 mr-2" />
+                    Start New Chat
+                  </Button>
+                </div>
+              </CardHeader>
+              <CardContent>
+                {loadingSupportTickets ? (
+                  <div className="text-center py-8">
+                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto"></div>
+                    <p className="text-muted-foreground mt-2">Loading support tickets...</p>
+                  </div>
+                ) : supportTickets.length === 0 ? (
+                  <div className="text-center py-8">
+                    <HelpCircle className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                    <h3 className="text-lg font-semibold mb-2">No support tickets yet</h3>
+                    <p className="text-muted-foreground mb-4">
+                      Start a conversation with our support team to get help!
+                    </p>
+                    <Button onClick={() => setOpenChatModal(true)} className="bg-gradient-to-r from-green-600 to-blue-600">
+                      <MessageCircle className="w-4 h-4 mr-2" />
+                      Start Chat
+                    </Button>
+                  </div>
+                ) : (
+                  <div className="space-y-4">
+                    {supportTickets.map((ticket) => (
+                      <Card key={ticket.id} className="glass-card-property hover-lift border-0 shadow-elevated">
+                        <CardContent className="p-4">
+                          <div className="flex items-center justify-between">
+                            <div className="flex-1">
+                              <div className="flex items-center gap-2 mb-2">
+                                <h3 className="font-semibold">{ticket.subject || 'Live Chat Session'}</h3>
+                                <Badge variant={
+                                  ticket.status === 'open' ? 'default' :
+                                    ticket.status === 'in-progress' ? 'secondary' :
+                                      ticket.status === 'resolved' ? 'outline' : 'destructive'
+                                }>
+                                  {ticket.status}
+                                </Badge>
+                              </div>
+                              <p className="text-sm text-muted-foreground mb-2">
+                                Created: {new Date(ticket.created_at).toLocaleDateString()}
+                              </p>
+                              <p className="text-sm text-muted-foreground">
+                                Priority: {ticket.priority || 'Normal'}
+                              </p>
+                            </div>
+                            <div className="flex gap-2">
+                              {ticket.status === 'open' || ticket.status === 'in-progress' ? (
+                                <Button
+                                  size="sm"
+                                  onClick={() => {
+                                    setSelectedTicketId(ticket.id);
+                                    setOpenChatModal(true);
+                                  }}
+                                  className="bg-gradient-to-r from-green-600 to-blue-600"
+                                >
+                                  <MessageCircle className="w-4 h-4 mr-1" />
+                                  Continue Chat
+                                </Button>
+                              ) : (
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  onClick={() => {
+                                    setSelectedTicketId(ticket.id);
+                                    setOpenChatModal(true);
+                                  }}
+                                  className="bg-gray-100 text-gray-600"
+                                >
+                                  <Eye className="w-4 h-4 mr-1" />
+                                  View Chat (Read Only)
+                                </Button>
+                              )}
+                            </div>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    ))}
+                  </div>
+                )}
               </CardContent>
             </Card>
           </TabsContent>
@@ -743,6 +877,13 @@ export default function CustomerDashboard() {
           </div>
         </DialogContent>
       </Dialog>
+
+      {/* Live Chat Modal */}
+      <LiveChatModal
+        open={openChatModal}
+        onOpenChange={setOpenChatModal}
+        ticketId={selectedTicketId}
+      />
     </div>
   );
 }

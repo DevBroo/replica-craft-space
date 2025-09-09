@@ -19,11 +19,14 @@ export interface AIResponse {
   confidence_score?: number;
   should_escalate?: boolean;
   suggested_actions?: string[];
+  adminJoined?: boolean; // Flag to indicate admin has taken over chat
+  shouldEscalate?: boolean; // Alternative property name used in some places
+  extractedInfo?: any; // For extracted customer information
 }
 
 export class AIChatService {
   private static customerDetails: CustomerDetails = {};
-  private static conversationHistory: Array<{ role: 'user' | 'assistant'; content: string }> = [];
+  private static conversationHistory: Array<{ role: 'user' | 'assistant'; content: string; timestamp?: string }> = [];
 
   /**
    * Process user message and generate AI response
@@ -32,8 +35,28 @@ export class AIChatService {
     try {
       console.log('🤖 Processing AI message:', userMessage);
 
-      // Add user message to conversation history
-      this.conversationHistory.push({ role: 'user', content: userMessage });
+      // Check if admin has joined the chat - if so, don't respond with AI
+      const hasAdminJoined = await this.checkIfAdminJoined(ticketId);
+      if (hasAdminJoined) {
+        console.log('👮‍♂️ Admin has joined chat - AI will not respond');
+        return {
+          message: "", // Empty response - AI should not reply
+          shouldEscalate: false,
+          extractedInfo: {},
+          adminJoined: true // Flag to indicate admin has taken over
+        };
+      }
+
+      // Add user message to conversation history with timestamp
+      this.conversationHistory.push({
+        role: 'user',
+        content: userMessage,
+        timestamp: new Date().toISOString()
+      });
+
+      // Get user role to provide appropriate responses
+      const userRole = await this.getUserRole(ticketId);
+      console.log('👤 User role detected:', userRole, 'for ticket:', ticketId);
 
       // Extract information from the message
       const extractedInfo = this.extractCustomerInfo(userMessage);
@@ -43,17 +66,21 @@ export class AIChatService {
       this.customerDetails = { ...this.customerDetails, ...extractedInfo };
       console.log('👤 Updated customer details:', this.customerDetails);
 
-      // Generate AI response based on conversation context
-      const aiResponse = await this.generateAIResponse(userMessage, this.customerDetails);
+      // Generate AI response based on user role and conversation context
+      const aiResponse = await this.generateAIResponse(userMessage, this.customerDetails, userRole);
       console.log('💬 Generated AI response:', aiResponse.message);
 
-      // Add AI response to conversation history
-      this.conversationHistory.push({ role: 'assistant', content: aiResponse.message });
+      // Add AI response to conversation history with timestamp
+      this.conversationHistory.push({
+        role: 'assistant',
+        content: aiResponse.message,
+        timestamp: new Date().toISOString()
+      });
 
       // Save customer details to database (only if not guest session)
       if (!ticketId.startsWith('guest-')) {
         try {
-          await this.saveCustomerDetails(ticketId, this.customerDetails);
+          await this.saveCustomerDetails(ticketId, this.customerDetails, userRole);
           console.log('💾 Saved customer details to database');
         } catch (saveError) {
           console.warn('⚠️ Failed to save customer details:', saveError);
@@ -70,6 +97,73 @@ export class AIChatService {
         message: "I apologize, but I'm having trouble processing your request right now. I'm still here to help though! Could you try rephrasing your question?",
         should_escalate: false // Don't escalate immediately on AI errors
       };
+    }
+  }
+
+  /**
+   * Check if admin has joined the chat
+   */
+  private static async checkIfAdminJoined(ticketId: string): Promise<boolean> {
+    try {
+      const { data: ticket, error } = await supabase
+        .from('support_tickets')
+        .select('assigned_agent, status')
+        .eq('id', ticketId)
+        .single();
+
+      if (error) {
+        console.warn('❌ Error checking admin status:', error);
+        return false;
+      }
+
+      // Admin has joined if ticket is assigned to an agent and status is in-progress
+      return ticket.assigned_agent && ticket.status === 'in-progress';
+    } catch (error) {
+      console.warn('❌ Error checking if admin joined:', error);
+      return false;
+    }
+  }
+
+  /**
+   * Get user role from ticket to provide appropriate AI responses
+   */
+  private static async getUserRole(ticketId: string): Promise<'customer' | 'property_owner' | 'unknown'> {
+    try {
+      if (ticketId.startsWith('guest-')) {
+        return 'customer'; // Guest users are treated as customers
+      }
+
+      // Get ticket details to find the user
+      const { data: ticket, error: ticketError } = await supabase
+        .from('support_tickets')
+        .select('created_by')
+        .eq('id', ticketId)
+        .single();
+
+      if (ticketError || !ticket) {
+        console.warn('Could not fetch ticket for role detection:', ticketError);
+        return 'unknown';
+      }
+
+      // Get user profile to check role
+      const { data: profile, error: profileError } = await supabase
+        .from('profiles')
+        .select('role')
+        .eq('id', ticket.created_by)
+        .single();
+
+      if (profileError || !profile) {
+        console.warn('Could not fetch user profile for role detection:', profileError);
+        return 'unknown';
+      }
+
+      console.log('🔍 Role detection - Profile role:', profile.role, 'for user:', ticket.created_by);
+      const detectedRole = profile.role === 'property_owner' ? 'property_owner' : 'customer';
+      console.log('🎭 Final detected role:', detectedRole);
+      return detectedRole;
+    } catch (error) {
+      console.warn('Error detecting user role:', error);
+      return 'unknown';
     }
   }
 
@@ -145,10 +239,10 @@ export class AIChatService {
   /**
    * Generate contextual AI response
    */
-  private static async generateAIResponse(userMessage: string, customerDetails: CustomerDetails): Promise<AIResponse> {
+  private static async generateAIResponse(userMessage: string, customerDetails: CustomerDetails, userRole: 'customer' | 'property_owner' | 'unknown' = 'unknown'): Promise<AIResponse> {
     const lowerMessage = userMessage.toLowerCase();
 
-    // Greeting responses - more engaging and helpful
+    // Greeting responses - role-specific and more engaging
     if (this.conversationHistory.length <= 2 && (
       lowerMessage.includes('hello') ||
       lowerMessage.includes('hi') ||
@@ -156,10 +250,17 @@ export class AIChatService {
       lowerMessage.includes('good') ||
       lowerMessage.includes('help')
     )) {
-      return {
-        message: `Hello! 👋 Welcome to Picnify support! I'm your AI assistant and I'm excited to help you today. \n\nI can assist you with:\n• 🏡 Finding and booking perfect venues\n• 📅 Managing your existing bookings\n• 💳 Payment and billing questions\n• 🎯 Property recommendations\n• 🔧 Technical support\n\nTo get started, could you please tell me your name and what you'd like help with?`,
-        next_question: "What's your name and how can I assist you?"
-      };
+      if (userRole === 'property_owner') {
+        return {
+          message: `Hello! 👋 Welcome to Picnify Property Owner Support! I'm your AI assistant and I'm here to help you manage your properties effectively. \n\nI can assist you with:\n• 🏡 Property listing and management\n• 📊 Booking analytics and insights\n• 💰 Earnings and payment tracking\n• 🎯 Property optimization tips\n• 📅 Calendar and availability management\n• 🔧 Technical support for your listings\n• 📈 Performance metrics and reports\n\nTo get started, could you please tell me your name and what you'd like help with regarding your properties?`,
+          next_question: "What's your name and how can I assist you with your properties?"
+        };
+      } else {
+        return {
+          message: `Hello! 👋 Welcome to Picnify support! I'm your AI assistant and I'm excited to help you today. \n\nI can assist you with:\n• 🏡 Finding and booking perfect venues\n• 📅 Managing your existing bookings\n• 💳 Payment and billing questions\n• 🎯 Property recommendations\n• 🔧 Technical support\n\nTo get started, could you please tell me your name and what you'd like help with?`,
+          next_question: "What's your name and how can I assist you?"
+        };
+      }
     }
 
     // Collect missing information
@@ -199,7 +300,12 @@ export class AIChatService {
       }
     }
 
-    // Issue-specific responses
+    // Role-specific responses
+    if (userRole === 'property_owner') {
+      return this.generatePropertyOwnerResponse(userMessage, customerDetails);
+    }
+
+    // Issue-specific responses for customers
     if (customerDetails.issue_type === 'booking') {
       if (!customerDetails.booking_reference) {
         return {
@@ -408,7 +514,7 @@ export class AIChatService {
   /**
    * Save customer details to database
    */
-  private static async saveCustomerDetails(ticketId: string, details: CustomerDetails): Promise<void> {
+  private static async saveCustomerDetails(ticketId: string, details: CustomerDetails, userRole: 'customer' | 'property_owner' | 'unknown' = 'unknown'): Promise<void> {
     try {
       // Get the current user's profile to get their real name
       const { data: { user } } = await supabase.auth.getUser();
@@ -440,7 +546,10 @@ export class AIChatService {
           customer_phone: details.phone,
           description: JSON.stringify({
             customer_details: details,
-            conversation_summary: this.conversationHistory.slice(-10) // Keep last 10 messages
+            conversation_summary: this.conversationHistory.slice(-20), // Keep last 20 messages for better history
+            last_updated: new Date().toISOString(),
+            user_role: userRole, // Save user role for admin categorization
+            chat_type: userRole === 'property_owner' ? 'property_owner_support' : 'customer_support'
           })
         })
         .eq('id', ticketId);
@@ -491,5 +600,42 @@ export class AIChatService {
     if (details.issue_type === 'booking' && details.booking_reference && messageCount > 5) return true;
 
     return false;
+  }
+
+  /**
+   * Generate property owner specific responses
+   */
+  private static generatePropertyOwnerResponse(userMessage: string, customerDetails: CustomerDetails): AIResponse {
+    const lowerMessage = userMessage.toLowerCase();
+
+    // Property management queries
+    if (lowerMessage.includes('property') || lowerMessage.includes('listing') || lowerMessage.includes('venue')) {
+      return {
+        message: "I can help you with your property management! Are you looking to:\n\n• 📝 Update your property listing details\n• 📊 Check your property's performance metrics\n• 📅 Manage your availability calendar\n• 💰 View your earnings and payments\n• 🎯 Get tips to optimize your property\n• 🔧 Fix any technical issues with your listing\n\nWhat specific aspect of your property would you like help with?",
+        suggested_actions: ['Update listing', 'View analytics', 'Manage calendar', 'Check earnings', 'Get optimization tips']
+      };
+    }
+
+    // Booking management queries
+    if (lowerMessage.includes('booking') || lowerMessage.includes('reservation') || lowerMessage.includes('guest')) {
+      return {
+        message: "I can help you manage your bookings! Are you looking to:\n\n• 📋 View upcoming bookings\n• 📊 Check booking analytics\n• 📅 Manage your availability\n• 💬 Communicate with guests\n• 🔄 Handle booking modifications\n• ❌ Process cancellations\n\nWhat would you like to do with your bookings?",
+        suggested_actions: ['View bookings', 'Check analytics', 'Manage availability', 'Contact guests']
+      };
+    }
+
+    // Earnings and payment queries
+    if (lowerMessage.includes('earnings') || lowerMessage.includes('payment') || lowerMessage.includes('money') || lowerMessage.includes('revenue')) {
+      return {
+        message: "I can help you with your earnings and payments! Are you looking to:\n\n• 💰 Check your current earnings\n• 📊 View payment history\n• 📈 Analyze revenue trends\n• 💳 Update payment methods\n• 🏦 Set up payouts\n• 📋 Download financial reports\n\nWhat specific financial information do you need?",
+        suggested_actions: ['View earnings', 'Check payments', 'Download reports', 'Update payment method']
+      };
+    }
+
+    // General property owner help
+    return {
+      message: `Hello! I'm here to help you manage your properties on Picnify. I can assist you with:\n\n• 🏡 Property listing optimization\n• 📊 Performance analytics and insights\n• 💰 Earnings and payment tracking\n• 📅 Calendar and availability management\n• 📋 Booking management\n• 🎯 Marketing and promotion tips\n• 🔧 Technical support\n\nWhat would you like help with today?`,
+      suggested_actions: ['Property management', 'Booking analytics', 'Earnings report', 'Calendar setup']
+    };
   }
 }
