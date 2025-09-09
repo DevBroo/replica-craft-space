@@ -149,8 +149,8 @@ export class PhonePeService {
             if (isTestMode) {
                 console.log('🧪 Test mode: Creating mock payment URL');
 
-                // Create a test payment URL that redirects back to our success page
-                const testPaymentUrl = `${window.location.origin}/payment/success?transactionId=${transactionId}&status=success&test=true`;
+                // Create a test payment URL that redirects to callback to trigger booking creation
+                const testPaymentUrl = `${window.location.origin}/payment/callback?transactionId=${transactionId}&status=success&code=PAYMENT_SUCCESS&test=true`;
 
                 console.log('✅ Mock payment URL generated successfully');
                 return {

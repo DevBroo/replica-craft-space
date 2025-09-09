@@ -67,7 +67,7 @@ const PaymentSuccess: React.FC = () => {
                 throw new Error('Unable to verify payment status');
             }
 
-            // Get booking details
+            // Get booking details or create if missing
             let booking = null;
             if (bookingId) {
                 const { data: bookingData, error: bookingError } = await supabase
@@ -85,6 +85,46 @@ const PaymentSuccess: React.FC = () => {
                 if (!bookingError && bookingData) {
                     booking = bookingData;
                     setBookingDetails(booking);
+                }
+            } else if (paymentResponse.success && paymentResponse.data?.state === 'COMPLETED') {
+                // Fallback: Create booking if payment is successful but no booking ID found
+                const pendingBookingData = sessionStorage.getItem('pending_booking_data');
+                if (pendingBookingData) {
+                    try {
+                        const bookingRequest = JSON.parse(pendingBookingData);
+                        console.log('📝 Creating missing booking after successful payment...');
+
+                        const { data: newBooking, error: createError } = await supabase
+                            .from('bookings')
+                            .insert({
+                                ...bookingRequest,
+                                status: 'confirmed',
+                                payment_status: 'paid',
+                                booking_details: {
+                                    ...bookingRequest.booking_details,
+                                    payment_transaction_id: transactionId,
+                                    payment_completed_at: new Date().toISOString()
+                                }
+                            })
+                            .select(`
+                                *,
+                                properties (
+                                  title,
+                                  images
+                                )
+                              `)
+                            .single();
+
+                        if (!createError && newBooking) {
+                            booking = newBooking;
+                            setBookingDetails(booking);
+                            sessionStorage.setItem('booking_id', newBooking.id);
+                            sessionStorage.removeItem('pending_booking_data');
+                            console.log('✅ Booking created successfully:', newBooking.id);
+                        }
+                    } catch (error) {
+                        console.error('❌ Error creating fallback booking:', error);
+                    }
                 }
             }
 
