@@ -25,6 +25,7 @@ import {
   Loader2
 } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Slider } from '@/components/ui/slider';
 
 const DayPicnicBooking: React.FC = () => {
   const { propertyId } = useParams<{ propertyId: string }>();
@@ -42,6 +43,8 @@ const DayPicnicBooking: React.FC = () => {
   const [guests, setGuests] = useState<GuestBreakdown>({ adults: 2, children: [] });
   const [selectedAddOns, setSelectedAddOns] = useState<string[]>([]);
   const [durationPrices, setDurationPrices] = useState<{ duration_type: string; price: number }[]>([]);
+  const [customHours, setCustomHours] = useState(4);
+  const [hourlyRates, setHourlyRates] = useState<any[]>([]);
   const [guestInfo, setGuestInfo] = useState<GuestInfo>({
     name: '',
     phone: '',
@@ -58,7 +61,8 @@ const DayPicnicBooking: React.FC = () => {
   const durationOptions = [
     { value: 'half_day', label: 'Half Day (4-5 hrs)', hours: '4-5' },
     { value: 'full_day', label: 'Full Day (6-8 hrs)', hours: '6-8' },
-    { value: 'extended_day', label: 'Extended Day (10+ hrs)', hours: '10+' }
+    { value: 'extended_day', label: 'Extended Day (10+ hrs)', hours: '10+' },
+    { value: 'custom', label: 'Custom Hours', hours: 'Custom' }
   ];
 
   useEffect(() => {
@@ -160,6 +164,17 @@ const DayPicnicBooking: React.FC = () => {
           })));
         }
 
+        // Fetch hourly rates for custom hours pricing
+        const { data: hourlyData, error: hourlyError } = await supabase
+          .from('day_picnic_hourly_rates')
+          .select('*')
+          .eq('package_id', packageData.id);
+
+        if (hourlyError) throw hourlyError;
+        if (hourlyData) {
+          setHourlyRates(hourlyData);
+        }
+
         // Fetch all option prices (inclusions, exclusions, add_ons)
         const { data: optionData, error: optionError } = await supabase
           .from('day_picnic_option_prices')
@@ -240,57 +255,89 @@ const DayPicnicBooking: React.FC = () => {
 
     let basePrice = 0;
 
-    // Check if owner has set explicit duration prices
-    const durationPrice = durationPrices.find(dp => dp.duration_type === selectedDuration);
-
-    if (durationPrice) {
-      // Use explicit duration price set by owner
-      if (package_.pricing_type === 'per_person') {
-        // Calculate price for adults
-        basePrice += durationPrice.price * guests.adults;
-
-        // Calculate price for children based on age
-        guests.children.forEach(child => {
-          if (child.priceCategory === 'free') {
-            basePrice += 0;
-          } else if (child.priceCategory === 'half') {
-            basePrice += durationPrice.price * 0.5;
+    // Handle custom hours pricing
+    if (selectedDuration === 'custom' && hourlyRates.length > 0) {
+      // Calculate price based on selected custom hours using hourly rates
+      for (let hour = 1; hour <= customHours; hour++) {
+        const hourlyRate = hourlyRates.find(rate => 
+          rate.meal_plan === 'ALL' && rate.hour_number === hour
+        );
+        
+        if (hourlyRate) {
+          if (package_.pricing_type === 'per_person') {
+            // Calculate price for adults
+            basePrice += hourlyRate.price_per_person * guests.adults;
+            
+            // Calculate price for children based on age
+            guests.children.forEach(child => {
+              if (child.priceCategory === 'free') {
+                basePrice += 0;
+              } else if (child.priceCategory === 'half') {
+                basePrice += hourlyRate.price_per_person * 0.5;
+              } else {
+                basePrice += hourlyRate.price_per_person;
+              }
+            });
           } else {
-            basePrice += durationPrice.price;
+            // Fixed package price per hour
+            basePrice += hourlyRate.price_per_package;
           }
-        });
-      } else {
-        // Fixed price regardless of guest count
-        basePrice = durationPrice.price;
+        }
       }
     } else {
-      // Fall back to multiplier-based pricing
-      const durationMultipliers = {
-        'half_day': 0.6,
-        'full_day': 1.0,
-        'extended_day': 1.5
-      };
+      // Original logic for predefined durations
+      // Check if owner has set explicit duration prices
+      const durationPrice = durationPrices.find(dp => dp.duration_type === selectedDuration);
 
-      const multiplier = durationMultipliers[selectedDuration as keyof typeof durationMultipliers] || 1.0;
-      const adjustedBasePrice = package_.base_price * multiplier;
+      if (durationPrice) {
+        // Use explicit duration price set by owner
+        if (package_.pricing_type === 'per_person') {
+          // Calculate price for adults
+          basePrice += durationPrice.price * guests.adults;
 
-      if (package_.pricing_type === 'per_person') {
-        // Calculate price for adults
-        basePrice += adjustedBasePrice * guests.adults;
-
-        // Calculate price for children based on age
-        guests.children.forEach(child => {
-          if (child.priceCategory === 'free') {
-            basePrice += 0;
-          } else if (child.priceCategory === 'half') {
-            basePrice += adjustedBasePrice * 0.5;
-          } else {
-            basePrice += adjustedBasePrice;
-          }
-        });
+          // Calculate price for children based on age
+          guests.children.forEach(child => {
+            if (child.priceCategory === 'free') {
+              basePrice += 0;
+            } else if (child.priceCategory === 'half') {
+              basePrice += durationPrice.price * 0.5;
+            } else {
+              basePrice += durationPrice.price;
+            }
+          });
+        } else {
+          // Fixed price regardless of guest count
+          basePrice = durationPrice.price;
+        }
       } else {
-        // Fixed price regardless of guest count
-        basePrice = adjustedBasePrice;
+        // Fall back to multiplier-based pricing
+        const durationMultipliers = {
+          'half_day': 0.6,
+          'full_day': 1.0,
+          'extended_day': 1.5
+        };
+
+        const multiplier = durationMultipliers[selectedDuration as keyof typeof durationMultipliers] || 1.0;
+        const adjustedBasePrice = package_.base_price * multiplier;
+
+        if (package_.pricing_type === 'per_person') {
+          // Calculate price for adults
+          basePrice += adjustedBasePrice * guests.adults;
+
+          // Calculate price for children based on age
+          guests.children.forEach(child => {
+            if (child.priceCategory === 'free') {
+              basePrice += 0;
+            } else if (child.priceCategory === 'half') {
+              basePrice += adjustedBasePrice * 0.5;
+            } else {
+              basePrice += adjustedBasePrice;
+            }
+          });
+        } else {
+          // Fixed price regardless of guest count
+          basePrice = adjustedBasePrice;
+        }
       }
     }
 
@@ -399,6 +446,7 @@ const DayPicnicBooking: React.FC = () => {
         start_time: package_.start_time,
         end_time: package_.end_time,
         duration: selectedDuration,
+        custom_hours: selectedDuration === 'custom' ? customHours : undefined,
         meal_plan: package_.meal_plan,
         selected_add_ons: selectedAddOns,
         pricing_type: package_.pricing_type,
@@ -655,14 +703,41 @@ const DayPicnicBooking: React.FC = () => {
                   <Label className="text-base font-semibold mb-3 block">Choose Duration</Label>
                   <div className="space-y-3">
                     {durationOptions.map((option) => {
-                      const durationPrice = durationPrices.find(dp => dp.duration_type === option.value);
-                      const fallbackMultipliers = {
-                        'half_day': 0.6,
-                        'full_day': 1.0,
-                        'extended_day': 1.5
-                      };
-                      const fallbackPrice = package_?.base_price * (fallbackMultipliers[option.value as keyof typeof fallbackMultipliers] || 1.0);
-                      const displayPrice = durationPrice?.price || fallbackPrice;
+                      let displayPrice = 0;
+                      let priceDescription = '';
+
+                      if (option.value === 'custom') {
+                        // Calculate custom hours price
+                        if (hourlyRates.length > 0) {
+                          for (let hour = 1; hour <= customHours; hour++) {
+                            const hourlyRate = hourlyRates.find(rate => 
+                              rate.meal_plan === 'ALL' && rate.hour_number === hour
+                            );
+                            if (hourlyRate) {
+                              if (package_?.pricing_type === 'per_person') {
+                                displayPrice += hourlyRate.price_per_person;
+                              } else {
+                                displayPrice += hourlyRate.price_per_package;
+                              }
+                            }
+                          }
+                          priceDescription = 'Hourly pricing';
+                        } else {
+                          displayPrice = package_?.base_price * customHours || 0;
+                          priceDescription = 'Standard hourly rate';
+                        }
+                      } else {
+                        // Original logic for predefined durations
+                        const durationPrice = durationPrices.find(dp => dp.duration_type === option.value);
+                        const fallbackMultipliers = {
+                          'half_day': 0.6,
+                          'full_day': 1.0,
+                          'extended_day': 1.5
+                        };
+                        const fallbackPrice = package_?.base_price * (fallbackMultipliers[option.value as keyof typeof fallbackMultipliers] || 1.0);
+                        displayPrice = durationPrice?.price || fallbackPrice;
+                        priceDescription = durationPrice ? 'Owner-set pricing' : 'Standard pricing with duration multiplier';
+                      }
 
                       return (
                         <div
@@ -676,12 +751,10 @@ const DayPicnicBooking: React.FC = () => {
                           <div className="flex justify-between items-center">
                             <div>
                               <h4 className="font-semibold text-gray-900">{option.label}</h4>
-                              <p className="text-sm text-gray-600">{option.hours} hours of fun</p>
-                              {durationPrice ? (
-                                <p className="text-xs text-green-600 mt-1">✓ Owner-set pricing</p>
-                              ) : (
-                                <p className="text-xs text-blue-600 mt-1">Standard pricing with duration multiplier</p>
-                              )}
+                              <p className="text-sm text-gray-600">
+                                {option.value === 'custom' ? `${customHours} hours selected` : `${option.hours} hours of fun`}
+                              </p>
+                              <p className="text-xs text-blue-600 mt-1">✓ {priceDescription}</p>
                             </div>
                             <div className="text-right">
                               <p className="text-lg font-bold text-primary">₹{Math.round(displayPrice)}</p>
@@ -691,6 +764,35 @@ const DayPicnicBooking: React.FC = () => {
                           {selectedDuration === option.value && (
                             <div className="mt-2 pt-2 border-t border-gray-200">
                               <p className="text-sm text-primary">✓ Selected for your day picnic</p>
+                              {option.value === 'custom' && (
+                                <div className="mt-3">
+                                  <Label className="text-sm text-gray-600 mb-2 block">Select Hours (1-{package_?.duration_hours || 12})</Label>
+                                  <div className="flex items-center space-x-2">
+                                    <input
+                                      type="range"
+                                      min="1"
+                                      max={package_?.duration_hours || 12}
+                                      value={customHours}
+                                      onChange={(e) => setCustomHours(parseInt(e.target.value))}
+                                      className="flex-1 h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer"
+                                      style={{
+                                        background: `linear-gradient(to right, hsl(var(--primary)) 0%, hsl(var(--primary)) ${(customHours - 1) / ((package_?.duration_hours || 12) - 1) * 100}%, #e5e7eb ${(customHours - 1) / ((package_?.duration_hours || 12) - 1) * 100}%, #e5e7eb 100%)`
+                                      }}
+                                    />
+                                    <Input
+                                      type="number"
+                                      min="1"
+                                      max={package_?.duration_hours || 12}
+                                      value={customHours}
+                                      onChange={(e) => setCustomHours(Math.min(Math.max(1, parseInt(e.target.value) || 1), package_?.duration_hours || 12))}
+                                      className="w-20 h-8 text-center"
+                                    />
+                                  </div>
+                                  <p className="text-xs text-gray-500 mt-1">
+                                    {hourlyRates.length > 0 ? 'Price calculated using owner-set hourly rates' : 'Using standard hourly calculation'}
+                                  </p>
+                                </div>
+                              )}
                             </div>
                           )}
                         </div>

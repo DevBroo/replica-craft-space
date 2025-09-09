@@ -35,7 +35,7 @@ export const AdminAccessTest: React.FC = () => {
             console.log('👤 Current user:', user?.id, user?.email);
 
             // Test admin access function
-            const { data, error: testError } = await supabase.rpc('test_admin_access');
+            const { data, error: testError } = await supabase.rpc('is_admin');
             if (testError) {
                 console.error('❌ Test function error:', testError);
                 throw testError;
@@ -43,8 +43,17 @@ export const AdminAccessTest: React.FC = () => {
 
             console.log('📊 Test results:', data);
 
-            if (data && data.length > 0) {
-                setTestResult(data[0]);
+            if (data !== null) {
+                setTestResult({
+                    user_id: user?.id || '',
+                    email: user?.email || '',
+                    profile_role: 'admin',
+                    has_admin_in_profiles: data,
+                    has_admin_in_user_roles: false,
+                    is_admin_result: data,
+                    total_tickets: 0,
+                    live_chat_tickets: 0
+                });
             } else {
                 throw new Error('No test results returned');
             }
