@@ -163,11 +163,12 @@ export class SearchService {
           // If searching for day picnic, only show day picnic properties - be more strict
           query = query.or('property_type.eq.day-picnic,property_type.eq.Day Picnic,property_type.eq.day_picnic,property_type.eq.daypicnic');
         } else {
-          // When no specific category is selected, exclude day picnics by default (all variations)
-          // Day picnics should only be shown when explicitly requested
-          query = query
-            .not('property_type', 'ilike', '%day%picnic%')
-            .not('property_type', 'ilike', '%picnic%');
+          // When no specific category is selected, include all properties except day picnics
+          // Include properties with NULL property_type and non-day-picnic types
+          query = query.or(
+            'property_type.is.null,' +
+            'and(property_type.not.ilike.%day%picnic%,property_type.not.ilike.%picnic%)'
+          );
         }
       }
 

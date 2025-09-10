@@ -569,7 +569,7 @@ const OptimizedProperties = () => {
                 setSearchTerm('');
                 setSelectedLocation('all');
                 setSelectedType('all');
-                setPriceRange([0, 15000]);
+                setPriceRange([0, 50000]);
                 setSortBy('newest');
                 setSearchFilters({
                   location: 'all',
