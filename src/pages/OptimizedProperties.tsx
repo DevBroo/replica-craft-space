@@ -62,7 +62,7 @@ const OptimizedProperties = () => {
   const [searchTerm, setSearchTerm] = useState(searchParams.get('search') || '');
   const [selectedLocation, setSelectedLocation] = useState(searchParams.get('location') || 'all');
   const [selectedType, setSelectedType] = useState(searchParams.get('category') || searchParams.get('type') || 'all');
-  const [priceRange, setPriceRange] = useState<[number, number]>([0, 15000]);
+  const [priceRange, setPriceRange] = useState<[number, number]>([0, 50000]);
   const [sortBy, setSortBy] = useState('newest');
   const [currentPage, setCurrentPage] = useState(1);
   const [activeTab, setActiveTab] = useState(searchParams.get('tab') || (searchParams.get('category') === 'day-picnic' ? 'day-picnics' : 'properties'));

@@ -176,11 +176,11 @@ export class SearchService {
         query = query.gte('max_guests', filters.guests);
       }
 
-      // Apply price range filter
-      if (filters.priceRange && filters.priceRange[0] > 0) {
+      // Apply price range filter only if user has explicitly set non-default values
+      if (filters.priceRange && filters.priceRange[0] > 0 && filters.priceRange[0] !== 0) {
         query = query.gte('pricing->>daily_rate', filters.priceRange[0]);
       }
-      if (filters.priceRange && filters.priceRange[1] < 50000) {
+      if (filters.priceRange && filters.priceRange[1] < 50000 && filters.priceRange[1] !== 50000) {
         query = query.lte('pricing->>daily_rate', filters.priceRange[1]);
       }
 
