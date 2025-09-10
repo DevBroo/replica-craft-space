@@ -137,12 +137,24 @@ const Properties: React.FC<PropertiesProps> = ({
 
   const handleEditProperty = (property: any) => {
     console.log('🔧 Edit button clicked for property:', property.title, 'Type:', property.property_type);
-    setEditingProperty(property);
-    setIsEditMode(true);
-    setSelectedPropertyType(property.property_type); // Set the property type from the property
-    setPropertyName(property.title); // Set property name for initial title
-    setShowFullPropertyForm(true);
-    console.log('✅ Edit modal opening with property type:', property.property_type);
+    
+    // Check if this is a Day Picnic property
+    const isDayPicnic = property.property_type === 'Day Picnic' || property.property_type === 'day-picnic';
+    
+    if (isDayPicnic) {
+      // For Day Picnic properties, navigate to Day Picnic setup page
+      console.log('🌿 Navigating to Day Picnic setup for editing');
+      navigate(`/owner/day-picnic-setup/${property.id}`);
+    } else {
+      // For all other property types, open PropertyWizard for general editing
+      console.log('🏨 Opening Property Wizard for editing');
+      setEditingProperty(property);
+      setIsEditMode(true);
+      setSelectedPropertyType(property.property_type); // Set the property type from the property
+      setPropertyName(property.title); // Set property name for initial title
+      setShowFullPropertyForm(true);
+      console.log('✅ Edit modal opening with property type:', property.property_type);
+    }
   };
 
   const handlePropertyTypeSelection = (type: string) => {

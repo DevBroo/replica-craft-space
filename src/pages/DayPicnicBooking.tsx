@@ -45,6 +45,7 @@ const DayPicnicBooking: React.FC = () => {
   const [durationPrices, setDurationPrices] = useState<{ duration_type: string; price: number }[]>([]);
   const [customHours, setCustomHours] = useState(4);
   const [hourlyRates, setHourlyRates] = useState<any[]>([]);
+  const [mealPrices, setMealPrices] = useState<any[]>([]);
   const [guestInfo, setGuestInfo] = useState<GuestInfo>({
     name: '',
     phone: '',
@@ -173,6 +174,17 @@ const DayPicnicBooking: React.FC = () => {
         if (hourlyError) throw hourlyError;
         if (hourlyData) {
           setHourlyRates(hourlyData);
+        }
+
+        // Fetch meal prices
+        const { data: mealPriceData, error: mealPriceError } = await supabase
+          .from('day_picnic_meal_prices')
+          .select('*')
+          .eq('package_id', packageData.id);
+
+        if (mealPriceError) throw mealPriceError;
+        if (mealPriceData) {
+          setMealPrices(mealPriceData);
         }
 
         // Fetch all option prices (inclusions, exclusions, add_ons)
@@ -550,12 +562,35 @@ const DayPicnicBooking: React.FC = () => {
                 <CardTitle>Meal Plan</CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="flex flex-wrap gap-2">
-                  {package_.meal_plan.map((meal: string) => (
-                    <Badge key={meal} className="bg-green-100 text-green-800">
-                      {meal}
-                    </Badge>
-                  ))}
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {package_.meal_plan.map((meal: string) => {
+                    const mealPrice = mealPrices.find(mp => mp.meal_plan === meal);
+                    const price = package_.pricing_type === 'per_person' 
+                      ? mealPrice?.price_per_person 
+                      : mealPrice?.price_per_package;
+                    
+                    return (
+                      <div key={meal} className="border rounded-lg p-3 bg-green-50">
+                        <div className="flex items-center justify-between">
+                          <Badge className="bg-green-100 text-green-800 border-green-200">
+                            {meal}
+                          </Badge>
+                        </div>
+                        {price && price > 0 && (
+                          <div className="mt-2 text-sm">
+                            <span className="font-semibold text-green-700">
+                              ₹{price} {package_.pricing_type === 'per_person' ? '/person' : '/package'}
+                            </span>
+                          </div>
+                        )}
+                        {(!price || price === 0) && (
+                          <div className="mt-2 text-sm text-gray-500">
+                            Included in base price
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
                 </div>
               </CardContent>
             </Card>
@@ -570,11 +605,26 @@ const DayPicnicBooking: React.FC = () => {
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <ul className="space-y-1">
+                  <ul className="space-y-2">
+                    {/* Show selected amenities */}
+                    {property?.amenities?.map((amenity: string, index: number) => (
+                      <li key={`amenity-${index}`} className="text-sm flex items-center">
+                        <span className="w-2 h-2 bg-green-500 rounded-full mr-2"></span>
+                        {amenity}
+                      </li>
+                    ))}
+                    {/* Show custom inclusions */}
                     {package_.inclusions.map((inclusion: string, index: number) => (
-                      <li key={index} className="text-sm flex items-center">
+                      <li key={`inclusion-${index}`} className="text-sm flex items-center">
                         <span className="w-2 h-2 bg-green-500 rounded-full mr-2"></span>
                         {inclusion}
+                      </li>
+                    ))}
+                    {/* Show meal plans as inclusions */}
+                    {package_.meal_plan.map((meal: string, index: number) => (
+                      <li key={`meal-${index}`} className="text-sm flex items-center">
+                        <span className="w-2 h-2 bg-green-500 rounded-full mr-2"></span>
+                        {meal} available
                       </li>
                     ))}
                   </ul>
@@ -589,27 +639,70 @@ const DayPicnicBooking: React.FC = () => {
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <ul className="space-y-1">
-                    {/* Show exclusions with pricing first */}
-                    {optionPrices
-                      .filter((option: any) => option.option_type === 'exclusion')
-                      .map((exclusion: any, index: number) => (
-                        <li key={`pricing-exclusion-${index}`} className="text-sm flex items-center justify-between">
-                          <div className="flex items-center">
-                            <span className="w-2 h-2 bg-red-500 rounded-full mr-2"></span>
-                            {exclusion.name}
-                          </div>
-                          <span className="text-red-600 font-medium">+₹{exclusion.price}</span>
-                        </li>
-                      ))}
-                    {/* Fallback to legacy exclusions if no pricing exclusions */}
-                    {optionPrices.filter((option: any) => option.option_type === 'exclusion').length === 0 &&
-                      package_.exclusions.map((exclusion: any, index: number) => (
-                        <li key={`legacy-exclusion-${index}`} className="text-sm flex items-center">
-                          <span className="w-2 h-2 bg-red-500 rounded-full mr-2"></span>
-                          {exclusion.item} ({exclusion.reason})
-                        </li>
-                      ))}
+                  <ul className="space-y-2">
+                    {(() => {
+                      // All available amenities
+                      const allAmenities = [
+                        'Swimming Pool', 'Garden Area', 'BBQ Facilities', 'Outdoor Games', 
+                        'Music System', 'Parking', 'Restrooms', 'Changing Rooms',
+                        'Seating Area', 'Shade/Gazebo', 'Kitchen Access', 'Power Supply',
+                        'Water Supply', 'First Aid', 'Security', 'Photography Area'
+                      ];
+                      
+                      // All available meal options
+                      const allMealOptions = [
+                        'Breakfast', 'Lunch', 'Snacks', 'Dinner', 'Beverages', 
+                        'Welcome Drink', 'BBQ', 'Traditional Meals', 'Vegetarian Options', 'Non-Vegetarian Options'
+                      ];
+                      
+                      const selectedAmenities = property?.amenities || [];
+                      const selectedMeals = package_.meal_plan || [];
+                      
+                      // Find unselected amenities and meals
+                      const unselectedAmenities = allAmenities.filter(amenity => !selectedAmenities.includes(amenity));
+                      const unselectedMeals = allMealOptions.filter(meal => !selectedMeals.includes(meal));
+                      
+                      return (
+                        <>
+                          {/* Show unselected amenities */}
+                          {unselectedAmenities.slice(0, 8).map((amenity: string, index: number) => (
+                            <li key={`excluded-amenity-${index}`} className="text-sm flex items-center">
+                              <span className="w-2 h-2 bg-red-500 rounded-full mr-2"></span>
+                              {amenity}
+                            </li>
+                          ))}
+                          {/* Show unselected meal options */}
+                          {unselectedMeals.slice(0, 5).map((meal: string, index: number) => (
+                            <li key={`excluded-meal-${index}`} className="text-sm flex items-center">
+                              <span className="w-2 h-2 bg-red-500 rounded-full mr-2"></span>
+                              {meal}
+                            </li>
+                          ))}
+                          {/* Show custom exclusions */}
+                          {package_.exclusions.map((exclusion: any, index: number) => (
+                            <li key={`custom-exclusion-${index}`} className="text-sm flex items-center">
+                              <span className="w-2 h-2 bg-red-500 rounded-full mr-2"></span>
+                              {typeof exclusion === 'string' ? exclusion : exclusion.item}
+                              {typeof exclusion !== 'string' && exclusion.reason && (
+                                <span className="text-gray-500 ml-1">({exclusion.reason})</span>
+                              )}
+                            </li>
+                          ))}
+                          {/* Show exclusions with pricing */}
+                          {optionPrices
+                            .filter((option: any) => option.option_type === 'exclusion')
+                            .map((exclusion: any, index: number) => (
+                              <li key={`pricing-exclusion-${index}`} className="text-sm flex items-center justify-between">
+                                <div className="flex items-center">
+                                  <span className="w-2 h-2 bg-red-500 rounded-full mr-2"></span>
+                                  {exclusion.name}
+                                </div>
+                                <span className="text-red-600 font-medium">+₹{exclusion.price}</span>
+                              </li>
+                            ))}
+                        </>
+                      );
+                    })()}
                   </ul>
                 </CardContent>
               </Card>

@@ -53,6 +53,7 @@ const Properties: React.FC<PropertiesProps> = ({
   const [quickViewInitialTab, setQuickViewInitialTab] = useState<'overview' | 'pricing' | 'rooms' | 'amenities' | 'policies' | 'location'>('overview');
   const [activePropertyTab, setActivePropertyTab] = useState<'properties' | 'day-picnic'>('properties');
   const [showDayPicnicForm, setShowDayPicnicForm] = useState(false);
+  const [editingDayPicnicProperty, setEditingDayPicnicProperty] = useState<any>(null);
   
   // Notification state
   const [notifications, setNotifications] = useState<any[]>([]);
@@ -305,10 +306,23 @@ const Properties: React.FC<PropertiesProps> = ({
   };
 
   const handleEditProperty = (property: any) => {
-    // For all property types, open PropertyWizard for general editing
-    setEditingProperty(property);
-    setIsEditMode(true);
-    setShowFullPropertyForm(true);
+    console.log('🔧 Edit button clicked for property:', property.title, 'Type:', property.property_type);
+    
+    // Check if this is a Day Picnic property
+    const isDayPicnic = property.property_type === 'Day Picnic' || property.property_type === 'day-picnic';
+    
+    if (isDayPicnic) {
+      // For Day Picnic properties, open the DayPicnicWizard
+      console.log('🌿 Opening Day Picnic Wizard for editing');
+      setEditingDayPicnicProperty(property);
+      setShowDayPicnicForm(true);
+    } else {
+      // For all other property types, open PropertyWizard for general editing
+      console.log('🏨 Opening Property Wizard for editing');
+      setEditingProperty(property);
+      setIsEditMode(true);
+      setShowFullPropertyForm(true);
+    }
   };
 
   const handleEditDayPicnicPricing = (property: any) => {
@@ -411,6 +425,7 @@ const Properties: React.FC<PropertiesProps> = ({
 
   const handleCloseDayPicnicForm = () => {
     setShowDayPicnicForm(false);
+    setEditingDayPicnicProperty(null); // Clear editing state
     fetchProperties(); // Refresh the list
   };
 
@@ -756,6 +771,8 @@ const Properties: React.FC<PropertiesProps> = ({
           <div className="bg-white rounded-lg w-full max-w-6xl h-[95vh] overflow-y-auto">
             <DayPicnicWizard 
               onBack={handleCloseDayPicnicForm}
+              dayPicnicId={editingDayPicnicProperty?.id}
+              initialTitle={editingDayPicnicProperty?.title || ''}
             />
           </div>
         </div>
