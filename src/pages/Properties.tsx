@@ -178,10 +178,12 @@ const Properties: React.FC = () => {
             images,
             rating,
             review_count,
-            status
+            status,
+            admin_blocked
           )
         `)
-        .eq('properties.status', 'approved');
+        .eq('properties.status', 'approved')
+        .or('properties.admin_blocked.is.null,properties.admin_blocked.eq.false');
 
       if (packagesError) {
         console.error('❌ Error fetching day picnic packages:', packagesError);
