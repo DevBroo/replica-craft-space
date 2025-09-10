@@ -572,22 +572,22 @@ const DayPicnicBooking: React.FC = () => {
                     return (
                       <div key={meal} className="border rounded-lg p-3 bg-green-50">
                         <div className="flex items-center justify-between">
-                          <Badge className="bg-green-100 text-green-800 border-green-200">
+                          {/* <Badge className="bg-green-100 text-green-800 border-green-200"> */}
                             {meal}
-                          </Badge>
+                          {/* </Badge> */}
                         </div>
-                        {price && price > 0 && (
+                        {/* {price && price > 0 && (
                           <div className="mt-2 text-sm">
                             <span className="font-semibold text-green-700">
                               ₹{price} {package_.pricing_type === 'per_person' ? '/person' : '/package'}
                             </span>
                           </div>
-                        )}
-                        {(!price || price === 0) && (
+                        )} */}
+                        {/* {(!price || price === 0) && (
                           <div className="mt-2 text-sm text-gray-500">
                             Included in base price
                           </div>
-                        )}
+                        )} */}
                       </div>
                     );
                   })}

@@ -934,7 +934,7 @@ const DayPicnicWizard: React.FC<DayPicnicWizardProps> = ({
             </div>
 
             {/* Meal Pricing Section */}
-            {formData.meal_plans.length > 0 && (
+            {/* {formData.meal_plans.length > 0 && (
               <div className="border-t pt-6">
                 <div className="mb-4">
                   <Label className="text-lg font-semibold">Meal Pricing</Label>
@@ -989,7 +989,7 @@ const DayPicnicWizard: React.FC<DayPicnicWizardProps> = ({
                   ))}
                 </div>
               </div>
-            )}
+            )} */}
           </div>
         );
 
@@ -1271,7 +1271,7 @@ const DayPicnicWizard: React.FC<DayPicnicWizardProps> = ({
                 {/* Meal Pricing Summary */}
                 {formData.meal_plans.length > 0 && (
                   <div>
-                    <span className="font-medium">Meal Pricing:</span>
+                    <span className="font-medium">Meals</span>
                     <div className="grid grid-cols-2 gap-2 mt-2 text-sm">
                       {formData.meal_plans.map(meal => {
                         const priceData = formData.meal_prices.find(mp => mp.meal_plan === meal);
@@ -1281,7 +1281,7 @@ const DayPicnicWizard: React.FC<DayPicnicWizardProps> = ({
                         return (
                           <div key={meal} className="border rounded p-2">
                             <div className="font-medium text-orange-600">{meal}</div>
-                            <div>₹{price} {formData.pricing.pricing_type === 'per_person' ? '/person' : '/package'}</div>
+                            {/* <div>₹{price} {formData.pricing.pricing_type === 'per_person' ? '/person' : '/package'}</div> */}
                           </div>
                         );
                       })}
