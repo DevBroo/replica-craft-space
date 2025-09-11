@@ -1008,7 +1008,8 @@ export class PropertyService {
             location,
             rating,
             review_count,
-            status
+            status,
+            max_guests
           )
         `)
         .eq('properties_public.status', 'approved')
@@ -1037,6 +1038,101 @@ export class PropertyService {
       return transformedData;
     } catch (error) {
       console.error('❌ Exception fetching day picnic packages:', error);
+      return [];
+    }
+  }
+
+  /**
+   * Search day picnic packages with filters
+   */
+  static async searchDayPicnics(filters: {
+    search?: string;
+    location?: string;
+    minPrice?: number;
+    maxPrice?: number;
+  }): Promise<any[]> {
+    try {
+      console.log('🔍 Searching day picnics with filters:', filters);
+      
+      let query = supabase
+        .from('day_picnic_packages')
+        .select(`
+          id,
+          start_time,
+          end_time,
+          duration_hours,
+          base_price,
+          pricing_type,
+          property_id,
+          properties_public!inner (
+            id,
+            title,
+            images,
+            location,
+            rating,
+            review_count,
+            status,
+            max_guests
+          )
+        `)
+        .eq('properties_public.status', 'approved');
+
+      // Apply search term filter (search in property title)
+      if (filters.search && filters.search.trim()) {
+        query = query.ilike('properties_public.title', `%${filters.search.trim()}%`);
+      }
+
+      // Apply location filter
+      if (filters.location && filters.location !== 'all') {
+        const locationParts = filters.location.split(',').map(part => part.trim());
+        
+        if (locationParts.length === 2) {
+          const [city, state] = locationParts;
+          query = query
+            .ilike('properties_public.location->>city', city)
+            .ilike('properties_public.location->>state', state);
+        } else {
+          query = query.or(
+            `properties_public.location->>city.ilike.%${filters.location}%,properties_public.location->>state.ilike.%${filters.location}%`
+          );
+        }
+      }
+
+      // Apply price range filter
+      if (filters.minPrice !== undefined && filters.minPrice > 0) {
+        query = query.gte('base_price', filters.minPrice);
+      }
+      if (filters.maxPrice !== undefined && filters.maxPrice > 0) {
+        query = query.lte('base_price', filters.maxPrice);
+      }
+
+      query = query.order('created_at', { ascending: false });
+
+      const { data, error } = await query;
+
+      if (error) {
+        console.error('❌ Error searching day picnic packages:', error);
+        return [];
+      }
+
+      // Transform data to include general_location derived from location
+      const transformedData = data?.map(item => {
+        const location = item.properties_public?.location as any;
+        return {
+          ...item,
+          properties: {
+            ...item.properties_public,
+            general_location: location?.city && location?.state 
+              ? `${location.city}, ${location.state}`
+              : 'Location not specified'
+          }
+        };
+      }) || [];
+
+      console.log('✅ Day picnic packages searched and transformed:', transformedData.length);
+      return transformedData;
+    } catch (error) {
+      console.error('❌ Exception searching day picnic packages:', error);
       return [];
     }
   }

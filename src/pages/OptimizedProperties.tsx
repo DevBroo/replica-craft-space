@@ -108,13 +108,18 @@ const OptimizedProperties = () => {
     staleTime: 5 * 60 * 1000,
   });
 
-  // Fetch day picnic packages only when tab is active
+  // Fetch day picnic packages with filters when tab is active
   const { 
     data: dayPicnics = [], 
     isLoading: isLoadingDayPicnics 
   } = useQuery({
-    queryKey: ['day_picnics', 'approved'],
-    queryFn: () => PropertyService.getApprovedDayPicnics(),
+    queryKey: ['day_picnics', 'search', debouncedSearchTerm, searchFilters.location, searchFilters.priceRange],
+    queryFn: () => PropertyService.searchDayPicnics({
+      search: debouncedSearchTerm,
+      location: searchFilters.location,
+      minPrice: searchFilters.priceRange[0],
+      maxPrice: searchFilters.priceRange[1]
+    }),
     enabled: activeTab === 'day-picnics',
     staleTime: 5 * 60 * 1000,
     gcTime: 10 * 60 * 1000,
