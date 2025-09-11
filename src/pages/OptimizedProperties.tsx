@@ -313,13 +313,19 @@ const OptimizedProperties = () => {
           </h3>
           <div className="flex items-center text-sm text-muted-foreground">
             <MapPin className="h-4 w-4 mr-1" />
-            <span className="line-clamp-1">{property?.general_location}</span>
+            <span className="line-clamp-1">
+              {property?.general_location || property?.location?.city || 'Location not specified'}
+            </span>
           </div>
         </CardHeader>
 
         <CardContent className="pt-0 pb-2">
           <div className="flex items-center justify-between mb-2">
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-4">
+              <div className="flex items-center">
+                <Users className="h-4 w-4 mr-1 text-muted-foreground" />
+                <span className="text-sm">{property?.max_guests || 'N/A'}</span>
+              </div>
               <div className="flex items-center">
                 <Calendar className="h-4 w-4 mr-1 text-muted-foreground" />
                 <span className="text-sm">{dayPicnic.duration_hours}h</span>
