@@ -44,7 +44,7 @@ import DayPicnicBooking from "@/pages/DayPicnicBooking";
 // Payment Pages (lazy)
 const PaymentSuccess = React.lazy(() => import("@/pages/PaymentSuccess"));
 const PaymentCallback = React.lazy(() => import("@/pages/PaymentCallback"));
-const BookingPayment = React.lazy(() => import("@/pages/BookingPayment"));
+import BookingPayment from "@/pages/BookingPayment";
 
 // Lazy-loaded Admin Pages
 const AdminIndex = React.lazy(() => import("@/pages/admin/Index"));
