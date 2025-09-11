@@ -113,7 +113,7 @@ const Index: React.FC = () => {
         image: property.images?.[0] || '/placeholder.svg',
         location: property.general_location || 'Location not specified',
         rating: property.rating || 4.5,
-        price: property.pricing?.daily_rate || 0
+        price: typeof property.pricing === 'object' && property.pricing && 'daily_rate' in property.pricing ? property.pricing.daily_rate : 0
       })) || [];
     },
     staleTime: 5 * 60 * 1000, // 5 minutes
@@ -164,7 +164,7 @@ const Index: React.FC = () => {
         name: property.title,
         image: property.images?.[0] || '/placeholder.svg',
         location: property.general_location || 'Location not specified',
-        price: property.pricing?.daily_rate || 0,
+        price: typeof property.pricing === 'object' && property.pricing && 'daily_rate' in property.pricing ? property.pricing.daily_rate : 0,
         amenities: property.amenities || []
       })) || [];
     },
@@ -400,9 +400,7 @@ const Index: React.FC = () => {
               Premium Collection
             </span>
             <h2 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-black text-foreground font-poppins mb-6 text-shadow">
-              {featuredPropertiesData.length > 0 && featuredPropertiesData[0]?.is_featured 
-                ? 'Featured Properties' 
-                : 'Popular Properties'}
+              Featured Properties
             </h2>
             <div className="w-24 h-1 bg-gradient-to-r from-red-500 to-orange-500 mx-auto rounded-full"></div>
           </div>

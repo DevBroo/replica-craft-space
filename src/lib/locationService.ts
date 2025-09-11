@@ -56,38 +56,166 @@ export const INDIAN_REGIONS = [
 
 export class LocationService {
   static async getLocations(): Promise<Location[]> {
-    return [];
+    const { supabase } = await import('@/integrations/supabase/client');
+    
+    const { data, error } = await supabase
+      .from('locations')
+      .select('*')
+      .eq('is_active', true)
+      .order('display_order', { ascending: true });
+
+    if (error) {
+      console.error('Error fetching locations:', error);
+      throw new Error('Failed to fetch locations');
+    }
+
+    return data || [];
   }
 
   static async getAllLocationsForAdmin(): Promise<Location[]> {
-    return [];
+    const { supabase } = await import('@/integrations/supabase/client');
+    
+    const { data, error } = await supabase
+      .from('locations')
+      .select('*')
+      .order('display_order', { ascending: true });
+
+    if (error) {
+      console.error('Error fetching locations for admin:', error);
+      throw new Error('Failed to fetch locations');
+    }
+
+    return data || [];
   }
 
-  static async createLocation(_locationData: LocationFormData): Promise<Location> {
-    throw new Error('Location service is temporarily disabled');
+  static async createLocation(locationData: LocationFormData): Promise<Location> {
+    const { supabase } = await import('@/integrations/supabase/client');
+    
+    const { data, error } = await supabase
+      .from('locations')
+      .insert({
+        ...locationData,
+        created_by: (await supabase.auth.getUser()).data.user?.id
+      })
+      .select()
+      .single();
+
+    if (error) {
+      console.error('Error creating location:', error);
+      throw new Error('Failed to create location');
+    }
+
+    return data;
   }
 
-  static async updateLocation(_id: string, _locationData: Partial<LocationFormData>): Promise<Location> {
-    throw new Error('Location service is temporarily disabled');
+  static async updateLocation(id: string, locationData: Partial<LocationFormData>): Promise<Location> {
+    const { supabase } = await import('@/integrations/supabase/client');
+    
+    const { data, error } = await supabase
+      .from('locations')
+      .update(locationData)
+      .eq('id', id)
+      .select()
+      .single();
+
+    if (error) {
+      console.error('Error updating location:', error);
+      throw new Error('Failed to update location');
+    }
+
+    return data;
   }
 
-  static async deleteLocation(_id: string): Promise<void> {
-    throw new Error('Location service is temporarily disabled');
+  static async deleteLocation(id: string): Promise<void> {
+    const { supabase } = await import('@/integrations/supabase/client');
+    
+    const { error } = await supabase
+      .from('locations')
+      .delete()
+      .eq('id', id);
+
+    if (error) {
+      console.error('Error deleting location:', error);
+      throw new Error('Failed to delete location');
+    }
   }
 
-  static async toggleLocationStatus(_id: string, _is_active: boolean): Promise<Location> {
-    throw new Error('Location service is temporarily disabled');
+  static async toggleLocationStatus(id: string, is_active: boolean): Promise<Location> {
+    const { supabase } = await import('@/integrations/supabase/client');
+    
+    const { data, error } = await supabase
+      .from('locations')
+      .update({ is_active })
+      .eq('id', id)
+      .select()
+      .single();
+
+    if (error) {
+      console.error('Error toggling location status:', error);
+      throw new Error('Failed to update location status');
+    }
+
+    return data;
   }
 
-  static async updateDisplayOrder(_locations: { id: string; display_order: number }[]): Promise<void> {
-    throw new Error('Location service is temporarily disabled');
+  static async updateDisplayOrder(locations: { id: string; display_order: number }[]): Promise<void> {
+    const { supabase } = await import('@/integrations/supabase/client');
+    
+    const updates = locations.map(async (location) => {
+      const { error } = await supabase
+        .from('locations')
+        .update({ display_order: location.display_order })
+        .eq('id', location.id);
+      
+      if (error) {
+        console.error(`Error updating display order for location ${location.id}:`, error);
+        throw new Error(`Failed to update display order for location ${location.id}`);
+      }
+    });
+
+    await Promise.all(updates);
   }
 
-  static async uploadCoverImage(_file: File, _locationName: string): Promise<string> {
-    throw new Error('Location service is temporarily disabled');
+  static async uploadCoverImage(file: File, locationName: string): Promise<string> {
+    const { supabase } = await import('@/integrations/supabase/client');
+    
+    const fileExt = file.name.split('.').pop();
+    const fileName = `${locationName.toLowerCase().replace(/\s+/g, '-')}-${Date.now()}.${fileExt}`;
+    const filePath = `locations/${fileName}`;
+
+    const { error: uploadError } = await supabase.storage
+      .from('location-images')
+      .upload(filePath, file);
+
+    if (uploadError) {
+      console.error('Error uploading image:', uploadError);
+      throw new Error('Failed to upload image');
+    }
+
+    const { data: { publicUrl } } = supabase.storage
+      .from('location-images')
+      .getPublicUrl(filePath);
+
+    return publicUrl;
   }
 
-  static async deleteCoverImage(_imageUrl: string): Promise<void> {
-    throw new Error('Location service is temporarily disabled');
+  static async deleteCoverImage(imageUrl: string): Promise<void> {
+    const { supabase } = await import('@/integrations/supabase/client');
+    
+    // Extract file path from URL
+    const urlParts = imageUrl.split('/');
+    const bucketIndex = urlParts.findIndex(part => part === 'location-images');
+    if (bucketIndex === -1) return;
+    
+    const filePath = urlParts.slice(bucketIndex + 1).join('/');
+
+    const { error } = await supabase.storage
+      .from('location-images')
+      .remove([filePath]);
+
+    if (error) {
+      console.error('Error deleting image:', error);
+      throw new Error('Failed to delete image');
+    }
   }
 }
