@@ -19,6 +19,22 @@ import {
     Loader2
 } from 'lucide-react';
 
+interface PriceBreakdown {
+    basePrice: number;
+    nights?: number;
+    serviceFee: number;
+    extraGuestCharges: number;
+    childDiscounts: number;
+    couponDiscount: number;
+    subtotal: number;
+    total: number;
+    breakdown: Array<{
+        label: string;
+        amount: number;
+        description?: string;
+    }>;
+}
+
 interface BookingState {
     propertyId: string;
     checkInDate: string;
@@ -27,6 +43,7 @@ interface BookingState {
     totalAmount: number;
     propertyTitle: string;
     propertyImages: string[];
+    priceBreakdown?: PriceBreakdown;
     // Optional guest info from day picnic booking
     guestName?: string;
     guestPhone?: string;
@@ -419,18 +436,50 @@ const BookingPayment: React.FC = () => {
                                     <span className="font-medium">{bookingData.guests}</span>
                                 </div>
 
+                                {/* Detailed Price Breakdown */}
                                 <div className="border-t pt-4">
-                                    <div className="flex justify-between text-sm">
-                                        <span>Nights</span>
-                                        <span>{calculateNights()}</span>
-                                    </div>
-                                    <div className="flex justify-between text-sm mt-2">
-                                        <span>Rate per night</span>
-                                        <span>₹{(bookingData.totalAmount / calculateNights()).toFixed(0)}</span>
-                                    </div>
-                                    <div className="flex justify-between font-semibold text-lg mt-4 pt-4 border-t">
-                                        <span>Total</span>
-                                        <span>₹{bookingData.totalAmount.toFixed(2)}</span>
+                                    <h4 className="font-semibold mb-3">Price Breakdown</h4>
+                                    <div className="space-y-2">
+                                        {bookingData.priceBreakdown ? (
+                                            <>
+                                                {bookingData.priceBreakdown.breakdown.map((item, index) => (
+                                                    <div key={index} className="flex justify-between text-sm">
+                                                        <div>
+                                                            <span className={item.amount < 0 ? 'text-green-600' : ''}>{item.label}</span>
+                                                            {item.description && (
+                                                                <div className="text-xs text-gray-500">{item.description}</div>
+                                                            )}
+                                                        </div>
+                                                        <span className={`${item.amount < 0 ? 'text-green-600' : ''}`}>
+                                                            {item.amount < 0 ? '-' : ''}₹{Math.abs(item.amount).toFixed(2)}
+                                                        </span>
+                                                    </div>
+                                                ))}
+                                                
+                                                <div className="border-t pt-3 mt-3">
+                                                    <div className="flex justify-between font-semibold text-lg">
+                                                        <span>Total Amount</span>
+                                                        <span>₹{bookingData.priceBreakdown.total.toFixed(2)}</span>
+                                                    </div>
+                                                </div>
+                                            </>
+                                        ) : (
+                                            <>
+                                                {/* Fallback for bookings without detailed breakdown */}
+                                                <div className="flex justify-between text-sm">
+                                                    <span>Nights</span>
+                                                    <span>{calculateNights()}</span>
+                                                </div>
+                                                <div className="flex justify-between text-sm mt-2">
+                                                    <span>Rate per night</span>
+                                                    <span>₹{(bookingData.totalAmount / calculateNights()).toFixed(0)}</span>
+                                                </div>
+                                                <div className="flex justify-between font-semibold text-lg mt-4 pt-4 border-t">
+                                                    <span>Total</span>
+                                                    <span>₹{bookingData.totalAmount.toFixed(2)}</span>
+                                                </div>
+                                            </>
+                                        )}
                                     </div>
                                 </div>
                             </CardContent>

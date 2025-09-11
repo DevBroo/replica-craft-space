@@ -372,6 +372,172 @@ const DayPicnicBooking: React.FC = () => {
     return Math.max(0, subtotal - discount);
   };
 
+  const calculateDetailedBreakdown = () => {
+    if (!package_) return null;
+
+    const breakdown = [];
+    let basePrice = 0;
+
+    // Handle custom hours pricing
+    if (selectedDuration === 'custom' && hourlyRates.length > 0) {
+      for (let hour = 1; hour <= customHours; hour++) {
+        const hourlyRate = hourlyRates.find(rate => 
+          rate.meal_plan === 'ALL' && rate.hour_number === hour
+        );
+        
+        if (hourlyRate) {
+          if (package_.pricing_type === 'per_person') {
+            const hourPrice = hourlyRate.price_per_person * (guests.adults + guests.children.length);
+            basePrice += hourPrice;
+          } else {
+            basePrice += hourlyRate.price_per_package;
+          }
+        }
+      }
+      breakdown.push({
+        label: `Custom hours (${customHours} hrs)`,
+        amount: basePrice,
+        description: package_.pricing_type === 'per_person' 
+          ? `₹${Math.round(basePrice / (guests.adults + guests.children.length))}/person` 
+          : 'Package rate'
+      });
+    } else {
+      // Original logic for predefined durations
+      const durationPrice = durationPrices.find(dp => dp.duration_type === selectedDuration);
+      
+      if (durationPrice) {
+        if (package_.pricing_type === 'per_person') {
+          basePrice += durationPrice.price * guests.adults;
+          breakdown.push({
+            label: `Adults (${guests.adults})`,
+            amount: durationPrice.price * guests.adults,
+            description: `₹${durationPrice.price}/adult`
+          });
+
+          guests.children.forEach((child, index) => {
+            let childPrice = 0;
+            let childDescription = '';
+            
+            if (child.priceCategory === 'free') {
+              childPrice = 0;
+              childDescription = 'Free';
+            } else if (child.priceCategory === 'half') {
+              childPrice = durationPrice.price * 0.5;
+              childDescription = '50% discount';
+            } else {
+              childPrice = durationPrice.price;
+              childDescription = 'Full price';
+            }
+            
+            basePrice += childPrice;
+            breakdown.push({
+              label: `Child ${index + 1} (Age ${child.age})`,
+              amount: childPrice,
+              description: childDescription
+            });
+          });
+        } else {
+          basePrice = durationPrice.price;
+          breakdown.push({
+            label: `Package rate (${selectedDuration.replace('_', ' ')})`,
+            amount: basePrice,
+            description: 'Fixed package price'
+          });
+        }
+      } else {
+        // Fall back to multiplier-based pricing
+        const durationMultipliers = {
+          'half_day': 0.6,
+          'full_day': 1.0,
+          'extended_day': 1.5
+        };
+        const multiplier = durationMultipliers[selectedDuration as keyof typeof durationMultipliers] || 1.0;
+        const adjustedBasePrice = package_.base_price * multiplier;
+
+        if (package_.pricing_type === 'per_person') {
+          basePrice += adjustedBasePrice * guests.adults;
+          breakdown.push({
+            label: `Adults (${guests.adults})`,
+            amount: adjustedBasePrice * guests.adults,
+            description: `₹${adjustedBasePrice}/adult`
+          });
+
+          guests.children.forEach((child, index) => {
+            let childPrice = 0;
+            let childDescription = '';
+            
+            if (child.priceCategory === 'free') {
+              childPrice = 0;
+              childDescription = 'Free';
+            } else if (child.priceCategory === 'half') {
+              childPrice = adjustedBasePrice * 0.5;
+              childDescription = '50% discount';
+            } else {
+              childPrice = adjustedBasePrice;
+              childDescription = 'Full price';
+            }
+            
+            basePrice += childPrice;
+            breakdown.push({
+              label: `Child ${index + 1} (Age ${child.age})`,
+              amount: childPrice,
+              description: childDescription
+            });
+          });
+        } else {
+          basePrice = adjustedBasePrice;
+          breakdown.push({
+            label: `Package rate (${selectedDuration.replace('_', ' ')})`,
+            amount: basePrice,
+            description: 'Fixed package price'
+          });
+        }
+      }
+    }
+
+    // Add selected add-ons
+    selectedAddOns.forEach(addOnName => {
+      const addOn = package_.add_ons.find((ao: any) => ao.name === addOnName);
+      if (addOn) {
+        breakdown.push({
+          label: `Add-on: ${addOn.name}`,
+          amount: addOn.price,
+          description: addOn.description || 'Additional service'
+        });
+      }
+    });
+
+    const addOnPrice = selectedAddOns.reduce((total, addOnName) => {
+      const addOn = package_.add_ons.find((ao: any) => ao.name === addOnName);
+      return total + (addOn ? addOn.price : 0);
+    }, 0);
+
+    let subtotal = basePrice + addOnPrice;
+    let couponDiscount = 0;
+
+    if (appliedCoupon) {
+      couponDiscount = CouponService.calculateDiscount(appliedCoupon, subtotal);
+      breakdown.push({
+        label: `Coupon (${appliedCoupon.code})`,
+        amount: -couponDiscount,
+        description: appliedCoupon.description
+      });
+    }
+
+    const total = Math.max(0, subtotal - couponDiscount);
+
+    return {
+      basePrice,
+      serviceFee: 0,
+      extraGuestCharges: 0,
+      childDiscounts: 0,
+      couponDiscount,
+      subtotal,
+      total,
+      breakdown
+    };
+  };
+
   const handleBooking = async () => {
     if (!isAuthenticated) {
       toast({
@@ -439,6 +605,7 @@ const DayPicnicBooking: React.FC = () => {
     }
 
     // Redirect to payment flow for day picnic booking
+    const detailedBreakdown = calculateDetailedBreakdown();
     const bookingData = {
       propertyId: propertyId,
       propertyTitle: property?.title || 'Day Picnic',
@@ -447,6 +614,7 @@ const DayPicnicBooking: React.FC = () => {
       checkOutDate: selectedEndDate,
       guests: guests.adults + guests.children.length,
       totalAmount: calculateTotalPrice(),
+      priceBreakdown: detailedBreakdown,
       // Add mandatory guest information
       guestName: guestInfo.name.trim(),
       guestPhone: guestInfo.phone.trim(),

@@ -263,7 +263,7 @@ const PropertyDetails = () => {
     return Math.ceil(diffTime / (1000 * 60 * 60 * 24));
   };
 
-  const calculateTotal = () => {
+  const calculateDetailedBreakdown = () => {
     if (isDayPicnic && selectedPackage) {
       const totalGuests = guests.adults + guests.children.length;
       const basePrice =
@@ -271,24 +271,65 @@ const PropertyDetails = () => {
           ? selectedPackage.base_price * totalGuests
           : selectedPackage.base_price;
 
+      const breakdown = [
+        {
+          label: selectedPackage.pricing_type === "per_person" 
+            ? `Package rate (${totalGuests} guests)` 
+            : "Package rate",
+          amount: basePrice,
+          description: selectedPackage.meal_plan?.join(", ") || "Day Picnic Package"
+        }
+      ];
+
+      let subtotal = basePrice;
+      let couponDiscount = 0;
+
       if (appliedCoupon) {
-        const discount = CouponService.calculateDiscount(
-          appliedCoupon,
-          basePrice
-        );
-        return basePrice - discount;
+        couponDiscount = CouponService.calculateDiscount(appliedCoupon, basePrice);
+        breakdown.push({
+          label: `Coupon (${appliedCoupon.code})`,
+          amount: -couponDiscount,
+          description: appliedCoupon.description
+        });
       }
-      return basePrice;
+
+      const total = Math.max(0, subtotal - couponDiscount);
+
+      return {
+        basePrice,
+        serviceFee: 0,
+        extraGuestCharges: 0,
+        childDiscounts: 0,
+        couponDiscount,
+        subtotal,
+        total,
+        breakdown
+      };
     }
 
     // Regular property booking with guest-based pricing
     const nights = calculateNights();
-    if (nights === 0) return 0;
+    if (nights === 0) return null;
 
-    // Base room rate
     const roomPrice = selectedRoom?.price || property?.price || 0;
     let basePrice = roomPrice * nights;
     const serviceFee = Math.round(basePrice * 0.1);
+    let extraGuestCharges = 0;
+    let childDiscounts = 0;
+
+    const breakdown = [
+      {
+        label: `Room rate (${nights} night${nights > 1 ? 's' : ''})`,
+        amount: basePrice,
+        description: `₹${roomPrice}/night`
+      },
+      {
+        label: "Service fee",
+        amount: serviceFee,
+        description: "10% of room rate"
+      }
+    ];
+
     let subtotal = basePrice + serviceFee;
 
     // Apply guest-based pricing if configured
@@ -303,41 +344,83 @@ const PropertyDetails = () => {
         
         // Add extra adult charges
         if (extraAdultsCount > 0 && property.pricing.extra_adult_charge) {
-          subtotal += extraAdultsCount * property.pricing.extra_adult_charge * nights;
+          const extraAdultTotal = extraAdultsCount * property.pricing.extra_adult_charge * nights;
+          extraGuestCharges += extraAdultTotal;
+          breakdown.push({
+            label: `Extra adults (${extraAdultsCount})`,
+            amount: extraAdultTotal,
+            description: `₹${property.pricing.extra_adult_charge}/adult/night`
+          });
         }
         
         // Add extra child charges  
         if (extraChildrenCount > 0 && property.pricing.extra_child_charge) {
-          subtotal += extraChildrenCount * property.pricing.extra_child_charge * nights;
+          const extraChildTotal = extraChildrenCount * property.pricing.extra_child_charge * nights;
+          extraGuestCharges += extraChildTotal;
+          breakdown.push({
+            label: `Extra children (${extraChildrenCount})`,
+            amount: extraChildTotal,
+            description: `₹${property.pricing.extra_child_charge}/child/night`
+          });
         }
       }
 
       // Apply child pricing discounts
       if (property.pricing.child_pricing && guests.children.length > 0) {
-        let childDiscounts = 0;
-        guests.children.forEach(child => {
+        guests.children.forEach((child, index) => {
           const freeAgeLimit = property.pricing.child_pricing.free_age_limit || 5;
           const halfPriceAgeLimit = property.pricing.child_pricing.half_price_age_limit || 10;
           const halfPricePercentage = property.pricing.child_pricing.half_price_percentage || 50;
           
           if (child.age <= freeAgeLimit) {
-            // Free - no additional cost
+            breakdown.push({
+              label: `Child ${index + 1} (Age ${child.age})`,
+              amount: 0,
+              description: "Free"
+            });
           } else if (child.age <= halfPriceAgeLimit) {
-            // Apply discount for half-price children
             const childDiscount = (roomPrice * nights * (100 - halfPricePercentage)) / 100;
             childDiscounts += childDiscount;
+            breakdown.push({
+              label: `Child ${index + 1} (Age ${child.age})`,
+              amount: -childDiscount,
+              description: `${halfPricePercentage}% discount`
+            });
           }
         });
-        subtotal -= childDiscounts;
       }
     }
 
+    subtotal = subtotal + extraGuestCharges - childDiscounts;
+
+    let couponDiscount = 0;
     if (appliedCoupon) {
-      const discount = CouponService.calculateDiscount(appliedCoupon, subtotal);
-      return subtotal - discount;
+      couponDiscount = CouponService.calculateDiscount(appliedCoupon, subtotal);
+      breakdown.push({
+        label: `Coupon (${appliedCoupon.code})`,
+        amount: -couponDiscount,
+        description: appliedCoupon.description
+      });
     }
 
-    return Math.max(0, subtotal);
+    const total = Math.max(0, subtotal - couponDiscount);
+
+    return {
+      basePrice,
+      nights,
+      serviceFee,
+      extraGuestCharges,
+      childDiscounts,
+      couponDiscount,
+      subtotal: subtotal + couponDiscount, // Subtotal before coupon
+      total,
+      breakdown
+    };
+  };
+
+  const calculateTotal = () => {
+    const breakdown = calculateDetailedBreakdown();
+    return breakdown?.total || 0;
   };
 
   const handleCouponApply = async () => {
@@ -537,6 +620,7 @@ const PropertyDetails = () => {
       }
 
       // Proceed with booking if dates are available
+      const detailedBreakdown = calculateDetailedBreakdown();
       const bookingData = {
         propertyId: property.id,
         propertyTitle: property.title,
@@ -545,6 +629,7 @@ const PropertyDetails = () => {
         checkOutDate: checkOutStr,
         guests: totalGuests,
         totalAmount: calculateTotal(),
+        priceBreakdown: detailedBreakdown,
         bookingDetails: {
           property_location: property.location,
           nights: calculateNights(),
