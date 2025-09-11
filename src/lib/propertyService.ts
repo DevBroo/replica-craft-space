@@ -1089,8 +1089,8 @@ export class PropertyService {
         if (locationParts.length === 2) {
           const [city, state] = locationParts;
           query = query
-            .ilike('properties_public.location->>city', city)
-            .ilike('properties_public.location->>state', state);
+            .ilike('properties_public.location->>city', `%${city}%`)
+            .ilike('properties_public.location->>state', `%${state}%`);
         } else {
           query = query.or(
             `properties_public.location->>city.ilike.%${filters.location}%,properties_public.location->>state.ilike.%${filters.location}%`

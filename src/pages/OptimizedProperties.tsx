@@ -113,12 +113,12 @@ const OptimizedProperties = () => {
     data: dayPicnics = [], 
     isLoading: isLoadingDayPicnics 
   } = useQuery({
-    queryKey: ['day_picnics', 'search', debouncedSearchTerm, searchFilters.location, searchFilters.priceRange],
+    queryKey: ['day_picnics', 'search', debouncedSearchTerm, selectedLocation, priceRange],
     queryFn: () => PropertyService.searchDayPicnics({
       search: debouncedSearchTerm,
-      location: searchFilters.location,
-      minPrice: searchFilters.priceRange[0],
-      maxPrice: searchFilters.priceRange[1]
+      location: selectedLocation !== 'all' ? selectedLocation : undefined,
+      minPrice: priceRange?.[0],
+      maxPrice: priceRange?.[1]
     }),
     enabled: activeTab === 'day-picnics',
     staleTime: 5 * 60 * 1000,
@@ -275,7 +275,7 @@ const OptimizedProperties = () => {
 
   // Day Picnic card component
   const DayPicnicCard = React.memo(({ dayPicnic, isPreview = false }: { dayPicnic: DayPicnicPackage; isPreview?: boolean }) => {
-    const property = dayPicnic.properties_public || dayPicnic.property;
+    const property = (dayPicnic as any).properties_public || (dayPicnic as any).property || (dayPicnic as any).properties;
     const primaryImage = property?.images?.[0];
     const optimizedImage = primaryImage ? getOptimizedImageUrl(primaryImage, { width: 400, height: 300 }) : null;
 
@@ -514,7 +514,7 @@ const OptimizedProperties = () => {
               <SelectContent>
                 <SelectItem value="all">All Locations</SelectItem>
                 {availableLocations.map((location) => (
-                  <SelectItem key={`${location.city}-${location.state}`} value={location.city}>
+                  <SelectItem key={`${location.city}-${location.state}`} value={`${location.city}, ${location.state}`}>
                     {location.city}, {location.state} ({location.property_count})
                   </SelectItem>
                 ))}
