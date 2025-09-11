@@ -578,6 +578,16 @@ const PropertyDetails = () => {
       return;
     }
 
+    // Validate room selection for non-day-picnic properties
+    if (!selectedRoom) {
+      toast({
+        title: "Select a Room",
+        description: "Please select a room to continue with your booking.",
+        variant: "destructive",
+      });
+      return;
+    }
+
     const totalGuests = guests.adults + guests.children.length;
     if (totalGuests > property.max_guests) {
       toast({
@@ -1186,7 +1196,7 @@ const PropertyDetails = () => {
                     disabled={
                       isBooking ||
                       (isDayPicnic && !selectedPackage) ||
-                      (!isDayPicnic && (!checkInDate || !checkOutDate))
+                      (!isDayPicnic && (!checkInDate || !checkOutDate || !selectedRoom))
                     }
                     className="w-full bg-purple-600 hover:bg-purple-700 disabled:bg-gray-300 disabled:cursor-not-allowed"
                     size="lg"
@@ -1195,13 +1205,23 @@ const PropertyDetails = () => {
                       ? "Processing..."
                       : isDayPicnic
                         ? (selectedPackage ? "Book Day Picnic" : "Select Package First")
-                        : (checkInDate && checkOutDate ? "Reserve Now" : "Select Dates First")}
+                        : (!checkInDate || !checkOutDate) 
+                          ? "Select Dates First"
+                          : !selectedRoom 
+                            ? "Select Room First"
+                            : "Reserve Now"}
                   </Button>
 
                   {/* Helper text for disabled state */}
                   {!isDayPicnic && (!checkInDate || !checkOutDate) && (
                     <p className="text-sm text-orange-600 text-center">
                       Please select check-in and check-out dates to continue booking
+                    </p>
+                  )}
+
+                  {!isDayPicnic && checkInDate && checkOutDate && !selectedRoom && (
+                    <p className="text-sm text-orange-600 text-center">
+                      Please select a room from the rooms tab to continue booking
                     </p>
                   )}
 
@@ -1247,14 +1267,14 @@ const PropertyDetails = () => {
           </div>
           <Button
             onClick={
-              (checkInDate && checkOutDate) || (isDayPicnic && selectedPackage)
+              ((checkInDate && checkOutDate && selectedRoom) || (isDayPicnic && selectedPackage))
                 ? handleBooking
                 : () => document.getElementById("booking-box")?.scrollIntoView({ behavior: "smooth" })
             }
             disabled={
               isBooking ||
               (isDayPicnic && !selectedPackage) ||
-              (!isDayPicnic && (!checkInDate || !checkOutDate))
+              (!isDayPicnic && (!checkInDate || !checkOutDate || !selectedRoom))
             }
             className="bg-purple-600 hover:bg-purple-700 disabled:bg-gray-300"
             size="lg"
@@ -1263,7 +1283,11 @@ const PropertyDetails = () => {
               ? "Processing..."
               : isDayPicnic
                 ? (selectedPackage ? "Book Day Picnic" : "Select Package")
-                : (checkInDate && checkOutDate ? "Reserve Now" : "Select Dates")}
+                : (!checkInDate || !checkOutDate) 
+                  ? "Select Dates"
+                  : !selectedRoom 
+                    ? "Select Room"
+                    : "Reserve Now"}
           </Button>
         </div>
       </div>
