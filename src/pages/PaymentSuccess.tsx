@@ -481,9 +481,7 @@ const PaymentSuccess: React.FC = () => {
                             </Button>
 
                             <Button
-                                onClick={() => {
-                                  navigate('/');
-                                }}
+                                onClick={() => navigate('/')}
                                 className="w-full bg-purple-600 hover:bg-purple-700"
                             >
                                 <Calendar className="w-4 h-4 mr-2" />
