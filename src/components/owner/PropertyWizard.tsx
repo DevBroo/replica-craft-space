@@ -48,7 +48,7 @@ export interface PropertyFormData {
   bathrooms: number;
   day_picnic_capacity?: number;
   rooms_details: {
-    types: Array<{ type: string; count: number; size?: string }>;
+    types: Array<{ type: string; count: number; size?: string; price_per_night?: number }>;
     configurations: Record<string, any>;
     amenities_per_room: Record<string, string[]>;
   };
@@ -75,6 +75,7 @@ export interface PropertyFormData {
   pricing: {
     currency: string;
     daily_rate: number;
+    calculated_total?: number;
   };
   seasonal_pricing: {
     seasons: Array<{ name: string; rate: number; start_date: string; end_date: string }>;

@@ -52,6 +52,23 @@ const PoliciesPricing: React.FC<PoliciesPricingProps> = ({
     }));
   };
 
+  const calculateTotalFromRoomTypes = () => {
+    return formData.rooms_details.types.reduce((total, room) => {
+      return total + ((room.price_per_night || 0) * (room.count || 0));
+    }, 0);
+  };
+
+  const getRoomTypeBreakdown = () => {
+    return formData.rooms_details.types
+      .filter(room => room.type && room.count > 0 && room.price_per_night > 0)
+      .map(room => ({
+        type: room.type,
+        count: room.count,
+        price: room.price_per_night,
+        total: room.price_per_night * room.count
+      }));
+  };
+
   const handlePolicyChange = (category: string, field: string, value: any) => {
     setFormData(prev => ({
       ...prev,
@@ -109,51 +126,62 @@ const PoliciesPricing: React.FC<PoliciesPricingProps> = ({
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          {/* Room Type Pricing Breakdown */}
+          <div className="space-y-4">
             <div>
-              <Label htmlFor="daily_rate">Base Rate per Night *</Label>
-              <div className="relative mt-1">
-                <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground">₹</span>
-                <Input
-                  id="daily_rate"
-                  type="number"
-                  min="100"
-                  value={formData.pricing.daily_rate}
-                  onChange={(e) => handlePricingChange('daily_rate', parseInt(e.target.value) || 0)}
-                  className="pl-8"
-                  placeholder="1000"
-                />
+              <Label className="text-base font-medium">Room Type Pricing Summary</Label>
+              <div className="mt-2 space-y-2">
+                {getRoomTypeBreakdown().length > 0 ? (
+                  <>
+                    {getRoomTypeBreakdown().map((room, index) => (
+                      <div key={index} className="flex justify-between items-center p-2 bg-muted/50 rounded text-sm">
+                        <span>{room.type} ({room.count} room{room.count !== 1 ? 's' : ''})</span>
+                        <span>₹{room.price} × {room.count} = ₹{room.total.toLocaleString()}</span>
+                      </div>
+                    ))}
+                    <div className="flex justify-between items-center p-3 bg-primary/10 rounded font-medium">
+                      <span>Total Base Rate per Night</span>
+                      <span>₹{calculateTotalFromRoomTypes().toLocaleString()}</span>
+                    </div>
+                  </>
+                ) : (
+                  <div className="p-3 bg-yellow-50 text-yellow-700 rounded text-sm">
+                    Configure room types in the previous step to see pricing breakdown
+                  </div>
+                )}
               </div>
             </div>
 
-            <div>
-              <Label htmlFor="minimum_stay">Minimum Stay (nights)</Label>
-              <Input
-                id="minimum_stay"
-                type="number"
-                min="1"
-                value={formData.minimum_stay}
-                onChange={(e) => setFormData(prev => ({ ...prev, minimum_stay: parseInt(e.target.value) || 1 }))}
-                className="mt-1"
-              />
-            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <Label htmlFor="minimum_stay">Minimum Stay (nights)</Label>
+                <Input
+                  id="minimum_stay"
+                  type="number"
+                  min="1"
+                  value={formData.minimum_stay}
+                  onChange={(e) => setFormData(prev => ({ ...prev, minimum_stay: parseInt(e.target.value) || 1 }))}
+                  className="mt-1"
+                />
+              </div>
 
-            <div>
-              <Label htmlFor="currency">Currency</Label>
-              <Select
-                value={formData.pricing.currency}
-                onValueChange={(value) => handlePricingChange('currency', value)}
-              >
-                <SelectTrigger className="mt-1">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="INR">INR (₹)</SelectItem>
-                  <SelectItem value="USD">USD ($)</SelectItem>
-                  <SelectItem value="EUR">EUR (€)</SelectItem>
-                  <SelectItem value="GBP">GBP (£)</SelectItem>
-                </SelectContent>
-              </Select>
+              <div>
+                <Label htmlFor="currency">Currency</Label>
+                <Select
+                  value={formData.pricing.currency}
+                  onValueChange={(value) => handlePricingChange('currency', value)}
+                >
+                  <SelectTrigger className="mt-1">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="INR">INR (₹)</SelectItem>
+                    <SelectItem value="USD">USD ($)</SelectItem>
+                    <SelectItem value="EUR">EUR (€)</SelectItem>
+                    <SelectItem value="GBP">GBP (£)</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
             </div>
           </div>
 

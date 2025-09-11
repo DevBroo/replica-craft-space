@@ -106,7 +106,7 @@ const RoomsUnits: React.FC<RoomsUnitsProps> = ({
   };
 
   const addRoomType = () => {
-    const newRoomType = { type: '', count: 1, size: '' };
+    const newRoomType = { type: '', count: 1, size: '', price_per_night: 0 };
     setFormData(prev => ({
       ...prev,
       rooms_details: {
@@ -325,45 +325,60 @@ const RoomsUnits: React.FC<RoomsUnitsProps> = ({
                     </Button>
                   </div>
 
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-                    <div>
-                      <Label>Room Type</Label>
-                      <Select
-                        value={room.type}
-                        onValueChange={(value) => updateRoomType(index, 'type', value)}
-                      >
-                        <SelectTrigger className="mt-1">
-                          <SelectValue placeholder="Select room type" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {ROOM_TYPES.map(type => (
-                            <SelectItem key={type} value={type}>{type}</SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
+                   <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
+                     <div>
+                       <Label>Room Type</Label>
+                       <Select
+                         value={room.type}
+                         onValueChange={(value) => updateRoomType(index, 'type', value)}
+                       >
+                         <SelectTrigger className="mt-1">
+                           <SelectValue placeholder="Select room type" />
+                         </SelectTrigger>
+                         <SelectContent>
+                           {ROOM_TYPES.map(type => (
+                             <SelectItem key={type} value={type}>{type}</SelectItem>
+                           ))}
+                         </SelectContent>
+                       </Select>
+                     </div>
 
-                    <div>
-                      <Label>Number of This Type</Label>
-                      <Input
-                        type="number"
-                        min="1"
-                        value={room.count}
-                        onChange={(e) => updateRoomType(index, 'count', parseInt(e.target.value) || 1)}
-                        className="mt-1"
-                      />
-                    </div>
+                     <div>
+                       <Label>Number of This Type</Label>
+                       <Input
+                         type="number"
+                         min="1"
+                         value={room.count}
+                         onChange={(e) => updateRoomType(index, 'count', parseInt(e.target.value) || 1)}
+                         className="mt-1"
+                       />
+                     </div>
 
-                    <div>
-                      <Label>Room Size (optional)</Label>
-                      <Input
-                        value={room.size || ''}
-                        onChange={(e) => updateRoomType(index, 'size', e.target.value)}
-                        placeholder="e.g., 25 sq.m"
-                        className="mt-1"
-                      />
-                    </div>
-                  </div>
+                     <div>
+                       <Label>Price per Night *</Label>
+                       <div className="relative mt-1">
+                         <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground">₹</span>
+                         <Input
+                           type="number"
+                           min="0"
+                           value={room.price_per_night || 0}
+                           onChange={(e) => updateRoomType(index, 'price_per_night', parseInt(e.target.value) || 0)}
+                           className="pl-8"
+                           placeholder="500"
+                         />
+                       </div>
+                     </div>
+
+                     <div>
+                       <Label>Room Size (optional)</Label>
+                       <Input
+                         value={room.size || ''}
+                         onChange={(e) => updateRoomType(index, 'size', e.target.value)}
+                         placeholder="e.g., 25 sq.m"
+                         className="mt-1"
+                       />
+                     </div>
+                   </div>
 
                   {/* Room-specific amenities */}
                   {room.type && (
