@@ -169,7 +169,9 @@ const SearchForm: React.FC<SearchFormProps> = ({
             <Select value={filters.guests?.toString()} onValueChange={handleGuestsChange}>
               <SelectTrigger className="w-24">
                 <UsersIcon className="w-4 h-4 mr-2 text-orange-500" />
-                <SelectValue />
+                <SelectValue>
+                  {filters.guests ? `${filters.guests}` : '2'}
+                </SelectValue>
               </SelectTrigger>
               <SelectContent>
                 {[1, 2, 3, 4, 5, 6, 8, 10, 12, 15, 20].map((num) => (
@@ -226,7 +228,7 @@ const SearchForm: React.FC<SearchFormProps> = ({
       </div>
 
       {/* Search Form */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-8 gap-4 md:gap-6 items-center">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-10 gap-4 md:gap-6 items-center">
         {/* Search Term */}
         <div className="lg:col-span-2">
           <div className="relative">
@@ -275,18 +277,18 @@ const SearchForm: React.FC<SearchFormProps> = ({
         </div>
 
         {/* Date */}
-        <div className="lg:col-span-1">
+        <div className="lg:col-span-2">
           <Popover>
             <PopoverTrigger asChild>
               <Button
                 variant="outline"
                 className={cn(
-                  "w-full h-14 text-base justify-start text-left font-normal border-gray-300 hover:border-gray-400 focus:border-gray-400 focus:ring-1 focus:ring-gray-300 overflow-hidden",
+                  "w-full h-14 text-base justify-start text-left font-normal border-gray-300 hover:border-gray-400 focus:border-gray-400 focus:ring-1 focus:ring-gray-300",
                   !selectedDate && "text-muted-foreground"
                 )}
               >
                 <CalendarIcon className="w-5 h-5 mr-2 text-orange-500 flex-shrink-0" />
-                <span className="flex-1 min-w-0 truncate text-left">
+                <span className="flex-1 text-left whitespace-nowrap">
                   {selectedDate ? format(selectedDate, "dd/MM/yyyy") : "Select date"}
                 </span>
               </Button>
@@ -304,12 +306,14 @@ const SearchForm: React.FC<SearchFormProps> = ({
         </div>
 
         {/* Guests */}
-        <div className="lg:col-span-1">
+        <div className="lg:col-span-2">
           <Select value={filters.guests?.toString()} onValueChange={handleGuestsChange}>
-            <SelectTrigger className="w-full h-14 text-base border-gray-300 hover:border-gray-400 focus:border-gray-400 focus:ring-1 focus:ring-gray-300 min-w-0">
-              <div className="flex items-center w-full min-w-0">
+            <SelectTrigger className="w-full h-14 text-base border-gray-300 hover:border-gray-400 focus:border-gray-400 focus:ring-1 focus:ring-gray-300">
+              <div className="flex items-center w-full">
                 <UsersIcon className="w-5 h-5 mr-3 text-orange-500 flex-shrink-0" />
-                <SelectValue placeholder="Guests" className="flex-1 text-left truncate" />
+                <SelectValue placeholder="Guests" className="flex-1 text-left">
+                  {filters.guests ? `${filters.guests} ${filters.guests === 1 ? 'Guest' : 'Guests'}` : 'Guests'}
+                </SelectValue>
               </div>
             </SelectTrigger>
             <SelectContent>

@@ -119,7 +119,6 @@ export class PhonePeService {
                 const { error: paymentError } = await (supabase as any)
                     .from('payments')
                     .insert({
-                        id: transactionId,
                         booking_id: paymentData.bookingId,
                         amount: paymentData.amount,
                         currency: paymentData.currency,
@@ -134,8 +133,10 @@ export class PhonePeService {
                     });
 
                 if (paymentError) {
-                    console.warn('⚠️ Could not store payment record (table may not exist):', paymentError);
+                    console.warn('⚠️ Could not store payment record:', paymentError);
                     // Continue with payment creation even if storage fails
+                } else {
+                    console.log('✅ Payment record stored successfully:', { transactionId, amount: paymentData.amount });
                 }
             } catch (error) {
                 console.warn('⚠️ Payment table not available, continuing without storage:', error);
@@ -213,6 +214,41 @@ export class PhonePeService {
             if (isTestMode) {
                 console.log('🧪 Test mode: Mock payment status check');
 
+                // Fetch the actual payment amount from database
+                let paymentAmount = 0;
+                try {
+                    const { data: paymentData, error: paymentError } = await (supabase as any)
+                        .from('payments')
+                        .select('amount, booking_id')
+                        .eq('transaction_id', transactionId)
+                        .single();
+                    
+                    if (!paymentError && paymentData) {
+                        paymentAmount = paymentData.amount * 100; // Convert to paise for PhonePe format
+                        console.log('💰 Retrieved payment amount from database:', paymentData.amount);
+                    } else {
+                        console.warn('⚠️ Could not fetch payment amount from database:', paymentError);
+                        
+                        // Fallback: Try to get amount from booking data
+                        try {
+                            const { data: bookingData, error: bookingError } = await (supabase as any)
+                                .from('bookings')
+                                .select('total_amount')
+                                .eq('id', paymentData?.booking_id)
+                                .single();
+                            
+                            if (!bookingError && bookingData) {
+                                paymentAmount = bookingData.total_amount * 100; // Convert to paise
+                                console.log('💰 Retrieved payment amount from booking data:', bookingData.total_amount);
+                            }
+                        } catch (bookingError) {
+                            console.warn('⚠️ Could not fetch amount from booking data:', bookingError);
+                        }
+                    }
+                } catch (error) {
+                    console.warn('⚠️ Error fetching payment amount:', error);
+                }
+
                 // Mock successful payment response
                 const mockResult: PhonePePaymentResponse = {
                     success: true,
@@ -222,7 +258,7 @@ export class PhonePeService {
                         merchantId: PHONEPE_CONFIG.MERCHANT_ID,
                         merchantTransactionId: transactionId,
                         transactionId: transactionId,
-                        amount: 0, // Will be updated from database
+                        amount: paymentAmount, // Use actual amount from database
                         state: 'COMPLETED' as const,
                         responseCode: 'SUCCESS',
                         paymentInstrument: {

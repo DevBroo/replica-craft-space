@@ -32,12 +32,57 @@ const BookingDetails: React.FC = () => {
   const [showCancelModal, setShowCancelModal] = useState(false);
   const [booking, setBooking] = useState<BookingData | null>(null);
   const [loading, setLoading] = useState(true);
+  const [selectedModification, setSelectedModification] = useState<string | null>(null);
 
   useEffect(() => {
     if (id) {
       fetchBookingDetails(id);
     }
   }, [id]);
+
+  const handleModificationSelect = (type: string) => {
+    setSelectedModification(type);
+  };
+
+  const handleModifyContinue = () => {
+    if (!selectedModification) {
+      toast({
+        title: "Please Select an Option",
+        description: "Please select what you would like to change.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    // Close the modal and navigate to appropriate modification page
+    setShowModifyModal(false);
+    
+    switch (selectedModification) {
+      case 'dates':
+        toast({
+          title: "Date Modification",
+          description: "Date modification feature is coming soon. Please contact support for assistance.",
+        });
+        break;
+      case 'guests':
+        toast({
+          title: "Guest Modification", 
+          description: "Guest modification feature is coming soon. Please contact support for assistance.",
+        });
+        break;
+      case 'room':
+        toast({
+          title: "Room Type Modification",
+          description: "Room type modification feature is coming soon. Please contact support for assistance.",
+        });
+        break;
+      default:
+        break;
+    }
+    
+    // Reset selection
+    setSelectedModification(null);
+  };
 
   const fetchBookingDetails = async (bookingId: string) => {
     try {
@@ -513,27 +558,54 @@ const BookingDetails: React.FC = () => {
               <p className="text-sm text-gray-600">What would you like to change?</p>
             </div>
             <div className="space-y-3">
-              <button className="w-full text-left p-3 border border-gray-200 rounded-lg hover:bg-gray-50 cursor-pointer">
+              <button 
+                onClick={() => handleModificationSelect('dates')}
+                className={`w-full text-left p-3 border rounded-lg cursor-pointer transition-colors ${
+                  selectedModification === 'dates' 
+                    ? 'border-blue-500 bg-blue-50' 
+                    : 'border-gray-200 hover:bg-gray-50'
+                }`}
+              >
                 <i className="fas fa-calendar mr-3 text-blue-500"></i>
                 Change Dates
               </button>
-              <button className="w-full text-left p-3 border border-gray-200 rounded-lg hover:bg-gray-50 cursor-pointer">
+              <button 
+                onClick={() => handleModificationSelect('guests')}
+                className={`w-full text-left p-3 border rounded-lg cursor-pointer transition-colors ${
+                  selectedModification === 'guests' 
+                    ? 'border-blue-500 bg-blue-50' 
+                    : 'border-gray-200 hover:bg-gray-50'
+                }`}
+              >
                 <i className="fas fa-users mr-3 text-blue-500"></i>
                 Change Guests
               </button>
-              <button className="w-full text-left p-3 border border-gray-200 rounded-lg hover:bg-gray-50 cursor-pointer">
+              <button 
+                onClick={() => handleModificationSelect('room')}
+                className={`w-full text-left p-3 border rounded-lg cursor-pointer transition-colors ${
+                  selectedModification === 'room' 
+                    ? 'border-blue-500 bg-blue-50' 
+                    : 'border-gray-200 hover:bg-gray-50'
+                }`}
+              >
                 <i className="fas fa-bed mr-3 text-blue-500"></i>
                 Change Room Type
               </button>
             </div>
             <div className="flex space-x-3 mt-6">
               <button
-                onClick={() => setShowModifyModal(false)}
+                onClick={() => {
+                  setShowModifyModal(false);
+                  setSelectedModification(null);
+                }}
                 className="flex-1 bg-gray-100 text-gray-700 py-2 px-4 rounded-lg hover:bg-gray-200 cursor-pointer whitespace-nowrap"
               >
                 Cancel
               </button>
-              <button className="flex-1 bg-blue-600 text-white py-2 px-4 rounded-lg hover:bg-blue-700 cursor-pointer whitespace-nowrap">
+              <button 
+                onClick={handleModifyContinue}
+                className="flex-1 bg-blue-600 text-white py-2 px-4 rounded-lg hover:bg-blue-700 cursor-pointer whitespace-nowrap"
+              >
                 Continue
               </button>
             </div>
