@@ -481,11 +481,17 @@ const PaymentSuccess: React.FC = () => {
                             </Button>
 
                             <Button
-                                onClick={() => navigate('/dashboard')}
+                                onClick={() => {
+                                  if (user?.role === 'customer' || user?.role === 'user') {
+                                    navigate('/');
+                                  } else {
+                                    navigate('/dashboard');
+                                  }
+                                }}
                                 className="w-full bg-purple-600 hover:bg-purple-700"
                             >
                                 <Calendar className="w-4 h-4 mr-2" />
-                                View My Bookings
+                                {user?.role === 'customer' || user?.role === 'user' ? 'Go to Home' : 'View My Bookings'}
                             </Button>
                         </div>
                     )}

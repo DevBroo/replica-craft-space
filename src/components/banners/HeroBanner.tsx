@@ -66,18 +66,18 @@ const HeroBanner = ({ overlay }: HeroBannerProps) => {
             <>
               {/* Enhanced Title */}
               <div className="mb-8 animate-fade-in">
-                <h1 className="text-5xl md:text-7xl lg:text-8xl font-black mb-4 leading-none">
-                  <span className="bg-gradient-to-r from-white via-yellow-100 to-orange-200 bg-clip-text text-transparent drop-shadow-2xl animate-pulse">
+                <h1 className="text-6xl md:text-8xl lg:text-9xl xl:text-[10rem] font-black mb-4 leading-none">
+                  <span className="bg-gradient-to-r from-white via-yellow-200 to-orange-400 bg-clip-text text-transparent drop-shadow-2xl">
                     Discover Perfect Getaways Near You
                   </span>
                 </h1>
-                <div className="w-32 h-1 bg-gradient-to-r from-orange-500 to-red-500 mx-auto rounded-full shadow-lg animate-scale-in"></div>
+                <div className="w-40 h-2 bg-gradient-to-r from-orange-500 via-red-500 to-pink-500 mx-auto rounded-full shadow-lg animate-scale-in"></div>
               </div>
 
               {/* Enhanced Subtitle */}
               <div className="mb-12 animate-fade-in animation-delay-500">
-                <p className="text-xl md:text-2xl lg:text-3xl text-white/90 max-w-4xl mx-auto leading-relaxed font-medium">
-                  <span className="drop-shadow-lg">
+                <p className="text-2xl md:text-3xl lg:text-4xl max-w-4xl mx-auto leading-relaxed font-bold">
+                  <span className="bg-gradient-to-r from-white via-yellow-100 to-orange-200 bg-clip-text text-transparent drop-shadow-lg">
                     From Day Picnic to weekend retreats, find unique properties and experiences across India
                   </span>
                 </p>
@@ -137,19 +137,19 @@ const HeroBanner = ({ overlay }: HeroBannerProps) => {
           <>
             {/* Enhanced Title with Multiple Effects */}
             <div className="mb-8 animate-fade-in">
-              <h1 className="text-5xl md:text-7xl lg:text-8xl font-black mb-4 leading-none">
-                <span className="bg-gradient-to-r from-white via-yellow-100 to-orange-200 bg-clip-text text-transparent drop-shadow-2xl animate-pulse">
+              <h1 className="text-6xl md:text-8xl lg:text-9xl xl:text-[10rem] font-black mb-4 leading-none">
+                <span className="bg-gradient-to-r from-white via-yellow-200 to-orange-400 bg-clip-text text-transparent drop-shadow-2xl">
                   {banner.title}
                 </span>
               </h1>
-              <div className="w-32 h-1 bg-gradient-to-r from-orange-500 to-red-500 mx-auto rounded-full shadow-lg animate-scale-in"></div>
+              <div className="w-40 h-2 bg-gradient-to-r from-orange-500 via-red-500 to-pink-500 mx-auto rounded-full shadow-lg animate-scale-in"></div>
             </div>
 
             {/* Enhanced Subtitle */}
             {banner.subtitle && (
               <div className="mb-12 animate-fade-in animation-delay-500">
-                <p className="text-xl md:text-2xl lg:text-3xl text-white/90 max-w-4xl mx-auto leading-relaxed font-medium">
-                  <span className="drop-shadow-lg">
+                <p className="text-2xl md:text-3xl lg:text-4xl max-w-4xl mx-auto leading-relaxed font-bold">
+                  <span className="bg-gradient-to-r from-white via-yellow-100 to-orange-200 bg-clip-text text-transparent drop-shadow-lg">
                     {banner.subtitle}
                   </span>
                 </p>

@@ -36,6 +36,8 @@ import GuestSelector, { GuestBreakdown } from "@/components/ui/GuestSelector";
 import { Input } from "@/components/ui/input";
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
+import { shareUtils } from "@/lib/shareUtils";
+import { ShareDropdown } from "@/components/ui/ShareDropdown";
 
 // Import new components
 import { HeroSection } from "@/components/property/HeroSection";
@@ -57,6 +59,9 @@ const PropertyDetails = () => {
   const [loading, setLoading] = useState(true);
   const [checkInDate, setCheckInDate] = useState<Date>();
   const [checkOutDate, setCheckOutDate] = useState<Date>();
+  const [checkInOpen, setCheckInOpen] = useState(false);
+  const [checkOutOpen, setCheckOutOpen] = useState(false);
+  const [dayPicnicDateOpen, setDayPicnicDateOpen] = useState(false);
   const [isBooking, setIsBooking] = useState(false);
   const [couponCode, setCouponCode] = useState("");
   const [appliedCoupon, setAppliedCoupon] = useState<Coupon | null>(null);
@@ -634,9 +639,23 @@ const PropertyDetails = () => {
             </Button>
 
             <div className="flex gap-2">
-              <Button variant="outline" size="icon">
-                <Share2 className="w-4 h-4" />
-              </Button>
+              <ShareDropdown
+                property={property}
+                onShareSuccess={() => {
+                  toast({
+                    title: "Shared successfully!",
+                    description: shareUtils.isWebShareSupported() 
+                      ? "Property shared via your device's share menu" 
+                      : "Property link copied to clipboard",
+                  });
+                }}
+                onCopySuccess={() => {
+                  toast({
+                    title: "Link copied!",
+                    description: "Property link copied to clipboard",
+                  });
+                }}
+              />
               <Button
                 variant="outline"
                 size="icon"
@@ -851,7 +870,7 @@ const PropertyDetails = () => {
                   {/* Date Selection */}
                   {!isDayPicnic && (
                     <div className="grid grid-cols-1 gap-2">
-                      <Popover>
+                      <Popover open={checkInOpen} onOpenChange={setCheckInOpen}>
                         <PopoverTrigger asChild>
                           <Button
                             variant="outline"
@@ -870,7 +889,14 @@ const PropertyDetails = () => {
                           <CalendarComponent
                             mode="single"
                             selected={checkInDate}
-                            onSelect={setCheckInDate}
+                            onSelect={(date) => {
+                              setCheckInDate(date);
+                              setCheckInOpen(false);
+                              // Clear check-out date if it's now invalid
+                              if (checkOutDate && date && checkOutDate <= date) {
+                                setCheckOutDate(undefined);
+                              }
+                            }}
                             disabled={(date) => {
                               // Disable past dates
                               if (date < new Date()) return true;
@@ -889,7 +915,7 @@ const PropertyDetails = () => {
                         </PopoverContent>
                       </Popover>
 
-                      <Popover>
+                      <Popover open={checkOutOpen} onOpenChange={setCheckOutOpen}>
                         <PopoverTrigger asChild>
                           <Button
                             variant="outline"
@@ -908,10 +934,18 @@ const PropertyDetails = () => {
                           <CalendarComponent
                             mode="single"
                             selected={checkOutDate}
-                            onSelect={setCheckOutDate}
+                            onSelect={(date) => {
+                              setCheckOutDate(date);
+                              setCheckOutOpen(false);
+                            }}
                             disabled={(date) => {
-                              // Disable dates before check-in
-                              if (date < (checkInDate || new Date())) return true;
+                              // Disable dates before or equal to check-in date
+                              if (checkInDate) {
+                                if (date <= checkInDate) return true;
+                              } else {
+                                // If no check-in date selected, disable today and past dates
+                                if (date <= new Date()) return true;
+                              }
 
                               // Disable unavailable dates
                               const dateStr = date.toISOString().split('T')[0];
@@ -931,7 +965,7 @@ const PropertyDetails = () => {
 
                   {/* Day Picnic Date Selection */}
                   {isDayPicnic && (
-                    <Popover>
+                    <Popover open={dayPicnicDateOpen} onOpenChange={setDayPicnicDateOpen}>
                       <PopoverTrigger asChild>
                         <Button
                           variant="outline"
@@ -950,7 +984,10 @@ const PropertyDetails = () => {
                         <CalendarComponent
                           mode="single"
                           selected={checkInDate}
-                          onSelect={setCheckInDate}
+                          onSelect={(date) => {
+                            setCheckInDate(date);
+                            setDayPicnicDateOpen(false);
+                          }}
                           disabled={(date) => {
                             // Disable past dates
                             if (date < new Date()) return true;
@@ -971,23 +1008,26 @@ const PropertyDetails = () => {
                   )}
 
                   {/* Guest Selection */}
-                  <GuestSelector
-                    maxGuests={property.max_guests}
-                    onGuestsChange={setGuests}
-                    initialGuests={guests}
-                    pricing={{
-                      baseGuests: property.pricing?.base_guests,
-                      extraAdultCharge: property.pricing?.extra_adult_charge,
-                      extraChildCharge: property.pricing?.extra_child_charge,
-                      childPricing: property.pricing?.child_pricing ? {
-                        freeAgeLimit: property.pricing.child_pricing.free_age_limit,
-                        halfPriceAgeLimit: property.pricing.child_pricing.half_price_age_limit,
-                        halfPricePercentage: property.pricing.child_pricing.half_price_percentage
-                      } : undefined
-                    }}
-                    baseRoomRate={selectedRoom?.price || property?.roomTypes?.[0]?.price || property?.daily_rate || 0}
-                    showPricingFeedback={true}
-                  />
+                  <div className="space-y-2">
+                    <div className="text-sm font-medium">Guests</div>
+                    <GuestSelector
+                      maxGuests={property.max_guests}
+                      onGuestsChange={setGuests}
+                      initialGuests={guests}
+                      pricing={{
+                        baseGuests: property.pricing?.base_guests,
+                        extraAdultCharge: property.pricing?.extra_adult_charge,
+                        extraChildCharge: property.pricing?.extra_child_charge,
+                        childPricing: property.pricing?.child_pricing ? {
+                          freeAgeLimit: property.pricing.child_pricing.free_age_limit,
+                          halfPriceAgeLimit: property.pricing.child_pricing.half_price_age_limit,
+                          halfPricePercentage: property.pricing.child_pricing.half_price_percentage
+                        } : undefined
+                      }}
+                      baseRoomRate={selectedRoom?.price || property?.roomTypes?.[0]?.price || property?.daily_rate || 0}
+                      showPricingFeedback={true}
+                    />
+                  </div>
 
                   {/* Package/Room Selection Display */}
                   {isDayPicnic ? (

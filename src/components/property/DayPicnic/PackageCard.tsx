@@ -85,7 +85,7 @@ export const PackageCard: React.FC<PackageCardProps> = ({
                         <Check className="h-3 w-3 text-green-600 mt-0.5 flex-shrink-0" />
                         <span className="text-muted-foreground">{item.name}</span>
                       </div>
-                      <span className="text-green-600 font-medium text-xs">+₹{item.price}</span>
+                      <span className="text-red-600 font-medium text-xs">+₹{item.price}</span>
                     </li>
                   ))}
                   {inclusionsPriced.length > 4 && (

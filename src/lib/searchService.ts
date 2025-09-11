@@ -7,11 +7,11 @@ export const PROPERTY_CATEGORIES = [
   { value: 'villa', label: 'Villas', icon: 'fas fa-home' },
   { value: 'resort', label: 'Resorts', icon: 'fas fa-umbrella-beach' },
   { value: 'farmhouse', label: 'Farmhouse', icon: 'fas fa-tractor' },
-  { value: 'homestay', label: 'Homestay', icon: 'fas fa-house-user' },
+  { value: 'home-stays', label: 'Home Stays', icon: 'fas fa-house-user' },
   { value: 'apartment', label: 'Apartment', icon: 'fas fa-building' },
   { value: 'guesthouse', label: 'Guesthouse', icon: 'fas fa-bed' },
   { value: 'hostel', label: 'Hostel', icon: 'fas fa-bunk-bed' },
-  { value: 'heritage-palace', label: 'Heritage Palace', icon: 'fas fa-crown' },
+  { value: 'heritage-place', label: 'Heritage Place', icon: 'fas fa-crown' },
   { value: 'banquet-hall', label: 'Banquet Hall', icon: 'fas fa-glass-cheers' },
   { value: 'wedding-venue', label: 'Wedding Venue', icon: 'fas fa-heart' }
 ] as const;

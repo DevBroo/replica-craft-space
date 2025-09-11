@@ -361,6 +361,35 @@ const Properties: React.FC = () => {
     return matchesLocation && matchesPrice && matchesDuration;
   });
 
+  // Sort day picnics
+  const sortedDayPicnics = [...filteredDayPicnics].sort((a, b) => {
+    // Debug logging
+    if (sortBy === 'price-low' && filteredDayPicnics.length > 0) {
+      console.log('🔍 Day Picnic Sorting Debug:', {
+        sortBy,
+        aPrice: a.price,
+        bPrice: b.price,
+        aPriceNum: Number(a.price),
+        bPriceNum: Number(b.price),
+        aTitle: a.title,
+        bTitle: b.title
+      });
+    }
+    
+    switch (sortBy) {
+      case 'price-low':
+        return (Number(a.price) || 0) - (Number(b.price) || 0);
+      case 'price-high':
+        return (Number(b.price) || 0) - (Number(a.price) || 0);
+      case 'rating':
+        return (Number(b.rating) || 0) - (Number(a.rating) || 0);
+      case 'popular':
+        return (Number(b.totalBookings) || 0) - (Number(a.totalBookings) || 0);
+      default:
+        return 0;
+    }
+  });
+
   // Sort properties
   const sortedProperties = [...filteredProperties].sort((a, b) => {
     switch (sortBy) {
@@ -382,6 +411,12 @@ const Properties: React.FC = () => {
   const startIndex = (currentPage - 1) * propertiesPerPage;
   const endIndex = startIndex + propertiesPerPage;
   const currentProperties = sortedProperties.slice(startIndex, endIndex);
+
+  // Day Picnic pagination logic
+  const dayPicnicTotalPages = Math.ceil(sortedDayPicnics.length / propertiesPerPage);
+  const dayPicnicStartIndex = (currentPage - 1) * propertiesPerPage;
+  const dayPicnicEndIndex = dayPicnicStartIndex + propertiesPerPage;
+  const currentDayPicnics = sortedDayPicnics.slice(dayPicnicStartIndex, dayPicnicEndIndex);
 
   const handleViewProperty = (property: Property) => {
     navigate(`/property/${property.id}`);
@@ -494,9 +529,15 @@ const Properties: React.FC = () => {
                   <Button 
                     variant="outline" 
                     size="sm"
-                    onClick={() => navigate('/dashboard')}
+                    onClick={() => {
+                      if (user?.role === 'customer' || user?.role === 'user') {
+                        navigate('/');
+                      } else {
+                        navigate('/dashboard');
+                      }
+                    }}
                   >
-                    Dashboard
+                    {user?.role === 'customer' || user?.role === 'user' ? 'Home' : 'Dashboard'}
                   </Button>
                 </div>
               ) : (
@@ -704,11 +745,12 @@ const Properties: React.FC = () => {
                 {/* Properties Grid */}
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                   {currentProperties.map((property) => (
-                    <Card key={property.id} className="overflow-hidden hover:shadow-lg transition-shadow cursor-pointer">
-                      <div 
-                        className="relative"
-                        onClick={() => handleViewProperty(property)}
-                      >
+                    <Card 
+                      key={property.id} 
+                      className="overflow-hidden hover:shadow-lg transition-shadow cursor-pointer"
+                      onClick={() => handleViewProperty(property)}
+                    >
+                      <div className="relative">
                         {property.images && property.images.length > 0 ? (
                           <img
                             src={property.images[0]}
@@ -722,12 +764,15 @@ const Properties: React.FC = () => {
                         )}
                         
                         {/* Wishlist Button */}
-                        <button className="absolute top-3 right-3 p-2 bg-white rounded-full shadow-md hover:bg-gray-50">
+                        <button 
+                          className="absolute top-3 right-3 p-2 bg-white rounded-full shadow-md hover:bg-gray-50"
+                          aria-label="Add to wishlist"
+                        >
                           <Heart className="w-4 h-4 text-gray-600" />
                         </button>
 
                          {/* Property Type Badge */}
-                         <Badge className="absolute top-3 left-3">
+                         <Badge className="absolute top-3 left-3 bg-red-500 text-white">
                            {formatPropertyType(property.type)}
                          </Badge>
                       </div>
@@ -743,7 +788,7 @@ const Properties: React.FC = () => {
                         {/* Property Details */}
                         <div className="space-y-2 mb-3">
                           {/* Capacity Display */}
-                           <div className="text-sm text-blue-600 font-medium">
+                           <div className="text-sm text-red-600 font-medium">
                              {normalizeTypeKey(property.type) === 'day_picnic' ? (
                               property.day_picnic_capacity || property.capacity ? (
                                 `Max capacity: ${property.day_picnic_capacity || property.capacity} guests for day picnic`
@@ -776,7 +821,7 @@ const Properties: React.FC = () => {
 
                         <div className="flex items-center justify-between">
                           <div>
-                            <span className="text-xl font-bold text-green-600">
+                            <span className="text-xl font-bold text-red-600">
                               ₹{property.price.toLocaleString()}
                             </span>
                             <span className="text-gray-600 text-sm ml-1">/night</span>
@@ -793,12 +838,9 @@ const Properties: React.FC = () => {
                           )}
                         </div>
 
-                        <Button
-                          onClick={() => handleViewProperty(property)}
-                          className="w-full mt-4"
-                        >
-                          View Details
-                        </Button>
+                        <div className="w-full mt-4 text-center text-sm text-muted-foreground">
+                          Click to view details
+                        </div>
                       </CardContent>
                     </Card>
                   ))}
@@ -814,7 +856,7 @@ const Properties: React.FC = () => {
                 )}
 
                 {/* Pagination */}
-                {totalPages > 1 && (
+                {(showDayPicnics ? dayPicnicTotalPages : totalPages) > 1 && (
                   <div className="flex items-center justify-center space-x-2 mt-8">
                     <Button
                       variant="outline"
@@ -824,11 +866,12 @@ const Properties: React.FC = () => {
                       <ChevronLeft className="w-4 h-4" />
                     </Button>
                     
-                    {[...Array(totalPages)].map((_, index) => {
+                    {[...Array(showDayPicnics ? dayPicnicTotalPages : totalPages)].map((_, index) => {
                       const page = index + 1;
+                      const maxPages = showDayPicnics ? dayPicnicTotalPages : totalPages;
                       if (
                         page === 1 ||
-                        page === totalPages ||
+                        page === maxPages ||
                         (page >= currentPage - 1 && page <= currentPage + 1)
                       ) {
                         return (
@@ -852,8 +895,8 @@ const Properties: React.FC = () => {
                     
                     <Button
                       variant="outline"
-                      onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
-                      disabled={currentPage === totalPages}
+                      onClick={() => setCurrentPage(prev => Math.min(prev + 1, showDayPicnics ? dayPicnicTotalPages : totalPages))}
+                      disabled={currentPage === (showDayPicnics ? dayPicnicTotalPages : totalPages)}
                     >
                       <ChevronRight className="w-4 h-4" />
                     </Button>
@@ -867,12 +910,12 @@ const Properties: React.FC = () => {
           <div>
             <div className="flex items-center justify-between mb-6">
               <h2 className="text-2xl font-bold text-gray-900">
-                Day Picnic ({filteredDayPicnics.length})
+                Day Picnic ({sortedDayPicnics.length})
               </h2>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {filteredDayPicnics.map((pkg) => (
+              {currentDayPicnics.map((pkg) => (
                 <Card key={pkg.id} className="overflow-hidden hover:shadow-lg transition-shadow">
                   <div className="relative">
                     {pkg.images && pkg.images.length > 0 ? (
@@ -995,7 +1038,7 @@ const Properties: React.FC = () => {
               ))}
             </div>
 
-            {filteredDayPicnics.length === 0 && (
+            {sortedDayPicnics.length === 0 && (
               <div className="text-center py-12">
                 <MapPin className="w-16 h-16 text-gray-300 mx-auto mb-4" />
                 <p className="text-gray-600 text-lg">No Day Picnic properties found</p>

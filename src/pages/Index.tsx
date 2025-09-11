@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
 
 // Enhanced scroll animation hook with fallback visibility
 const useScrollAnimation = () => {
@@ -69,25 +71,108 @@ const Index: React.FC = () => {
   // Initialize scroll animations
   useScrollAnimation();
 
-  // No dummy data - will be replaced with database properties
-  const topPicks: Array<{
-    id: string;
-    name: string;
-    image: string;
-    location: string;
-    rating: number;
-    price: number;
-  }> = [];
+  // Fetch top picks from database with fallback to any available properties
+  const { data: topPicksData = [], isLoading: topPicksLoading } = useQuery({
+    queryKey: ['top-picks'],
+    queryFn: async () => {
+      // First try to get high-rated and featured properties
+      let { data, error } = await supabase
+        .from('properties_public')
+        .select('*')
+        .eq('status', 'approved')
+        .order('rating', { ascending: false })
+        .order('is_featured', { ascending: false })
+        .limit(8);
 
-  // No dummy data - will be replaced with database properties
-  const featuredProperties: Array<{
-    id: string;
-    name: string;
-    image: string;
-    location: string;
-    price: number;
-    amenities: string[];
-  }> = [];
+      if (error) {
+        console.error('Error fetching top picks:', error);
+        return [];
+      }
+
+      // If no properties found, try to get any approved properties
+      if (!data || data.length === 0) {
+        console.log('No top picks found, fetching any available properties as fallback');
+        const { data: fallbackData, error: fallbackError } = await supabase
+          .from('properties_public')
+          .select('*')
+          .eq('status', 'approved')
+          .order('created_at', { ascending: false })
+          .limit(8);
+
+        if (fallbackError) {
+          console.error('Error fetching fallback properties:', fallbackError);
+          return [];
+        }
+
+        data = fallbackData;
+      }
+
+      return data?.map(property => ({
+        id: property.id,
+        name: property.title,
+        image: property.images?.[0] || '/placeholder.svg',
+        location: property.general_location || 'Location not specified',
+        rating: property.rating || 4.5,
+        price: property.pricing?.daily_rate || 0
+      })) || [];
+    },
+    staleTime: 5 * 60 * 1000, // 5 minutes
+    gcTime: 10 * 60 * 1000, // 10 minutes
+  });
+
+  const topPicks = topPicksData;
+
+  // Fetch featured properties from database with fallback to regular properties
+  const { data: featuredPropertiesData = [], isLoading: featuredLoading } = useQuery({
+    queryKey: ['featured-properties'],
+    queryFn: async () => {
+      // First try to get featured properties
+      let { data: featuredData, error: featuredError } = await supabase
+        .from('properties_public')
+        .select('*')
+        .eq('status', 'approved')
+        .eq('is_featured', true)
+        .order('rating', { ascending: false })
+        .limit(6);
+
+      if (featuredError) {
+        console.error('Error fetching featured properties:', featuredError);
+        featuredData = [];
+      }
+
+      // If no featured properties, fallback to regular properties
+      if (!featuredData || featuredData.length === 0) {
+        console.log('No featured properties found, fetching regular properties as fallback');
+        const { data: regularData, error: regularError } = await supabase
+          .from('properties_public')
+          .select('*')
+          .eq('status', 'approved')
+          .order('rating', { ascending: false })
+          .order('created_at', { ascending: false })
+          .limit(6);
+
+        if (regularError) {
+          console.error('Error fetching regular properties:', regularError);
+          return [];
+        }
+
+        featuredData = regularData;
+      }
+
+      return featuredData?.map(property => ({
+        id: property.id,
+        name: property.title,
+        image: property.images?.[0] || '/placeholder.svg',
+        location: property.general_location || 'Location not specified',
+        price: property.pricing?.daily_rate || 0,
+        amenities: property.amenities || []
+      })) || [];
+    },
+    staleTime: 5 * 60 * 1000, // 5 minutes
+    gcTime: 10 * 60 * 1000, // 10 minutes
+  });
+
+  const featuredProperties = featuredPropertiesData;
 
   // Handle search from homepage
   const handleSearch = (filters: SearchFilters) => {
@@ -137,8 +222,10 @@ const Index: React.FC = () => {
           <div className="animate-fade-in">
             {/* Sub-heading */}
             <div className="mb-8">
-              <h2 className="text-2xl md:text-3xl lg:text-4xl font-bold text-white drop-shadow-lg">
-                Discover your perfect getaway
+              <h2 className="text-4xl md:text-5xl lg:text-6xl xl:text-7xl font-black leading-tight">
+                <span className="bg-gradient-to-r from-white via-yellow-200 to-orange-300 bg-clip-text text-transparent drop-shadow-2xl">
+                  Discover your perfect getaway
+                </span>
               </h2>
             </div>
 
@@ -153,56 +240,6 @@ const Index: React.FC = () => {
       {/* Secondary Banner */}
       <SecondaryBanner />
 
-      {/* Host CTA Section */}
-      <section className="py-16 bg-gradient-to-r from-orange-500 to-red-500 relative overflow-hidden">
-        <div className="absolute inset-0 bg-black/10"></div>
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative">
-          <div className="text-center text-white">
-            <div className="mb-6">
-              <span className="inline-block bg-white/20 backdrop-blur-md px-6 py-2 rounded-full text-sm font-bold border border-white/30 mb-4">
-                🏠 Hosts
-              </span>
-              <h2 className="text-2xl sm:text-3xl md:text-4xl font-black mb-4 font-poppins text-shadow">
-                Ready to List Your Property?
-              </h2>
-              <p className="text-lg opacity-90 mb-8 max-w-2xl mx-auto">
-                Join thousands of successful hosts earning premium
-                income. Access your dashboard and start listing today!
-              </p>
-            </div>
-            <div className="flex flex-col sm:flex-row gap-4 justify-center">
-              <button
-                onClick={() => {
-                  console.log("🚀 Host CTA clicked");
-                  if (isAuthenticated && user) {
-                    console.log(
-                      "✅ User is authenticated, navigating to dashboard"
-                    );
-                    console.log("🔍 User role:", user.role);
-                    navigate("/owner/view");
-                  } else {
-                    console.log(
-                      "❌ User not authenticated, navigating to login"
-                    );
-                    navigate("/owner/login");
-                  }
-                }}
-                className="bg-white text-gray-900 px-8 py-4 rounded-xl font-bold text-lg hover:bg-gray-100 transition-all duration-300 cursor-pointer whitespace-nowrap rounded-button shadow-xl hover:shadow-2xl transform hover:scale-105 flex items-center justify-center gap-3"
-              >
-                <i className="fas fa-home"></i>
-                Access Dashboard
-              </button>
-              <button
-                onClick={() => navigate("/owner/signup")}
-                className="border-2 border-white text-white px-8 py-4 rounded-xl font-bold text-lg hover:bg-white hover:text-gray-900 transition-all duration-300 cursor-pointer whitespace-nowrap rounded-button flex items-center justify-center gap-3"
-              >
-                <i className="fas fa-user-plus"></i>
-                Sign Up as Owner
-              </button>
-            </div>
-          </div>
-        </div>
-      </section>
 
       {/* Top Picks Section */}
       <section className="py-32 bg-secondary/20 relative overflow-hidden">
@@ -225,7 +262,37 @@ const Index: React.FC = () => {
             </p>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
-            {topPicks.length > 0 ? (
+            {topPicksLoading ? (
+              // Loading skeleton
+              Array.from({ length: 4 }).map((_, index) => (
+                <div key={index} className="group cursor-pointer fade-in-up animate-pulse">
+                  <div className="bg-gradient-to-br from-orange-500 to-red-500 p-0.5 rounded-2xl">
+                    <div className="bg-background rounded-2xl overflow-hidden">
+                      <div className="relative">
+                        <div className="w-full h-64 bg-gray-300"></div>
+                        <div className="absolute top-4 left-4">
+                          <div className="bg-gray-300 h-8 w-24 rounded-full"></div>
+                        </div>
+                        <div className="absolute top-4 right-4">
+                          <div className="bg-gray-300 h-6 w-16 rounded-full"></div>
+                        </div>
+                      </div>
+                      <div className="p-6">
+                        <div className="bg-gray-300 h-6 w-3/4 rounded mb-3"></div>
+                        <div className="flex items-center justify-between">
+                          <div className="bg-gray-300 h-6 w-20 rounded"></div>
+                          <div className="flex gap-1">
+                            {[...Array(5)].map((_, i) => (
+                              <div key={i} className="bg-gray-300 h-4 w-4 rounded"></div>
+                            ))}
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              ))
+            ) : topPicks.length > 0 ? (
               topPicks.map((property, index) => (
                 <div
                   key={property.id}
@@ -296,11 +363,17 @@ const Index: React.FC = () => {
                 <div className="bg-secondary/20 rounded-2xl p-12 max-w-md mx-auto">
                   <i className="fas fa-home text-6xl text-muted-foreground mb-4"></i>
                   <h3 className="text-xl font-bold text-foreground mb-2">
-                    No Properties Available
+                    No Top Picks Available
                   </h3>
-                  <p className="text-muted-foreground">
-                    Check back later for amazing property listings!
+                  <p className="text-muted-foreground mb-6">
+                    We're working on curating amazing properties for you. In the meantime, explore all our available properties!
                   </p>
+                  <button
+                    onClick={() => navigate("/properties")}
+                    className="bg-gradient-to-r from-red-600 to-orange-500 text-white px-6 py-3 rounded-lg hover:from-red-700 hover:to-orange-600 transition-all duration-300 font-medium"
+                  >
+                    Explore All Properties
+                  </button>
                 </div>
               </div>
             )}
@@ -327,75 +400,111 @@ const Index: React.FC = () => {
               Premium Collection
             </span>
             <h2 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-black text-foreground font-poppins mb-6 text-shadow">
-              Featured Properties
+              {featuredPropertiesData.length > 0 && featuredPropertiesData[0]?.is_featured 
+                ? 'Featured Properties' 
+                : 'Popular Properties'}
             </h2>
             <div className="w-24 h-1 bg-gradient-to-r from-red-500 to-orange-500 mx-auto rounded-full"></div>
           </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-10">
-            {featuredProperties.length > 0 ? (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 items-stretch">
+            {featuredLoading ? (
+              // Loading skeleton for featured properties
+              Array.from({ length: 3 }).map((_, index) => (
+                <div key={index} className="group cursor-pointer fade-in-up animate-pulse flex flex-col h-full">
+                  <div className="bg-white rounded-2xl shadow-xl overflow-hidden hover:shadow-2xl transition-all duration-500 transform hover:scale-105 flex flex-col h-full">
+                    <div className="relative">
+                      <div className="w-full h-48 bg-gray-300"></div>
+                      <div className="absolute top-4 left-4">
+                        <div className="bg-gray-300 h-6 w-20 rounded-full"></div>
+                      </div>
+                      <div className="absolute top-4 right-4">
+                        <div className="bg-gray-300 h-8 w-16 rounded-full"></div>
+                      </div>
+                    </div>
+                    <div className="p-4 flex flex-col flex-grow">
+                      <div className="bg-gray-300 h-5 w-3/4 rounded mb-2"></div>
+                      <div className="bg-gray-300 h-4 w-1/2 rounded mb-3"></div>
+                      <div className="flex gap-1 mb-3 flex-grow">
+                        <div className="bg-gray-300 h-6 w-16 rounded-full"></div>
+                        <div className="bg-gray-300 h-6 w-20 rounded-full"></div>
+                        <div className="bg-gray-300 h-6 w-14 rounded-full"></div>
+                      </div>
+                      <div className="bg-gray-300 h-10 w-full rounded-lg mt-auto"></div>
+                    </div>
+                  </div>
+                </div>
+              ))
+            ) : featuredProperties.length > 0 ? (
               featuredProperties.map((property, index) => (
                 <div
                   key={property.id}
-                  className="group cursor-pointer fade-in-up"
+                  className="group cursor-pointer fade-in-up flex flex-col h-full"
                   style={{ animationDelay: `${index * 0.2}s` }}
+                  onClick={() => navigate(`/property/${property.id}`)}
                 >
-                  <div className="bg-background rounded-3xl shadow-xl hover:shadow-2xl transition-all duration-500 overflow-hidden transform hover:scale-105 hover:-rotate-1 border border-border">
+                  <div className="bg-background rounded-2xl shadow-xl hover:shadow-2xl transition-all duration-500 overflow-hidden transform hover:scale-105 border border-border flex flex-col h-full">
                     <div className="relative overflow-hidden">
                       <img
                         src={property.image}
                         alt={property.name}
-                        className="w-full h-72 object-cover transition-transform duration-700 group-hover:scale-110"
+                        className="w-full h-48 object-cover transition-transform duration-700 group-hover:scale-110"
                       />
                       <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
                       <div className="absolute top-4 right-4">
-                        <button className="w-12 h-12 bg-white/90 backdrop-blur-sm rounded-full flex items-center justify-center shadow-lg hover:bg-red-500 hover:text-white transition-all duration-300 group">
+                        <button 
+                          className="w-12 h-12 bg-white/90 backdrop-blur-sm rounded-full flex items-center justify-center shadow-lg hover:bg-red-500 hover:text-white transition-all duration-300 group"
+                          onClick={(e) => e.stopPropagation()}
+                          aria-label="Add to wishlist"
+                        >
                           <i className="fas fa-heart text-gray-600 group-hover:text-white"></i>
                         </button>
                       </div>
                       <div className="absolute bottom-4 left-4 md:opacity-0 md:group-hover:opacity-100 transition-all duration-500 transform md:translate-y-4 md:group-hover:translate-y-0">
-                        <button
-                          onClick={() => navigate(`/property/${property.id}`)}
-                          className="bg-white text-gray-900 px-6 py-2 rounded-full font-bold hover:bg-gray-100 transition-colors duration-200 rounded-button shadow-lg"
-                        >
-                          View Details
-                        </button>
+                        <div className="bg-white/90 backdrop-blur-sm text-gray-900 px-6 py-2 rounded-full font-bold shadow-lg">
+                          Click to view details
+                        </div>
                       </div>
                     </div>
-                    <div className="p-8">
-                      <div className="flex items-start justify-between mb-4">
-                        <div>
-                          <h3 className="text-lg font-bold text-foreground mb-2 group-hover:text-red-500 transition-colors duration-300">
+                    <div className="p-4 flex flex-col flex-grow">
+                      <div className="flex items-start justify-between mb-3">
+                        <div className="flex-1">
+                          <h3 className="text-lg font-bold text-foreground mb-1 group-hover:text-red-500 transition-colors duration-300 line-clamp-1">
                             {property.name}
                           </h3>
                           <div className="flex items-center text-muted-foreground">
-                            <i className="fas fa-map-marker-alt text-red-500 mr-2"></i>
-                            <span className="font-medium">
+                            <i className="fas fa-map-marker-alt text-red-500 mr-1 text-sm"></i>
+                            <span className="font-medium text-sm">
                               {property.location}
                             </span>
                           </div>
                         </div>
-                        <div className="text-right">
-                          <div className="text-xl font-black text-foreground">
+                        <div className="text-right ml-2">
+                          <div className="text-lg font-black text-red-600">
                             ₹{property.price.toLocaleString()}
                           </div>
-                          <div className="text-sm text-muted-foreground">
+                          <div className="text-xs text-muted-foreground">
                             per day
                           </div>
                         </div>
                       </div>
-                      <div className="flex flex-wrap gap-2 mb-6">
-                        {property.amenities.map((amenity, amenityIndex) => (
+                      <div className="flex flex-wrap gap-1 mb-3 flex-grow">
+                        {property.amenities.slice(0, 3).map((amenity, amenityIndex) => (
                           <span
                             key={amenityIndex}
-                            className="bg-gradient-to-r from-red-500/10 to-brand-orange/10 text-red-500 px-4 py-2 rounded-full text-sm font-medium border border-red-500/20"
+                            className="bg-gradient-to-r from-red-500/10 to-brand-orange/10 text-red-500 px-2 py-1 rounded-full text-xs font-medium border border-red-500/20"
                           >
                             {amenity}
                           </span>
                         ))}
+                        {property.amenities.length > 3 && (
+                          <span className="bg-gray-100 text-gray-600 px-2 py-1 rounded-full text-xs font-medium">
+                            +{property.amenities.length - 3} more
+                          </span>
+                        )}
                       </div>
                       <button
                         onClick={() => navigate("/properties")}
-                        className="w-full bg-gradient-to-r from-orange-500 to-red-500 text-white py-3 px-6 rounded-xl hover:from-orange-600 hover:to-red-600 transition-all duration-300 cursor-pointer font-bold text-sm shadow-lg hover:shadow-xl transform hover:scale-105 border border-white/20"
+                        className="w-full bg-gradient-to-r from-orange-500 to-red-500 text-white py-2 px-4 rounded-lg hover:from-orange-600 hover:to-red-600 transition-all duration-300 cursor-pointer font-bold text-sm shadow-lg hover:shadow-xl transform hover:scale-105 border border-white/20 mt-auto"
                       >
                         Book Now
                         <i className="fas fa-arrow-right ml-2"></i>
@@ -409,11 +518,17 @@ const Index: React.FC = () => {
                 <div className="bg-secondary/20 rounded-2xl p-12 max-w-md mx-auto">
                   <i className="fas fa-building text-6xl text-muted-foreground mb-4"></i>
                   <h3 className="text-xl font-bold text-foreground mb-2">
-                    No Featured Properties
+                    No Properties Available
                   </h3>
-                  <p className="text-muted-foreground">
-                    Featured properties will appear here once added!
+                  <p className="text-muted-foreground mb-6">
+                    We're working on adding amazing properties. Check back later for new listings!
                   </p>
+                  <button
+                    onClick={() => navigate("/properties")}
+                    className="bg-gradient-to-r from-gray-800 to-gray-900 text-white px-6 py-3 rounded-lg hover:from-gray-900 hover:to-black transition-all duration-300 font-medium"
+                  >
+                    Explore All Properties
+                  </button>
                 </div>
               </div>
             )}

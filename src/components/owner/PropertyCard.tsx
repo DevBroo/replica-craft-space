@@ -70,7 +70,10 @@ export const PropertyCard: React.FC<PropertyCardProps> = ({
   const isDayPicnic = property.property_type === 'Day Picnic' || property.property_type === 'day-picnic';
 
   return (
-    <Card className="overflow-hidden hover:shadow-md transition-shadow">
+    <Card 
+      className="overflow-hidden hover:shadow-md transition-shadow cursor-pointer"
+      onClick={() => onView(property)}
+    >
       {/* Image Section */}
       <div className="relative aspect-[4/3] bg-muted">
         {property.images && property.images.length > 0 ? (
@@ -94,7 +97,12 @@ export const PropertyCard: React.FC<PropertyCardProps> = ({
         <div className="absolute top-2 left-2 z-10">
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="secondary" size="sm" className="h-8 w-8 p-0">
+              <Button 
+                variant="secondary" 
+                size="sm" 
+                className="h-8 w-8 p-0"
+                onClick={(e) => e.stopPropagation()}
+              >
                 <MoreHorizontal className="h-4 w-4" />
               </Button>
             </DropdownMenuTrigger>
@@ -136,7 +144,7 @@ export const PropertyCard: React.FC<PropertyCardProps> = ({
 
         {/* Price and Capacity */}
         <div className="mt-3 flex items-center justify-between">
-          <div className="text-lg font-bold text-primary">
+          <div className="text-lg font-bold text-red-600">
             ₹{property.pricing?.daily_rate || 0}
             <span className="text-sm font-normal text-muted-foreground">
               /{isDayPicnic ? 'day' : 'night'}

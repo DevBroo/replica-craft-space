@@ -1,12 +1,14 @@
 import React, { useState, useMemo, useCallback, useEffect } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
-import { Search, MapPin, Users, Star, Calendar, Bed, Bath, Filter } from 'lucide-react';
+import { Search, MapPin, Users, Star, Calendar, Bed, Bath, Filter, Share2 } from 'lucide-react';
 import { useDebounce } from '@/hooks/useDebounce';
 import { PropertyService } from '@/lib/propertyService';
 import { SearchService, PROPERTY_CATEGORIES, type SearchFilters } from '@/lib/searchService';
 import { getOptimizedImageUrl, getImageSizes } from '@/lib/imageOptimization';
 import { useAuth } from '@/contexts/AuthContext';
+import { shareUtils } from '@/lib/shareUtils';
+import { ShareDropdown } from '@/components/ui/ShareDropdown';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -260,6 +262,33 @@ const OptimizedProperties = () => {
     }
   }, [filteredProperties, sortBy]);
 
+  // Memoized sorted day picnics
+  const sortedDayPicnics = useMemo(() => {
+    const sorted = [...dayPicnics];
+    
+    switch (sortBy) {
+      case 'price-low':
+        return sorted.sort((a, b) => (Number(a.base_price) || 0) - (Number(b.base_price) || 0));
+      case 'price-high':
+        return sorted.sort((a, b) => (Number(b.base_price) || 0) - (Number(a.base_price) || 0));
+      case 'rating':
+        return sorted.sort((a, b) => {
+          const aRating = (a.properties_public?.rating || a.property?.rating || a.properties?.rating) || 0;
+          const bRating = (b.properties_public?.rating || b.property?.rating || b.properties?.rating) || 0;
+          return Number(bRating) - Number(aRating);
+        });
+      case 'popular':
+        return sorted.sort((a, b) => {
+          const aCount = (a.properties_public?.review_count || a.property?.review_count || a.properties?.review_count) || 0;
+          const bCount = (b.properties_public?.review_count || b.property?.review_count || b.properties?.review_count) || 0;
+          return Number(bCount) - Number(aCount);
+        });
+      case 'newest':
+      default:
+        return sorted.sort((a, b) => new Date(b.created_at || 0).getTime() - new Date(a.created_at || 0).getTime());
+    }
+  }, [dayPicnics, sortBy]);
+
   // Navigation handlers
   const handleViewProperty = useCallback((propertyId: string) => {
     navigate(`/property/${propertyId}`);
@@ -280,7 +309,10 @@ const OptimizedProperties = () => {
     const optimizedImage = primaryImage ? getOptimizedImageUrl(primaryImage, { width: 400, height: 300 }) : null;
 
     return (
-      <Card className="group hover:shadow-lg transition-all duration-300 overflow-hidden">
+      <Card 
+        className="group hover:shadow-lg transition-all duration-300 overflow-hidden cursor-pointer"
+        onClick={() => handleViewDayPicnic(dayPicnic.property_id, isPreview)}
+      >
         <div className="relative aspect-[4/3] overflow-hidden">
           {optimizedImage ? (
             <img
@@ -301,7 +333,7 @@ const OptimizedProperties = () => {
             </div>
           )}
           
-          <Badge className="absolute top-2 left-2 bg-primary text-primary-foreground">
+          <Badge className="absolute top-2 left-2 bg-red-500 text-white">
             Day Picnic
           </Badge>
           
@@ -309,6 +341,16 @@ const OptimizedProperties = () => {
             <Badge className="absolute top-2 right-2 bg-orange-500 text-white">
               Owner Preview
             </Badge>
+          )}
+          
+          {/* Share Button for Day Picnic */}
+          {!isPreview && (
+            <ShareDropdown
+              property={dayPicnic}
+              variant="secondary"
+              size="sm"
+              className="absolute top-2 right-2 h-8 w-8 p-0 bg-white/90 hover:bg-white shadow-md"
+            />
           )}
         </div>
 
@@ -342,16 +384,16 @@ const OptimizedProperties = () => {
         <CardFooter className="pt-0">
           <div className="flex gap-2 items-center justify-between w-full">
             <div>
-              <span className="text-2xl font-bold text-primary">
+              <span className="text-2xl font-bold text-red-600">
                 ₹{dayPicnic.base_price?.toLocaleString() || 'N/A'}
               </span>
               <span className="text-sm text-muted-foreground">
                 /{dayPicnic.pricing_type === 'per_person' ? 'person' : 'package'}
               </span>
             </div>
-            <Button onClick={() => handleViewDayPicnic(dayPicnic.property_id, isPreview)}>
-              {isPreview ? 'Edit Setup' : 'View Details'}
-            </Button>
+            <div className="text-sm text-muted-foreground">
+              {isPreview ? 'Click to edit setup' : 'Click to view details'}
+            </div>
           </div>
         </CardFooter>
       </Card>
@@ -364,7 +406,10 @@ const OptimizedProperties = () => {
     const optimizedImage = primaryImage ? getOptimizedImageUrl(primaryImage, { width: 400, height: 300 }) : null;
 
     return (
-      <Card className="group hover:shadow-lg transition-all duration-300 overflow-hidden">
+      <Card 
+        className="group hover:shadow-lg transition-all duration-300 overflow-hidden cursor-pointer"
+        onClick={() => handleViewProperty(property.id)}
+      >
         <div className="relative aspect-[4/3] overflow-hidden">
           {optimizedImage ? (
             <img
@@ -386,10 +431,18 @@ const OptimizedProperties = () => {
           )}
           
           {property.property_type && (
-            <Badge className="absolute top-2 left-2 bg-primary text-primary-foreground">
+            <Badge className="absolute top-2 left-2 bg-red-500 text-white">
               {property.property_type}
             </Badge>
           )}
+          
+          {/* Share Button */}
+          <ShareDropdown
+            property={property}
+            variant="secondary"
+            size="sm"
+            className="absolute top-2 right-2 h-8 w-8 p-0 bg-white/90 hover:bg-white shadow-md"
+          />
         </div>
 
         <CardHeader className="pb-2">
@@ -440,14 +493,14 @@ const OptimizedProperties = () => {
         <CardFooter className="pt-0">
           <div className="flex gap-2 items-center justify-between w-full">
             <div>
-              <span className="text-2xl font-bold text-primary">
+              <span className="text-2xl font-bold text-red-600">
                 ₹{property.pricing?.daily_rate?.toLocaleString() || 'N/A'}
               </span>
               <span className="text-sm text-muted-foreground">/night</span>
             </div>
-            <Button variant='destructive' onClick={() => handleViewProperty(property.id)}>
-              View Details
-            </Button>
+            <div className="text-sm text-muted-foreground">
+              Click to view details
+            </div>
           </div>
         </CardFooter>
       </Card>
@@ -610,7 +663,7 @@ const OptimizedProperties = () => {
               {/* Only show Day Picnics tab when day-picnic category is selected or no specific property type is selected */}
               {(selectedType === 'day-picnic' || selectedType === 'all') && (
                 <TabsTrigger value="day-picnics">
-                  Day Picnics ({dayPicnics.length})
+                  Day Picnics ({sortedDayPicnics.length})
                 </TabsTrigger>
               )}
             </TabsList>
@@ -701,15 +754,15 @@ const OptimizedProperties = () => {
                   <PropertySkeleton key={i} />
                 ))}
               </div>
-            ) : dayPicnics.length > 0 || ownerDayPicnics.length > 0 ? (
+            ) : sortedDayPicnics.length > 0 || ownerDayPicnics.length > 0 ? (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
                 {/* Approved day picnics */}
-                {dayPicnics.map((picnic: DayPicnicPackage) => (
+                {sortedDayPicnics.map((picnic: DayPicnicPackage) => (
                   <DayPicnicCard key={`approved-${picnic.id}`} dayPicnic={picnic} />
                 ))}
                 
                 {/* Owner preview day picnics (only if no approved ones) */}
-                {dayPicnics.length === 0 && ownerDayPicnics.map((picnic: DayPicnicPackage) => (
+                {sortedDayPicnics.length === 0 && ownerDayPicnics.map((picnic: DayPicnicPackage) => (
                   <DayPicnicCard key={`preview-${picnic.id}`} dayPicnic={picnic} isPreview={true} />
                 ))}
               </div>

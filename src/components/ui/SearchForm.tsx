@@ -31,6 +31,7 @@ const SearchForm: React.FC<SearchFormProps> = ({
     ...initialFilters
   });
   const [selectedDate, setSelectedDate] = useState<Date | undefined>();
+  const [calendarOpen, setCalendarOpen] = useState(false);
 
   // Fetch available locations from database
   const { data: locations = [], isLoading: locationsLoading } = useQuery({
@@ -200,20 +201,20 @@ const SearchForm: React.FC<SearchFormProps> = ({
     <div className="bg-white rounded-xl shadow-lg p-6">
       {/* Category Selection */}
       <div className="mb-6">
-        <div className="flex flex-wrap gap-3">
+        <div className="flex flex-wrap gap-2">
           {categoriesWithCounts.map((category) => (
             <button
               key={category.category}
               onClick={() => handleCategoryChange(category.category)}
               className={cn(
-                "px-6 py-3 rounded-xl text-base font-medium transition-all duration-300 flex items-center",
+                "px-4 py-2 rounded-lg text-sm font-medium transition-all duration-300 flex items-center",
                 filters.category === category.category
                   ? "bg-orange-500 text-white shadow-lg transform scale-105"
                   : "bg-gray-100 text-gray-700 hover:bg-gray-200 hover:shadow-md"
               )}
               disabled={categoriesLoading}
             >
-              <i className={`${category.icon} mr-2 text-lg`}></i>
+              <i className={`${category.icon} mr-2 text-sm`}></i>
               {category.label}
             </button>
           ))}
@@ -228,7 +229,7 @@ const SearchForm: React.FC<SearchFormProps> = ({
       </div>
 
       {/* Search Form */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-10 gap-4 md:gap-6 items-center">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-8 gap-4 md:gap-6 items-center">
         {/* Search Term */}
         <div className="lg:col-span-2">
           <div className="relative">
@@ -278,7 +279,7 @@ const SearchForm: React.FC<SearchFormProps> = ({
 
         {/* Date */}
         <div className="lg:col-span-2">
-          <Popover>
+          <Popover open={calendarOpen} onOpenChange={setCalendarOpen}>
             <PopoverTrigger asChild>
               <Button
                 variant="outline"
@@ -297,7 +298,10 @@ const SearchForm: React.FC<SearchFormProps> = ({
               <Calendar
                 mode="single"
                 selected={selectedDate}
-                onSelect={setSelectedDate}
+                onSelect={(date) => {
+                  setSelectedDate(date);
+                  setCalendarOpen(false);
+                }}
                 disabled={(date) => date < new Date()}
                 initialFocus
               />
@@ -325,16 +329,42 @@ const SearchForm: React.FC<SearchFormProps> = ({
             </SelectContent>
           </Select>
         </div>
+      </div>
 
-        {/* Search Button */}
-        <div className="lg:col-span-2 lg:ml-3 xl:ml-4">
-          <Button 
-            onClick={handleSearch}
-            className="w-full h-14 bg-orange-500 hover:bg-red-500 text-white text-lg font-semibold shadow-lg hover:shadow-xl transition-all duration-300"
-          >
-            <i className="fas fa-search mr-2"></i>
-            Search
-          </Button>
+      {/* Search Button - Third Row */}
+      <div className="mt-6 flex justify-center">
+        <Button 
+          onClick={handleSearch}
+          className="w-full max-w-md h-14 bg-orange-500 hover:bg-red-500 text-white text-lg font-semibold shadow-lg hover:shadow-xl transition-all duration-300"
+        >
+          <i className="fas fa-search mr-2"></i>
+          Search
+        </Button>
+      </div>
+
+      {/* Popular Section - Fourth Row */}
+      <div className="mt-6">
+        <div className="flex items-center gap-3">
+          <span className="text-sm font-medium text-gray-600">Popular:</span>
+          <div className="flex flex-wrap gap-2">
+            {[
+              { label: "Goa Beach Villas", search: "Goa beach villa" },
+              { label: "Himalayan Retreats", search: "Himalayan mountain resort" },
+              { label: "Rajasthan Palaces", search: "Rajasthan palace heritage" },
+              { label: "Kerala Backwaters", search: "Kerala backwater houseboat" }
+            ].map((item, index) => (
+              <button
+                key={index}
+                onClick={() => {
+                  setFilters(prev => ({ ...prev, search: item.search }));
+                  handleSearch();
+                }}
+                className="px-3 py-1 text-sm text-gray-600 hover:text-orange-500 hover:underline transition-colors duration-200 cursor-pointer"
+              >
+                {item.label}
+              </button>
+            ))}
+          </div>
         </div>
       </div>
     </div>

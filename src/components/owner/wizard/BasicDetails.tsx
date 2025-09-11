@@ -37,8 +37,8 @@ const PROPERTY_SUBTYPES = {
   'hostel': ['Backpacker Hostel', 'Luxury Hostel', 'Female Only', 'Mixed Dorm'],
   'day-picnic': ['Family Picnic', 'Corporate Outing', 'Birthday Party', 'Group Gathering'],
   'farmhouse': ['Traditional Farmhouse', 'Modern Farmhouse', 'Heritage Farmhouse'],
-  'homestay': ['Family Homestay', 'Budget Homestay', 'Luxury Homestay'],
-  'heritage-palace': ['Royal Palace', 'Heritage Hotel', 'Historic Mansion'],
+  'home-stays': ['Family Homestay', 'Budget Homestay', 'Luxury Homestay'],
+  'heritage-place': ['Royal Palace', 'Heritage Hotel', 'Historic Mansion'],
   'banquet-hall': ['Wedding Hall', 'Conference Hall', 'Event Space'],
   'wedding-venue': ['Garden Wedding', 'Beach Wedding', 'Palace Wedding']
 };

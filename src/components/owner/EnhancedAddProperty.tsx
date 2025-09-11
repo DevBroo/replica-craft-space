@@ -84,7 +84,8 @@ const EnhancedAddProperty: React.FC<AddPropertyProps> = ({ onBack }) => {
     { value: 'cottage', label: 'Cottage', subtypes: ['Hill Cottage', 'Garden Cottage', 'Heritage Cottage'] },
     { value: 'resort', label: 'Resort', subtypes: ['Beach Resort', 'Hill Resort', 'Spa Resort', 'Adventure Resort'] },
     { value: 'farmhouse', label: 'Farmhouse', subtypes: ['Traditional Farmhouse', 'Modern Farmhouse', 'Heritage Farmhouse'] },
-    { value: 'homestay', label: 'Homestay', subtypes: ['Family Homestay', 'Budget Homestay', 'Luxury Homestay'] }
+    { value: 'home-stays', label: 'Home Stays', subtypes: ['Family Homestay', 'Budget Homestay', 'Luxury Homestay'] },
+    { value: 'heritage-place', label: 'Heritage Place', subtypes: ['Royal Palace', 'Heritage Hotel', 'Historic Mansion'] }
   ];
 
   // Categorized amenities

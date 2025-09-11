@@ -2,6 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { shareUtils } from '@/lib/shareUtils';
+import { ShareDropdown } from '@/components/ui/ShareDropdown';
 
 interface BookingData {
   id: string;
@@ -245,13 +247,26 @@ const BookingDetails: React.FC = () => {
               <span className="text-sm font-medium">Back</span>
             </Link>
             <h1 className="text-lg font-semibold text-gray-900">Booking Details</h1>
-            <button 
-              className="text-gray-600 hover:text-gray-900 cursor-pointer whitespace-nowrap"
-              title="Share booking"
-              aria-label="Share booking"
-            >
-              <i className="fas fa-share-alt"></i>
-            </button>
+            <ShareDropdown
+              booking={booking}
+              variant="ghost"
+              size="default"
+              className="text-gray-600 hover:text-gray-900"
+              onShareSuccess={() => {
+                toast({
+                  title: "Booking shared successfully!",
+                  description: shareUtils.isWebShareSupported() 
+                    ? "Booking details shared via your device's share menu" 
+                    : "Booking details copied to clipboard",
+                });
+              }}
+              onCopySuccess={() => {
+                toast({
+                  title: "Link copied!",
+                  description: "Booking link copied to clipboard",
+                });
+              }}
+            />
           </div>
         </div>
       </header>

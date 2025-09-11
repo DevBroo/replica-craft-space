@@ -401,10 +401,10 @@ const DayPicnicBooking: React.FC = () => {
       return;
     }
 
-    if (selectedEndDate < selectedDate) {
+    if (selectedEndDate <= selectedDate) {
       toast({
         title: "Invalid Date Range",
-        description: "End date must be after or same as start date",
+        description: "End date must be after start date",
         variant: "destructive"
       });
       return;
@@ -547,7 +547,7 @@ const DayPicnicBooking: React.FC = () => {
                       <Clock className="w-4 h-4 mr-1" />
                       {formatTime12Hour(package_.start_time)} - {formatTime12Hour(package_.end_time)} ({package_.duration_hours}h)
                     </p>
-                    <p className="text-blue-600 flex items-center font-medium">
+                    <p className="text-red-600 flex items-center font-medium">
                       <Users className="w-4 h-4 mr-1" />
                       Max capacity: {property.day_picnic_capacity || property.max_guests || 0} guests for day picnic
                     </p>
@@ -728,7 +728,7 @@ const DayPicnicBooking: React.FC = () => {
                             {addOn.name}
                           </Label>
                         </div>
-                        <span className="font-semibold text-green-600">₹{addOn.price}</span>
+                        <span className="font-semibold text-red-600">₹{addOn.price}</span>
                       </div>
                     ))}
                   </div>
@@ -745,8 +745,8 @@ const DayPicnicBooking: React.FC = () => {
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className={`${!selectedDate ? 'border-2 border-red-200 rounded-lg p-3 bg-red-50' : ''}`}>
-                    <Label htmlFor="date" className={`${!selectedDate ? 'text-red-700 font-semibold' : ''}`}>
+                  <div className={`border-2 rounded-lg p-3 ${!selectedDate ? 'border-red-200 bg-red-50' : 'border-gray-200 bg-white'}`}>
+                    <Label htmlFor="date" className={`${!selectedDate ? 'text-red-700 font-semibold' : 'text-gray-700 font-semibold'}`}>
                       Start Date *
                     </Label>
                     <Input
@@ -755,9 +755,15 @@ const DayPicnicBooking: React.FC = () => {
                       value={selectedDate}
                       onChange={(e) => {
                         setSelectedDate(e.target.value);
-                        // Auto-set end date to same day if not set
-                        if (!selectedEndDate) {
-                          setSelectedEndDate(e.target.value);
+                        // Auto-set end date to next day if not set
+                        if (!selectedEndDate && e.target.value) {
+                          const nextDay = new Date(e.target.value);
+                          nextDay.setDate(nextDay.getDate() + 1);
+                          setSelectedEndDate(nextDay.toISOString().split('T')[0]);
+                        }
+                        // Clear end date if it's now invalid (same or before start date)
+                        if (selectedEndDate && e.target.value && selectedEndDate <= e.target.value) {
+                          setSelectedEndDate('');
                         }
                       }}
                       min={new Date().toISOString().split('T')[0]}
@@ -769,8 +775,8 @@ const DayPicnicBooking: React.FC = () => {
                     )}
                   </div>
 
-                  <div className={`${selectedDate && !selectedEndDate ? 'border-2 border-red-200 rounded-lg p-3 bg-red-50' : ''}`}>
-                    <Label htmlFor="endDate" className={`${selectedDate && !selectedEndDate ? 'text-red-700 font-semibold' : ''}`}>
+                  <div className={`border-2 rounded-lg p-3 ${selectedDate && !selectedEndDate ? 'border-red-200 bg-red-50' : 'border-gray-200 bg-white'}`}>
+                    <Label htmlFor="endDate" className={`${selectedDate && !selectedEndDate ? 'text-red-700 font-semibold' : 'text-gray-700 font-semibold'}`}>
                       End Date *
                     </Label>
                     <Input
@@ -778,7 +784,7 @@ const DayPicnicBooking: React.FC = () => {
                       type="date"
                       value={selectedEndDate}
                       onChange={(e) => setSelectedEndDate(e.target.value)}
-                      min={selectedDate || new Date().toISOString().split('T')[0]}
+                      min={selectedDate ? new Date(new Date(selectedDate).getTime() + 24 * 60 * 60 * 1000).toISOString().split('T')[0] : new Date().toISOString().split('T')[0]}
                       className={`mt-2 ${selectedDate && !selectedEndDate ? 'border-red-300 focus:border-red-500' : ''}`}
                       placeholder="Please select an end date"
                       disabled={!selectedDate}
@@ -786,7 +792,7 @@ const DayPicnicBooking: React.FC = () => {
                     {selectedDate && !selectedEndDate && (
                       <p className="text-sm text-red-600 mt-1 font-medium">⚠️ End date is required</p>
                     )}
-                    {selectedEndDate && selectedDate && selectedEndDate < selectedDate && (
+                    {selectedEndDate && selectedDate && selectedEndDate <= selectedDate && (
                       <p className="text-sm text-red-600 mt-1 font-medium">⚠️ End date must be after start date</p>
                     )}
                   </div>
@@ -847,10 +853,10 @@ const DayPicnicBooking: React.FC = () => {
                               <p className="text-sm text-gray-600">
                                 {option.value === 'custom' ? `${customHours} hours selected` : `${option.hours} hours of fun`}
                               </p>
-                              <p className="text-xs text-blue-600 mt-1">✓ {priceDescription}</p>
+                              <p className="text-xs text-red-600 mt-1">✓ {priceDescription}</p>
                             </div>
                             <div className="text-right">
-                              <p className="text-lg font-bold text-primary">₹{Math.round(displayPrice)}</p>
+                              <p className="text-lg font-bold text-red-600">₹{Math.round(displayPrice)}</p>
                               <p className="text-xs text-gray-500">{package_?.pricing_type?.replace('_', ' ')}</p>
                             </div>
                           </div>
@@ -871,6 +877,7 @@ const DayPicnicBooking: React.FC = () => {
                                       style={{
                                         background: `linear-gradient(to right, hsl(var(--primary)) 0%, hsl(var(--primary)) ${(customHours - 1) / ((package_?.duration_hours || 12) - 1) * 100}%, #e5e7eb ${(customHours - 1) / ((package_?.duration_hours || 12) - 1) * 100}%, #e5e7eb 100%)`
                                       }}
+                                      aria-label="Select custom hours"
                                     />
                                     <Input
                                       type="number"
@@ -1030,14 +1037,14 @@ const DayPicnicBooking: React.FC = () => {
 
                     <div className="flex justify-between font-bold text-lg border-t pt-2">
                       <span>Total</span>
-                      <span className="text-green-600">₹{calculateTotalPrice().toLocaleString()}</span>
+                      <span className="text-red-600">₹{calculateTotalPrice().toLocaleString()}</span>
                     </div>
                   </div>
                 </div>
 
                 <Button
                   onClick={handleBooking}
-                  disabled={loading || !selectedDate || selectedDate.trim() === '' || !selectedEndDate || selectedEndDate.trim() === '' || selectedEndDate < selectedDate || !guestInfo.name.trim() || !guestInfo.phone.trim() || !guestInfo.dateOfBirth}
+                  disabled={loading || !selectedDate || selectedDate.trim() === '' || !selectedEndDate || selectedEndDate.trim() === '' || selectedEndDate <= selectedDate || !guestInfo.name.trim() || !guestInfo.phone.trim() || !guestInfo.dateOfBirth}
                   className="w-full"
                 >
                   {loading ? (

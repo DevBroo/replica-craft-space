@@ -136,7 +136,13 @@ const Header: React.FC = () => {
                   <div 
                     className="w-8 h-8 bg-gradient-to-r from-orange-500 to-red-500 rounded-full flex items-center justify-center text-white font-medium text-sm cursor-pointer hover:scale-110 transition-transform duration-200" 
                     title={user.email}
-                    onClick={() => navigate('/dashboard')}
+                    onClick={() => {
+                      if (user.role === 'customer' || user.role === 'user') {
+                        navigate('/');
+                      } else {
+                        navigate('/dashboard');
+                      }
+                    }}
                   >
                     {user.email.charAt(0).toUpperCase()}
                   </div>
@@ -294,7 +300,11 @@ const Header: React.FC = () => {
                         className="w-10 h-10 bg-gradient-to-r from-orange-500 to-red-500 rounded-full flex items-center justify-center text-white font-medium cursor-pointer hover:scale-110 transition-transform duration-200" 
                         title={user.email}
                         onClick={() => {
-                          navigate('/dashboard');
+                          if (user.role === 'customer' || user.role === 'user') {
+                            navigate('/');
+                          } else {
+                            navigate('/dashboard');
+                          }
                           setIsMobileMenuOpen(false);
                         }}
                       >
