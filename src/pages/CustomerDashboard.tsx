@@ -284,20 +284,20 @@ export default function CustomerDashboard() {
               <Separator orientation="vertical" className="h-6" />
               <h1 className="text-lg font-semibold text-foreground">Customer Dashboard</h1>
             </div>
-            <div className="flex items-center space-x-4">
+            <div className="flex items-center space-x-2 md:space-x-4">
               <Avatar className="ring-2 ring-primary/20">
                 <AvatarImage src={user?.avatar_url} />
                 <AvatarFallback className="bg-gradient-to-r from-primary/10 to-blue-600/10">
                   {user?.email?.charAt(0).toUpperCase()}
                 </AvatarFallback>
               </Avatar>
-              <div className="hidden md:block">
-                <p className="text-sm font-medium text-foreground">{user?.full_name || 'Guest User'}</p>
-                <p className="text-xs text-muted-foreground">{user?.email}</p>
+              <div className="min-w-0 flex-1">
+                <p className="text-sm font-medium text-foreground truncate">{user?.full_name || 'Guest User'}</p>
+                <p className="text-xs text-muted-foreground truncate md:block">{user?.email}</p>
               </div>
               <Button variant="outline" size="sm" onClick={handleLogout} className="hover-lift glass-card">
-                <LogOut className="h-4 w-4 mr-2" />
-                Logout
+                <LogOut className="h-4 w-4 md:mr-2" />
+                <span className="hidden md:inline">Logout</span>
               </Button>
             </div>
           </div>
@@ -379,13 +379,19 @@ export default function CustomerDashboard() {
 
         {/* Main Dashboard Content */}
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-          <TabsList className="grid w-full grid-cols-6 glass-card-light h-12 p-1">
-            <TabsTrigger value="bookings" className="data-[state=active]:bg-white/40 data-[state=active]:shadow-sm transition-all">My Bookings</TabsTrigger>
-            <TabsTrigger value="messages" className="data-[state=active]:bg-white/40 data-[state=active]:shadow-sm transition-all">Messages</TabsTrigger>
-            <TabsTrigger value="reviews" className="data-[state=active]:bg-white/40 data-[state=active]:shadow-sm transition-all">Reviews</TabsTrigger>
-            <TabsTrigger value="saved" className="data-[state=active]:bg-white/40 data-[state=active]:shadow-sm transition-all">Saved Properties</TabsTrigger>
-            <TabsTrigger value="profile" className="data-[state=active]:bg-white/40 data-[state=active]:shadow-sm transition-all">Profile</TabsTrigger>
-            <TabsTrigger value="settings" className="data-[state=active]:bg-white/40 data-[state=active]:shadow-sm transition-all">Settings</TabsTrigger>
+          <TabsList className="grid w-full grid-cols-2 md:grid-cols-3 lg:grid-cols-6 glass-card-light h-12 p-1 gap-1">
+            <TabsTrigger value="bookings" className="data-[state=active]:bg-white/40 data-[state=active]:shadow-sm transition-all text-xs md:text-sm">
+              <span className="hidden sm:inline">My Bookings</span>
+              <span className="sm:hidden">Bookings</span>
+            </TabsTrigger>
+            <TabsTrigger value="messages" className="data-[state=active]:bg-white/40 data-[state=active]:shadow-sm transition-all text-xs md:text-sm">Messages</TabsTrigger>
+            <TabsTrigger value="reviews" className="data-[state=active]:bg-white/40 data-[state=active]:shadow-sm transition-all text-xs md:text-sm">Reviews</TabsTrigger>
+            <TabsTrigger value="saved" className="data-[state=active]:bg-white/40 data-[state=active]:shadow-sm transition-all text-xs md:text-sm">
+              <span className="hidden sm:inline">Saved Properties</span>
+              <span className="sm:hidden">Saved</span>
+            </TabsTrigger>
+            <TabsTrigger value="profile" className="data-[state=active]:bg-white/40 data-[state=active]:shadow-sm transition-all text-xs md:text-sm">Profile</TabsTrigger>
+            <TabsTrigger value="settings" className="data-[state=active]:bg-white/40 data-[state=active]:shadow-sm transition-all text-xs md:text-sm">Settings</TabsTrigger>
           </TabsList>
 
           {/* Bookings Tab */}
@@ -434,34 +440,43 @@ export default function CustomerDashboard() {
                     {bookings.map((booking) => (
                       <div
                         key={booking.id}
-                        className="flex items-center justify-between p-6 glass-card-light rounded-xl hover-lift transition-all duration-300 border-0 shadow-elevated"
+                        className="flex flex-col md:flex-row md:items-center justify-between p-4 md:p-6 glass-card-light rounded-xl hover-lift transition-all duration-300 border-0 shadow-elevated gap-4"
                       >
-                        <div className="flex-1">
-                          <h4 className="font-semibold">{booking.property_title}</h4>
+                        <div className="flex-1 min-w-0">
+                          <h4 className="font-semibold truncate">{booking.property_title}</h4>
                           <p className="text-sm text-muted-foreground">
                             {new Date(booking.check_in_date).toLocaleDateString()} - {new Date(booking.check_out_date).toLocaleDateString()}
                           </p>
                           <p className="text-sm font-medium">₹{booking.total_amount.toLocaleString()}</p>
                         </div>
-                        <div className="flex items-center space-x-2">
-                          <Badge variant={getStatusBadgeVariant(booking.status)}>
+                        <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2 sm:space-x-2">
+                          <Badge variant={getStatusBadgeVariant(booking.status)} className="self-start sm:self-auto">
                             {booking.status}
                           </Badge>
-                          <Button 
-                            variant="outline" 
-                            size="sm" 
-                            onClick={() => handleMessageHost(booking)}
-                            className="bg-blue-50 hover:bg-blue-100 text-blue-700 border-blue-200"
-                          >
-                            <MessageCircle className="h-3 w-3 mr-1" />
-                            Message Host
-                          </Button>
-                          <Button variant="outline" size="sm" asChild>
-                            <Link to={`/booking/${booking.id}`}>View Booking</Link>
-                          </Button>
-                          <Button variant="ghost" size="sm" asChild>
-                            <Link to={`/property/${booking.property_id}`}>View Property</Link>
-                          </Button>
+                          <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
+                            <Button 
+                              variant="outline" 
+                              size="sm" 
+                              onClick={() => handleMessageHost(booking)}
+                              className="bg-blue-50 hover:bg-blue-100 text-blue-700 border-blue-200 text-xs sm:text-sm h-8 px-2 sm:px-3"
+                            >
+                              <MessageCircle className="h-3 w-3 mr-1" />
+                              <span className="hidden sm:inline">Message Host</span>
+                              <span className="sm:hidden">Message</span>
+                            </Button>
+                            <Button variant="outline" size="sm" asChild className="text-xs sm:text-sm h-8 px-2 sm:px-3">
+                              <Link to={`/booking/${booking.id}`}>
+                                <span className="hidden sm:inline">View Booking</span>
+                                <span className="sm:hidden">Booking</span>
+                              </Link>
+                            </Button>
+                            <Button variant="ghost" size="sm" asChild className="text-xs sm:text-sm h-8 px-2 sm:px-3">
+                              <Link to={`/property/${booking.property_id}`}>
+                                <span className="hidden sm:inline">View Property</span>
+                                <span className="sm:hidden">Property</span>
+                              </Link>
+                            </Button>
+                          </div>
                         </div>
                       </div>
                     ))}
@@ -584,7 +599,7 @@ export default function CustomerDashboard() {
                   </div>
                 </div>
                 <Separator />
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div>
                     <label className="text-sm font-medium">Member Since</label>
                     <p className="text-sm text-muted-foreground">
