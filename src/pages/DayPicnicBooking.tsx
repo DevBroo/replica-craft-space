@@ -900,6 +900,18 @@ const DayPicnicBooking: React.FC = () => {
                     maxGuests={property.max_guests}
                     onGuestsChange={setGuests}
                     initialGuests={guests}
+                    pricing={{
+                      baseGuests: property.pricing?.base_guests,
+                      extraAdultCharge: property.pricing?.extra_adult_charge,
+                      extraChildCharge: property.pricing?.extra_child_charge,
+                      childPricing: property.pricing?.child_pricing ? {
+                        freeAgeLimit: property.pricing.child_pricing.free_age_limit,
+                        halfPriceAgeLimit: property.pricing.child_pricing.half_price_age_limit,
+                        halfPricePercentage: property.pricing.child_pricing.half_price_percentage
+                      } : undefined
+                    }}
+                    baseRoomRate={package_?.base_price || 0}
+                    showPricingFeedback={true}
                   />
                 </div>
 

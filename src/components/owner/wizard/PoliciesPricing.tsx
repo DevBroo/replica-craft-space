@@ -8,7 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/owner/ui/card';
 import { Badge } from '@/components/owner/ui/badge';
 import { Checkbox } from '@/components/owner/ui/checkbox';
-import { ArrowLeft, ArrowRight, DollarSign, Calendar, Clock, CreditCard } from 'lucide-react';
+import { ArrowLeft, ArrowRight, DollarSign, Calendar, Clock, CreditCard, Users } from 'lucide-react';
 
 interface PoliciesPricingProps {
   formData: PropertyFormData;
@@ -45,6 +45,26 @@ const PoliciesPricing: React.FC<PoliciesPricingProps> = ({
   onNext,
   onPrevious
 }) => {
+  // Initialize guest pricing defaults
+  React.useEffect(() => {
+    if (!formData.pricing?.base_guests) {
+      handlePricingChange('base_guests', 2);
+    }
+    if (!formData.pricing?.extra_adult_charge) {
+      handlePricingChange('extra_adult_charge', 0);
+    }
+    if (!formData.pricing?.extra_child_charge) {
+      handlePricingChange('extra_child_charge', 0);
+    }
+    if (!formData.pricing?.child_pricing) {
+      handlePricingChange('child_pricing', {
+        free_age_limit: 5,
+        half_price_age_limit: 10,
+        half_price_percentage: 50
+      });
+    }
+  }, []);
+
   const handlePricingChange = (field: string, value: any) => {
     setFormData(prev => ({
       ...prev,

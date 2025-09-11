@@ -76,6 +76,14 @@ export interface PropertyFormData {
     currency: string;
     daily_rate: number;
     calculated_total?: number;
+    base_guests?: number;
+    extra_adult_charge?: number;
+    extra_child_charge?: number;
+    child_pricing?: {
+      free_age_limit: number;
+      half_price_age_limit: number;
+      half_price_percentage: number;
+    };
   };
   seasonal_pricing: {
     seasons: Array<{ name: string; rate: number; start_date: string; end_date: string }>;

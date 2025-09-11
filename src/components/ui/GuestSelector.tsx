@@ -18,13 +18,28 @@ interface GuestSelectorProps {
   onGuestsChange: (guests: GuestBreakdown) => void;
   initialGuests?: GuestBreakdown;
   className?: string;
+  pricing?: {
+    baseGuests?: number;
+    extraAdultCharge?: number;
+    extraChildCharge?: number;
+    childPricing?: {
+      freeAgeLimit: number;
+      halfPriceAgeLimit: number;
+      halfPricePercentage: number;
+    };
+  };
+  baseRoomRate?: number;
+  showPricingFeedback?: boolean;
 }
 
 export const GuestSelector: React.FC<GuestSelectorProps> = ({
   maxGuests,
   onGuestsChange,
   initialGuests = { adults: 2, children: [] },
-  className = ""
+  className = "",
+  pricing,
+  baseRoomRate = 0,
+  showPricingFeedback = false
 }) => {
   const [adults, setAdults] = useState(initialGuests.adults);
   const [children, setChildren] = useState<Array<{ age: number; priceCategory: 'free' | 'half' | 'full' }>>(
@@ -32,9 +47,50 @@ export const GuestSelector: React.FC<GuestSelectorProps> = ({
   );
 
   const getPriceCategory = (age: number): 'free' | 'half' | 'full' => {
-    if (age <= 5) return 'free';
-    if (age <= 10) return 'half';
+    const freeAgeLimit = pricing?.childPricing?.freeAgeLimit || 5;
+    const halfPriceAgeLimit = pricing?.childPricing?.halfPriceAgeLimit || 10;
+    
+    if (age <= freeAgeLimit) return 'free';
+    if (age <= halfPriceAgeLimit) return 'half';
     return 'full';
+  };
+
+  const calculateExtraGuestCharges = () => {
+    if (!showPricingFeedback || !pricing) return 0;
+    
+    const baseGuests = pricing.baseGuests || 2;
+    const totalGuests = adults + children.length;
+    
+    if (totalGuests <= baseGuests) return 0;
+    
+    let extraCharges = 0;
+    const extraGuestsNeeded = totalGuests - baseGuests;
+    let extraAdultsProcessed = Math.max(0, adults - baseGuests);
+    
+    // First, count extra adults
+    if (extraAdultsProcessed > 0) {
+      extraCharges += extraAdultsProcessed * (pricing.extraAdultCharge || 0);
+    }
+    
+    // Then, count extra children
+    const extraChildrenCount = Math.max(0, extraGuestsNeeded - extraAdultsProcessed);
+    extraCharges += extraChildrenCount * (pricing.extraChildCharge || 0);
+    
+    return extraCharges;
+  };
+
+  const getChildPriceDisplay = (age: number) => {
+    if (!showPricingFeedback || !pricing) return '';
+    
+    const category = getPriceCategory(age);
+    const halfPricePercentage = pricing.childPricing?.halfPricePercentage || 50;
+    
+    switch (category) {
+      case 'free': return 'Free';
+      case 'half': return `${halfPricePercentage}% price`;
+      case 'full': return 'Full price';
+      default: return '';
+    }
   };
 
   const updateChildAge = (index: number, age: number) => {
@@ -143,13 +199,19 @@ export const GuestSelector: React.FC<GuestSelectorProps> = ({
               </div>
               <div className="text-xs text-center min-w-[50px]">
                 {child.priceCategory === 'free' && (
-                  <span className="text-green-600 font-medium">Free</span>
+                  <span className="text-green-600 font-medium">
+                    {showPricingFeedback ? getChildPriceDisplay(child.age) : 'Free'}
+                  </span>
                 )}
                 {child.priceCategory === 'half' && (
-                  <span className="text-orange-600 font-medium">Half</span>
+                  <span className="text-orange-600 font-medium">
+                    {showPricingFeedback ? getChildPriceDisplay(child.age) : 'Half'}
+                  </span>
                 )}
                 {child.priceCategory === 'full' && (
-                  <span className="text-blue-600 font-medium">Full</span>
+                  <span className="text-blue-600 font-medium">
+                    {showPricingFeedback ? getChildPriceDisplay(child.age) : 'Full'}
+                  </span>
                 )}
               </div>
               <Button
@@ -169,9 +231,25 @@ export const GuestSelector: React.FC<GuestSelectorProps> = ({
             <span className="text-muted-foreground">Total Guests:</span>
             <span className="font-medium">{totalGuests} / {maxGuests}</span>
           </div>
-          <div className="text-xs text-muted-foreground mt-1">
-            • Age 0-5: Free • Age 6-10: Half price • Age 11+: Full price
-          </div>
+          
+          {showPricingFeedback && pricing ? (
+            <div className="mt-2 space-y-1">
+              <div className="text-xs text-muted-foreground">
+                • Age 0-{pricing.childPricing?.freeAgeLimit || 5}: Free 
+                • Age {(pricing.childPricing?.freeAgeLimit || 5) + 1}-{pricing.childPricing?.halfPriceAgeLimit || 10}: {pricing.childPricing?.halfPricePercentage || 50}% price 
+                • Age {(pricing.childPricing?.halfPriceAgeLimit || 10) + 1}+: Full price
+              </div>
+              {calculateExtraGuestCharges() > 0 && (
+                <div className="text-xs text-orange-600 font-medium">
+                  + ₹{calculateExtraGuestCharges()} extra guest charges
+                </div>
+              )}
+            </div>
+          ) : (
+            <div className="text-xs text-muted-foreground mt-1">
+              • Age 0-5: Free • Age 6-10: Half price • Age 11+: Full price
+            </div>
+          )}
         </div>
       </CardContent>
     </Card>

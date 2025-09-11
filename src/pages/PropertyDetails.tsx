@@ -276,19 +276,63 @@ const PropertyDetails = () => {
       return basePrice;
     }
 
-    // Regular stay calculation
+    // Regular property booking with guest-based pricing
     const nights = calculateNights();
+    if (nights === 0) return 0;
+
+    // Base room rate
     const roomPrice = selectedRoom?.price || property?.price || 0;
-    const basePrice = roomPrice * nights;
+    let basePrice = roomPrice * nights;
     const serviceFee = Math.round(basePrice * 0.1);
-    const subtotal = basePrice + serviceFee;
+    let subtotal = basePrice + serviceFee;
+
+    // Apply guest-based pricing if configured
+    if (property?.pricing) {
+      const baseGuests = property.pricing.base_guests || 2;
+      const totalGuests = guests.adults + guests.children.length;
+      
+      if (totalGuests > baseGuests) {
+        const extraGuestsNeeded = totalGuests - baseGuests;
+        let extraAdultsCount = Math.max(0, guests.adults - baseGuests);
+        let extraChildrenCount = Math.max(0, extraGuestsNeeded - extraAdultsCount);
+        
+        // Add extra adult charges
+        if (extraAdultsCount > 0 && property.pricing.extra_adult_charge) {
+          subtotal += extraAdultsCount * property.pricing.extra_adult_charge * nights;
+        }
+        
+        // Add extra child charges  
+        if (extraChildrenCount > 0 && property.pricing.extra_child_charge) {
+          subtotal += extraChildrenCount * property.pricing.extra_child_charge * nights;
+        }
+      }
+
+      // Apply child pricing discounts
+      if (property.pricing.child_pricing && guests.children.length > 0) {
+        let childDiscounts = 0;
+        guests.children.forEach(child => {
+          const freeAgeLimit = property.pricing.child_pricing.free_age_limit || 5;
+          const halfPriceAgeLimit = property.pricing.child_pricing.half_price_age_limit || 10;
+          const halfPricePercentage = property.pricing.child_pricing.half_price_percentage || 50;
+          
+          if (child.age <= freeAgeLimit) {
+            // Free - no additional cost
+          } else if (child.age <= halfPriceAgeLimit) {
+            // Apply discount for half-price children
+            const childDiscount = (roomPrice * nights * (100 - halfPricePercentage)) / 100;
+            childDiscounts += childDiscount;
+          }
+        });
+        subtotal -= childDiscounts;
+      }
+    }
 
     if (appliedCoupon) {
       const discount = CouponService.calculateDiscount(appliedCoupon, subtotal);
       return subtotal - discount;
     }
 
-    return subtotal;
+    return Math.max(0, subtotal);
   };
 
   const handleCouponApply = async () => {
@@ -931,6 +975,18 @@ const PropertyDetails = () => {
                     maxGuests={property.max_guests}
                     onGuestsChange={setGuests}
                     initialGuests={guests}
+                    pricing={{
+                      baseGuests: property.pricing?.base_guests,
+                      extraAdultCharge: property.pricing?.extra_adult_charge,
+                      extraChildCharge: property.pricing?.extra_child_charge,
+                      childPricing: property.pricing?.child_pricing ? {
+                        freeAgeLimit: property.pricing.child_pricing.free_age_limit,
+                        halfPriceAgeLimit: property.pricing.child_pricing.half_price_age_limit,
+                        halfPricePercentage: property.pricing.child_pricing.half_price_percentage
+                      } : undefined
+                    }}
+                    baseRoomRate={selectedRoom?.price || property?.roomTypes?.[0]?.price || property?.daily_rate || 0}
+                    showPricingFeedback={true}
                   />
 
                   {/* Package/Room Selection Display */}
