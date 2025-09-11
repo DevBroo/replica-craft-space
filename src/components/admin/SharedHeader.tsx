@@ -43,15 +43,6 @@ const SharedHeader: React.FC<SharedHeaderProps> = ({
     <header className="bg-white shadow-sm border-b px-6 py-4">
       <div className="flex items-center justify-between">
         <div className="flex items-center space-x-4">
-          <button
-            onClick={() => navigate('/')}
-            className="flex items-center space-x-2 px-3 py-2 text-sm font-medium text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors"
-            title="Back to Home"
-          >
-            <Home className="h-4 w-4" />
-            <span>Back to Home</span>
-          </button>
-          <div className="h-6 w-px bg-gray-300"></div>
           <h1 className="text-2xl font-semibold text-gray-800">{title}</h1>
           <div className="text-sm text-gray-500">
             <span>Super Admin Panel</span> / <span className="text-blue-600">{breadcrumb}</span>

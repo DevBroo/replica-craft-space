@@ -334,12 +334,6 @@ const BookingDetails: React.FC = () => {
                   </span>
                   <p className="text-sm text-gray-600 mt-2">Booking Reference: <span className="font-semibold text-gray-900">#{booking.id.slice(-8).toUpperCase()}</span></p>
                 </div>
-                <div className="text-center">
-                  <div className="w-20 h-20 bg-gray-100 rounded-lg flex items-center justify-center mb-2 mx-auto">
-                    <i className="fas fa-qrcode text-2xl text-gray-400"></i>
-                  </div>
-                  <p className="text-xs text-gray-500">QR Check-in</p>
-                </div>
               </div>
             </div>
           </div>

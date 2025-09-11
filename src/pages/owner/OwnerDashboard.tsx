@@ -318,13 +318,6 @@ const OwnerDashboard: React.FC = () => {
               </div>
             </div>
             <div className="flex items-center space-x-4">
-              <button
-                onClick={() => navigate('/')}
-                className="flex items-center space-x-2 px-3 py-2 text-sm border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
-              >
-                <i className="fas fa-home text-gray-600"></i>
-                <span className="text-gray-700">Back to Home</span>
-              </button>
               <NotificationDropdown />
               <div className="flex items-center space-x-2 relative group">
                 {user?.avatar_url ? (
