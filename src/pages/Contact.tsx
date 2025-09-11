@@ -2,7 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { toast } from 'sonner';
 import { LiveChatModal } from '@/components/support/LiveChatModal';
-import { openGoogleMapsDirections, generateOfficeDirectionsUrl } from '@/lib/googleMapsUtils';
+import { openGoogleMapsDirections, generateOfficeDirectionsUrl, getCityCoordinates } from '@/lib/googleMapsUtils';
+import InteractiveMap from '@/components/maps/InteractiveMap';
 
 // Scroll animation hook
 const useScrollAnimation = () => {
@@ -443,14 +444,20 @@ const Contact: React.FC = () => {
                   </div>
                 ))}
               </div>
-              {/* Map Placeholder */}
-              <div className="bg-gray-200 rounded-2xl h-64 flex items-center justify-center">
-                <div className="text-center">
-                  <i className="fas fa-map text-4xl text-gray-400 mb-4"></i>
-                  <div className="text-gray-600 font-semibold">Interactive Map</div>
-                  <div className="text-sm text-gray-500">Office Locations</div>
-                </div>
-              </div>
+              {/* Interactive Map */}
+              <InteractiveMap 
+                offices={officeLocations.map(office => {
+                  const coords = getCityCoordinates(office.city);
+                  return {
+                    city: office.city,
+                    address: office.address,
+                    phone: office.phone,
+                    hours: office.hours,
+                    coordinates: coords ? [coords.lng, coords.lat] : [77.5946, 20.9629] as [number, number]
+                  };
+                })}
+                className="h-64"
+              />
             </div>
           </div>
         </div>
