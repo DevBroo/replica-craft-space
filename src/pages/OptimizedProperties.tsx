@@ -527,6 +527,7 @@ const OptimizedProperties = () => {
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">All Types</SelectItem>
+                <SelectItem value="day-picnic">Day Picnic</SelectItem>
                 {categoriesWithCounts
                   .filter((category) => category.category !== 'day-picnic')
                   .map((category) => (
@@ -609,7 +610,7 @@ const OptimizedProperties = () => {
               {/* Only show Day Picnics tab when day-picnic category is selected or no specific property type is selected */}
               {(selectedType === 'day-picnic' || selectedType === 'all') && (
                 <TabsTrigger value="day-picnics">
-                  Day Picnics ({dayPicnics.length}{ownerDayPicnics.length > 0 && dayPicnics.length === 0 ? ` + ${ownerDayPicnics.length} preview` : ''})
+                  Day Picnics ({dayPicnics.length})
                 </TabsTrigger>
               )}
             </TabsList>
