@@ -138,7 +138,7 @@ const Header: React.FC = () => {
                     title={user.email}
                     onClick={() => {
                       if (user.role === 'customer' || user.role === 'user') {
-                        navigate('/');
+                        navigate('/dashboard');
                       } else {
                         navigate('/dashboard');
                       }
@@ -301,7 +301,7 @@ const Header: React.FC = () => {
                         title={user.email}
                         onClick={() => {
                           if (user.role === 'customer' || user.role === 'user') {
-                            navigate('/');
+                            navigate('/dashboard');
                           } else {
                             navigate('/dashboard');
                           }

@@ -69,7 +69,7 @@ const CustomerLogin: React.FC = () => {
         case 'customer':
         case 'user':
         default:
-          navigate('/', { replace: true });
+          navigate('/dashboard', { replace: true });
           break;
       }
     }
