@@ -7,6 +7,7 @@ import { useToast } from '@/hooks/use-toast';
 import { PhonePeService } from '@/lib/phonePeService';
 import { BookingService } from '@/lib/bookingService';
 import { supabase } from '@/integrations/supabase/client';
+import jsPDF from 'jspdf';
 import {
     CheckCircle,
     XCircle,
@@ -228,42 +229,85 @@ const PaymentSuccess: React.FC = () => {
         if (!paymentStatus) return;
 
         try {
-            // Create a comprehensive receipt object with safe access to booking details
-            const receipt = {
-                transactionId: paymentStatus.transactionId,
-                bookingId: paymentStatus.bookingId || 'N/A',
-                propertyTitle: paymentStatus.propertyTitle || bookingDetails?.properties?.title || 'N/A',
-                amount: paymentStatus.amount,
-                currency: 'INR',
-                paymentDate: new Date().toISOString(),
-                status: paymentStatus.status,
-                paymentMethod: 'PhonePe',
-                customerEmail: bookingDetails?.booking_details?.customer_details?.email || 'N/A',
-                checkInDate: bookingDetails?.check_in_date || 'N/A',
-                checkOutDate: bookingDetails?.check_out_date || 'N/A',
-                guests: bookingDetails?.guests || 'N/A',
-                receiptGeneratedAt: new Date().toISOString()
-            };
-
-            // Convert to JSON and create blob for download
-            const dataStr = JSON.stringify(receipt, null, 2);
-            const blob = new Blob([dataStr], { type: 'application/json' });
+            const doc = new jsPDF();
             
-            const exportFileDefaultName = `receipt_${paymentStatus.transactionId}.json`;
-
-            // Modern browser download method
-            const url = URL.createObjectURL(blob);
-            const linkElement = document.createElement('a');
-            linkElement.href = url;
-            linkElement.download = exportFileDefaultName;
-            linkElement.style.display = 'none';
+            // Header
+            doc.setFontSize(20);
+            doc.setFont(undefined, 'bold');
+            doc.text('Payment Receipt', 20, 30);
             
-            document.body.appendChild(linkElement);
-            linkElement.click();
-            document.body.removeChild(linkElement);
+            doc.setFontSize(12);
+            doc.setFont(undefined, 'normal');
+            doc.text(`Generated on: ${new Date().toLocaleDateString()}`, 20, 40);
             
-            // Clean up the URL object
-            URL.revokeObjectURL(url);
+            // Payment Details Section
+            doc.setFontSize(16);
+            doc.setFont(undefined, 'bold');
+            doc.text('Payment Details', 20, 60);
+            
+            doc.setFontSize(12);
+            doc.setFont(undefined, 'normal');
+            let yPos = 75;
+            
+            doc.text(`Transaction ID: ${paymentStatus.transactionId}`, 20, yPos);
+            yPos += 10;
+            doc.text(`Amount: ${PhonePeService.formatAmount(paymentStatus.amount)}`, 20, yPos);
+            yPos += 10;
+            doc.text(`Payment Method: PhonePe`, 20, yPos);
+            yPos += 10;
+            doc.text(`Status: ${paymentStatus.status.toUpperCase()}`, 20, yPos);
+            yPos += 20;
+            
+            // Booking Details Section (if available)
+            if (bookingDetails && paymentStatus.status === 'success') {
+                doc.setFontSize(16);
+                doc.setFont(undefined, 'bold');
+                doc.text('Booking Details', 20, yPos);
+                yPos += 15;
+                
+                doc.setFontSize(12);
+                doc.setFont(undefined, 'normal');
+                
+                if (paymentStatus.bookingId) {
+                    doc.text(`Booking ID: ${paymentStatus.bookingId}`, 20, yPos);
+                    yPos += 10;
+                }
+                
+                if (bookingDetails.properties?.title) {
+                    doc.text(`Property: ${bookingDetails.properties.title}`, 20, yPos);
+                    yPos += 10;
+                }
+                
+                if (bookingDetails.check_in_date) {
+                    doc.text(`Check-in: ${new Date(bookingDetails.check_in_date).toLocaleDateString()}`, 20, yPos);
+                    yPos += 10;
+                }
+                
+                if (bookingDetails.check_out_date) {
+                    doc.text(`Check-out: ${new Date(bookingDetails.check_out_date).toLocaleDateString()}`, 20, yPos);
+                    yPos += 10;
+                }
+                
+                if (bookingDetails.guests) {
+                    doc.text(`Guests: ${bookingDetails.guests}`, 20, yPos);
+                    yPos += 10;
+                }
+                
+                if (bookingDetails.booking_details?.customer_details?.email) {
+                    doc.text(`Email: ${bookingDetails.booking_details.customer_details.email}`, 20, yPos);
+                    yPos += 20;
+                }
+            }
+            
+            // Footer
+            doc.setFontSize(10);
+            doc.setFont(undefined, 'italic');
+            doc.text('Thank you for your booking!', 20, yPos + 10);
+            doc.text('For support, please contact us with your transaction ID.', 20, yPos + 20);
+            
+            // Save the PDF
+            const fileName = `receipt_${paymentStatus.transactionId}.pdf`;
+            doc.save(fileName);
 
             toast({
                 title: "Receipt Downloaded",
