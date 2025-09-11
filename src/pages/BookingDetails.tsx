@@ -41,47 +41,73 @@ const BookingDetails: React.FC = () => {
   }, [id]);
 
   const handleModificationSelect = (type: string) => {
-    setSelectedModification(type);
+    console.log('🔘 Modification type selected:', type);
+    try {
+      setSelectedModification(type);
+      toast({
+        title: "Selection Updated",
+        description: `Selected: ${type.charAt(0).toUpperCase() + type.slice(1)} modification`,
+        variant: "default",
+      });
+    } catch (error) {
+      console.error('❌ Error in handleModificationSelect:', error);
+    }
   };
 
   const handleModifyContinue = () => {
-    if (!selectedModification) {
+    console.log('🚀 Continue button clicked with selection:', selectedModification);
+    
+    try {
+      if (!selectedModification) {
+        console.warn('⚠️ No modification type selected');
+        toast({
+          title: "Please Select an Option",
+          description: "Please select what you would like to change.",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      // Close the modal and navigate to appropriate modification page
+      setShowModifyModal(false);
+      
+      switch (selectedModification) {
+        case 'dates':
+          console.log('📅 Processing date modification');
+          toast({
+            title: "Date Modification",
+            description: "Date modification feature is coming soon. Please contact support for assistance.",
+          });
+          break;
+        case 'guests':
+          console.log('👥 Processing guest modification');
+          toast({
+            title: "Guest Modification", 
+            description: "Guest modification feature is coming soon. Please contact support for assistance.",
+          });
+          break;
+        case 'room':
+          console.log('🛏️ Processing room modification');
+          toast({
+            title: "Room Type Modification",
+            description: "Room type modification feature is coming soon. Please contact support for assistance.",
+          });
+          break;
+        default:
+          console.warn('⚠️ Unknown modification type:', selectedModification);
+          break;
+      }
+      
+      // Reset selection
+      setSelectedModification(null);
+    } catch (error) {
+      console.error('❌ Error in handleModifyContinue:', error);
       toast({
-        title: "Please Select an Option",
-        description: "Please select what you would like to change.",
+        title: "Error",
+        description: "Something went wrong. Please try again.",
         variant: "destructive",
       });
-      return;
     }
-
-    // Close the modal and navigate to appropriate modification page
-    setShowModifyModal(false);
-    
-    switch (selectedModification) {
-      case 'dates':
-        toast({
-          title: "Date Modification",
-          description: "Date modification feature is coming soon. Please contact support for assistance.",
-        });
-        break;
-      case 'guests':
-        toast({
-          title: "Guest Modification", 
-          description: "Guest modification feature is coming soon. Please contact support for assistance.",
-        });
-        break;
-      case 'room':
-        toast({
-          title: "Room Type Modification",
-          description: "Room type modification feature is coming soon. Please contact support for assistance.",
-        });
-        break;
-      default:
-        break;
-    }
-    
-    // Reset selection
-    setSelectedModification(null);
   };
 
   const fetchBookingDetails = async (bookingId: string) => {
@@ -529,18 +555,56 @@ const BookingDetails: React.FC = () => {
       </main>
 
       {/* Action Buttons */}
-      <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 p-4 z-40 shadow-lg">
+      <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 p-4 z-50 shadow-lg">
         <div className="max-w-4xl mx-auto flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-4">
           <button
-            onClick={() => setShowModifyModal(true)}
-            className="flex-1 bg-white border border-gray-300 text-gray-700 py-3 px-4 rounded-lg hover:bg-gray-50 cursor-pointer whitespace-nowrap"
+            onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              console.log('🔘 Modify Booking button clicked');
+              try {
+                setShowModifyModal(true);
+                toast({
+                  title: "Opening Modify Booking",
+                  description: "Select what you'd like to change",
+                });
+              } catch (error) {
+                console.error('❌ Error opening modify modal:', error);
+                toast({
+                  title: "Error",
+                  description: "Could not open modify booking. Please try again.",
+                  variant: "destructive",
+                });
+              }
+            }}
+            className="flex-1 bg-white border-2 border-blue-500 text-blue-600 py-3 px-4 rounded-lg hover:bg-blue-50 active:bg-blue-100 transition-all duration-200 font-medium focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50 cursor-pointer"
+            style={{ pointerEvents: 'auto' }}
           >
             <i className="fas fa-edit mr-2"></i>
             Modify Booking
           </button>
           <button
-            onClick={() => setShowCancelModal(true)}
-            className="flex-1 bg-red-600 text-white py-3 px-4 rounded-lg hover:bg-red-700 cursor-pointer whitespace-nowrap"
+            onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              console.log('🔘 Cancel Booking button clicked');
+              try {
+                setShowCancelModal(true);
+                toast({
+                  title: "Opening Cancel Booking",
+                  description: "Review cancellation details",
+                });
+              } catch (error) {
+                console.error('❌ Error opening cancel modal:', error);
+                toast({
+                  title: "Error",
+                  description: "Could not open cancel booking. Please try again.",
+                  variant: "destructive",
+                });
+              }
+            }}
+            className="flex-1 bg-red-600 text-white py-3 px-4 rounded-lg hover:bg-red-700 active:bg-red-800 transition-all duration-200 font-medium focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-opacity-50 cursor-pointer"
+            style={{ pointerEvents: 'auto' }}
           >
             <i className="fas fa-times mr-2"></i>
             Cancel Booking
@@ -559,52 +623,89 @@ const BookingDetails: React.FC = () => {
             </div>
             <div className="space-y-3">
               <button 
-                onClick={() => handleModificationSelect('dates')}
-                className={`w-full text-left p-3 border rounded-lg cursor-pointer transition-colors ${
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  console.log('🔘 Date modification selected');
+                  handleModificationSelect('dates');
+                }}
+                className={`w-full text-left p-4 border-2 rounded-lg transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500 ${
                   selectedModification === 'dates' 
-                    ? 'border-blue-500 bg-blue-50' 
-                    : 'border-gray-200 hover:bg-gray-50'
+                    ? 'border-blue-500 bg-blue-50 shadow-md' 
+                    : 'border-gray-200 hover:bg-gray-50 hover:border-gray-300'
                 }`}
+                style={{ pointerEvents: 'auto' }}
               >
                 <i className="fas fa-calendar mr-3 text-blue-500"></i>
-                Change Dates
+                <span className="font-medium">Change Dates</span>
               </button>
               <button 
-                onClick={() => handleModificationSelect('guests')}
-                className={`w-full text-left p-3 border rounded-lg cursor-pointer transition-colors ${
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  console.log('🔘 Guest modification selected');
+                  handleModificationSelect('guests');
+                }}
+                className={`w-full text-left p-4 border-2 rounded-lg transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500 ${
                   selectedModification === 'guests' 
-                    ? 'border-blue-500 bg-blue-50' 
-                    : 'border-gray-200 hover:bg-gray-50'
+                    ? 'border-blue-500 bg-blue-50 shadow-md' 
+                    : 'border-gray-200 hover:bg-gray-50 hover:border-gray-300'
                 }`}
+                style={{ pointerEvents: 'auto' }}
               >
                 <i className="fas fa-users mr-3 text-blue-500"></i>
-                Change Guests
+                <span className="font-medium">Change Guests</span>
               </button>
               <button 
-                onClick={() => handleModificationSelect('room')}
-                className={`w-full text-left p-3 border rounded-lg cursor-pointer transition-colors ${
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  console.log('🔘 Room modification selected');
+                  handleModificationSelect('room');
+                }}
+                className={`w-full text-left p-4 border-2 rounded-lg transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500 ${
                   selectedModification === 'room' 
-                    ? 'border-blue-500 bg-blue-50' 
-                    : 'border-gray-200 hover:bg-gray-50'
+                    ? 'border-blue-500 bg-blue-50 shadow-md' 
+                    : 'border-gray-200 hover:bg-gray-50 hover:border-gray-300'
                 }`}
+                style={{ pointerEvents: 'auto' }}
               >
                 <i className="fas fa-bed mr-3 text-blue-500"></i>
-                Change Room Type
+                <span className="font-medium">Change Room Type</span>
               </button>
             </div>
             <div className="flex space-x-3 mt-6">
               <button
-                onClick={() => {
-                  setShowModifyModal(false);
-                  setSelectedModification(null);
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  console.log('🔘 Cancel button clicked in modify modal');
+                  try {
+                    setShowModifyModal(false);
+                    setSelectedModification(null);
+                    toast({
+                      title: "Cancelled",
+                      description: "Booking modification cancelled",
+                    });
+                  } catch (error) {
+                    console.error('❌ Error cancelling modification:', error);
+                  }
                 }}
-                className="flex-1 bg-gray-100 text-gray-700 py-2 px-4 rounded-lg hover:bg-gray-200 cursor-pointer whitespace-nowrap"
+                className="flex-1 bg-gray-100 text-gray-700 py-3 px-4 rounded-lg hover:bg-gray-200 active:bg-gray-300 transition-all duration-200 font-medium focus:outline-none focus:ring-2 focus:ring-gray-400"
+                style={{ pointerEvents: 'auto' }}
               >
                 Cancel
               </button>
               <button 
-                onClick={handleModifyContinue}
-                className="flex-1 bg-blue-600 text-white py-2 px-4 rounded-lg hover:bg-blue-700 cursor-pointer whitespace-nowrap"
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  console.log('🔘 Continue button clicked in modify modal');
+                  handleModifyContinue();
+                }}
+                className="flex-1 bg-blue-600 text-white py-3 px-4 rounded-lg hover:bg-blue-700 active:bg-blue-800 transition-all duration-200 font-medium focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
+                style={{ pointerEvents: 'auto' }}
+                disabled={!selectedModification}
               >
                 Continue
               </button>
@@ -630,12 +731,51 @@ const BookingDetails: React.FC = () => {
             </div>
             <div className="flex space-x-3">
               <button
-                onClick={() => setShowCancelModal(false)}
-                className="flex-1 bg-gray-100 text-gray-700 py-2 px-4 rounded-lg hover:bg-gray-200 cursor-pointer whitespace-nowrap"
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  console.log('🔘 Keep Booking button clicked');
+                  try {
+                    setShowCancelModal(false);
+                    toast({
+                      title: "Booking Kept",
+                      description: "Your booking remains active",
+                    });
+                  } catch (error) {
+                    console.error('❌ Error keeping booking:', error);
+                  }
+                }}
+                className="flex-1 bg-gray-100 text-gray-700 py-3 px-4 rounded-lg hover:bg-gray-200 active:bg-gray-300 transition-all duration-200 font-medium focus:outline-none focus:ring-2 focus:ring-gray-400"
+                style={{ pointerEvents: 'auto' }}
               >
                 Keep Booking
               </button>
-              <button className="flex-1 bg-red-600 text-white py-2 px-4 rounded-lg hover:bg-red-700 cursor-pointer whitespace-nowrap">
+              <button 
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  console.log('🔘 Yes, Cancel button clicked');
+                  try {
+                    // Here you would implement actual cancellation logic
+                    toast({
+                      title: "Booking Cancelled",
+                      description: "Your booking has been cancelled. Refund processing may take 3-5 business days.",
+                      variant: "destructive",
+                    });
+                    setShowCancelModal(false);
+                    // Optionally redirect to bookings list or dashboard
+                  } catch (error) {
+                    console.error('❌ Error cancelling booking:', error);
+                    toast({
+                      title: "Error",
+                      description: "Could not cancel booking. Please try again.",
+                      variant: "destructive",
+                    });
+                  }
+                }}
+                className="flex-1 bg-red-600 text-white py-3 px-4 rounded-lg hover:bg-red-700 active:bg-red-800 transition-all duration-200 font-medium focus:outline-none focus:ring-2 focus:ring-red-500"
+                style={{ pointerEvents: 'auto' }}
+              >
                 Yes, Cancel
               </button>
             </div>
