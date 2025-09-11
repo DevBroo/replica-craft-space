@@ -146,7 +146,29 @@ const PaymentSuccess: React.FC = () => {
 
             // Determine payment status
             const isSuccess = paymentResponse.success && paymentResponse.data?.state === 'COMPLETED';
-            const amount = paymentResponse.data?.amount ? paymentResponse.data.amount / 100 : 0; // Convert from paise
+            let amount = paymentResponse.data?.amount ? paymentResponse.data.amount / 100 : 0; // Convert from paise
+            
+            // Fallback: If amount is still 0, try to get from booking or session storage
+            if (amount === 0) {
+                if (booking?.total_amount) {
+                    amount = booking.total_amount;
+                    console.log('💰 Using booking total_amount as fallback:', amount);
+                } else {
+                    // Try session storage fallback
+                    try {
+                        const pendingBookingData = sessionStorage.getItem('pending_booking_data');
+                        if (pendingBookingData) {
+                            const bookingRequest = JSON.parse(pendingBookingData);
+                            if (bookingRequest.total_amount) {
+                                amount = bookingRequest.total_amount;
+                                console.log('💰 Using session storage amount as fallback:', amount);
+                            }
+                        }
+                    } catch (error) {
+                        console.warn('⚠️ Could not parse session storage booking data:', error);
+                    }
+                }
+            }
 
             setPaymentStatus({
                 success: isSuccess,

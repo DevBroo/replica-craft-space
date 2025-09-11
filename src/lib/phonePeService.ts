@@ -229,20 +229,44 @@ export class PhonePeService {
                     } else {
                         console.warn('⚠️ Could not fetch payment amount from database:', paymentError);
                         
-                        // Fallback: Try to get amount from booking data
+                        // Fallback: Try to get amount from booking data using transaction ID from booking_details
                         try {
                             const { data: bookingData, error: bookingError } = await (supabase as any)
                                 .from('bookings')
                                 .select('total_amount')
-                                .eq('id', paymentData?.booking_id)
+                                .or(`booking_details->payment_transaction_id.eq.${transactionId},transaction_id.eq.${transactionId}`)
                                 .single();
                             
                             if (!bookingError && bookingData) {
                                 paymentAmount = bookingData.total_amount * 100; // Convert to paise
                                 console.log('💰 Retrieved payment amount from booking data:', bookingData.total_amount);
+                            } else {
+                                // Final fallback: check session storage for booking amount
+                                const pendingBookingData = sessionStorage?.getItem('pending_booking_data');
+                                if (pendingBookingData) {
+                                    const bookingRequest = JSON.parse(pendingBookingData);
+                                    if (bookingRequest.total_amount) {
+                                        paymentAmount = bookingRequest.total_amount * 100; // Convert to paise
+                                        console.log('💰 Retrieved payment amount from session storage:', bookingRequest.total_amount);
+                                    }
+                                }
                             }
                         } catch (bookingError) {
                             console.warn('⚠️ Could not fetch amount from booking data:', bookingError);
+                            
+                            // Final fallback: check session storage for booking amount
+                            try {
+                                const pendingBookingData = sessionStorage?.getItem('pending_booking_data');
+                                if (pendingBookingData) {
+                                    const bookingRequest = JSON.parse(pendingBookingData);
+                                    if (bookingRequest.total_amount) {
+                                        paymentAmount = bookingRequest.total_amount * 100; // Convert to paise
+                                        console.log('💰 Retrieved payment amount from session storage:', bookingRequest.total_amount);
+                                    }
+                                }
+                            } catch (sessionError) {
+                                console.warn('⚠️ Could not retrieve amount from session storage:', sessionError);
+                            }
                         }
                     }
                 } catch (error) {
