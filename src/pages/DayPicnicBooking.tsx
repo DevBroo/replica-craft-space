@@ -38,7 +38,6 @@ const DayPicnicBooking: React.FC = () => {
   const [package_, setPackage] = useState<any>(null);
   const [optionPrices, setOptionPrices] = useState<any[]>([]);
   const [selectedDate, setSelectedDate] = useState('');
-  const [selectedEndDate, setSelectedEndDate] = useState('');
   const [selectedDuration, setSelectedDuration] = useState('');
   const [guests, setGuests] = useState<GuestBreakdown>({ adults: 2, children: [] });
   const [selectedAddOns, setSelectedAddOns] = useState<string[]>([]);
@@ -558,23 +557,6 @@ const DayPicnicBooking: React.FC = () => {
       return;
     }
 
-    if (!selectedEndDate || selectedEndDate.trim() === '') {
-      toast({
-        title: "End Date Required",
-        description: "Please select an end date for your day picnic",
-        variant: "destructive"
-      });
-      return;
-    }
-
-    if (selectedEndDate <= selectedDate) {
-      toast({
-        title: "Invalid Date Range",
-        description: "End date must be after start date",
-        variant: "destructive"
-      });
-      return;
-    }
 
     // Validate guest information
     if (!guestInfo.name.trim()) {
@@ -611,7 +593,6 @@ const DayPicnicBooking: React.FC = () => {
       propertyTitle: property?.title || 'Day Picnic',
       propertyImages: property?.images || [],
       checkInDate: selectedDate,
-      checkOutDate: selectedEndDate,
       guests: guests.adults + guests.children.length,
       totalAmount: calculateTotalPrice(),
       priceBreakdown: detailedBreakdown,
@@ -923,16 +904,6 @@ const DayPicnicBooking: React.FC = () => {
                       value={selectedDate}
                       onChange={(e) => {
                         setSelectedDate(e.target.value);
-                        // Auto-set end date to next day if not set
-                        if (!selectedEndDate && e.target.value) {
-                          const nextDay = new Date(e.target.value);
-                          nextDay.setDate(nextDay.getDate() + 1);
-                          setSelectedEndDate(nextDay.toISOString().split('T')[0]);
-                        }
-                        // Clear end date if it's now invalid (same or before start date)
-                        if (selectedEndDate && e.target.value && selectedEndDate <= e.target.value) {
-                          setSelectedEndDate('');
-                        }
                       }}
                       min={new Date().toISOString().split('T')[0]}
                       className={`mt-2 ${!selectedDate ? 'border-red-300 focus:border-red-500' : ''}`}
@@ -943,27 +914,6 @@ const DayPicnicBooking: React.FC = () => {
                     )}
                   </div>
 
-                  <div className={`border-2 rounded-lg p-3 ${selectedDate && !selectedEndDate ? 'border-red-200 bg-red-50' : 'border-gray-200 bg-white'}`}>
-                    <Label htmlFor="endDate" className={`${selectedDate && !selectedEndDate ? 'text-red-700 font-semibold' : 'text-gray-700 font-semibold'}`}>
-                      End Date *
-                    </Label>
-                    <Input
-                      id="endDate"
-                      type="date"
-                      value={selectedEndDate}
-                      onChange={(e) => setSelectedEndDate(e.target.value)}
-                      min={selectedDate ? new Date(new Date(selectedDate).getTime() + 24 * 60 * 60 * 1000).toISOString().split('T')[0] : new Date().toISOString().split('T')[0]}
-                      className={`mt-2 ${selectedDate && !selectedEndDate ? 'border-red-300 focus:border-red-500' : ''}`}
-                      placeholder="Please select an end date"
-                      disabled={!selectedDate}
-                    />
-                    {selectedDate && !selectedEndDate && (
-                      <p className="text-sm text-red-600 mt-1 font-medium">⚠️ End date is required</p>
-                    )}
-                    {selectedEndDate && selectedDate && selectedEndDate <= selectedDate && (
-                      <p className="text-sm text-red-600 mt-1 font-medium">⚠️ End date must be after start date</p>
-                    )}
-                  </div>
                 </div>
 
                 <div>
@@ -1212,7 +1162,7 @@ const DayPicnicBooking: React.FC = () => {
 
                 <Button
                   onClick={handleBooking}
-                  disabled={loading || !selectedDate || selectedDate.trim() === '' || !selectedEndDate || selectedEndDate.trim() === '' || selectedEndDate <= selectedDate || !guestInfo.name.trim() || !guestInfo.phone.trim() || !guestInfo.dateOfBirth}
+                  disabled={loading || !selectedDate || selectedDate.trim() === '' || !guestInfo.name.trim() || !guestInfo.phone.trim() || !guestInfo.dateOfBirth}
                   className="w-full"
                 >
                   {loading ? (
