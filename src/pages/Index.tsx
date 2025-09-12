@@ -72,7 +72,7 @@ const Index: React.FC = () => {
   useScrollAnimation();
 
   // Fetch top picks from database with fallback to any available properties
-  const { data: topPicksData = [], isLoading: topPicksLoading } = useQuery({
+  const { data: topPicksData = [], isLoading: topPicksLoading, refetch: refetchTopPicks } = useQuery({
     queryKey: ['top-picks'],
     queryFn: async () => {
       // First try to get high-rated and featured properties
@@ -86,7 +86,7 @@ const Index: React.FC = () => {
 
       if (error) {
         console.error('Error fetching top picks:', error);
-        return [];
+        throw error;
       }
 
       // If no properties found, try to get any approved properties
@@ -101,7 +101,7 @@ const Index: React.FC = () => {
 
         if (fallbackError) {
           console.error('Error fetching fallback properties:', fallbackError);
-          return [];
+          throw fallbackError;
         }
 
         data = fallbackData;
@@ -116,14 +116,16 @@ const Index: React.FC = () => {
         price: typeof property.pricing === 'object' && property.pricing && 'daily_rate' in property.pricing ? property.pricing.daily_rate : 0
       })) || [];
     },
-    staleTime: 5 * 60 * 1000, // 5 minutes
-    gcTime: 10 * 60 * 1000, // 10 minutes
+    staleTime: 2 * 60 * 1000, // 2 minutes for fresher data
+    gcTime: 5 * 60 * 1000, // 5 minutes
+    retry: 3,
+    retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 30000),
   });
 
   const topPicks = topPicksData;
 
   // Fetch featured properties from database with fallback to regular properties
-  const { data: featuredPropertiesData = [], isLoading: featuredLoading } = useQuery({
+  const { data: featuredPropertiesData = [], isLoading: featuredLoading, refetch: refetchFeatured } = useQuery({
     queryKey: ['featured-properties'],
     queryFn: async () => {
       // First try to get featured properties
@@ -153,7 +155,7 @@ const Index: React.FC = () => {
 
         if (regularError) {
           console.error('Error fetching regular properties:', regularError);
-          return [];
+          throw regularError;
         }
 
         featuredData = regularData;
@@ -168,8 +170,10 @@ const Index: React.FC = () => {
         amenities: property.amenities || []
       })) || [];
     },
-    staleTime: 5 * 60 * 1000, // 5 minutes
-    gcTime: 10 * 60 * 1000, // 10 minutes
+    staleTime: 2 * 60 * 1000, // 2 minutes for fresher data
+    gcTime: 5 * 60 * 1000, // 5 minutes
+    retry: 3,
+    retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 30000),
   });
 
   const featuredProperties = featuredPropertiesData;
