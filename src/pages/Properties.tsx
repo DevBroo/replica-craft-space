@@ -456,7 +456,7 @@ const Properties: React.FC = () => {
     if (filters.location && filters.location !== 'all') {
       setLocationFilter(filters.location);
     }
-    if (filters.category && filters.category !== 'all') {
+    if (filters.category && filters.category !== ('all' as any)) {
       setPropertyTypeFilter(filters.category);
     }
     if (filters.guests && filters.guests > 0) {
@@ -672,16 +672,9 @@ const Properties: React.FC = () => {
         </div>
 
         {/* Home Page Search Form */}
-        <div className="mb-8 bg-blue-50 p-4 rounded-lg">
-          <h3 className="text-lg font-semibold mb-4 text-blue-800">Search Properties (Home Page Style)</h3>
+        <div className="mb-8">
           <div className="max-w-6xl mx-auto">
-            <div className="bg-white rounded-xl shadow-lg p-6">
-              <div className="text-center mb-4">
-                <h4 className="text-xl font-bold text-gray-800">Find Your Perfect Stay</h4>
-                <p className="text-gray-600">Search from our collection of amazing properties</p>
-              </div>
-              <SearchForm onSearch={handleSearchForm} />
-            </div>
+            <SearchForm onSearch={handleSearchForm} />
           </div>
         </div>
 
