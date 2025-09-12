@@ -671,8 +671,8 @@ const Properties: React.FC = () => {
           </div>
         </div>
 
-        {/* Home Page Search Form */}
-        <div className="mb-8">
+        {/* Search Form - Same as Home Page */}
+        <div className="mb-8 px-4">
           <div className="max-w-6xl mx-auto">
             <SearchForm 
               onSearch={handleSearchForm} 
