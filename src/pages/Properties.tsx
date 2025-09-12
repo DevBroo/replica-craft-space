@@ -672,9 +672,14 @@ const Properties: React.FC = () => {
         </div>
 
         {/* Home Page Search Form */}
-        <div className="mb-8">
+        <div className="mb-8" style={{ border: '2px solid red', padding: '10px', background: '#f0f0f0' }}>
+          <h3 style={{ color: 'red', fontSize: '18px', fontWeight: 'bold' }}>DEBUG: SearchForm Container</h3>
           <div className="max-w-6xl mx-auto">
-            <SearchForm onSearch={handleSearchForm} />
+            <SearchForm 
+              onSearch={handleSearchForm} 
+              compact={false}
+              key="properties-search-form"
+            />
           </div>
         </div>
 
