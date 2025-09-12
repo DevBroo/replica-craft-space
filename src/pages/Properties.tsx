@@ -10,6 +10,9 @@ import { Slider } from '@/components/ui/slider';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
+import ModernSearchFilter from '@/components/ui/ModernSearchFilter';
+import SearchForm from '@/components/ui/SearchForm';
+import { SearchService, type SearchFilters } from '@/lib/searchService';
 import { 
   Search, 
   MapPin, 
@@ -59,6 +62,9 @@ const Properties: React.FC = () => {
   const [locationFilter, setLocationFilter] = useState(searchParams.get('location') || '');
   const [propertyTypeFilter, setPropertyTypeFilter] = useState(searchParams.get('type') || '');
   const [priceRange, setPriceRange] = useState([0, 50000]);
+  const [priceRangeFilter, setPriceRangeFilter] = useState('any');
+  const [checkInDate, setCheckInDate] = useState<Date | undefined>();
+  const [guests, setGuests] = useState(2);
   const [sortBy, setSortBy] = useState('price-low');
   const [showFilters, setShowFilters] = useState(false);
   
@@ -422,6 +428,64 @@ const Properties: React.FC = () => {
     navigate(`/property/${property.id}`);
   };
 
+  const handleSearch = () => {
+    // Apply price range filter
+    if (priceRangeFilter !== 'any') {
+      const [min, max] = priceRangeFilter.split('-').map(Number);
+      if (priceRangeFilter.includes('+')) {
+        setPriceRange([parseInt(priceRangeFilter.replace('+', '')), 100000]);
+      } else {
+        setPriceRange([min, max]);
+      }
+    } else {
+      setPriceRange([0, 50000]);
+    }
+    
+    // Trigger search by updating current page
+    setCurrentPage(1);
+  };
+
+  // Handle search from SearchForm component (same as home page)
+  const handleSearchForm = (filters: SearchFilters) => {
+    console.log('🔍 SearchForm search triggered on Properties page:', filters);
+    
+    // Update local state with search form filters
+    if (filters.search) {
+      setSearchTerm(filters.search);
+    }
+    if (filters.location && filters.location !== 'all') {
+      setLocationFilter(filters.location);
+    }
+    if (filters.category && filters.category !== 'all') {
+      setPropertyTypeFilter(filters.category);
+    }
+    if (filters.guests && filters.guests > 0) {
+      setGuests(filters.guests);
+    }
+    
+    // Navigate to properties page with search params
+    const searchParams = new URLSearchParams();
+    
+    if (filters.location && filters.location !== 'all') {
+      searchParams.set('location', filters.location);
+    }
+    if (filters.category && filters.category !== ('all' as any)) {
+      searchParams.set('category', filters.category);
+    }
+    if (filters.date) {
+      searchParams.set('date', filters.date);
+    }
+    if (filters.guests && filters.guests > 0) {
+      searchParams.set('guests', filters.guests.toString());
+    }
+    if (filters.search) {
+      searchParams.set('search', filters.search);
+    }
+
+    const queryString = searchParams.toString();
+    navigate(`/properties${queryString ? `?${queryString}` : ''}`);
+  };
+
   const formatTime12Hour = (time24: string) => {
     const [hour, minute] = time24.split(':');
     const h = parseInt(hour, 10);
@@ -607,111 +671,57 @@ const Properties: React.FC = () => {
           </div>
         </div>
 
-        {/* Search and Filters */}
-        <Card className="mb-8">
-          <CardContent className="p-6">
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-              {/* Search */}
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
-                <Input
-                  placeholder="Search properties..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="pl-10"
-                />
+        {/* Home Page Search Form */}
+        <div className="mb-8 bg-blue-50 p-4 rounded-lg">
+          <h3 className="text-lg font-semibold mb-4 text-blue-800">Search Properties (Home Page Style)</h3>
+          <div className="max-w-6xl mx-auto">
+            <div className="bg-white rounded-xl shadow-lg p-6">
+              <div className="text-center mb-4">
+                <h4 className="text-xl font-bold text-gray-800">Find Your Perfect Stay</h4>
+                <p className="text-gray-600">Search from our collection of amazing properties</p>
               </div>
-
-              {/* Location */}
-              <div className="relative">
-                <MapPin className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
-                <Input
-                  placeholder="Location"
-                  value={locationFilter}
-                  onChange={(e) => setLocationFilter(e.target.value)}
-                  className="pl-10"
-                />
-              </div>
-
-              {/* Property Type */}
-              {!showDayPicnics && (
-                <Select value={propertyTypeFilter} onValueChange={setPropertyTypeFilter}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Property Type" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">All Types</SelectItem>
-                    {propertyTypes.map(type => (
-                      <SelectItem key={type} value={type}>{type}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              )}
-
-              {/* Duration Filter for Day Picnics */}
-              {showDayPicnics && (
-                <Select value={durationFilter} onValueChange={setDurationFilter}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Duration" />
-                  </SelectTrigger>
-                  <SelectContent className="bg-white z-50">
-                    <SelectItem value="all">All Durations</SelectItem>
-                    <SelectItem value="half-day">Half day (4-5 hrs)</SelectItem>
-                    <SelectItem value="full-day">Full day (6-8 hrs)</SelectItem>
-                    <SelectItem value="extended-day">Extended Day (10+ hrs)</SelectItem>
-                  </SelectContent>
-                </Select>
-              )}
-
-              {/* Sort */}
-              <Select value={sortBy} onValueChange={setSortBy}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Sort by" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="price-low">Price: Low to High</SelectItem>
-                  <SelectItem value="price-high">Price: High to Low</SelectItem>
-                  <SelectItem value="rating">Highest Rated</SelectItem>
-                  <SelectItem value="popular">Most Popular</SelectItem>
-                </SelectContent>
-              </Select>
+              <SearchForm onSearch={handleSearchForm} />
             </div>
+          </div>
+        </div>
 
-            {/* Advanced Filters Toggle */}
-            <div className="mt-4">
-              <Button
-                variant="outline"
-                onClick={() => setShowFilters(!showFilters)}
-                className="flex items-center"
-              >
-                <SlidersHorizontal className="w-4 h-4 mr-2" />
-                {showFilters ? 'Hide' : 'Show'} Filters
-              </Button>
-            </div>
+        {/* Modern Search Filter */}
+        <div className="mb-8">
+          <ModernSearchFilter
+            searchTerm={searchTerm}
+            onSearchTermChange={setSearchTerm}
+            locationFilter={locationFilter}
+            onLocationChange={setLocationFilter}
+            checkInDate={checkInDate}
+            onCheckInDateChange={setCheckInDate}
+            guests={guests}
+            onGuestsChange={setGuests}
+            priceRange={priceRangeFilter}
+            onPriceRangeChange={setPriceRangeFilter}
+            propertyTypeFilter={propertyTypeFilter}
+            onPropertyTypeChange={setPropertyTypeFilter}
+            durationFilter={durationFilter}
+            onDurationChange={setDurationFilter}
+            showDayPicnics={showDayPicnics}
+            propertyTypes={propertyTypes}
+            onSearch={handleSearch}
+          />
+        </div>
 
-            {/* Advanced Filters */}
-            {showFilters && (
-              <div className="mt-6 p-4 bg-gray-50 rounded-lg">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  {/* Price Range */}
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Price Range: ₹{priceRange[0]} - ₹{priceRange[1]}
-                    </label>
-                    <Slider
-                      value={priceRange}
-                      onValueChange={setPriceRange}
-                      max={50000}
-                      min={0}
-                      step={500}
-                      className="w-full"
-                    />
-                  </div>
-                </div>
-              </div>
-            )}
-          </CardContent>
-        </Card>
+        {/* Sort Options */}
+        <div className="mb-6 flex justify-end">
+          <Select value={sortBy} onValueChange={setSortBy}>
+            <SelectTrigger className="w-48">
+              <SelectValue placeholder="Sort by" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="price-low">Price: Low to High</SelectItem>
+              <SelectItem value="price-high">Price: High to Low</SelectItem>
+              <SelectItem value="rating">Highest Rated</SelectItem>
+              <SelectItem value="popular">Most Popular</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
 
         {/* Results Section */}
         {!showDayPicnics ? (
@@ -838,8 +848,16 @@ const Properties: React.FC = () => {
                           )}
                         </div>
 
-                        <div className="w-full mt-4 text-center text-sm text-muted-foreground">
-                          Click to view details
+                        <div className="w-full mt-4 space-y-3">
+                          <Button 
+                            className="w-full bg-red-600 hover:bg-red-700 text-white font-semibold"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleViewProperty(property);
+                            }}
+                          >
+                            Book Now
+                          </Button>
                         </div>
                       </CardContent>
                     </Card>

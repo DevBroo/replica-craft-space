@@ -391,9 +391,6 @@ const OptimizedProperties = () => {
                 /{dayPicnic.pricing_type === 'per_person' ? 'person' : 'package'}
               </span>
             </div>
-            <div className="text-sm text-muted-foreground">
-              {isPreview ? 'Click to edit setup' : 'Click to view details'}
-            </div>
           </div>
         </CardFooter>
       </Card>
@@ -491,16 +488,24 @@ const OptimizedProperties = () => {
         </CardContent>
 
         <CardFooter className="pt-0">
-          <div className="flex gap-2 items-center justify-between w-full">
-            <div>
-              <span className="text-2xl font-bold text-red-600">
-                ₹{property.pricing?.daily_rate?.toLocaleString() || 'N/A'}
-              </span>
-              <span className="text-sm text-muted-foreground">/night</span>
+          <div className="flex flex-col gap-3 w-full">
+            <div className="flex items-center justify-between">
+              <div>
+                <span className="text-2xl font-bold text-red-600">
+                  ₹{property.pricing?.daily_rate?.toLocaleString() || 'N/A'}
+                </span>
+                <span className="text-sm text-muted-foreground">/night</span>
+              </div>
             </div>
-            <div className="text-sm text-muted-foreground">
-              Click to view details
-            </div>
+            <Button 
+              className="w-full bg-red-600 hover:bg-red-700 text-white font-semibold"
+              onClick={(e) => {
+                e.stopPropagation();
+                handleViewProperty(property.id);
+              }}
+            >
+              Book Now
+            </Button>
           </div>
         </CardFooter>
       </Card>

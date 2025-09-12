@@ -33,8 +33,10 @@ const SearchForm: React.FC<SearchFormProps> = ({
   const [selectedDate, setSelectedDate] = useState<Date | undefined>();
   const [calendarOpen, setCalendarOpen] = useState(false);
 
+  console.log('🔍 SearchForm component rendering, compact:', compact);
+
   // Fetch available locations from database
-  const { data: locations = [], isLoading: locationsLoading } = useQuery({
+  const { data: locations = [], isLoading: locationsLoading, error: locationsError } = useQuery({
     queryKey: ['available-locations'],
     queryFn: SearchService.getAvailableLocations,
     staleTime: 5 * 60 * 1000, // 5 minutes
@@ -42,11 +44,20 @@ const SearchForm: React.FC<SearchFormProps> = ({
   });
 
   // Fetch categories with counts
-  const { data: categoriesWithCounts = [], isLoading: categoriesLoading } = useQuery({
+  const { data: categoriesWithCounts = [], isLoading: categoriesLoading, error: categoriesError } = useQuery({
     queryKey: ['categories-with-counts'],
     queryFn: SearchService.getCategoriesWithCounts,
     staleTime: 5 * 60 * 1000,
     gcTime: 10 * 60 * 1000,
+  });
+
+  console.log('🔍 SearchForm data:', { 
+    locations: locations.length, 
+    categories: categoriesWithCounts.length, 
+    locationsLoading, 
+    categoriesLoading,
+    locationsError,
+    categoriesError
   });
 
   // Update date filter when selectedDate changes
@@ -192,6 +203,32 @@ const SearchForm: React.FC<SearchFormProps> = ({
               Search
             </Button>
           </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Show loading state
+  if (locationsLoading || categoriesLoading) {
+    return (
+      <div className="bg-white rounded-xl shadow-lg p-6">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-orange-500 mx-auto mb-4"></div>
+          <p className="text-gray-600">Loading search options...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Show error state if there are errors
+  if (locationsError || categoriesError) {
+    console.error('SearchForm errors:', { locationsError, categoriesError });
+    return (
+      <div className="bg-white rounded-xl shadow-lg p-6">
+        <div className="text-center text-red-600">
+          <p>Error loading search data. Please refresh the page.</p>
+          <p className="text-sm mt-2">Locations: {locationsError?.message || 'OK'}</p>
+          <p className="text-sm">Categories: {categoriesError?.message || 'OK'}</p>
         </div>
       </div>
     );

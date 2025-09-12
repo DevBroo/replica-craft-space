@@ -71,108 +71,142 @@ const Index: React.FC = () => {
   // Initialize scroll animations
   useScrollAnimation();
 
-  // Fetch top picks from database with fallback to any available properties
+  // Fetch top picks from database with comprehensive fallback logic
   const { data: topPicksData = [], isLoading: topPicksLoading, refetch: refetchTopPicks } = useQuery({
     queryKey: ['top-picks'],
     queryFn: async () => {
-      // First try to get high-rated and featured properties
-      let { data, error } = await supabase
-        .from('properties_public')
-        .select('*')
-        .eq('status', 'approved')
-        .order('rating', { ascending: false })
-        .order('is_featured', { ascending: false })
-        .limit(8);
-
-      if (error) {
-        console.error('Error fetching top picks:', error);
-        throw error;
-      }
-
-      // If no properties found, try to get any approved properties
-      if (!data || data.length === 0) {
-        console.log('No top picks found, fetching any available properties as fallback');
-        const { data: fallbackData, error: fallbackError } = await supabase
+      try {
+        // First try to get high-rated and featured properties
+        let { data, error } = await supabase
           .from('properties_public')
           .select('*')
           .eq('status', 'approved')
-          .order('created_at', { ascending: false })
+          .order('rating', { ascending: false })
+          .order('is_featured', { ascending: false })
           .limit(8);
 
-        if (fallbackError) {
-          console.error('Error fetching fallback properties:', fallbackError);
-          throw fallbackError;
+        if (error) {
+          console.error('Error fetching top picks:', error);
+          // Don't throw, try fallback instead
         }
 
-        data = fallbackData;
-      }
+        // If no properties found or error, try to get any approved properties
+        if (!data || data.length === 0) {
+          console.log('No top picks found, fetching any available properties as fallback');
+          const { data: fallbackData, error: fallbackError } = await supabase
+            .from('properties_public')
+            .select('*')
+            .eq('status', 'approved')
+            .order('created_at', { ascending: false })
+            .limit(8);
 
-      return data?.map(property => ({
-        id: property.id,
-        name: property.title,
-        image: property.images?.[0] || '/placeholder.svg',
-        location: property.general_location || 'Location not specified',
-        rating: property.rating || 4.5,
-        price: typeof property.pricing === 'object' && property.pricing && 'daily_rate' in property.pricing ? property.pricing.daily_rate : 0
-      })) || [];
+          if (fallbackError) {
+            console.error('Error fetching fallback properties:', fallbackError);
+            // Try one more fallback - get any properties regardless of status
+            const { data: anyData, error: anyError } = await supabase
+              .from('properties_public')
+              .select('*')
+              .order('created_at', { ascending: false })
+              .limit(8);
+
+            if (anyError) {
+              console.error('Error fetching any properties:', anyError);
+              return []; // Return empty array as final fallback
+            }
+
+            data = anyData;
+          } else {
+            data = fallbackData;
+          }
+        }
+
+        return data?.map(property => ({
+          id: property.id,
+          name: property.title,
+          image: property.images?.[0] || '/placeholder.svg',
+          location: property.general_location || 'Location not specified',
+          rating: property.rating || 4.5,
+          price: typeof property.pricing === 'object' && property.pricing && 'daily_rate' in property.pricing ? property.pricing.daily_rate : 0
+        })) || [];
+      } catch (error) {
+        console.error('Unexpected error in top picks query:', error);
+        return []; // Return empty array as final fallback
+      }
     },
     staleTime: 2 * 60 * 1000, // 2 minutes for fresher data
     gcTime: 5 * 60 * 1000, // 5 minutes
-    retry: 3,
+    retry: 2, // Reduced retries since we have fallbacks
     retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 30000),
   });
 
   const topPicks = topPicksData;
 
-  // Fetch featured properties from database with fallback to regular properties
+  // Fetch featured properties from database with comprehensive fallback logic
   const { data: featuredPropertiesData = [], isLoading: featuredLoading, refetch: refetchFeatured } = useQuery({
     queryKey: ['featured-properties'],
     queryFn: async () => {
-      // First try to get featured properties
-      let { data: featuredData, error: featuredError } = await supabase
-        .from('properties_public')
-        .select('*')
-        .eq('status', 'approved')
-        .eq('is_featured', true)
-        .order('rating', { ascending: false })
-        .limit(6);
-
-      if (featuredError) {
-        console.error('Error fetching featured properties:', featuredError);
-        featuredData = [];
-      }
-
-      // If no featured properties, fallback to regular properties
-      if (!featuredData || featuredData.length === 0) {
-        console.log('No featured properties found, fetching regular properties as fallback');
-        const { data: regularData, error: regularError } = await supabase
+      try {
+        // First try to get featured properties
+        let { data: featuredData, error: featuredError } = await supabase
           .from('properties_public')
           .select('*')
           .eq('status', 'approved')
+          .eq('is_featured', true)
           .order('rating', { ascending: false })
-          .order('created_at', { ascending: false })
           .limit(6);
 
-        if (regularError) {
-          console.error('Error fetching regular properties:', regularError);
-          throw regularError;
+        if (featuredError) {
+          console.error('Error fetching featured properties:', featuredError);
+          featuredData = [];
         }
 
-        featuredData = regularData;
-      }
+        // If no featured properties, fallback to regular properties
+        if (!featuredData || featuredData.length === 0) {
+          console.log('No featured properties found, fetching regular properties as fallback');
+          const { data: regularData, error: regularError } = await supabase
+            .from('properties_public')
+            .select('*')
+            .eq('status', 'approved')
+            .order('rating', { ascending: false })
+            .order('created_at', { ascending: false })
+            .limit(6);
 
-      return featuredData?.map(property => ({
-        id: property.id,
-        name: property.title,
-        image: property.images?.[0] || '/placeholder.svg',
-        location: property.general_location || 'Location not specified',
-        price: typeof property.pricing === 'object' && property.pricing && 'daily_rate' in property.pricing ? property.pricing.daily_rate : 0,
-        amenities: property.amenities || []
-      })) || [];
+          if (regularError) {
+            console.error('Error fetching regular properties:', regularError);
+            // Try one more fallback - get any properties regardless of status
+            const { data: anyData, error: anyError } = await supabase
+              .from('properties_public')
+              .select('*')
+              .order('created_at', { ascending: false })
+              .limit(6);
+
+            if (anyError) {
+              console.error('Error fetching any properties:', anyError);
+              return []; // Return empty array as final fallback
+            }
+
+            featuredData = anyData;
+          } else {
+            featuredData = regularData;
+          }
+        }
+
+        return featuredData?.map(property => ({
+          id: property.id,
+          name: property.title,
+          image: property.images?.[0] || '/placeholder.svg',
+          location: property.general_location || 'Location not specified',
+          price: typeof property.pricing === 'object' && property.pricing && 'daily_rate' in property.pricing ? property.pricing.daily_rate : 0,
+          amenities: property.amenities || []
+        })) || [];
+      } catch (error) {
+        console.error('Unexpected error in featured properties query:', error);
+        return []; // Return empty array as final fallback
+      }
     },
     staleTime: 2 * 60 * 1000, // 2 minutes for fresher data
     gcTime: 5 * 60 * 1000, // 5 minutes
-    retry: 3,
+    retry: 2, // Reduced retries since we have fallbacks
     retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 30000),
   });
 
@@ -372,12 +406,21 @@ const Index: React.FC = () => {
                   <p className="text-muted-foreground mb-6">
                     We're working on curating amazing properties for you. In the meantime, explore all our available properties!
                   </p>
-                  <button
-                    onClick={() => navigate("/properties")}
-                    className="bg-gradient-to-r from-red-600 to-orange-500 text-white px-6 py-3 rounded-lg hover:from-red-700 hover:to-orange-600 transition-all duration-300 font-medium"
-                  >
-                    Explore All Properties
-                  </button>
+                  <div className="flex flex-col sm:flex-row gap-3 justify-center">
+                    <button
+                      onClick={() => navigate("/properties")}
+                      className="bg-gradient-to-r from-red-600 to-orange-500 text-white px-6 py-3 rounded-lg hover:from-red-700 hover:to-orange-600 transition-all duration-300 font-medium"
+                    >
+                      Explore All Properties
+                    </button>
+                    <button
+                      onClick={() => refetchTopPicks()}
+                      className="bg-gradient-to-r from-gray-600 to-gray-700 text-white px-6 py-3 rounded-lg hover:from-gray-700 hover:to-gray-800 transition-all duration-300 font-medium"
+                    >
+                      <i className="fas fa-refresh mr-2"></i>
+                      Refresh
+                    </button>
+                  </div>
                 </div>
               </div>
             )}
@@ -461,11 +504,6 @@ const Index: React.FC = () => {
                           <i className="fas fa-heart text-gray-600 group-hover:text-white"></i>
                         </button>
                       </div>
-                      <div className="absolute bottom-4 left-4 md:opacity-0 md:group-hover:opacity-100 transition-all duration-500 transform md:translate-y-4 md:group-hover:translate-y-0">
-                        <div className="bg-white/90 backdrop-blur-sm text-gray-900 px-6 py-2 rounded-full font-bold shadow-lg">
-                          Click to view details
-                        </div>
-                      </div>
                     </div>
                     <div className="p-4 flex flex-col flex-grow">
                       <div className="flex items-start justify-between mb-3">
@@ -520,17 +558,26 @@ const Index: React.FC = () => {
                 <div className="bg-secondary/20 rounded-2xl p-12 max-w-md mx-auto">
                   <i className="fas fa-building text-6xl text-muted-foreground mb-4"></i>
                   <h3 className="text-xl font-bold text-foreground mb-2">
-                    No Properties Available
+                    No Featured Properties Available
                   </h3>
                   <p className="text-muted-foreground mb-6">
                     We're working on adding amazing properties. Check back later for new listings!
                   </p>
-                  <button
-                    onClick={() => navigate("/properties")}
-                    className="bg-gradient-to-r from-gray-800 to-gray-900 text-white px-6 py-3 rounded-lg hover:from-gray-900 hover:to-black transition-all duration-300 font-medium"
-                  >
-                    Explore All Properties
-                  </button>
+                  <div className="flex flex-col sm:flex-row gap-3 justify-center">
+                    <button
+                      onClick={() => navigate("/properties")}
+                      className="bg-gradient-to-r from-gray-800 to-gray-900 text-white px-6 py-3 rounded-lg hover:from-gray-900 hover:to-black transition-all duration-300 font-medium"
+                    >
+                      Explore All Properties
+                    </button>
+                    <button
+                      onClick={() => refetchFeatured()}
+                      className="bg-gradient-to-r from-gray-600 to-gray-700 text-white px-6 py-3 rounded-lg hover:from-gray-700 hover:to-gray-800 transition-all duration-300 font-medium"
+                    >
+                      <i className="fas fa-refresh mr-2"></i>
+                      Refresh
+                    </button>
+                  </div>
                 </div>
               </div>
             )}
