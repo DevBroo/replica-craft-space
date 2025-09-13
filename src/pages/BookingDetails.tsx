@@ -4,6 +4,8 @@ import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { shareUtils } from '@/lib/shareUtils';
 import { ShareDropdown } from '@/components/ui/ShareDropdown';
+import BookingModificationModal from '@/components/customer/BookingModificationModal';
+import BookingCancellationModal from '@/components/customer/BookingCancellationModal';
 
 interface BookingData {
   id: string;
@@ -24,6 +26,7 @@ interface BookingData {
     pricing?: any;
     images?: string[];
     amenities?: string[];
+    max_guests?: number;
   };
 }
 
@@ -32,6 +35,8 @@ const BookingDetails: React.FC = () => {
   const { toast } = useToast();
   const [showModifyModal, setShowModifyModal] = useState(false);
   const [showCancelModal, setShowCancelModal] = useState(false);
+  const [showModificationModal, setShowModificationModal] = useState(false);
+  const [showCancellationModal, setShowCancellationModal] = useState(false);
   const [booking, setBooking] = useState<BookingData | null>(null);
   const [loading, setLoading] = useState(true);
   const [selectedModification, setSelectedModification] = useState<string | null>(null);
@@ -70,38 +75,16 @@ const BookingDetails: React.FC = () => {
         return;
       }
 
-      // Close the modal and navigate to appropriate modification page
+      // Close the selection modal and open the modification modal
       setShowModifyModal(false);
-      
-      switch (selectedModification) {
-        case 'dates':
-          console.log('📅 Processing date modification');
-          toast({
-            title: "Date Modification",
-            description: "Date modification feature is coming soon. Please contact support for assistance.",
-          });
-          break;
-        case 'guests':
-          console.log('👥 Processing guest modification');
-          toast({
-            title: "Guest Modification", 
-            description: "Guest modification feature is coming soon. Please contact support for assistance.",
-          });
-          break;
-        case 'room':
-          console.log('🛏️ Processing room modification');
-          toast({
-            title: "Room Type Modification",
-            description: "Room type modification feature is coming soon. Please contact support for assistance.",
-          });
-          break;
-        default:
-          console.warn('⚠️ Unknown modification type:', selectedModification);
-          break;
-      }
-      
-      // Reset selection
       setSelectedModification(null);
+      
+      // The modification modal will handle all types of modifications
+      // We'll open it directly since it has all the necessary fields
+      setTimeout(() => {
+        setShowModificationModal(true);
+      }, 100);
+      
     } catch (error) {
       console.error('❌ Error in handleModifyContinue:', error);
       toast({
@@ -209,6 +192,13 @@ const BookingDetails: React.FC = () => {
     const diffTime = Math.abs(end.getTime() - start.getTime());
     const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
     return diffDays;
+  };
+
+  const handleBookingUpdate = async () => {
+    // Refresh booking details after modification/cancellation
+    if (id) {
+      await fetchBookingDetails(id);
+    }
   };
 
   if (loading) {
@@ -335,6 +325,21 @@ const BookingDetails: React.FC = () => {
                   <p className="text-sm text-gray-600 mt-2">Booking Reference: <span className="font-semibold text-gray-900">#{booking.id.slice(-8).toUpperCase()}</span></p>
                 </div>
               </div>
+              
+              {/* Cancellation Details for Cancelled Bookings */}
+              {booking.status === 'cancelled' && (booking as any).cancellation_reason && (
+                <div className="mt-4 p-4 bg-red-50 border border-red-200 rounded-lg">
+                  <h4 className="font-medium text-red-900 mb-2">Cancellation Details</h4>
+                  <p className="text-sm text-red-700 mb-2">
+                    <strong>Reason:</strong> {(booking as any).cancellation_reason}
+                  </p>
+                  {(booking as any).cancelled_at && (
+                    <p className="text-sm text-red-700">
+                      <strong>Cancelled on:</strong> {new Date((booking as any).cancelled_at).toLocaleDateString()}
+                    </p>
+                  )}
+                </div>
+              )}
             </div>
           </div>
 
@@ -431,9 +436,27 @@ const BookingDetails: React.FC = () => {
                   </div>
                 </div>
                 <div className="flex items-center mt-4">
-                  <i className={`fas ${booking.payment_status === 'completed' ? 'fa-check-circle text-green-500' : 'fa-clock text-yellow-500'} mr-2`}></i>
-                  <span className={`text-sm font-medium ${booking.payment_status === 'completed' ? 'text-green-600' : 'text-yellow-600'}`}>
-                    Payment {booking.payment_status === 'completed' ? 'Completed' : 'Pending'}
+                  <i className={`fas ${
+                    booking.payment_status === 'completed' ? 'fa-check-circle text-green-500' :
+                    booking.payment_status === 'refunded' ? 'fa-undo text-blue-500' :
+                    booking.payment_status === 'partially_refunded' ? 'fa-exchange-alt text-orange-500' :
+                    booking.payment_status === 'paid' ? 'fa-check-circle text-green-500' :
+                    'fa-clock text-yellow-500'
+                  } mr-2`}></i>
+                  <span className={`text-sm font-medium ${
+                    booking.payment_status === 'completed' ? 'text-green-600' :
+                    booking.payment_status === 'refunded' ? 'text-blue-600' :
+                    booking.payment_status === 'partially_refunded' ? 'text-orange-600' :
+                    booking.payment_status === 'paid' ? 'text-green-600' :
+                    'text-yellow-600'
+                  }`}>
+                    Payment {
+                      booking.payment_status === 'completed' ? 'Completed' :
+                      booking.payment_status === 'refunded' ? 'Refunded' :
+                      booking.payment_status === 'partially_refunded' ? 'Partially Refunded' :
+                      booking.payment_status === 'paid' ? 'Paid' :
+                      'Pending'
+                    }
                   </span>
                 </div>
               </div>
@@ -563,63 +586,97 @@ const BookingDetails: React.FC = () => {
         </div>
       </main>
 
-      {/* Action Buttons */}
-      <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 p-4 z-50 shadow-lg">
-        <div className="max-w-4xl mx-auto flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-4">
-          <button
-            onClick={(e) => {
-              e.preventDefault();
-              e.stopPropagation();
-              console.log('🔘 Modify Booking button clicked');
-              try {
-                setShowModifyModal(true);
-                toast({
-                  title: "Opening Modify Booking",
-                  description: "Select what you'd like to change",
-                });
-              } catch (error) {
-                console.error('❌ Error opening modify modal:', error);
-                toast({
-                  title: "Error",
-                  description: "Could not open modify booking. Please try again.",
-                  variant: "destructive",
-                });
-              }
-            }}
-            className="flex-1 bg-white border-2 border-blue-500 text-blue-600 py-3 px-4 rounded-lg hover:bg-blue-50 active:bg-blue-100 transition-all duration-200 font-medium focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50 cursor-pointer"
-            style={{ pointerEvents: 'auto' }}
-          >
-            <i className="fas fa-edit mr-2"></i>
-            Modify Booking
-          </button>
-          <button
-            onClick={(e) => {
-              e.preventDefault();
-              e.stopPropagation();
-              console.log('🔘 Cancel Booking button clicked');
-              try {
-                setShowCancelModal(true);
-                toast({
-                  title: "Opening Cancel Booking",
-                  description: "Review cancellation details",
-                });
-              } catch (error) {
-                console.error('❌ Error opening cancel modal:', error);
-                toast({
-                  title: "Error",
-                  description: "Could not open cancel booking. Please try again.",
-                  variant: "destructive",
-                });
-              }
-            }}
-            className="flex-1 bg-red-600 text-white py-3 px-4 rounded-lg hover:bg-red-700 active:bg-red-800 transition-all duration-200 font-medium focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-opacity-50 cursor-pointer"
-            style={{ pointerEvents: 'auto' }}
-          >
-            <i className="fas fa-times mr-2"></i>
-            Cancel Booking
-          </button>
+      {/* Action Buttons - Only show for active bookings */}
+      {booking.status !== 'cancelled' && booking.status !== 'completed' && (
+        <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 p-4 z-50 shadow-lg">
+          <div className="max-w-4xl mx-auto flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-4">
+            {booking.status === 'confirmed' && (
+              <>
+                <button
+                  onClick={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    console.log('🔘 Modify Booking button clicked');
+                    try {
+                      setShowModifyModal(true);
+                      toast({
+                        title: "Opening Modify Booking",
+                        description: "Select what you'd like to change",
+                      });
+                    } catch (error) {
+                      console.error('❌ Error opening modify modal:', error);
+                      toast({
+                        title: "Error",
+                        description: "Could not open modify booking. Please try again.",
+                        variant: "destructive",
+                      });
+                    }
+                  }}
+                  className="flex-1 bg-white border-2 border-blue-500 text-blue-600 py-3 px-4 rounded-lg hover:bg-blue-50 active:bg-blue-100 transition-all duration-200 font-medium focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50 cursor-pointer"
+                  style={{ pointerEvents: 'auto' }}
+                >
+                  <i className="fas fa-edit mr-2"></i>
+                  Modify Booking
+                </button>
+                <button
+                  onClick={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    console.log('🔘 Cancel Booking button clicked');
+                    try {
+                      setShowCancellationModal(true);
+                      toast({
+                        title: "Opening Cancel Booking",
+                        description: "Review cancellation details",
+                      });
+                    } catch (error) {
+                      console.error('❌ Error opening cancel modal:', error);
+                      toast({
+                        title: "Error",
+                        description: "Could not open cancel booking. Please try again.",
+                        variant: "destructive",
+                      });
+                    }
+                  }}
+                  className="flex-1 bg-red-600 text-white py-3 px-4 rounded-lg hover:bg-red-700 active:bg-red-800 transition-all duration-200 font-medium focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-opacity-50 cursor-pointer"
+                  style={{ pointerEvents: 'auto' }}
+                >
+                  <i className="fas fa-times mr-2"></i>
+                  Cancel Booking
+                </button>
+              </>
+            )}
+            {booking.status === 'pending' && (
+              <button
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  console.log('🔘 Cancel Booking button clicked');
+                  try {
+                    setShowCancellationModal(true);
+                    toast({
+                      title: "Opening Cancel Booking",
+                      description: "Review cancellation details",
+                    });
+                  } catch (error) {
+                    console.error('❌ Error opening cancel modal:', error);
+                    toast({
+                      title: "Error",
+                      description: "Could not open cancel booking. Please try again.",
+                      variant: "destructive",
+                    });
+                  }
+                }}
+                className="flex-1 bg-red-600 text-white py-3 px-4 rounded-lg hover:bg-red-700 active:bg-red-800 transition-all duration-200 font-medium focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-opacity-50 cursor-pointer"
+                style={{ pointerEvents: 'auto' }}
+              >
+                <i className="fas fa-times mr-2"></i>
+                Cancel Booking
+              </button>
+            )}
+          </div>
         </div>
-      </div>
+      )}
 
       {/* Modify Modal */}
       {showModifyModal && (
@@ -790,6 +847,26 @@ const BookingDetails: React.FC = () => {
             </div>
           </div>
         </div>
+      )}
+
+      {/* New Booking Modification Modal */}
+      {booking && (
+        <BookingModificationModal
+          open={showModificationModal}
+          onOpenChange={setShowModificationModal}
+          booking={booking}
+          onUpdate={handleBookingUpdate}
+        />
+      )}
+
+      {/* New Booking Cancellation Modal */}
+      {booking && (
+        <BookingCancellationModal
+          open={showCancellationModal}
+          onOpenChange={setShowCancellationModal}
+          booking={booking}
+          onUpdate={handleBookingUpdate}
+        />
       )}
     </div>
   );

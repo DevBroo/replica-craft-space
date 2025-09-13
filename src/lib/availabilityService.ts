@@ -214,6 +214,104 @@ export class AvailabilityService {
             return null;
         }
     }
+
+    /**
+     * Update property availability when a booking is modified
+     */
+    static async updateAvailabilityOnBookingModification(
+        propertyId: string,
+        oldDates: { check_in_date: string; check_out_date: string },
+        newDates: { check_in_date: string; check_out_date: string }
+    ): Promise<void> {
+        try {
+            console.log('🔄 Updating availability for booking modification:', {
+                propertyId,
+                oldDates,
+                newDates
+            });
+
+            // The availability is automatically updated based on the bookings table
+            // When a booking is modified, the new dates will be reflected in the availability check
+            // This method is here for future enhancements like caching or notifications
+
+            console.log('✅ Availability updated for booking modification');
+        } catch (error) {
+            console.error('❌ Error updating availability on booking modification:', error);
+            throw error;
+        }
+    }
+
+    /**
+     * Update property availability when a booking is cancelled
+     */
+    static async updateAvailabilityOnBookingCancellation(
+        propertyId: string,
+        cancelledDates: { check_in_date: string; check_out_date: string }
+    ): Promise<void> {
+        try {
+            console.log('🔄 Updating availability for booking cancellation:', {
+                propertyId,
+                cancelledDates
+            });
+
+            // The availability is automatically updated based on the bookings table
+            // When a booking is cancelled, those dates become available again
+            // This method is here for future enhancements like caching or notifications
+
+            console.log('✅ Availability updated for booking cancellation');
+        } catch (error) {
+            console.error('❌ Error updating availability on booking cancellation:', error);
+            throw error;
+        }
+    }
+
+    /**
+     * Check if dates are available excluding a specific booking (for modification)
+     */
+    static async checkDateRangeAvailabilityExcludingBooking(
+        propertyId: string,
+        checkInDate: string,
+        checkOutDate: string,
+        excludeBookingId: string
+    ): Promise<{ available: boolean; conflictingBookings?: any[] }> {
+        try {
+            console.log('🔍 Checking date range availability excluding booking:', { 
+                propertyId, 
+                checkInDate, 
+                checkOutDate, 
+                excludeBookingId 
+            });
+
+            // Check for overlapping bookings excluding the specified booking
+            const { data: conflictingBookings, error } = await supabase
+                .from('bookings')
+                .select('*')
+                .eq('property_id', propertyId)
+                .in('status', ['confirmed', 'pending'])
+                .neq('id', excludeBookingId) // Exclude the booking being modified
+                .or(`and(check_in_date.lte.${checkOutDate},check_out_date.gte.${checkInDate})`);
+
+            if (error) {
+                console.error('❌ Error checking date availability:', error);
+                throw error;
+            }
+
+            const available = !conflictingBookings || conflictingBookings.length === 0;
+
+            console.log('✅ Date range availability check complete:', { 
+                available, 
+                conflicts: conflictingBookings?.length || 0 
+            });
+
+            return {
+                available,
+                conflictingBookings: conflictingBookings || []
+            };
+        } catch (error) {
+            console.error('❌ Error checking date range availability excluding booking:', error);
+            throw error;
+        }
+    }
 }
 
 export default AvailabilityService;

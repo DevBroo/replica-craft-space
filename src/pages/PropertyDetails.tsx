@@ -603,6 +603,39 @@ const PropertyDetails = () => {
     const checkOutStr = checkOutDate.toISOString().split("T")[0];
 
     try {
+      // Validate booking dates first
+      const dateValidation = AvailabilityService.validateBookingDates(checkInDate, checkOutDate);
+      if (!dateValidation.valid) {
+        toast({
+          title: "Invalid Dates",
+          description: dateValidation.error,
+          variant: "destructive",
+        });
+        return;
+      }
+
+      // Check guest count against property limits
+      const totalGuests = guests.adults + guests.children.length;
+      if (totalGuests > property.max_guests) {
+        toast({
+          title: "Guest Limit Exceeded",
+          description: `This property accommodates up to ${property.max_guests} guests. You have selected ${totalGuests} guests.`,
+          variant: "destructive",
+        });
+        return;
+      }
+
+      // Check if minimum guest requirement is met
+      if (totalGuests < 1) {
+        toast({
+          title: "Minimum Guests Required",
+          description: "Please select at least 1 guest for this booking.",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      // Check date availability
       const availabilityCheck = await AvailabilityService.checkDateRangeAvailability(
         property.id,
         checkInStr,
@@ -611,19 +644,8 @@ const PropertyDetails = () => {
 
       if (!availabilityCheck.available) {
         toast({
-          title: "Dates Not Available",
-          description: `Selected dates are not available. ${availabilityCheck.conflictingBookings?.length || 0} conflicting booking(s) found.`,
-          variant: "destructive",
-        });
-        return;
-      }
-
-      // Validate booking dates
-      const dateValidation = AvailabilityService.validateBookingDates(checkInDate, checkOutDate);
-      if (!dateValidation.valid) {
-        toast({
-          title: "Invalid Dates",
-          description: dateValidation.error,
+          title: "Property Not Available",
+          description: `This property is not available for the selected dates (${checkInStr} to ${checkOutStr}). Please choose different dates.`,
           variant: "destructive",
         });
         return;

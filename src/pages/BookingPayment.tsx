@@ -7,6 +7,7 @@ import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
 import { PropertyService } from '@/lib/propertyService';
 import { BookingService } from '@/lib/bookingService';
+import { AvailabilityService } from '@/lib/availabilityService';
 import { PhonePePayment } from '@/components/payment/PhonePePayment';
 import GuestInformationForm, { GuestInfo } from '@/components/ui/GuestInformationForm';
 import {
@@ -148,7 +149,7 @@ const BookingPayment: React.FC = () => {
         }
     };
 
-    const proceedToPayment = () => {
+    const proceedToPayment = async () => {
         if (!user || !bookingData) return;
 
         // Validate guest information
@@ -163,7 +164,7 @@ const BookingPayment: React.FC = () => {
 
         if (!guestInfo.phone.trim()) {
             toast({
-                title: "Phone Number Required", 
+                title: "Phone Number Required",
                 description: "Please enter the guest's phone number",
                 variant: "destructive"
             });
@@ -175,6 +176,32 @@ const BookingPayment: React.FC = () => {
                 title: "Date of Birth Required",
                 description: "Please enter the guest's date of birth",
                 variant: "destructive"
+            });
+            return;
+        }
+
+        // Final availability check before payment
+        try {
+            const availabilityCheck = await AvailabilityService.checkDateRangeAvailability(
+                propertyId!,
+                bookingData.checkInDate,
+                bookingData.checkOutDate
+            );
+
+            if (!availabilityCheck.available) {
+                toast({
+                    title: "Property No Longer Available",
+                    description: "This property is no longer available for the selected dates. Please choose different dates or another property.",
+                    variant: "destructive",
+                });
+                return;
+            }
+        } catch (error) {
+            console.error('Error checking final availability:', error);
+            toast({
+                title: "Availability Check Failed",
+                description: "Unable to verify property availability. Please try again.",
+                variant: "destructive",
             });
             return;
         }

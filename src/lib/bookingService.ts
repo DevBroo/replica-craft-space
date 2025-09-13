@@ -213,4 +213,124 @@ export class BookingService {
       throw error;
     }
   }
+
+  static async modifyBooking(bookingId: string, updateData: {
+    check_in_date?: string;
+    check_out_date?: string;
+    guests?: number;
+    total_amount?: number;
+    modification_reason?: string;
+  }) {
+    try {
+      const { data, error } = await supabase
+        .from('bookings')
+        .update({
+          ...updateData,
+          updated_at: new Date().toISOString(),
+        })
+        .eq('id', bookingId)
+        .select()
+        .single();
+
+      if (error) {
+        console.error('Error modifying booking:', error);
+        throw error;
+      }
+
+      // Log the modification action
+      await supabase
+        .from('booking_action_logs')
+        .insert({
+          booking_id: bookingId,
+          actor_id: (await supabase.auth.getUser()).data.user?.id,
+          action: 'customer_modification',
+          reason: updateData.modification_reason,
+          metadata: updateData
+        });
+
+      return data;
+    } catch (error) {
+      console.error('BookingService.modifyBooking error:', error);
+      throw error;
+    }
+  }
+
+  static async cancelBooking(bookingId: string, cancellationData: {
+    cancellation_reason: string;
+    cancellation_type: string;
+    cancellation_fee: number;
+    refund_amount: number;
+  }) {
+    try {
+      // First, get the current booking to check payment status
+      const { data: currentBooking, error: fetchError } = await supabase
+        .from('bookings')
+        .select('payment_status, total_amount')
+        .eq('id', bookingId)
+        .single();
+
+      if (fetchError) {
+        console.error('Error fetching booking for cancellation:', fetchError);
+        throw fetchError;
+      }
+
+      // Determine payment status based on cancellation fee
+      let newPaymentStatus = currentBooking.payment_status;
+      if (cancellationData.cancellation_fee === 0) {
+        // Full refund - payment was completed but fully refunded
+        newPaymentStatus = 'refunded';
+      } else if (cancellationData.cancellation_fee < currentBooking.total_amount) {
+        // Partial refund - payment was completed but partially refunded
+        newPaymentStatus = 'partially_refunded';
+      } else {
+        // No refund - payment was completed, no refund
+        newPaymentStatus = 'completed';
+      }
+
+      const { data, error } = await supabase
+        .from('bookings')
+        .update({
+          status: 'cancelled',
+          payment_status: newPaymentStatus,
+          cancellation_reason: cancellationData.cancellation_reason,
+          cancelled_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+          booking_details: {
+            cancellation_type: cancellationData.cancellation_type,
+            cancellation_fee: cancellationData.cancellation_fee,
+            refund_amount: cancellationData.refund_amount,
+            original_payment_status: currentBooking.payment_status,
+            cancellation_payment_status: newPaymentStatus,
+          }
+        })
+        .eq('id', bookingId)
+        .select()
+        .single();
+
+      if (error) {
+        console.error('Error cancelling booking:', error);
+        throw error;
+      }
+
+      // Log the cancellation action
+      await supabase
+        .from('booking_action_logs')
+        .insert({
+          booking_id: bookingId,
+          actor_id: (await supabase.auth.getUser()).data.user?.id,
+          action: 'customer_cancellation',
+          reason: cancellationData.cancellation_reason,
+          metadata: {
+            ...cancellationData,
+            original_payment_status: currentBooking.payment_status,
+            new_payment_status: newPaymentStatus
+          }
+        });
+
+      return data;
+    } catch (error) {
+      console.error('BookingService.cancelBooking error:', error);
+      throw error;
+    }
+  }
 }

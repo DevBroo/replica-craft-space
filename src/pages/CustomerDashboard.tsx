@@ -19,6 +19,8 @@ import { toast } from '@/hooks/use-toast';
 import { ReviewYourStay } from '@/components/reviews/ReviewYourStay';
 import CustomerMessages from '@/components/customer/CustomerMessages';
 import { MessageService } from '@/lib/messageService';
+import BookingModificationModal from '@/components/customer/BookingModificationModal';
+import BookingCancellationModal from '@/components/customer/BookingCancellationModal';
 
 interface Booking {
   id: string;
@@ -28,6 +30,15 @@ interface Booking {
   check_out_date: string;
   status: string;
   total_amount: number;
+  guests: number;
+  payment_status?: string;
+  cancellation_reason?: string;
+  cancelled_at?: string;
+  properties?: {
+    title: string;
+    max_guests?: number;
+    pricing?: any;
+  };
 }
 
 interface Property {
@@ -52,6 +63,9 @@ export default function CustomerDashboard() {
     phone: '',
     bio: ''
   });
+  const [showModificationModal, setShowModificationModal] = useState(false);
+  const [showCancellationModal, setShowCancellationModal] = useState(false);
+  const [selectedBooking, setSelectedBooking] = useState<Booking | null>(null);
   
   const { savedProperties, savedCount, removeFromWishlist } = useWishlist();
 
@@ -93,7 +107,12 @@ export default function CustomerDashboard() {
           check_in_date: booking.check_in_date,
           check_out_date: booking.check_out_date,
           status: booking.status,
-          total_amount: booking.total_amount
+          total_amount: booking.total_amount,
+          guests: booking.guests,
+          payment_status: booking.payment_status,
+          cancellation_reason: booking.cancellation_reason,
+          cancelled_at: booking.cancelled_at,
+          properties: booking.properties
         }));
         setBookings(formattedBookings);
       }
@@ -245,6 +264,21 @@ export default function CustomerDashboard() {
     } catch (error) {
       console.error('Logout error:', error);
     }
+  };
+
+  const handleModifyBooking = (booking: Booking) => {
+    setSelectedBooking(booking);
+    setShowModificationModal(true);
+  };
+
+  const handleCancelBooking = (booking: Booking) => {
+    setSelectedBooking(booking);
+    setShowCancellationModal(true);
+  };
+
+  const handleBookingUpdate = async () => {
+    // Refresh bookings after modification/cancellation
+    await fetchUserData();
   };
 
   const getStatusBadgeVariant = (status: string) => {
@@ -448,6 +482,16 @@ export default function CustomerDashboard() {
                             {new Date(booking.check_in_date).toLocaleDateString()} - {new Date(booking.check_out_date).toLocaleDateString()}
                           </p>
                           <p className="text-sm font-medium">₹{booking.total_amount.toLocaleString()}</p>
+                          {booking.payment_status && (
+                            <p className={`text-xs ${
+                              booking.payment_status === 'completed' || booking.payment_status === 'paid' ? 'text-green-600' :
+                              booking.payment_status === 'refunded' ? 'text-blue-600' :
+                              booking.payment_status === 'partially_refunded' ? 'text-orange-600' :
+                              'text-yellow-600'
+                            }`}>
+                              Payment: {booking.payment_status.replace('_', ' ').toUpperCase()}
+                            </p>
+                          )}
                         </div>
                         <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2 sm:space-x-2">
                           <Badge variant={getStatusBadgeVariant(booking.status)} className="self-start sm:self-auto">
@@ -464,6 +508,42 @@ export default function CustomerDashboard() {
                               <span className="hidden sm:inline">Message Host</span>
                               <span className="sm:hidden">Message</span>
                             </Button>
+                            {booking.status === 'confirmed' && (
+                              <>
+                                <Button 
+                                  variant="outline" 
+                                  size="sm" 
+                                  onClick={() => handleModifyBooking(booking)}
+                                  className="bg-green-50 hover:bg-green-100 text-green-700 border-green-200 text-xs sm:text-sm h-8 px-2 sm:px-3"
+                                >
+                                  <Edit className="h-3 w-3 mr-1" />
+                                  <span className="hidden sm:inline">Modify</span>
+                                  <span className="sm:hidden">Edit</span>
+                                </Button>
+                                <Button 
+                                  variant="outline" 
+                                  size="sm" 
+                                  onClick={() => handleCancelBooking(booking)}
+                                  className="bg-red-50 hover:bg-red-100 text-red-700 border-red-200 text-xs sm:text-sm h-8 px-2 sm:px-3"
+                                >
+                                  <X className="h-3 w-3 mr-1" />
+                                  <span className="hidden sm:inline">Cancel</span>
+                                  <span className="sm:hidden">Cancel</span>
+                                </Button>
+                              </>
+                            )}
+                            {booking.status === 'pending' && (
+                              <Button 
+                                variant="outline" 
+                                size="sm" 
+                                onClick={() => handleCancelBooking(booking)}
+                                className="bg-red-50 hover:bg-red-100 text-red-700 border-red-200 text-xs sm:text-sm h-8 px-2 sm:px-3"
+                              >
+                                <X className="h-3 w-3 mr-1" />
+                                <span className="hidden sm:inline">Cancel</span>
+                                <span className="sm:hidden">Cancel</span>
+                              </Button>
+                            )}
                             <Button variant="outline" size="sm" asChild className="text-xs sm:text-sm h-8 px-2 sm:px-3">
                               <Link to={`/booking/${booking.id}`}>
                                 <span className="hidden sm:inline">View Booking</span>
@@ -758,6 +838,26 @@ export default function CustomerDashboard() {
           </div>
         </DialogContent>
       </Dialog>
+
+      {/* Booking Modification Modal */}
+      {selectedBooking && (
+        <BookingModificationModal
+          open={showModificationModal}
+          onOpenChange={setShowModificationModal}
+          booking={selectedBooking}
+          onUpdate={handleBookingUpdate}
+        />
+      )}
+
+      {/* Booking Cancellation Modal */}
+      {selectedBooking && (
+        <BookingCancellationModal
+          open={showCancellationModal}
+          onOpenChange={setShowCancellationModal}
+          booking={selectedBooking}
+          onUpdate={handleBookingUpdate}
+        />
+      )}
     </div>
   );
 }

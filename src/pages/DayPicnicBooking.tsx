@@ -12,6 +12,7 @@ import { supabase } from '@/integrations/supabase/client';
 import GuestSelector, { GuestBreakdown } from '@/components/ui/GuestSelector';
 import GuestInformationForm, { GuestInfo } from '@/components/ui/GuestInformationForm';
 import { CouponService, Coupon } from '@/lib/couponService';
+import { AvailabilityService } from '@/lib/availabilityService';
 import {
   Clock,
   MapPin,
@@ -582,6 +583,63 @@ const DayPicnicBooking: React.FC = () => {
         title: "Date of Birth Required",
         description: "Please enter the guest's date of birth",
         variant: "destructive"
+      });
+      return;
+    }
+
+    // Check guest count against package limits
+    const totalGuests = guests.adults + guests.children.length;
+    if (package_.max_guests && totalGuests > package_.max_guests) {
+      toast({
+        title: "Guest Limit Exceeded",
+        description: `This package accommodates up to ${package_.max_guests} guests. You have selected ${totalGuests} guests.`,
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (package_.min_guests && totalGuests < package_.min_guests) {
+      toast({
+        title: "Minimum Guests Required",
+        description: `This package requires at least ${package_.min_guests} guests. You have selected ${totalGuests} guests.`,
+        variant: "destructive",
+      });
+      return;
+    }
+
+    // Check if minimum guest requirement is met
+    if (totalGuests < 1) {
+      toast({
+        title: "Minimum Guests Required",
+        description: "Please select at least 1 guest for this booking.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    // Check date availability for day picnic
+    try {
+      const dateStr = selectedDate;
+      const availabilityCheck = await AvailabilityService.checkDateRangeAvailability(
+        propertyId!,
+        dateStr,
+        dateStr
+      );
+
+      if (!availabilityCheck.available) {
+        toast({
+          title: "Property Not Available",
+          description: `This property is not available for day picnic on ${new Date(selectedDate).toLocaleDateString()}. Please choose a different date.`,
+          variant: "destructive",
+        });
+        return;
+      }
+    } catch (error) {
+      console.error('Error checking day picnic availability:', error);
+      toast({
+        title: "Availability Check Failed",
+        description: "Unable to verify property availability. Please try again.",
+        variant: "destructive",
       });
       return;
     }
