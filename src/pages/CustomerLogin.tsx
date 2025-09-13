@@ -229,7 +229,7 @@ const CustomerLogin: React.FC = () => {
                   to="/agent/login" 
                   className="block w-full text-center py-2 px-4 border border-border rounded-md text-sm text-foreground hover:bg-secondary transition-colors"
                 >
-                  Real Estate Agent Login
+                  Agent Login
                 </Link>
               </div>
             </div>

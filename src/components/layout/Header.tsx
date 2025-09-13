@@ -76,37 +76,43 @@ const Header: React.FC = () => {
                       <i className="fas fa-home mr-3 text-orange-500"></i>
                       Host Portal
                     </button>
-                    {/* Travel Agent Portal - Hidden */}
-                    {false && (
+                    {/* Agent Portal */}
                     <button 
                       onClick={(e) => {
                         e.preventDefault();
                         e.stopPropagation();
-                        console.log('🚀 Travel Agent Portal clicked');
+                        console.log('🚀 Agent Portal clicked');
                         console.log('🔍 Current user state:', { 
                           isAuthenticated, 
                           user: user ? { email: user.email, role: user.role } : null 
                         });
                         
+                        if (loading) {
+                          console.log('⏳ Auth still loading, waiting...');
+                          return;
+                        }
+                        
                         if (isAuthenticated && user) {
+                          console.log('✅ User is authenticated, checking role...');
+                          console.log('🔍 User role:', user.role);
+                          
+                          // Check if user is agent
                           if (user.role === 'agent') {
-                            console.log('✅ User is agent, navigating to dashboard');
                             navigate('/agent/dashboard');
                           } else {
-                            console.log('⚠️ User is not agent, navigating to login');
-                            navigate('/agent/login');
+                            // Non-agent authenticated user, redirect to agent login with switch option
+                            navigate('/agent/login?switch=1');
                           }
                         } else {
-                          console.log('❌ User not authenticated, navigating to login');
+                          console.log('❌ User not authenticated, navigating to agent login');
                           navigate('/agent/login');
                         }
                       }} 
                       className="w-full text-left px-4 py-3 text-sm text-gray-700 hover:bg-gray-50 hover:text-orange-500 transition-colors duration-200 border-b border-gray-100"
                     >
                       <i className="fas fa-handshake mr-3 text-orange-500"></i>
-                      Travel Agent Portal
+                      Agent Portal
                     </button>
-                    )}
                     <Link to="/admin/login" className="block px-4 py-3 text-sm text-gray-700 hover:bg-gray-50 hover:text-orange-500 transition-colors duration-200">
                       <i className="fas fa-cog mr-3 text-orange-500"></i>
                       Admin Panel

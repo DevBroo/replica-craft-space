@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Agent Dashboard - Removed Create Booking</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .test-section {
+            background: white;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .success {
+            color: #28a745;
+            font-weight: bold;
+        }
+        .info {
+            color: #17a2b8;
+            font-weight: bold;
+        }
+        .change-summary {
+            background: #d4edda;
+            border: 1px solid #c3e6cb;
+            padding: 15px;
+            border-radius: 4px;
+            margin: 10px 0;
+        }
+        .before-after {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin: 20px 0;
+        }
+        .before, .after {
+            padding: 15px;
+            border-radius: 8px;
+        }
+        .before {
+            background: #f8d7da;
+            border: 1px solid #f5c6cb;
+        }
+        .after {
+            background: #d4edda;
+            border: 1px solid #c3e6cb;
+        }
+        .step {
+            background: #e7f3ff;
+            border: 1px solid #b3d9ff;
+            padding: 15px;
+            border-radius: 4px;
+            margin: 10px 0;
+        }
+        .step h4 {
+            margin: 0 0 10px 0;
+            color: #0066cc;
+        }
+        .code-block {
+            background: #f8f9fa;
+            border: 1px solid #e9ecef;
+            padding: 10px;
+            border-radius: 4px;
+            font-family: monospace;
+            margin: 10px 0;
+        }
+    </style>
+</head>
+<body>
+    <h1>🔧 Agent Dashboard - Removed Create Booking</h1>
+    
+    <div class="test-section">
+        <h2>✅ Changes Made</h2>
+        <div class="change-summary">
+            <h3>🎯 What Was Removed:</h3>
+            <ul>
+                <li><strong>Create Booking Tab</strong> - Removed from navigation</li>
+                <li><strong>AgentBookingForm Component</strong> - No longer imported or used</li>
+                <li><strong>Plus Icon</strong> - Removed unused import</li>
+                <li><strong>Create Booking TabsContent</strong> - Removed entire section</li>
+            </ul>
+            
+            <h3>🎯 What Was Added:</h3>
+            <ul>
+                <li><strong>How to Create Bookings Info Card</strong> - Clear instructions for agents</li>
+                <li><strong>Step-by-step Guide</strong> - Explains the normal booking flow</li>
+                <li><strong>Go to Main Website Button</strong> - Direct link to main site</li>
+                <li><strong>Updated Grid Layout</strong> - Changed from 5 columns to 4 columns</li>
+            </ul>
+        </div>
+    </div>
+
+    <div class="test-section">
+        <h2>📊 Before vs After</h2>
+        <div class="before-after">
+            <div class="before">
+                <h4>❌ Before (5 Tabs):</h4>
+                <ul>
+                    <li>Overview</li>
+                    <li><strong>+ Create Booking</strong> ← REMOVED</li>
+                    <li>Commissions</li>
+                    <li>My Bookings</li>
+                    <li>Profile</li>
+                </ul>
+            </div>
+            <div class="after">
+                <h4>✅ After (4 Tabs):</h4>
+                <ul>
+                    <li>Overview</li>
+                    <li>Commissions</li>
+                    <li>My Bookings</li>
+                    <li>Profile</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <div class="test-section">
+        <h2>🎯 New Agent Workflow</h2>
+        <div class="step">
+            <h4>Step 1: Use Main Website</h4>
+            <p>Agents go to the main Picnify website and browse properties like regular customers</p>
+        </div>
+        <div class="step">
+            <h4>Step 2: Book for Customer</h4>
+            <p>Select properties and complete the booking process with customer's details</p>
+        </div>
+        <div class="step">
+            <h4>Step 3: Earn Commission Automatically</h4>
+            <p>Once booking is confirmed, agent automatically earns commission at their current rate</p>
+        </div>
+    </div>
+
+    <div class="test-section">
+        <h2>🔧 Technical Changes</h2>
+        
+        <h3>📝 Files Modified:</h3>
+        <ul>
+            <li><strong>src/pages/AgentDashboard.tsx</strong> - Main dashboard component</li>
+        </ul>
+        
+        <h3>🗑️ Removed Code:</h3>
+        <div class="code-block">
+// Removed import
+import AgentBookingForm from '@/components/agent/AgentBookingForm';
+
+// Removed tab trigger
+&lt;TabsTrigger value="create-booking"&gt;
+  &lt;Plus className="h-4 w-4 mr-1" /&gt;
+  &lt;span className="hidden sm:inline"&gt;Create Booking&lt;/span&gt;
+&lt;/TabsTrigger&gt;
+
+// Removed tab content
+&lt;TabsContent value="create-booking"&gt;
+  &lt;AgentBookingForm /&gt;
+&lt;/TabsContent&gt;
+        </div>
+        
+        <h3>➕ Added Code:</h3>
+        <div class="code-block">
+// Added helpful info card
+&lt;Card className="border-0 shadow-lg bg-gradient-to-r from-blue-50 to-indigo-50"&gt;
+  &lt;CardHeader&gt;
+    &lt;CardTitle&gt;How to Create Bookings&lt;/CardTitle&gt;
+    &lt;CardDescription&gt;Create bookings for customers and earn commission automatically&lt;/CardDescription&gt;
+  &lt;/CardHeader&gt;
+  &lt;CardContent&gt;
+    // Step-by-step instructions
+    // Go to Main Website button
+  &lt;/CardContent&gt;
+&lt;/Card&gt;
+        </div>
+    </div>
+
+    <div class="test-section">
+        <h2>🎉 Benefits</h2>
+        <ul>
+            <li><strong>✅ Simplified Interface</strong> - Cleaner dashboard with fewer tabs</li>
+            <li><strong>✅ Clear Instructions</strong> - Agents know exactly how to create bookings</li>
+            <li><strong>✅ Normal Booking Flow</strong> - Uses existing, tested booking system</li>
+            <li><strong>✅ Automatic Commission</strong> - No manual booking creation needed</li>
+            <li><strong>✅ Better UX</strong> - Agents use the same interface as customers</li>
+            <li><strong>✅ Consistent Experience</strong> - All bookings go through same validation</li>
+        </ul>
+    </div>
+
+    <div class="test-section">
+        <h2>🚀 Next Steps</h2>
+        <ol>
+            <li><strong>Run the SQL fix</strong> - Execute <code>fix-agent-dashboard-safe.sql</code> in Supabase</li>
+            <li><strong>Test agent dashboard</strong> - Verify it loads without errors</li>
+            <li><strong>Test booking flow</strong> - Have an agent create a booking through main website</li>
+            <li><strong>Verify commission</strong> - Check that commission is automatically calculated</li>
+            <li><strong>Update documentation</strong> - Let agents know about the new workflow</li>
+        </ol>
+    </div>
+
+    <script>
+        // Auto-run on page load
+        window.onload = function() {
+            console.log('🎉 Agent Dashboard Create Booking Removal Complete!');
+            console.log('📝 Changes made:');
+            console.log('   • Removed Create Booking tab');
+            console.log('   • Added helpful instructions');
+            console.log('   • Updated grid layout');
+            console.log('   • Agents now use main website for bookings');
+            console.log('🔧 Next: Run fix-agent-dashboard-safe.sql in Supabase');
+        };
+    </script>
+</body>
+</html>

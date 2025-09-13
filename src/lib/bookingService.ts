@@ -19,6 +19,8 @@ export interface BookingData {
     email: string;
     phone?: string;
   };
+  // Agent tracking
+  agent_id?: string;
 }
 
 export class BookingService {
@@ -66,7 +68,9 @@ export class BookingService {
             customer_details: bookingData.customer_details
           },
           status: bookingData.status || 'pending',
-          payment_status: 'pending'
+          payment_status: 'pending',
+          // Add agent tracking
+          agent_id: bookingData.agent_id
         }])
         .select()
         .single();

@@ -219,6 +219,8 @@ const BookingPayment: React.FC = () => {
             guest_phone: guestInfo.phone.trim(),
             guest_date_of_birth: guestInfo.dateOfBirth,
             payment_method: 'phonepe' as const,
+            // Set agent_id if user is an agent
+            agent_id: user.role === 'agent' ? user.id : undefined,
             customer_details: {
                 name: user.email?.split('@')[0] || 'Guest',
                 email: user.email!,
@@ -228,6 +230,8 @@ const BookingPayment: React.FC = () => {
                 property_title: bookingData.propertyTitle,
                 property_images: bookingData.propertyImages,
                 booking_type: bookingData.guestName ? 'day_picnic' : 'standard',
+                // Track if booking was made by an agent
+                booked_by_agent: user.role === 'agent',
                 // Include original booking details if from day picnic
                 ...(bookingData as any).bookingDetails
             }

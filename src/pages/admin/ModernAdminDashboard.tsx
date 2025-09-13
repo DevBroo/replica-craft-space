@@ -251,6 +251,7 @@ const ModernAdminDashboard: React.FC = () => {
         {[
           { id: 'overview', label: 'Overview', icon: BarChart3, path: '/admin/dashboard' },
           { id: 'owners', label: 'Hosts', icon: Users, path: '/admin/owner-management' },
+          { id: 'agents', label: 'Agents', icon: Users, path: '/admin/agent-management' },
           { id: 'properties', label: 'Properties', icon: Building, path: '/admin/property-approval' },
           { id: 'bookings', label: 'Bookings', icon: Calendar, path: '/admin/booking-management' },
           { id: 'analytics', label: 'Analytics', icon: TrendingUp, path: '/admin/analytics' },

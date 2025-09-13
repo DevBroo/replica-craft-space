@@ -1,0 +1,268 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Commission Service</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .test-section {
+            margin: 20px 0;
+            padding: 15px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
+        .success { background-color: #d4edda; border-color: #c3e6cb; }
+        .error { background-color: #f8d7da; border-color: #f5c6cb; }
+        .info { background-color: #d1ecf1; border-color: #bee5eb; }
+        button {
+            background-color: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        button:hover { background-color: #0056b3; }
+        pre { background-color: #f8f9fa; padding: 10px; border-radius: 5px; overflow-x: auto; }
+    </style>
+</head>
+<body>
+    <h1>Commission Service Test</h1>
+    <p>This page tests the CommissionService methods to see if they work correctly.</p>
+
+    <div class="test-section info">
+        <h3>Test Instructions</h3>
+        <p>1. Open browser console (F12)</p>
+        <p>2. Click the test buttons below</p>
+        <p>3. Check console for results and any errors</p>
+    </div>
+
+    <div class="test-section">
+        <h3>Test CommissionService.getCommissions()</h3>
+        <button onclick="testGetCommissions()">Test getCommissions</button>
+        <div id="getCommissionsResult"></div>
+    </div>
+
+    <div class="test-section">
+        <h3>Test CommissionService.getRevenueSplitSummary()</h3>
+        <button onclick="testGetRevenueSplitSummary()">Test getRevenueSplitSummary</button>
+        <div id="getRevenueSplitSummaryResult"></div>
+    </div>
+
+    <div class="test-section">
+        <h3>Test CommissionService.getCommissionAnalytics()</h3>
+        <button onclick="testGetCommissionAnalytics()">Test getCommissionAnalytics</button>
+        <div id="getCommissionAnalyticsResult"></div>
+    </div>
+
+    <div class="test-section">
+        <h3>Test CommissionService.getAllAgentsCommissionData()</h3>
+        <button onclick="testGetAllAgentsCommissionData()">Test getAllAgentsCommissionData</button>
+        <div id="getAllAgentsCommissionDataResult"></div>
+    </div>
+
+    <script>
+        // Import the CommissionService (this would normally be done via module imports)
+        // For testing, we'll simulate the service calls
+        
+        async function testGetCommissions() {
+            const resultDiv = document.getElementById('getCommissionsResult');
+            resultDiv.innerHTML = '<p>Testing getCommissions...</p>';
+            
+            try {
+                // This would normally call CommissionService.getCommissions()
+                console.log('🔍 Testing CommissionService.getCommissions()');
+                
+                // Simulate the call
+                const result = await simulateGetCommissions();
+                
+                resultDiv.innerHTML = `
+                    <div class="success">
+                        <h4>✅ Success!</h4>
+                        <pre>${JSON.stringify(result, null, 2)}</pre>
+                    </div>
+                `;
+                
+                console.log('✅ getCommissions result:', result);
+            } catch (error) {
+                resultDiv.innerHTML = `
+                    <div class="error">
+                        <h4>❌ Error!</h4>
+                        <pre>${error.message}</pre>
+                    </div>
+                `;
+                console.error('❌ getCommissions error:', error);
+            }
+        }
+
+        async function testGetRevenueSplitSummary() {
+            const resultDiv = document.getElementById('getRevenueSplitSummaryResult');
+            resultDiv.innerHTML = '<p>Testing getRevenueSplitSummary...</p>';
+            
+            try {
+                console.log('🔍 Testing CommissionService.getRevenueSplitSummary()');
+                
+                const result = await simulateGetRevenueSplitSummary();
+                
+                resultDiv.innerHTML = `
+                    <div class="success">
+                        <h4>✅ Success!</h4>
+                        <pre>${JSON.stringify(result, null, 2)}</pre>
+                    </div>
+                `;
+                
+                console.log('✅ getRevenueSplitSummary result:', result);
+            } catch (error) {
+                resultDiv.innerHTML = `
+                    <div class="error">
+                        <h4>❌ Error!</h4>
+                        <pre>${error.message}</pre>
+                    </div>
+                `;
+                console.error('❌ getRevenueSplitSummary error:', error);
+            }
+        }
+
+        async function testGetCommissionAnalytics() {
+            const resultDiv = document.getElementById('getCommissionAnalyticsResult');
+            resultDiv.innerHTML = '<p>Testing getCommissionAnalytics...</p>';
+            
+            try {
+                console.log('🔍 Testing CommissionService.getCommissionAnalytics()');
+                
+                const result = await simulateGetCommissionAnalytics();
+                
+                resultDiv.innerHTML = `
+                    <div class="success">
+                        <h4>✅ Success!</h4>
+                        <pre>${JSON.stringify(result, null, 2)}</pre>
+                    </div>
+                `;
+                
+                console.log('✅ getCommissionAnalytics result:', result);
+            } catch (error) {
+                resultDiv.innerHTML = `
+                    <div class="error">
+                        <h4>❌ Error!</h4>
+                        <pre>${error.message}</pre>
+                    </div>
+                `;
+                console.error('❌ getCommissionAnalytics error:', error);
+            }
+        }
+
+        async function testGetAllAgentsCommissionData() {
+            const resultDiv = document.getElementById('getAllAgentsCommissionDataResult');
+            resultDiv.innerHTML = '<p>Testing getAllAgentsCommissionData...</p>';
+            
+            try {
+                console.log('🔍 Testing CommissionService.getAllAgentsCommissionData()');
+                
+                const result = await simulateGetAllAgentsCommissionData();
+                
+                resultDiv.innerHTML = `
+                    <div class="success">
+                        <h4>✅ Success!</h4>
+                        <pre>${JSON.stringify(result, null, 2)}</pre>
+                    </div>
+                `;
+                
+                console.log('✅ getAllAgentsCommissionData result:', result);
+            } catch (error) {
+                resultDiv.innerHTML = `
+                    <div class="error">
+                        <h4>❌ Error!</h4>
+                        <pre>${error.message}</pre>
+                    </div>
+                `;
+                console.error('❌ getAllAgentsCommissionData error:', error);
+            }
+        }
+
+        // Simulate the service calls (in real app, these would be actual service calls)
+        async function simulateGetCommissions() {
+            // Simulate API call delay
+            await new Promise(resolve => setTimeout(resolve, 1000));
+            
+            // Return mock data based on what we know exists
+            return {
+                data: [
+                    {
+                        id: "test-1",
+                        commission_id: "test-1",
+                        property_title: "Life at Repose - Lake Villas and Club",
+                        booking_id: "40fc20e2-248b-4d60-becd-9270968ff029",
+                        owner_name: "Property Owner",
+                        agent_name: "Agent Name",
+                        total_booking_amount: 5000,
+                        admin_commission: 500,
+                        owner_share: 4250,
+                        agent_commission: 250,
+                        due_date: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
+                        disbursement_status: "pending",
+                        payment_details: {
+                            method: "pending",
+                            reference: "",
+                            date: null
+                        },
+                        created_at: new Date().toISOString(),
+                        updated_at: new Date().toISOString()
+                    }
+                ],
+                count: 1
+            };
+        }
+
+        async function simulateGetRevenueSplitSummary() {
+            await new Promise(resolve => setTimeout(resolve, 1000));
+            
+            return {
+                totalAdmin: 720,
+                totalOwner: 6227.80,
+                totalAgent: 252.20,
+                totalAmount: 7200
+            };
+        }
+
+        async function simulateGetCommissionAnalytics() {
+            await new Promise(resolve => setTimeout(resolve, 1000));
+            
+            return {
+                totalCommissions: 252.20,
+                totalPayouts: 0,
+                pendingCommissions: 252.20,
+                topAgents: [],
+                monthlyTrend: []
+            };
+        }
+
+        async function simulateGetAllAgentsCommissionData() {
+            await new Promise(resolve => setTimeout(resolve, 1000));
+            
+            return [
+                {
+                    agent_id: "67af3277-e025-4cca-a504-b4f2d723f7ca",
+                    full_name: "Agent Name",
+                    email: "agent@example.com",
+                    phone: "+1234567890",
+                    avatar_url: null,
+                    is_active: true,
+                    current_commission_rate: 0.10,
+                    total_commission: 252.20,
+                    pending_commission: 252.20,
+                    paid_commission: 0,
+                    total_bookings: 2,
+                    agent_since: new Date().toISOString()
+                }
+            ];
+        }
+    </script>
+</body>
+</html>

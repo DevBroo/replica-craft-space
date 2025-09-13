@@ -59,6 +59,9 @@ const OwnerManagement = React.lazy(
 const AgentManagement = React.lazy(
   () => import("@/pages/admin/AgentManagement")
 );
+const AgentManagementPage = React.lazy(
+  () => import("@/pages/admin/AgentManagementPage")
+);
 const LocationManagement = React.lazy(
   () => import("@/pages/admin/LocationManagement")
 );
@@ -88,6 +91,11 @@ const HostSignup = React.lazy(() => import("@/pages/HostSignup"));
 const HostDashboard = React.lazy(() => import("@/pages/HostDashboard"));
 const OwnerLogin = React.lazy(() => import("@/pages/owner/OwnerLogin"));
 const OwnerDashboard = React.lazy(() => import("@/pages/owner/OwnerDashboard"));
+
+// Lazy-loaded Agent Pages
+const AgentLogin = React.lazy(() => import("@/pages/AgentLogin"));
+const AgentSignup = React.lazy(() => import("@/pages/AgentSignup"));
+const AgentDashboard = React.lazy(() => import("@/pages/AgentDashboard"));
 const DayPicnicSetup = React.lazy(
   () => import("@/components/owner/DayPicnicSetup")
 );
@@ -237,6 +245,23 @@ function App() {
                     <Route path="/customer/dashboard" element={<CustomerDashboard />} />
                     <Route path="/booking/:id" element={<BookingDetails />} />
 
+                    {/* Agent Routes */}
+                    <Route path="/agent/login" element={
+                      <Suspense fallback={<LoadingSpinner />}>
+                        <AgentLogin />
+                      </Suspense>
+                    } />
+                    <Route path="/agent/signup" element={
+                      <Suspense fallback={<LoadingSpinner />}>
+                        <AgentSignup />
+                      </Suspense>
+                    } />
+                    <Route path="/agent/dashboard" element={
+                      <Suspense fallback={<LoadingSpinner />}>
+                        <AgentDashboard />
+                      </Suspense>
+                    } />
+
                     {/* Admin Routes - Lazy Loaded */}
                     <Route path="/admin" element={
                       <Suspense fallback={<LoadingSpinner />}>
@@ -260,7 +285,7 @@ function App() {
                     } />
                     <Route path="/admin/agent-management" element={
                       <Suspense fallback={<LoadingSpinner />}>
-                        <ProtectedRoute><AgentManagement /></ProtectedRoute>
+                        <ProtectedRoute><AgentManagementPage /></ProtectedRoute>
                       </Suspense>
                     } />
                     <Route path="/admin/location-management" element={

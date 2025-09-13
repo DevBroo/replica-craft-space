@@ -29,7 +29,7 @@ import {
 } from 'lucide-react';
 import SharedSidebar from '../../components/admin/SharedSidebar';
 import SharedHeader from '../../components/admin/SharedHeader';
-import { commissionService, CommissionData } from '../../lib/commissionService';
+import { CommissionService, CommissionData } from '../../lib/commissionService';
 import { useAnalyticsExport } from '../../hooks/useAnalyticsExport';
 import ProcessPaymentModal from '../../components/admin/commission/ProcessPaymentModal';
 import ApproveRejectModal from '../../components/admin/commission/ApproveRejectModal';
@@ -83,7 +83,7 @@ const CommissionDisbursement: React.FC = () => {
   const loadCommissions = async () => {
     setLoading(true);
     try {
-      const { data, count } = await commissionService.getCommissions({
+      console.log('🔍 Loading commissions with filters:', {
         search: searchTerm,
         status: statusFilter,
         limit: rowsPerPage,
@@ -91,10 +91,26 @@ const CommissionDisbursement: React.FC = () => {
         sortBy,
         sortDir
       });
+      
+      const { data, count } = await CommissionService.getCommissions({
+        search: searchTerm,
+        status: statusFilter,
+        limit: rowsPerPage,
+        offset: (currentPage - 1) * rowsPerPage,
+        sortBy,
+        sortDir
+      });
+      
+      console.log('✅ Commissions loaded:', { data, count });
       setCommissions(data);
       setTotalCount(count);
     } catch (error) {
-      console.error('Error loading commissions:', error);
+      console.error('❌ Error loading commissions:', error);
+      toast({
+        title: "Error Loading Commissions",
+        description: `Failed to load commission data: ${error.message}`,
+        variant: "destructive",
+      });
     } finally {
       setLoading(false);
     }
@@ -103,14 +119,27 @@ const CommissionDisbursement: React.FC = () => {
   // Load revenue summary
   const loadRevenueSummary = async () => {
     try {
-      const summary = await commissionService.getRevenueSplitSummary({
+      console.log('🔍 Loading revenue summary with filters:', {
         status: statusFilter,
         dateFrom,
         dateTo
       });
+      
+      const summary = await CommissionService.getRevenueSplitSummary({
+        status: statusFilter,
+        dateFrom,
+        dateTo
+      });
+      
+      console.log('✅ Revenue summary loaded:', summary);
       setRevenueSummary(summary);
     } catch (error) {
-      console.error('Error loading revenue summary:', error);
+      console.error('❌ Error loading revenue summary:', error);
+      toast({
+        title: "Error Loading Revenue Summary",
+        description: `Failed to load revenue data: ${error.message}`,
+        variant: "destructive",
+      });
     }
   };
 
@@ -237,7 +266,7 @@ const CommissionDisbursement: React.FC = () => {
     if (!selectedCommission) return;
     
     try {
-      await commissionService.processPayment(selectedCommission.id, paymentMode, paymentReference, paymentDate);
+      await CommissionService.processPayment(selectedCommission.id, paymentMode, paymentReference, paymentDate);
       await loadCommissions();
       await loadRevenueSummary();
     } catch (error) {
@@ -248,7 +277,7 @@ const CommissionDisbursement: React.FC = () => {
 
   const handleApprove = async (commissionId: string, notes?: string) => {
     try {
-      await commissionService.approveCommission(commissionId, notes);
+      await CommissionService.approveCommission(commissionId, notes);
       await loadCommissions();
       await loadRevenueSummary();
     } catch (error) {
@@ -259,7 +288,7 @@ const CommissionDisbursement: React.FC = () => {
 
   const handleReject = async (commissionId: string, reason: string) => {
     try {
-      await commissionService.rejectCommission(commissionId, reason);
+      await CommissionService.rejectCommission(commissionId, reason);
       await loadCommissions();
       await loadRevenueSummary();
     } catch (error) {
@@ -270,7 +299,7 @@ const CommissionDisbursement: React.FC = () => {
 
   const handleEdit = async (commissionId: string, updates: Partial<CommissionData>) => {
     try {
-      await commissionService.updateCommission(commissionId, updates);
+      await CommissionService.updateCommission(commissionId, updates);
       await loadCommissions();
       await loadRevenueSummary();
     } catch (error) {
@@ -285,15 +314,15 @@ const CommissionDisbursement: React.FC = () => {
     try {
       switch (action) {
         case 'approve':
-          await commissionService.bulkUpdateStatus(selectedCommissions, 'approved');
+          await CommissionService.bulkUpdateStatus(selectedCommissions, 'approved');
           break;
         case 'reject':
           const reason = prompt('Enter rejection reason:');
           if (!reason) return;
-          await commissionService.bulkUpdateStatus(selectedCommissions, 'rejected', reason);
+          await CommissionService.bulkUpdateStatus(selectedCommissions, 'rejected', reason);
           break;
         case 'process':
-          await commissionService.bulkUpdateStatus(selectedCommissions, 'processing');
+          await CommissionService.bulkUpdateStatus(selectedCommissions, 'processing');
           break;
         case 'export':
           const selectedData = commissions.filter(c => selectedCommissions.includes(c.id));
@@ -758,21 +787,18 @@ const CommissionDisbursement: React.FC = () => {
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                           <div>
-                            <div className="font-medium">{formatDate(commission.check_in_date)}</div>
-                            <div className="text-gray-500">to {formatDate(commission.check_out_date)}</div>
+                            <div className="font-medium">{commission.stay_dates}</div>
                           </div>
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                           <div>
                             <div className="font-medium">{commission.owner_name}</div>
-                            <div className="text-gray-500">{commission.owner_email}</div>
                           </div>
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                           {commission.agent_name ? (
                             <div>
                               <div className="font-medium">{commission.agent_name}</div>
-                              <div className="text-gray-500">{commission.agent_email}</div>
                             </div>
                           ) : (
                             <span className="text-gray-400">-</span>

@@ -547,10 +547,10 @@ const PropertyDetails = () => {
       return;
     }
 
-    if (user.role !== "customer") {
+    if (user.role !== "customer" && user.role !== "agent") {
       toast({
         title: "Booking Restricted",
-        description: "Only customers can book properties.",
+        description: "Only customers and agents can book properties.",
         variant: "destructive",
       });
       return;
