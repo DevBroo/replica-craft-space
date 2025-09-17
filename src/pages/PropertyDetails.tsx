@@ -20,14 +20,23 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { useState, useEffect } from "react";
 import { PropertyService } from "@/lib/propertyService";
 import { BookingService } from "@/lib/bookingService";
 import { CouponService, Coupon } from "@/lib/couponService";
-import { AvailabilityService, PropertyAvailability } from "@/lib/availabilityService";
+import {
+  AvailabilityService,
+  PropertyAvailability,
+} from "@/lib/availabilityService";
 import { MessageService } from "@/lib/messageService";
 import { useAuth } from "@/contexts/AuthContext";
 import { useWishlist } from "@/contexts/WishlistContext";
@@ -35,7 +44,7 @@ import { useToast } from "@/hooks/use-toast";
 import GuestSelector, { GuestBreakdown } from "@/components/ui/GuestSelector";
 import { Input } from "@/components/ui/input";
 import { format } from "date-fns";
-import { cn } from "@/lib/utils";
+import { cn, transformRoomData } from "@/lib/utils";
 import { shareUtils } from "@/lib/shareUtils";
 import { ShareDropdown } from "@/components/ui/ShareDropdown";
 
@@ -47,13 +56,28 @@ import { MapEmbed } from "@/components/property/MapEmbed";
 import { PackageCard } from "@/components/property/DayPicnic/PackageCard";
 import { RoomCard } from "@/components/property/Rooms/RoomCard";
 import { ReviewsSection } from "@/components/property/ReviewsSection";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
+import { Separator } from "@/components/ui/separator";
+import {
+  DropdownMenu,
+  DropdownMenuSeparator,
+  DropdownMenuLabel,
+  DropdownMenuContent,
+  DropdownMenuTrigger,
+  DropdownMenuItem,
+} from "@/components/ui/dropdown-menu";
 
 const PropertyDetails = () => {
   const { id } = useParams();
   const navigate = useNavigate();
   const [guests, setGuests] = useState<GuestBreakdown>({
     adults: 2,
-    children: [],
+    children: 0,
   });
   const [property, setProperty] = useState<any>(null);
   const [loading, setLoading] = useState(true);
@@ -69,14 +93,16 @@ const PropertyDetails = () => {
   const [lightboxOpen, setLightboxOpen] = useState(false);
   const [lightboxStartIndex, setLightboxStartIndex] = useState(0);
   const [selectedPackage, setSelectedPackage] = useState<any>(null);
-  const [selectedRoom, setSelectedRoom] = useState<any>(null);
+  const [selectedRoom, setSelectedRoom] = useState<any[]>([]);
   const [dayPicnicPackages, setDayPicnicPackages] = useState<any[]>([]);
   const [activeTab, setActiveTab] = useState("description");
-  const [propertyAvailability, setPropertyAvailability] = useState<PropertyAvailability | null>(null);
+  const [propertyAvailability, setPropertyAvailability] =
+    useState<PropertyAvailability | null>(null);
   const [availabilityLoading, setAvailabilityLoading] = useState(false);
   const [showMessageModal, setShowMessageModal] = useState(false);
-  const [messageText, setMessageText] = useState('');
+  const [messageText, setMessageText] = useState("");
   const [sendingMessage, setSendingMessage] = useState(false);
+  const [priceBreakdown, setPriceBreakdown] = useState(null);
 
   const { user, isAuthenticated } = useAuth();
   const { toast } = useToast();
@@ -129,8 +155,9 @@ const PropertyDetails = () => {
             title: propertyData.title,
             type: propertyData.property_type,
             property_type: propertyData.property_type,
-            location: `${(propertyData.location as any)?.city || ""}, ${(propertyData.location as any)?.state || ""
-              }`,
+            location: `${(propertyData.location as any)?.city || ""}, ${
+              (propertyData.location as any)?.state || ""
+            }`,
             city: (propertyData.location as any)?.city || "",
             state: (propertyData.location as any)?.state || "",
             address: propertyData.address || "",
@@ -142,6 +169,7 @@ const PropertyDetails = () => {
             capacity_per_room: propertyData.capacity_per_room,
             day_picnic_capacity: propertyData.day_picnic_capacity,
             contact_phone: propertyData.contact_phone,
+            rooms_details: transformRoomData(propertyData.rooms_details),
             images:
               propertyData.images && propertyData.images.length > 0
                 ? propertyData.images
@@ -156,9 +184,10 @@ const PropertyDetails = () => {
             roomTypes: [
               {
                 id: "default",
-                name: `${propertyData.property_type.charAt(0).toUpperCase() +
+                name: `${
+                  propertyData.property_type.charAt(0).toUpperCase() +
                   propertyData.property_type.slice(1)
-                  } Room`,
+                } Room`,
                 price: (propertyData.pricing as any)?.daily_rate || 0,
                 max_guests: propertyData.max_guests,
                 features: [
@@ -175,8 +204,9 @@ const PropertyDetails = () => {
               `${propertyData.bedrooms || 0} Bedrooms`,
               `${propertyData.bathrooms || 0} Bathrooms`,
               `Capacity: ${propertyData.max_guests || 0} guests`,
-              `${propertyData.property_type.charAt(0).toUpperCase() +
-              propertyData.property_type.slice(1)
+              `${
+                propertyData.property_type.charAt(0).toUpperCase() +
+                propertyData.property_type.slice(1)
               } Type`,
               `Status: ${propertyData.status}`,
             ],
@@ -214,11 +244,13 @@ const PropertyDetails = () => {
 
     try {
       setAvailabilityLoading(true);
-      const availability = await AvailabilityService.getPropertyAvailability(id);
+      const availability = await AvailabilityService.getPropertyAvailability(
+        id
+      );
       setPropertyAvailability(availability);
-      console.log('✅ Property availability loaded:', availability);
+      console.log("✅ Property availability loaded:", availability);
     } catch (error) {
-      console.error('❌ Error loading property availability:', error);
+      console.error("❌ Error loading property availability:", error);
       // Continue without availability data
     } finally {
       setAvailabilityLoading(false);
@@ -265,7 +297,7 @@ const PropertyDetails = () => {
 
   const calculateDetailedBreakdown = () => {
     if (isDayPicnic && selectedPackage) {
-      const totalGuests = guests.adults + guests.children.length;
+      const totalGuests = guests.adults + guests.children;
       const basePrice =
         selectedPackage.pricing_type === "per_person"
           ? selectedPackage.base_price * totalGuests
@@ -273,23 +305,28 @@ const PropertyDetails = () => {
 
       const breakdown = [
         {
-          label: selectedPackage.pricing_type === "per_person" 
-            ? `Package rate (${totalGuests} guests)` 
-            : "Package rate",
+          label:
+            selectedPackage.pricing_type === "per_person"
+              ? `Package rate (${totalGuests} guests)`
+              : "Package rate",
           amount: basePrice,
-          description: selectedPackage.meal_plan?.join(", ") || "Day Picnic Package"
-        }
+          description:
+            selectedPackage.meal_plan?.join(", ") || "Day Picnic Package",
+        },
       ];
 
-      let subtotal = basePrice;
+      const subtotal = basePrice;
       let couponDiscount = 0;
 
       if (appliedCoupon) {
-        couponDiscount = CouponService.calculateDiscount(appliedCoupon, basePrice);
+        couponDiscount = CouponService.calculateDiscount(
+          appliedCoupon,
+          basePrice
+        );
         breakdown.push({
           label: `Coupon (${appliedCoupon.code})`,
           amount: -couponDiscount,
-          description: appliedCoupon.description
+          description: appliedCoupon.description,
         });
       }
 
@@ -303,7 +340,7 @@ const PropertyDetails = () => {
         couponDiscount,
         subtotal,
         total,
-        breakdown
+        breakdown,
       };
     }
 
@@ -311,23 +348,29 @@ const PropertyDetails = () => {
     const nights = calculateNights();
     if (nights === 0) return null;
 
-    const roomPrice = selectedRoom?.price || property?.price || 0;
-    let basePrice = roomPrice * nights;
+    const roomPrice =
+      selectedRoom?.reduce((total, room) => total + (room.price || 0), 0) ||
+      property?.price ||
+      0;
+    const basePrice = roomPrice * nights;
     const serviceFee = Math.round(basePrice * 0.1);
+    const cgst = Math.round(basePrice * 0.09);
+    const sgst = Math.round(basePrice * 0.09);
+    const gst = cgst + sgst;
     let extraGuestCharges = 0;
     let childDiscounts = 0;
 
     const breakdown = [
       {
-        label: `Room rate (${nights} night${nights > 1 ? 's' : ''})`,
+        label: `Room rate (${nights} night${nights > 1 ? "s" : ""})`,
         amount: basePrice,
-        description: `₹${roomPrice}/night`
+        description: `₹${roomPrice}/night`,
       },
       {
         label: "Service fee",
         amount: serviceFee,
-        description: "10% of room rate"
-      }
+        description: "10% of room rate",
+      },
     ];
 
     let subtotal = basePrice + serviceFee;
@@ -335,56 +378,65 @@ const PropertyDetails = () => {
     // Apply guest-based pricing if configured
     if (property?.pricing) {
       const baseGuests = property.pricing.base_guests || 2;
-      const totalGuests = guests.adults + guests.children.length;
-      
+      const totalGuests = guests.adults + guests.children;
+
       if (totalGuests > baseGuests) {
         const extraGuestsNeeded = totalGuests - baseGuests;
         let extraAdultsCount = Math.max(0, guests.adults - baseGuests);
-        let extraChildrenCount = Math.max(0, extraGuestsNeeded - extraAdultsCount);
-        
+        let extraChildrenCount = Math.max(
+          0,
+          extraGuestsNeeded - extraAdultsCount
+        );
+
         // Add extra adult charges
         if (extraAdultsCount > 0 && property.pricing.extra_adult_charge) {
-          const extraAdultTotal = extraAdultsCount * property.pricing.extra_adult_charge * nights;
+          const extraAdultTotal =
+            extraAdultsCount * property.pricing.extra_adult_charge * nights;
           extraGuestCharges += extraAdultTotal;
           breakdown.push({
             label: `Extra adults (${extraAdultsCount})`,
             amount: extraAdultTotal,
-            description: `₹${property.pricing.extra_adult_charge}/adult/night`
+            description: `₹${property.pricing.extra_adult_charge}/adult/night`,
           });
         }
-        
-        // Add extra child charges  
+
+        // Add extra child charges
         if (extraChildrenCount > 0 && property.pricing.extra_child_charge) {
-          const extraChildTotal = extraChildrenCount * property.pricing.extra_child_charge * nights;
+          const extraChildTotal =
+            extraChildrenCount * property.pricing.extra_child_charge * nights;
           extraGuestCharges += extraChildTotal;
           breakdown.push({
             label: `Extra children (${extraChildrenCount})`,
             amount: extraChildTotal,
-            description: `₹${property.pricing.extra_child_charge}/child/night`
+            description: `₹${property.pricing.extra_child_charge}/child/night`,
           });
         }
       }
 
       // Apply child pricing discounts
-      if (property.pricing.child_pricing && guests.children.length > 0) {
+      if (property.pricing.child_pricing && guests.children > 0) {
         guests.children.forEach((child, index) => {
-          const freeAgeLimit = property.pricing.child_pricing.free_age_limit || 5;
-          const halfPriceAgeLimit = property.pricing.child_pricing.half_price_age_limit || 10;
-          const halfPricePercentage = property.pricing.child_pricing.half_price_percentage || 50;
-          
+          const freeAgeLimit =
+            property.pricing.child_pricing.free_age_limit || 5;
+          const halfPriceAgeLimit =
+            property.pricing.child_pricing.half_price_age_limit || 10;
+          const halfPricePercentage =
+            property.pricing.child_pricing.half_price_percentage || 50;
+
           if (child.age <= freeAgeLimit) {
             breakdown.push({
               label: `Child ${index + 1} (Age ${child.age})`,
               amount: 0,
-              description: "Free"
+              description: "Free",
             });
           } else if (child.age <= halfPriceAgeLimit) {
-            const childDiscount = (roomPrice * nights * (100 - halfPricePercentage)) / 100;
+            const childDiscount =
+              (roomPrice * nights * (100 - halfPricePercentage)) / 100;
             childDiscounts += childDiscount;
             breakdown.push({
               label: `Child ${index + 1} (Age ${child.age})`,
               amount: -childDiscount,
-              description: `${halfPricePercentage}% discount`
+              description: `${halfPricePercentage}% discount`,
             });
           }
         });
@@ -399,11 +451,11 @@ const PropertyDetails = () => {
       breakdown.push({
         label: `Coupon (${appliedCoupon.code})`,
         amount: -couponDiscount,
-        description: appliedCoupon.description
+        description: appliedCoupon.description,
       });
     }
 
-    const total = Math.max(0, subtotal - couponDiscount);
+    const total = Math.max(0, subtotal - couponDiscount) + gst;
 
     return {
       basePrice,
@@ -414,7 +466,10 @@ const PropertyDetails = () => {
       couponDiscount,
       subtotal: subtotal + couponDiscount, // Subtotal before coupon
       total,
-      breakdown
+      breakdown,
+      cgst,
+      sgst,
+      gst,
     };
   };
 
@@ -422,6 +477,11 @@ const PropertyDetails = () => {
     const breakdown = calculateDetailedBreakdown();
     return breakdown?.total || 0;
   };
+
+  useEffect(() => {
+    const breakdown = calculateDetailedBreakdown();
+    setPriceBreakdown(breakdown);
+  }, [selectedPackage, checkInDate, checkOutDate, selectedRoom]);
 
   const handleCouponApply = async () => {
     if (!couponCode.trim()) {
@@ -455,8 +515,9 @@ const PropertyDetails = () => {
         setAppliedCoupon(coupon);
         toast({
           title: "Coupon Applied! 🎉",
-          description: `${coupon.description || "Discount applied successfully"
-            }`,
+          description: `${
+            coupon.description || "Discount applied successfully"
+          }`,
         });
       } else {
         toast({
@@ -503,18 +564,19 @@ const PropertyDetails = () => {
         property_id: property.id,
         receiver_id: property.owner_id,
         message: messageText.trim(),
-        message_type: 'text'
+        message_type: "text",
       });
 
-      setMessageText('');
+      setMessageText("");
       setShowMessageModal(false);
-      
+
       toast({
         title: "Message Sent! 📨",
-        description: "Your message has been sent to the host. They will respond soon.",
+        description:
+          "Your message has been sent to the host. They will respond soon.",
       });
     } catch (error) {
-      console.error('Error sending message:', error);
+      console.error("Error sending message:", error);
       toast({
         title: "Failed to Send",
         description: "Unable to send your message. Please try again.",
@@ -588,7 +650,7 @@ const PropertyDetails = () => {
       return;
     }
 
-    const totalGuests = guests.adults + guests.children.length;
+    const totalGuests = guests.adults + guests.children;
     if (totalGuests > property.max_guests) {
       toast({
         title: "Guest Limit Exceeded",
@@ -604,7 +666,10 @@ const PropertyDetails = () => {
 
     try {
       // Validate booking dates first
-      const dateValidation = AvailabilityService.validateBookingDates(checkInDate, checkOutDate);
+      const dateValidation = AvailabilityService.validateBookingDates(
+        checkInDate,
+        checkOutDate
+      );
       if (!dateValidation.valid) {
         toast({
           title: "Invalid Dates",
@@ -615,7 +680,7 @@ const PropertyDetails = () => {
       }
 
       // Check guest count against property limits
-      const totalGuests = guests.adults + guests.children.length;
+      const totalGuests = guests.adults + guests.children;
       if (totalGuests > property.max_guests) {
         toast({
           title: "Guest Limit Exceeded",
@@ -636,11 +701,12 @@ const PropertyDetails = () => {
       }
 
       // Check date availability
-      const availabilityCheck = await AvailabilityService.checkDateRangeAvailability(
-        property.id,
-        checkInStr,
-        checkOutStr
-      );
+      const availabilityCheck =
+        await AvailabilityService.checkDateRangeAvailability(
+          property.id,
+          checkInStr,
+          checkOutStr
+        );
 
       if (!availabilityCheck.available) {
         toast({
@@ -668,20 +734,21 @@ const PropertyDetails = () => {
           guest_breakdown: guests,
           room_selection: selectedRoom,
           coupon_applied: appliedCoupon,
-        }
+        },
       };
 
       toast({
         title: "Proceeding to Payment",
-        description: "You'll be redirected to complete your booking with payment.",
+        description:
+          "You'll be redirected to complete your booking with payment.",
       });
 
       // Navigate to payment flow
       navigate(`/booking/${property.id}/payment`, {
-        state: { bookingData }
+        state: { bookingData },
       });
     } catch (error) {
-      console.error('❌ Error checking availability:', error);
+      console.error("❌ Error checking availability:", error);
       toast({
         title: "Availability Check Failed",
         description: "Unable to verify date availability. Please try again.",
@@ -699,7 +766,27 @@ const PropertyDetails = () => {
   };
 
   const handleRoomSelect = (room: any) => {
-    setSelectedRoom(room);
+    setSelectedRoom((prevSelected) => {
+      const exists = prevSelected.some(
+        (selected) =>
+          (room.id && selected.id === room.id) ||
+          (!room.id && selected.type === room.type)
+      );
+
+      if (exists) {
+        // Remove only the matching room
+        return prevSelected.filter(
+          (selected) =>
+            !(
+              (room.id && selected.id === room.id) ||
+              (!room.id && selected.type === room.type)
+            )
+        );
+      } else {
+        // Add the room to the selection
+        return [...prevSelected, room];
+      }
+    });
     document
       .getElementById("booking-box")
       ?.scrollIntoView({ behavior: "smooth" });
@@ -761,8 +848,8 @@ const PropertyDetails = () => {
                 onShareSuccess={() => {
                   toast({
                     title: "Shared successfully!",
-                    description: shareUtils.isWebShareSupported() 
-                      ? "Property shared via your device's share menu" 
+                    description: shareUtils.isWebShareSupported()
+                      ? "Property shared via your device's share menu"
                       : "Property link copied to clipboard",
                   });
                 }}
@@ -785,10 +872,11 @@ const PropertyDetails = () => {
                 }}
               >
                 <Heart
-                  className={`w-4 h-4 transition-colors ${isPropertySaved(property.id)
-                    ? "fill-red-500 text-red-500"
-                    : "text-gray-600"
-                    }`}
+                  className={`w-4 h-4 transition-colors ${
+                    isPropertySaved(property.id)
+                      ? "fill-red-500 text-red-500"
+                      : "text-gray-600"
+                  }`}
                 />
               </Button>
             </div>
@@ -824,8 +912,9 @@ const PropertyDetails = () => {
                 <div className="flex items-center">
                   <Users className="w-4 h-4 mr-1" />
                   {isDayPicnic
-                    ? `${property.day_picnic_capacity || property.max_guests
-                    } guests max`
+                    ? `${
+                        property.day_picnic_capacity || property.max_guests
+                      } guests max`
                     : `${property.max_guests} guests max`}
                 </div>
               </div>
@@ -950,10 +1039,19 @@ const PropertyDetails = () => {
                     <div className="space-y-4">
                       {property.roomTypes.map((room: any) => (
                         <RoomCard
+                          room_details={
+                            property.property_type !== "villa"
+                              ? property.rooms_details
+                              : null
+                          }
                           key={room.id}
                           room={room}
                           onSelect={handleRoomSelect}
-                          isSelected={selectedRoom?.id === room.id}
+                          isSelected={selectedRoom?.some(
+                            (r) => r.id === room.id
+                          )}
+                          selectedRoom={selectedRoom}
+                          isVilla={property.property_type === "villa"}
                         />
                       ))}
                     </div>
@@ -1010,7 +1108,11 @@ const PropertyDetails = () => {
                               setCheckInDate(date);
                               setCheckInOpen(false);
                               // Clear check-out date if it's now invalid
-                              if (checkOutDate && date && checkOutDate <= date) {
+                              if (
+                                checkOutDate &&
+                                date &&
+                                checkOutDate <= date
+                              ) {
                                 setCheckOutDate(undefined);
                               }
                             }}
@@ -1019,8 +1121,12 @@ const PropertyDetails = () => {
                               if (date < new Date()) return true;
 
                               // Disable unavailable dates
-                              const dateStr = date.toISOString().split('T')[0];
-                              if (propertyAvailability?.unavailableDates.includes(dateStr)) {
+                              const dateStr = date.toISOString().split("T")[0];
+                              if (
+                                propertyAvailability?.unavailableDates.includes(
+                                  dateStr
+                                )
+                              ) {
                                 return true;
                               }
 
@@ -1032,7 +1138,10 @@ const PropertyDetails = () => {
                         </PopoverContent>
                       </Popover>
 
-                      <Popover open={checkOutOpen} onOpenChange={setCheckOutOpen}>
+                      <Popover
+                        open={checkOutOpen}
+                        onOpenChange={setCheckOutOpen}
+                      >
                         <PopoverTrigger asChild>
                           <Button
                             variant="outline"
@@ -1065,8 +1174,12 @@ const PropertyDetails = () => {
                               }
 
                               // Disable unavailable dates
-                              const dateStr = date.toISOString().split('T')[0];
-                              if (propertyAvailability?.unavailableDates.includes(dateStr)) {
+                              const dateStr = date.toISOString().split("T")[0];
+                              if (
+                                propertyAvailability?.unavailableDates.includes(
+                                  dateStr
+                                )
+                              ) {
                                 return true;
                               }
 
@@ -1082,7 +1195,10 @@ const PropertyDetails = () => {
 
                   {/* Day Picnic Date Selection */}
                   {isDayPicnic && (
-                    <Popover open={dayPicnicDateOpen} onOpenChange={setDayPicnicDateOpen}>
+                    <Popover
+                      open={dayPicnicDateOpen}
+                      onOpenChange={setDayPicnicDateOpen}
+                    >
                       <PopoverTrigger asChild>
                         <Button
                           variant="outline"
@@ -1110,8 +1226,12 @@ const PropertyDetails = () => {
                             if (date < new Date()) return true;
 
                             // Disable unavailable dates for day picnics too
-                            const dateStr = date.toISOString().split('T')[0];
-                            if (propertyAvailability?.unavailableDates.includes(dateStr)) {
+                            const dateStr = date.toISOString().split("T")[0];
+                            if (
+                              propertyAvailability?.unavailableDates.includes(
+                                dateStr
+                              )
+                            ) {
                               return true;
                             }
 
@@ -1135,13 +1255,28 @@ const PropertyDetails = () => {
                         baseGuests: property.pricing?.base_guests,
                         extraAdultCharge: property.pricing?.extra_adult_charge,
                         extraChildCharge: property.pricing?.extra_child_charge,
-                        childPricing: property.pricing?.child_pricing ? {
-                          freeAgeLimit: property.pricing.child_pricing.free_age_limit,
-                          halfPriceAgeLimit: property.pricing.child_pricing.half_price_age_limit,
-                          halfPricePercentage: property.pricing.child_pricing.half_price_percentage
-                        } : undefined
+                        childPricing: property.pricing?.child_pricing
+                          ? {
+                              freeAgeLimit:
+                                property.pricing.child_pricing.free_age_limit,
+                              halfPriceAgeLimit:
+                                property.pricing.child_pricing
+                                  .half_price_age_limit,
+                              halfPricePercentage:
+                                property.pricing.child_pricing
+                                  .half_price_percentage,
+                            }
+                          : undefined,
                       }}
-                      baseRoomRate={selectedRoom?.price || property?.roomTypes?.[0]?.price || property?.daily_rate || 0}
+                      baseRoomRate={
+                        selectedRoom?.reduce(
+                          (total, room) => total + (room.price || 0),
+                          0
+                        ) ||
+                        property?.roomTypes?.[0]?.price ||
+                        property?.daily_rate ||
+                        0
+                      }
                       showPricingFeedback={true}
                     />
                   </div>
@@ -1152,11 +1287,13 @@ const PropertyDetails = () => {
                       <div className="text-sm font-medium mb-1">Package</div>
                       <div className="text-sm text-muted-foreground">
                         {selectedPackage
-                          ? `${selectedPackage.meal_plan?.join(", ") || "Package"
-                          } - ₹${selectedPackage.base_price} ${selectedPackage.pricing_type === "per_person"
-                            ? "per person"
-                            : "per package"
-                          }`
+                          ? `${
+                              selectedPackage.meal_plan?.join(", ") || "Package"
+                            } - ₹${selectedPackage.base_price} ${
+                              selectedPackage.pricing_type === "per_person"
+                                ? "per person"
+                                : "per package"
+                            }`
                           : "Select a package from the packages tab"}
                       </div>
                     </div>
@@ -1164,8 +1301,13 @@ const PropertyDetails = () => {
                     <div className="p-3 bg-muted/50 rounded-lg">
                       <div className="text-sm font-medium mb-1">Room</div>
                       <div className="text-sm text-muted-foreground">
-                        {selectedRoom
-                          ? `${selectedRoom.name} - ₹${selectedRoom.price} per night`
+                        {selectedRoom.length > 0
+                          ? selectedRoom.map((room, index) => (
+                              <div key={index}>
+                                {room.name || room.type} - ₹{room.price || 0}{" "}
+                                per night
+                              </div>
+                            ))
                           : property.roomTypes[0]?.name || "Standard Room"}
                       </div>
                     </div>
@@ -1205,10 +1347,63 @@ const PropertyDetails = () => {
                   <div className="space-y-2 pt-4 border-t">
                     <div className="flex justify-between">
                       <span>Total</span>
-                      <span className="font-semibold">₹{calculateTotal()}</span>
-                    </div>
-                    <div className="text-xs text-muted-foreground">
-                      Includes taxes and fees
+                      <div className="flex flex-col items-end">
+                        <span className="font-semibold">
+                          ₹{calculateTotal()}
+                        </span>
+                        {priceBreakdown && (
+                          <DropdownMenu>
+                            <DropdownMenuTrigger className="flex flex-col">
+                              <small className="text-end text-xs text-red-500 underline cursor-pointer">
+                                Pricing details
+                              </small>
+                              <div className="text-xs text-muted-foreground">
+                                Price Incl. of all taxes
+                              </div>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent>
+                              <DropdownMenuLabel>
+                                <p className="text-md font-semibold">
+                                  Price Breakdown
+                                </p>
+                              </DropdownMenuLabel>
+                              <DropdownMenuSeparator />
+                              <div className="w-40 flex flex-col gap-2 p-2 text-sm">
+                                <div className="flex justify-between">
+                                  <span>Base Price</span>
+                                  <span>{priceBreakdown.basePrice}</span>
+                                </div>
+                                <div className="flex justify-between">
+                                  <span>Service Fee</span>
+                                  <span>{priceBreakdown.serviceFee}</span>
+                                </div>
+                                <div className="flex justify-between">
+                                  <span>Subtotal</span>
+                                  <span>{priceBreakdown.subtotal}</span>
+                                </div>
+                                <DropdownMenuSeparator />
+                                <div className="flex justify-between">
+                                  <span>CGST (99%)</span>
+                                  <span>{priceBreakdown.cgst}</span>
+                                </div>
+                                <div className="flex justify-between">
+                                  <span>SGST (9%)</span>
+                                  <span>{priceBreakdown.sgst}</span>
+                                </div>
+                                <div className="flex justify-between">
+                                  <span>Total GST</span>
+                                  <span>{priceBreakdown.gst}</span>
+                                </div>
+                                <DropdownMenuSeparator />
+                                <div className="flex justify-between font-semibold">
+                                  <span>Total Amount</span>
+                                  <span>{priceBreakdown.total}</span>
+                                </div>
+                              </div>
+                            </DropdownMenuContent>
+                          </DropdownMenu>
+                        )}
+                      </div>
                     </div>
                   </div>
 
@@ -1218,7 +1413,10 @@ const PropertyDetails = () => {
                     disabled={
                       isBooking ||
                       (isDayPicnic && !selectedPackage) ||
-                      (!isDayPicnic && (!checkInDate || !checkOutDate || !selectedRoom))
+                      (!isDayPicnic &&
+                        (!checkInDate ||
+                          !checkOutDate ||
+                          selectedRoom.length === 0))
                     }
                     className="w-full bg-purple-600 hover:bg-purple-700 disabled:bg-gray-300 disabled:cursor-not-allowed"
                     size="lg"
@@ -1226,38 +1424,46 @@ const PropertyDetails = () => {
                     {isBooking
                       ? "Processing..."
                       : isDayPicnic
-                        ? (selectedPackage ? "Book Day Picnic" : "Select Package First")
-                        : (!checkInDate || !checkOutDate) 
-                          ? "Select Dates First"
-                          : !selectedRoom 
-                            ? "Select Room First"
-                            : "Reserve Now"}
+                      ? selectedPackage
+                        ? "Book Day Picnic"
+                        : "Select Package First"
+                      : !checkInDate || !checkOutDate
+                      ? "Select Dates First"
+                      : selectedRoom.length === 0
+                      ? "Select Room First"
+                      : "Reserve Now"}
                   </Button>
 
                   {/* Helper text for disabled state */}
                   {!isDayPicnic && (!checkInDate || !checkOutDate) && (
                     <p className="text-sm text-orange-600 text-center">
-                      Please select check-in and check-out dates to continue booking
+                      Please select check-in and check-out dates to continue
+                      booking
                     </p>
                   )}
 
-                  {!isDayPicnic && checkInDate && checkOutDate && !selectedRoom && (
-                    <p className="text-sm text-orange-600 text-center">
-                      Please select a room from the rooms tab to continue booking
-                    </p>
-                  )}
+                  {!isDayPicnic &&
+                    checkInDate &&
+                    checkOutDate &&
+                    !selectedRoom && (
+                      <p className="text-sm text-orange-600 text-center">
+                        Please select a room from the rooms tab to continue
+                        booking
+                      </p>
+                    )}
 
                   {isDayPicnic && !selectedPackage && (
                     <p className="text-sm text-orange-600 text-center">
-                      Please select a package from the packages tab to continue booking
+                      Please select a package from the packages tab to continue
+                      booking
                     </p>
                   )}
 
                   {/* Quick Contact */}
                   <div className="flex gap-2 pt-4">
-                    <Button 
-                      variant="outline" 
-                      className="flex-1" 
+                    <Button
+                      variant="outline"
+                      className="flex-1"
                       size="sm"
                       onClick={() => setShowMessageModal(true)}
                     >
@@ -1281,22 +1487,80 @@ const PropertyDetails = () => {
       {/* Mobile Sticky Bottom Bar */}
       <div className="lg:hidden fixed bottom-0 left-0 right-0 bg-background border-t p-4 z-50">
         <div className="flex items-center justify-between">
-          <div>
-            <div className="font-semibold">₹{calculateTotal()}</div>
-            <div className="text-xs text-muted-foreground">
-              {isDayPicnic ? "total price" : `${calculateNights()} nights`}
+          <div className="flex gap-4 items-end">
+            <div>
+              <div className="font-semibold">₹{calculateTotal()}</div>
+              <div className="text-xs text-muted-foreground">
+                {isDayPicnic ? "total price" : `${calculateNights()} nights`}
+              </div>
             </div>
+
+            {priceBreakdown && (
+              <DropdownMenu>
+                <DropdownMenuTrigger className="flex flex-col">
+                  <small className="text-left text-xs text-red-500 underline cursor-pointer">
+                    Pricing details
+                  </small>
+                  <div className="text-xs text-muted-foreground">
+                    Incl. of all taxes
+                  </div>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent>
+                  <DropdownMenuLabel>
+                    <p className="text-md font-semibold">Price Breakdown</p>
+                  </DropdownMenuLabel>
+                  <DropdownMenuSeparator />
+                  <div className="w-40 flex flex-col gap-2 p-2 text-xs">
+                    <div className="flex justify-between">
+                      <span>Base Price</span>
+                      <span>{priceBreakdown.basePrice}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span>Service Fee</span>
+                      <span>{priceBreakdown.serviceFee}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span>Subtotal</span>
+                      <span>{priceBreakdown.subtotal}</span>
+                    </div>
+                    <DropdownMenuSeparator />
+                    <div className="flex justify-between">
+                      <span>CGST (99%)</span>
+                      <span>{priceBreakdown.cgst}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span>SGST (9%)</span>
+                      <span>{priceBreakdown.sgst}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span>Total GST</span>
+                      <span>{priceBreakdown.gst}</span>
+                    </div>
+                    <DropdownMenuSeparator />
+                    <div className="flex justify-between font-semibold">
+                      <span>Total Amount</span>
+                      <span>{priceBreakdown.total}</span>
+                    </div>
+                  </div>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            )}
           </div>
           <Button
             onClick={
-              ((checkInDate && checkOutDate && selectedRoom) || (isDayPicnic && selectedPackage))
+              (checkInDate && checkOutDate && selectedRoom.length > 0) ||
+              (isDayPicnic && selectedPackage)
                 ? handleBooking
-                : () => document.getElementById("booking-box")?.scrollIntoView({ behavior: "smooth" })
+                : () =>
+                    document
+                      .getElementById("booking-box")
+                      ?.scrollIntoView({ behavior: "smooth" })
             }
             disabled={
               isBooking ||
               (isDayPicnic && !selectedPackage) ||
-              (!isDayPicnic && (!checkInDate || !checkOutDate || !selectedRoom))
+              (!isDayPicnic &&
+                (!checkInDate || !checkOutDate || selectedRoom.length === 0))
             }
             className="bg-purple-600 hover:bg-purple-700 disabled:bg-gray-300"
             size="lg"
@@ -1304,12 +1568,14 @@ const PropertyDetails = () => {
             {isBooking
               ? "Processing..."
               : isDayPicnic
-                ? (selectedPackage ? "Book Day Picnic" : "Select Package")
-                : (!checkInDate || !checkOutDate) 
-                  ? "Select Dates"
-                  : !selectedRoom 
-                    ? "Select Room"
-                    : "Reserve Now"}
+              ? selectedPackage
+                ? "Book Day Picnic"
+                : "Select Package"
+              : !checkInDate || !checkOutDate
+              ? "Select Dates"
+              : selectedRoom.length === 0
+              ? "Select Room"
+              : "Reserve Now"}
           </Button>
         </div>
       </div>
@@ -1331,7 +1597,8 @@ const PropertyDetails = () => {
               Message Host
             </DialogTitle>
             <DialogDescription>
-              Send a message to the host about this listing. They'll respond to you directly.
+              Send a message to the host about this listing. They'll respond to
+              you directly.
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4 py-4">
@@ -1351,18 +1618,18 @@ const PropertyDetails = () => {
             </div>
           </div>
           <div className="flex justify-end space-x-2">
-            <Button 
-              variant="outline" 
+            <Button
+              variant="outline"
               onClick={() => {
                 setShowMessageModal(false);
-                setMessageText('');
-              }} 
+                setMessageText("");
+              }}
               disabled={sendingMessage}
             >
               Cancel
             </Button>
-            <Button 
-              onClick={handleSendMessage} 
+            <Button
+              onClick={handleSendMessage}
               disabled={sendingMessage || !messageText.trim()}
             >
               {sendingMessage ? (

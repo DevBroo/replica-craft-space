@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -6,10 +6,11 @@ import { Minus, Plus, Users, Baby, User } from "lucide-react";
 
 export interface GuestBreakdown {
   adults: number;
-  children: Array<{
-    age: number;
-    priceCategory: 'free' | 'half' | 'full';
-  }>;
+  children: number;
+  //  Array<{
+  //   age: number;
+  //   priceCategory: 'free' | 'half' | 'full';
+  // }>;
 }
 
 interface GuestSelectorProps {
@@ -34,61 +35,66 @@ interface GuestSelectorProps {
 export const GuestSelector: React.FC<GuestSelectorProps> = ({
   maxGuests,
   onGuestsChange,
-  initialGuests = { adults: 2, children: [] },
+  initialGuests = { adults: 2, children: 0 },
   className = "",
   pricing,
   baseRoomRate = 0,
-  showPricingFeedback = false
+  showPricingFeedback = false,
 }) => {
   const [adults, setAdults] = useState(initialGuests.adults);
-  const [children, setChildren] = useState<Array<{ age: number; priceCategory: 'free' | 'half' | 'full' }>>(
-    initialGuests.children
-  );
+  const [children, setChildren] = useState(initialGuests.children);
 
-  const getPriceCategory = (age: number): 'free' | 'half' | 'full' => {
+  const getPriceCategory = (age: number): "free" | "half" | "full" => {
     const freeAgeLimit = pricing?.childPricing?.freeAgeLimit || 5;
     const halfPriceAgeLimit = pricing?.childPricing?.halfPriceAgeLimit || 10;
-    
-    if (age <= freeAgeLimit) return 'free';
-    if (age <= halfPriceAgeLimit) return 'half';
-    return 'full';
+
+    if (age <= freeAgeLimit) return "free";
+    if (age <= halfPriceAgeLimit) return "half";
+    return "full";
   };
 
   const calculateExtraGuestCharges = () => {
     if (!showPricingFeedback || !pricing) return 0;
-    
+
     const baseGuests = pricing.baseGuests || 2;
-    const totalGuests = adults + children.length;
-    
+    const totalGuests = adults + children;
+
     if (totalGuests <= baseGuests) return 0;
-    
+
     let extraCharges = 0;
     const extraGuestsNeeded = totalGuests - baseGuests;
     let extraAdultsProcessed = Math.max(0, adults - baseGuests);
-    
+
     // First, count extra adults
     if (extraAdultsProcessed > 0) {
       extraCharges += extraAdultsProcessed * (pricing.extraAdultCharge || 0);
     }
-    
+
     // Then, count extra children
-    const extraChildrenCount = Math.max(0, extraGuestsNeeded - extraAdultsProcessed);
+    const extraChildrenCount = Math.max(
+      0,
+      extraGuestsNeeded - extraAdultsProcessed
+    );
     extraCharges += extraChildrenCount * (pricing.extraChildCharge || 0);
-    
+
     return extraCharges;
   };
 
   const getChildPriceDisplay = (age: number) => {
-    if (!showPricingFeedback || !pricing) return '';
-    
+    if (!showPricingFeedback || !pricing) return "";
+
     const category = getPriceCategory(age);
     const halfPricePercentage = pricing.childPricing?.halfPricePercentage || 50;
-    
+
     switch (category) {
-      case 'free': return 'Free';
-      case 'half': return `${halfPricePercentage}% price`;
-      case 'full': return 'Full price';
-      default: return '';
+      case "free":
+        return "Free";
+      case "half":
+        return `${halfPricePercentage}% price`;
+      case "full":
+        return "Full price";
+      default:
+        return "";
     }
   };
 
@@ -96,24 +102,24 @@ export const GuestSelector: React.FC<GuestSelectorProps> = ({
     const newChildren = [...children];
     newChildren[index] = {
       age,
-      priceCategory: getPriceCategory(age)
+      priceCategory: getPriceCategory(age),
     };
     setChildren(newChildren);
   };
 
-  const addChild = () => {
-    if (adults + children.length < maxGuests) {
-      setChildren([...children, { age: 6, priceCategory: 'half' }]);
-    }
-  };
+  // const addChild = () => {
+  //   if (adults + children.length < maxGuests) {
+  //     setChildren([...children, { age: 6, priceCategory: 'half' }]);
+  //   }
+  // };
 
-  const removeChild = (index: number) => {
-    const newChildren = children.filter((_, i) => i !== index);
-    setChildren(newChildren);
-  };
+  // const removeChild = (index: number) => {
+  //   const newChildren = children.filter((_, i) => i !== index);
+  //   setChildren(newChildren);
+  // };
 
   const incrementAdults = () => {
-    if (adults + children.length < maxGuests) {
+    if (adults + children < maxGuests) {
       setAdults(adults + 1);
     }
   };
@@ -124,7 +130,19 @@ export const GuestSelector: React.FC<GuestSelectorProps> = ({
     }
   };
 
-  const totalGuests = adults + children.length;
+  const incrementChildren = () => {
+    if (adults + children < maxGuests) {
+      setChildren(children + 1);
+    }
+  };
+
+  const decrementChildren = () => {
+    if (children > 0) {
+      setChildren(children - 1);
+    }
+  };
+
+  const totalGuests = adults + children;
 
   useEffect(() => {
     onGuestsChange({ adults, children });
@@ -132,53 +150,77 @@ export const GuestSelector: React.FC<GuestSelectorProps> = ({
 
   return (
     <div className={`border rounded-lg bg-card p-4 space-y-4 ${className}`}>
+      <div className="flex items-center justify-between">
+        <div className="flex items-center space-x-2">
+          <Users className="w-4 h-4 text-muted-foreground" />
+          <Label className="font-medium">Adults</Label>
+        </div>
+        <div className="flex items-center space-x-2">
+          <Button
+            variant="outline"
+            size="icon"
+            className="h-8 w-8"
+            onClick={decrementAdults}
+            disabled={adults <= 1}
+          >
+            <Minus className="w-3 h-3" />
+          </Button>
+          <span className="w-8 text-center font-medium">{adults}</span>
+          <Button
+            variant="outline"
+            size="icon"
+            className="h-8 w-8"
+            onClick={incrementAdults}
+            disabled={totalGuests >= maxGuests}
+          >
+            <Plus className="w-3 h-3" />
+          </Button>
+        </div>
+      </div>
+
+      <div className="space-y-3">
         <div className="flex items-center justify-between">
           <div className="flex items-center space-x-2">
-            <Users className="w-4 h-4 text-muted-foreground" />
-            <Label className="font-medium">Adults</Label>
+            <User className="w-4 h-4 text-muted-foreground" />
+            <Label className="font-medium">Children</Label>
           </div>
-          <div className="flex items-center space-x-2">
-            <Button
-              variant="outline"
-              size="icon"
-              className="h-8 w-8"
-              onClick={decrementAdults}
-              disabled={adults <= 1}
-            >
-              <Minus className="w-3 h-3" />
-            </Button>
-            <span className="w-8 text-center font-medium">{adults}</span>
-            <Button
-              variant="outline"
-              size="icon"
-              className="h-8 w-8"
-              onClick={incrementAdults}
-              disabled={totalGuests >= maxGuests}
-            >
-              <Plus className="w-3 h-3" />
-            </Button>
-          </div>
-        </div>
-
-        <div className="space-y-3">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-2">
-              <User className="w-4 h-4 text-muted-foreground" />
-              <Label className="font-medium">Children</Label>
-            </div>
+          {children === 0 ? (
             <Button
               variant="outline"
               size="sm"
-              onClick={addChild}
+              onClick={incrementChildren}
               disabled={totalGuests >= maxGuests}
               className="h-8"
             >
               <Plus className="w-3 h-3 mr-1" />
               Add Child
             </Button>
-          </div>
+          ) : (
+            <div className="flex items-center space-x-2">
+              <Button
+                variant="outline"
+                size="icon"
+                className="h-8 w-8"
+                onClick={decrementChildren}
+                disabled={adults <= 1}
+              >
+                <Minus className="w-3 h-3" />
+              </Button>
+              <span className="w-8 text-center font-medium">{children}</span>
+              <Button
+                variant="outline"
+                size="icon"
+                className="h-8 w-8"
+                onClick={incrementChildren}
+                disabled={totalGuests >= maxGuests}
+              >
+                <Plus className="w-3 h-3" />
+              </Button>
+            </div>
+          )}
+        </div>
 
-          {children.map((child, index) => (
+        {/* {children.map((child, index) => (
             <div key={index} className="flex items-center space-x-2 p-2 bg-muted/50 rounded-lg">
               <Baby className="w-3 h-3 text-muted-foreground" />
               <div className="flex-1">
@@ -221,16 +263,18 @@ export const GuestSelector: React.FC<GuestSelectorProps> = ({
                 <Minus className="w-3 h-3" />
               </Button>
             </div>
-          ))}
+          ))} */}
+      </div>
+
+      <div className="pt-2 border-t">
+        <div className="flex justify-between text-sm">
+          <span className="text-muted-foreground">Total Guests:</span>
+          <span className="font-medium">
+            {totalGuests} / {maxGuests}
+          </span>
         </div>
 
-        <div className="pt-2 border-t">
-          <div className="flex justify-between text-sm">
-            <span className="text-muted-foreground">Total Guests:</span>
-            <span className="font-medium">{totalGuests} / {maxGuests}</span>
-          </div>
-          
-          {showPricingFeedback && pricing ? (
+        {/* {showPricingFeedback && pricing ? (
             <div className="mt-2 space-y-1">
               <div className="text-xs text-muted-foreground">
                 • Age 0-{pricing.childPricing?.freeAgeLimit || 5}: Free 
@@ -247,8 +291,8 @@ export const GuestSelector: React.FC<GuestSelectorProps> = ({
             <div className="text-xs text-muted-foreground mt-1">
               • Age 0-5: Free • Age 6-10: Half price • Age 11+: Full price
             </div>
-          )}
-        </div>
+          )} */}
+      </div>
     </div>
   );
 };
