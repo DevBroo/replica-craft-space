@@ -371,6 +371,21 @@ const PropertyDetails = () => {
         amount: serviceFee,
         description: "10% of room rate",
       },
+      {
+        label: "CGST",
+        amount: cgst,
+        description: "9% of room rate",
+      },
+      {
+        label: "SGST",
+        amount: sgst,
+        description: "9% of room rate",
+      },
+      {
+        label: "GST",
+        amount: gst,
+        description: "Total GST",
+      },
     ];
 
     let subtotal = basePrice + serviceFee;
@@ -1383,7 +1398,7 @@ const PropertyDetails = () => {
                                 </div>
                                 <DropdownMenuSeparator />
                                 <div className="flex justify-between">
-                                  <span>CGST (99%)</span>
+                                  <span>CGST (9%)</span>
                                   <span>{priceBreakdown.cgst}</span>
                                 </div>
                                 <div className="flex justify-between">
@@ -1525,7 +1540,7 @@ const PropertyDetails = () => {
                     </div>
                     <DropdownMenuSeparator />
                     <div className="flex justify-between">
-                      <span>CGST (99%)</span>
+                      <span>CGST (9%)</span>
                       <span>{priceBreakdown.cgst}</span>
                     </div>
                     <div className="flex justify-between">

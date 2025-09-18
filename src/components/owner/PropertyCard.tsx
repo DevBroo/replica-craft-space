@@ -203,7 +203,10 @@ export const PropertyCard: React.FC<PropertyCardProps> = ({
           <Button
             variant="default"
             size="sm"
-            onClick={() => onEdit(property)}
+            onClick={(e) => {
+              e.stopPropagation();
+              onEdit(property);
+            }}
             className="flex-1"
           >
             <Edit className="w-4 h-4 mr-2" />

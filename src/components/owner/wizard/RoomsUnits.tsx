@@ -106,6 +106,7 @@ const RoomsUnits: React.FC<RoomsUnitsProps> = ({
   };
 
   const addRoomType = () => {
+    if(formData.property_type === 'villa') return
     const newRoomType = { type: '', count: 1, size: '', price_per_night: 0 };
     setFormData(prev => ({
       ...prev,
@@ -405,7 +406,7 @@ const RoomsUnits: React.FC<RoomsUnitsProps> = ({
                 </div>
               ))}
 
-              <Button variant="outline" onClick={addRoomType} className="w-full">
+              <Button disabled={formData.property_type === 'villa'} variant="outline" onClick={addRoomType} className="w-full">
                 <Plus className="w-4 h-4 mr-2" />
                 Add Room Type
               </Button>
