@@ -66,3 +66,14 @@ export function normalizeTypeKey(type: string): string {
   
   return typeMap[normalized] || normalized.replace(/\s+/g, '_');
 }
+
+export function transformRoomData(inputData) {
+  return inputData.types.map(room => {
+    return {
+      type: room.type,
+      count: room.count,
+      price: room.price_per_night,
+      amenities: inputData.amenities_per_room[room.type] || []
+    };
+  });
+}

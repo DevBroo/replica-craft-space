@@ -599,17 +599,18 @@ export class PropertyService {
         return data;
       }
       
+      // NOTE: commented because property public do not have rooms details 
       // First try to get from the public view (for approved properties)
-      const { data: publicData, error: publicError } = await supabase
-        .from('properties_public')
-        .select('*')
-        .eq('id', propertyId)
-        .maybeSingle();
+      // const { data: publicData, error: publicError } = await supabase
+      //   .from('properties_public')
+      //   .select('*')
+      //   .eq('id', propertyId)
+      //   .maybeSingle();
 
-      if (publicData) {
-        console.log('✅ Property fetched from public view:', publicData);
-        return publicData as any;
-      }
+      // if (publicData) {
+      //   console.log('✅ Property fetched from public view:', publicData);
+      //   return publicData as any;
+      // }
 
       // If not found in public view, try the main properties table (for owners/admins)
       const { data, error } = await supabase
