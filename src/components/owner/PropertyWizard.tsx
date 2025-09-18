@@ -310,14 +310,16 @@ const PropertyWizard: React.FC<PropertyWizardProps> = ({ onBack, propertyId, ini
       setAuthChecked(true);
       
       // Load saved draft
-      const savedDraft = localStorage.getItem(`property_draft_${user.id}`);
-      if (savedDraft) {
-        try {
-          const draftData = JSON.parse(savedDraft);
-          setFormData(draftData);
-          console.log('📝 Loaded saved draft');
-        } catch (error) {
-          console.error('Error loading draft:', error);
+      if(!propertyId) {
+        const savedDraft = localStorage.getItem(`property_draft_${user.id}`);
+        if (savedDraft) {
+          try {
+            const draftData = JSON.parse(savedDraft);
+            setFormData(draftData);
+            console.log('📝 Loaded saved draft');
+          } catch (error) {
+            console.error('Error loading draft:', error);
+          }
         }
       }
     }, 1000); // 1 second delay for stability
@@ -499,6 +501,7 @@ const PropertyWizard: React.FC<PropertyWizardProps> = ({ onBack, propertyId, ini
       onNext: handleNext,
       onPrevious: handlePrevious
     };
+    console.log(formData, 'propeofjhvd')
 
     switch (WIZARD_STEPS[currentStep].id) {
       case 'basic':
