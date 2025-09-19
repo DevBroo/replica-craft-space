@@ -17,6 +17,8 @@ export interface PropertyFormData {
   property_type: string;
   property_subtype?: string;
   description: string;
+  itinerary?: string;
+  packages?: any[];
   address: string;
   city: string;
   state: string;

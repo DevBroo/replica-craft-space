@@ -77,3 +77,26 @@ export function transformRoomData(inputData) {
     };
   });
 }
+
+const parseTime = (timeStr: string) => {
+  const [hours, minutes] = timeStr.split(":").map(Number);
+  return hours * 60 + minutes; // total minutes from midnight
+};
+
+export const calculateDuration = (start_time: string, end_time: string) => {
+  const startMins = parseTime(start_time);
+  const endMins = parseTime(end_time);
+
+  if (endMins < startMins) {
+    console.warn("End time is before start time");
+    return null;
+  }
+
+  return formatDuration(endMins - startMins); // duration in minutes
+};
+
+const formatDuration = (minutes: number) => {
+  const hrs = Math.floor(minutes / 60);
+  const mins = minutes % 60;
+  return `${hrs}h ${mins != 0 ? `${mins}m` : ''}`;
+};

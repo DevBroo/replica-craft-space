@@ -414,7 +414,10 @@ function App() {
                     } />
 
                     {/* Day Picnic Routes */}
-                    <Route path="/day-picnic/:propertyId" element={<DayPicnicBooking />} />
+                    <Route path="/day-picnic/:id" element={
+                      // <DayPicnicBooking />
+                      <PropertyDetails />
+                      } />
 
                     {/* Booking & Payment Routes */}
                     <Route path="/booking/:propertyId/payment" element={

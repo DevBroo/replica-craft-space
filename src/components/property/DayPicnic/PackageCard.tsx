@@ -1,24 +1,30 @@
-import React from 'react';
-import { Clock, Users, Check, X } from 'lucide-react';
+import React from "react";
+import { Clock, Users, Check, X } from "lucide-react";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { calculateDuration } from "@/lib/utils";
 
 interface PackageCardProps {
   pkg: {
-    id: string;
-    meal_plan: string[];
-    duration_hours?: number;
-    min_hours?: number;
-    inclusions?: any[];
-    exclusions?: any[];
-    exclusionsPriced?: any[];
-    inclusionsPriced?: any[];
-    addOnsPriced?: any[];
-    base_price: number;
-    pricing_type: string;
-    start_time?: string;
-    end_time?: string;
+    // id: string;
+    name: string;
+    start_time: string;
+    end_time: string;
+    meal_plans: string[];
+    adult_price: number;
+    child_price: number;
+    // duration_hours?: number;
+    // min_hours?: number;
+    // inclusions?: any[];
+    // exclusions?: any[];
+    // exclusionsPriced?: any[];
+    // inclusionsPriced?: any[];
+    // addOnsPriced?: any[];
+    // base_price: number;
+    // pricing_type: string;
+    // start_time?: string;
+    // end_time?: string;
   };
   onSelect: (pkg: any) => void;
   isSelected?: boolean;
@@ -27,16 +33,21 @@ interface PackageCardProps {
 export const PackageCard: React.FC<PackageCardProps> = ({
   pkg,
   onSelect,
-  isSelected = false
+  isSelected = false,
 }) => {
-  const duration = pkg.duration_hours || pkg.min_hours || 8;
-  const inclusions = Array.isArray(pkg.inclusions) ? pkg.inclusions : [];
-  const exclusions = Array.isArray(pkg.exclusions) ? pkg.exclusions : [];
-  const exclusionsPriced = Array.isArray(pkg.exclusionsPriced) ? pkg.exclusionsPriced : [];
-  const inclusionsPriced = Array.isArray(pkg.inclusionsPriced) ? pkg.inclusionsPriced : [];
+  // const duration = pkg.duration_hours || pkg.min_hours || 8;
+  // const inclusions = Array.isArray(pkg.inclusions) ? pkg.inclusions : [];
+  // const exclusions = Array.isArray(pkg.exclusions) ? pkg.exclusions : [];
+  // const exclusionsPriced = Array.isArray(pkg.exclusionsPriced) ? pkg.exclusionsPriced : [];
+  // const inclusionsPriced = Array.isArray(pkg.inclusionsPriced) ? pkg.inclusionsPriced : [];
+  const duration = calculateDuration(pkg.start_time, pkg.end_time);
 
   return (
-    <Card className={`h-full transition-all hover:shadow-lg ${isSelected ? 'ring-2 ring-primary' : ''}`}>
+    <Card
+      className={`h-full transition-all hover:shadow-lg ${
+        isSelected ? "ring-2 ring-primary" : ""
+      }`}
+    >
       <CardHeader className="pb-4">
         {/* Duration and time */}
         <div className="flex items-center justify-between mb-3">
@@ -51,70 +62,55 @@ export const PackageCard: React.FC<PackageCardProps> = ({
           )}
         </div>
 
+        {/* Price */}
+        <div className="flex items-end gap-4 pb-4">
+        <div className="flex items-baseline gap-2">
+          <span className="text-2xl font-bold">₹{pkg.adult_price}</span>
+          <span className="text-sm text-muted-foreground">per Adult</span>
+        </div>
+        <div className="flex items-baseline gap-2">
+          <span className="text-lg font-bold">₹{pkg.child_price}</span>
+          <span className="text-sm text-muted-foreground">per Child</span>
+        </div>
+        </div>
+
         {/* Meal plan badges */}
-        {pkg.meal_plan && pkg.meal_plan.length > 0 && (
-          <div className="flex flex-wrap gap-2 mb-3">
-            {pkg.meal_plan.map((meal, index) => (
-              <Badge key={index} variant="secondary" className="text-xs">
+        {pkg.meal_plans && pkg.meal_plans.length > 0 && (
+          <div className="flex flex-wrap gap-2">
+            {pkg.meal_plans.map((meal, index) => (
+              <Badge key={index} variant="secondary" className="text-xs text-green-600 bg-transparent border-green-600">
                 {meal.charAt(0).toUpperCase() + meal.slice(1)}
               </Badge>
             ))}
           </div>
         )}
-
-        {/* Price */}
-        <div className="flex items-baseline gap-2">
-          <span className="text-2xl font-bold">₹{pkg.base_price}</span>
-          <span className="text-sm text-muted-foreground">
-            {pkg.pricing_type === 'per_person' ? 'per person' : 'per package'}
-          </span>
-        </div>
       </CardHeader>
 
       <CardContent className="space-y-4">
         {/* Inclusions - prefer priced inclusions */}
-        {(inclusionsPriced.length > 0 || inclusions.length > 0) && (
+        {/* {pkg?.meal_plans?.length > 0 && (
           <div>
-            <h4 className="font-medium text-sm mb-2 text-green-700">What's Included</h4>
+            <h4 className="font-medium text-sm mb-2 text-green-700">
+              Meal Options
+            </h4>
             <ul className="space-y-1">
-              {inclusionsPriced.length > 0 ? (
-                <>
-                  {inclusionsPriced.slice(0, 4).map((item, index) => (
-                    <li key={index} className="flex items-start justify-between gap-2 text-sm">
-                      <div className="flex items-start gap-2">
-                        <Check className="h-3 w-3 text-green-600 mt-0.5 flex-shrink-0" />
-                        <span className="text-muted-foreground">{item.name}</span>
-                      </div>
-                      <span className="text-red-600 font-medium text-xs">+₹{item.price}</span>
-                    </li>
-                  ))}
-                  {inclusionsPriced.length > 4 && (
-                    <li className="text-xs text-muted-foreground ml-5">
-                      +{inclusionsPriced.length - 4} more inclusions
-                    </li>
-                  )}
-                </>
-              ) : (
-                <>
-                  {inclusions.slice(0, 4).map((item, index) => (
-                    <li key={index} className="flex items-start gap-2 text-sm">
-                      <Check className="h-3 w-3 text-green-600 mt-0.5 flex-shrink-0" />
-                      <span className="text-muted-foreground">{item}</span>
-                    </li>
-                  ))}
-                  {inclusions.length > 4 && (
-                    <li className="text-xs text-muted-foreground ml-5">
-                      +{inclusions.length - 4} more inclusions
-                    </li>
-                  )}
-                </>
+              {pkg.meal_plans.slice(0, 4).map((item, index) => (
+                <li key={index} className="flex items-start gap-2 text-sm">
+                  <Check className="h-3 w-3 text-green-600 mt-0.5 flex-shrink-0" />
+                  <span className="text-muted-foreground">{item}</span>
+                </li>
+              ))}
+              {pkg.meal_plans.length > 4 && (
+                <li className="text-xs text-muted-foreground ml-5">
+                  +{pkg.meal_plans.length - 4} more meals
+                </li>
               )}
             </ul>
           </div>
-        )}
+        )} */}
 
         {/* Exclusions - prefer priced exclusions */}
-        {(exclusionsPriced.length > 0 || exclusions.length > 0) && (
+        {/* {(exclusionsPriced.length > 0 || exclusions.length > 0) && (
           <div>
             <h4 className="font-medium text-sm mb-2 text-red-700">Not Included</h4>
             <ul className="space-y-1">
@@ -152,15 +148,15 @@ export const PackageCard: React.FC<PackageCardProps> = ({
               )}
             </ul>
           </div>
-        )}
+        )} */}
 
         {/* Select button */}
-        <Button 
+        <Button
           onClick={() => onSelect(pkg)}
           className="w-full mt-4"
           variant={isSelected ? "default" : "outline"}
         >
-          {isSelected ? 'Selected Package' : 'Select Package'}
+          {isSelected ? "Selected Package" : "Select Package"}
         </Button>
       </CardContent>
     </Card>

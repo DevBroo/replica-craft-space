@@ -176,6 +176,8 @@ const PropertyDetails = () => {
                 : ["/placeholder.svg"],
             description:
               propertyData.description || "No description available.",
+            itinerary: propertyData.itinerary || "No itinerary available.",
+            packages: propertyData.packages || [],
             amenities:
               propertyData.amenities?.map((a: string) => ({
                 icon: null,
@@ -299,9 +301,13 @@ const PropertyDetails = () => {
     if (isDayPicnic && selectedPackage) {
       const totalGuests = guests.adults + guests.children;
       const basePrice =
-        selectedPackage.pricing_type === "per_person"
-          ? selectedPackage.base_price * totalGuests
-          : selectedPackage.base_price;
+        selectedPackage.adult_price * guests.adults +
+        selectedPackage.child_price * guests.children;
+
+      const serviceFee = Math.round(basePrice * 0.1);
+      const cgst = Math.round(basePrice * 0.09);
+      const sgst = Math.round(basePrice * 0.09);
+      const gst = cgst + sgst;
 
       const breakdown = [
         {
@@ -313,9 +319,29 @@ const PropertyDetails = () => {
           description:
             selectedPackage.meal_plan?.join(", ") || "Day Picnic Package",
         },
+        {
+          label: "Service fee",
+          amount: serviceFee,
+          description: "10% of room rate",
+        },
+        {
+          label: "CGST",
+          amount: cgst,
+          description: "9% of room rate",
+        },
+        {
+          label: "SGST",
+          amount: sgst,
+          description: "9% of room rate",
+        },
+        {
+          label: "GST",
+          amount: gst,
+          description: "Total GST",
+        },
       ];
 
-      const subtotal = basePrice;
+      const subtotal = basePrice + serviceFee;
       let couponDiscount = 0;
 
       if (appliedCoupon) {
@@ -330,16 +356,19 @@ const PropertyDetails = () => {
         });
       }
 
-      const total = Math.max(0, subtotal - couponDiscount);
+      const total = Math.max(0, subtotal - couponDiscount) + gst;
 
       return {
         basePrice,
-        serviceFee: 0,
+        serviceFee,
         extraGuestCharges: 0,
         childDiscounts: 0,
         couponDiscount,
         subtotal,
         total,
+        cgst,
+        sgst,
+        gst,
         breakdown,
       };
     }
@@ -990,12 +1019,12 @@ const PropertyDetails = () => {
                   </div>
                 </div>
               </TabsContent>
-
               {isDayPicnic && (
                 <TabsContent value="itinerary" className="mt-6">
                   <ItineraryTimeline
-                    propertyType={property.property_type}
-                    packages={dayPicnicPackages}
+                    itinerary={property.itinerary}
+                    // propertyType={property.property_type}
+                    // packages={dayPicnicPackages}
                   />
                 </TabsContent>
               )}
@@ -1021,14 +1050,14 @@ const PropertyDetails = () => {
                       </p>
                     </div>
 
-                    {dayPicnicPackages.length > 0 ? (
+                    {property.packages.length > 0 ? (
                       <div className="grid gap-6 md:grid-cols-2">
-                        {dayPicnicPackages.map((pkg) => (
+                        {property.packages.map((pkg) => (
                           <PackageCard
-                            key={pkg.id}
+                            key={pkg.name}
                             pkg={pkg}
                             onSelect={handlePackageSelect}
-                            isSelected={selectedPackage?.id === pkg.id}
+                            isSelected={selectedPackage?.name === pkg.name}
                           />
                         ))}
                       </div>
@@ -1302,13 +1331,15 @@ const PropertyDetails = () => {
                       <div className="text-sm font-medium mb-1">Package</div>
                       <div className="text-sm text-muted-foreground">
                         {selectedPackage
-                          ? `${
-                              selectedPackage.meal_plan?.join(", ") || "Package"
-                            } - ₹${selectedPackage.base_price} ${
-                              selectedPackage.pricing_type === "per_person"
-                                ? "per person"
-                                : "per package"
-                            }`
+                          ? `${selectedPackage.name || "Package"} - ₹${
+                              selectedPackage.adult_price
+                            } per adult 
+                            `
+                            // ${
+                            //   selectedPackage.pricing_type === "per_person"
+                            //     ? "per person"
+                            //     : "per package"
+                            // }
                           : "Select a package from the packages tab"}
                       </div>
                     </div>
