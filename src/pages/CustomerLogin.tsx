@@ -32,18 +32,6 @@ const CustomerLogin: React.FC = () => {
     }
   }, [location.state, clearError]);
 
-  // Restore booking data if available
-  useEffect(() => {
-    if (location.state?.bookingData) {
-      // Store booking data temporarily
-      sessionStorage.setItem('pendingBookingData', JSON.stringify(location.state.bookingData));
-    }
-    
-    // Clear any old redirect URLs that might be cached
-    sessionStorage.removeItem('redirectAfterLogin');
-    sessionStorage.removeItem('returnUrl');
-  }, [location.state]);
-
   // Redirect if already authenticated
   useEffect(() => {
     if (isAuthenticated && user) {

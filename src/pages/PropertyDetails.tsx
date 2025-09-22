@@ -81,8 +81,8 @@ const PropertyDetails = () => {
   });
   const [property, setProperty] = useState<any>(null);
   const [loading, setLoading] = useState(true);
-  const [checkInDate, setCheckInDate] = useState<Date>();
-  const [checkOutDate, setCheckOutDate] = useState<Date>();
+  const [checkInDate, setCheckInDate] = useState<Date>(null);
+  const [checkOutDate, setCheckOutDate] = useState<Date>(null);
   const [checkInOpen, setCheckInOpen] = useState(false);
   const [checkOutOpen, setCheckOutOpen] = useState(false);
   const [dayPicnicDateOpen, setDayPicnicDateOpen] = useState(false);
@@ -176,6 +176,8 @@ const PropertyDetails = () => {
                 : ["/placeholder.svg"],
             description:
               propertyData.description || "No description available.",
+            itinerary: propertyData.itinerary || "No itinerary available.",
+            packages: propertyData.packages || [],
             amenities:
               propertyData.amenities?.map((a: string) => ({
                 icon: null,
@@ -299,9 +301,13 @@ const PropertyDetails = () => {
     if (isDayPicnic && selectedPackage) {
       const totalGuests = guests.adults + guests.children;
       const basePrice =
-        selectedPackage.pricing_type === "per_person"
-          ? selectedPackage.base_price * totalGuests
-          : selectedPackage.base_price;
+        selectedPackage.adult_price * guests.adults +
+        selectedPackage.child_price * guests.children;
+
+      const serviceFee = Math.round(basePrice * 0.1);
+      const cgst = Math.round(basePrice * 0.09);
+      const sgst = Math.round(basePrice * 0.09);
+      const gst = cgst + sgst;
 
       const breakdown = [
         {
@@ -313,9 +319,29 @@ const PropertyDetails = () => {
           description:
             selectedPackage.meal_plan?.join(", ") || "Day Picnic Package",
         },
+        {
+          label: "Service fee",
+          amount: serviceFee,
+          description: "10% of room rate",
+        },
+        {
+          label: "CGST",
+          amount: cgst,
+          description: "9% of room rate",
+        },
+        {
+          label: "SGST",
+          amount: sgst,
+          description: "9% of room rate",
+        },
+        {
+          label: "GST",
+          amount: gst,
+          description: "Total GST",
+        },
       ];
 
-      const subtotal = basePrice;
+      const subtotal = basePrice + serviceFee;
       let couponDiscount = 0;
 
       if (appliedCoupon) {
@@ -330,16 +356,19 @@ const PropertyDetails = () => {
         });
       }
 
-      const total = Math.max(0, subtotal - couponDiscount);
+      const total = Math.max(0, subtotal - couponDiscount) + gst;
 
       return {
         basePrice,
-        serviceFee: 0,
+        serviceFee,
         extraGuestCharges: 0,
         childDiscounts: 0,
         couponDiscount,
         subtotal,
         total,
+        cgst,
+        sgst,
+        gst,
         breakdown,
       };
     }
@@ -496,7 +525,7 @@ const PropertyDetails = () => {
   useEffect(() => {
     const breakdown = calculateDetailedBreakdown();
     setPriceBreakdown(breakdown);
-  }, [selectedPackage, checkInDate, checkOutDate, selectedRoom]);
+  }, [selectedPackage, checkInDate, checkOutDate, selectedRoom, guests]);
 
   const handleCouponApply = async () => {
     if (!couponCode.trim()) {
@@ -602,6 +631,20 @@ const PropertyDetails = () => {
     }
   };
 
+  useEffect(() => {
+    const incompleteBookingData = localStorage.getItem('incompleteBookingData')
+    if(incompleteBookingData) {
+      const data = JSON.parse(incompleteBookingData)
+      setCheckInDate(new Date(data.checkInDate))
+      setCheckOutDate(new Date(data.checkOutDate))
+      setGuests(data.guests)
+      setPriceBreakdown(data.priceBreakdown)
+      setSelectedRoom(data.selectedRoom)
+      setSelectedPackage(data.selectedPackage)
+      localStorage.removeItem('incompleteBookingData')
+    }
+  }, [])
+
   const handleBooking = async () => {
     if (!isAuthenticated || !user) {
       toast({
@@ -610,6 +653,16 @@ const PropertyDetails = () => {
         variant: "destructive",
       });
 
+      // TODO: save booking data to localstorage
+      const incompleteBookingData = {
+        checkInDate,
+        checkOutDate,
+        guests,
+        selectedPackage,
+        selectedRoom,
+        priceBreakdown,
+      }
+      localStorage.setItem('incompleteBookingData', JSON.stringify(incompleteBookingData))
       navigate("/login", {
         state: {
           returnTo: `/property/${property.id}`,
@@ -634,19 +687,19 @@ const PropertyDetails = () => {
     }
 
     // For day picnic, redirect to day picnic booking flow
-    if (isDayPicnic) {
-      navigate(`/day-picnic/${property.id}`, {
-        state: {
-          selectedPackage,
-          guests,
-          selectedDate: checkInDate,
-        },
-      });
-      return;
-    }
+    // if (isDayPicnic) {
+    //   navigate(`/day-picnic/${property.id}`, {
+    //     state: {
+    //       selectedPackage,
+    //       guests,
+    //       selectedDate: checkInDate,
+    //     },
+    //   });
+    //   return;
+    // }
 
     // Validate stay booking
-    if (!checkInDate || !checkOutDate) {
+    if (!isDayPicnic && (!checkInDate || !checkOutDate)) {
       toast({
         title: "Select Your Dates",
         description: "Please choose your check-in and check-out dates.",
@@ -655,11 +708,29 @@ const PropertyDetails = () => {
       return;
     }
 
+    if (isDayPicnic && !checkInDate) {
+      toast({
+        title: "Select Your Date",
+        description: "Please choose your date.",
+        variant: "destructive",
+      });
+      return;
+    }
+
     // Validate room selection for non-day-picnic properties
-    if (!selectedRoom) {
+    if (!isDayPicnic && !selectedRoom) {
       toast({
         title: "Select a Room",
         description: "Please select a room to continue with your booking.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (isDayPicnic && !selectedPackage) {
+      toast({
+        title: "Select a Package",
+        description: "Please select a package to continue with your booking.",
         variant: "destructive",
       });
       return;
@@ -675,11 +746,13 @@ const PropertyDetails = () => {
       return;
     }
 
-    // Check date availability before proceeding to payment
-    const checkInStr = checkInDate.toISOString().split("T")[0];
-    const checkOutStr = checkOutDate.toISOString().split("T")[0];
+    let checkInStr: string;
+    let checkOutStr: string;
+    if (!isDayPicnic) {
+      // Check date availability before proceeding to payment
+      checkInStr = checkInDate.toISOString().split("T")[0];
+      checkOutStr = checkOutDate.toISOString().split("T")[0];
 
-    try {
       // Validate booking dates first
       const dateValidation = AvailabilityService.validateBookingDates(
         checkInDate,
@@ -689,27 +762,6 @@ const PropertyDetails = () => {
         toast({
           title: "Invalid Dates",
           description: dateValidation.error,
-          variant: "destructive",
-        });
-        return;
-      }
-
-      // Check guest count against property limits
-      const totalGuests = guests.adults + guests.children;
-      if (totalGuests > property.max_guests) {
-        toast({
-          title: "Guest Limit Exceeded",
-          description: `This property accommodates up to ${property.max_guests} guests. You have selected ${totalGuests} guests.`,
-          variant: "destructive",
-        });
-        return;
-      }
-
-      // Check if minimum guest requirement is met
-      if (totalGuests < 1) {
-        toast({
-          title: "Minimum Guests Required",
-          description: "Please select at least 1 guest for this booking.",
           variant: "destructive",
         });
         return;
@@ -731,6 +783,64 @@ const PropertyDetails = () => {
         });
         return;
       }
+    }
+
+    if (isDayPicnic) {
+      // Check date availability before proceeding to payment
+      checkInStr = checkInDate.toISOString().split("T")[0];
+      checkOutStr = checkInDate.toISOString().split("T")[0];
+
+      // Validate booking dates first
+      const dateValidation = AvailabilityService.validateBookingDate(
+        checkInDate,
+      );
+      if (!dateValidation.valid) {
+        toast({
+          title: "Invalid Dates",
+          description: dateValidation.error,
+          variant: "destructive",
+        });
+        return;
+      }
+
+      // Check date availability
+      const availabilityCheck =
+        await AvailabilityService.checkDateAvailability(
+          property.id,
+          checkInStr,
+        );
+
+      if (!availabilityCheck.available) {
+        toast({
+          title: "Property Not Available",
+          description: `This property is not available for the selected date (${checkInStr}). Please choose different date.`,
+          variant: "destructive",
+        });
+        return;
+      }
+    }
+
+    try {
+      // Check guest count against property limits
+      const totalGuests = guests.adults + guests.children;
+      if (totalGuests > property.max_guests) {
+        toast({
+          title: "Guest Limit Exceeded",
+          description: `This property accommodates up to ${property.max_guests} guests. You have selected ${totalGuests} guests.`,
+          variant: "destructive",
+        });
+        return;
+      }
+
+      // Check if minimum guest requirement is met
+      if (totalGuests < 1) {
+        toast({
+          title: "Minimum Guests Required",
+          description: "Please select at least 1 guest for this booking.",
+          variant: "destructive",
+        });
+        return;
+      }
 
       // Proceed with booking if dates are available
       const detailedBreakdown = calculateDetailedBreakdown();
@@ -748,6 +858,7 @@ const PropertyDetails = () => {
           nights: calculateNights(),
           guest_breakdown: guests,
           room_selection: selectedRoom,
+          package_selection: selectedPackage,
           coupon_applied: appliedCoupon,
         },
       };
@@ -990,12 +1101,12 @@ const PropertyDetails = () => {
                   </div>
                 </div>
               </TabsContent>
-
               {isDayPicnic && (
                 <TabsContent value="itinerary" className="mt-6">
                   <ItineraryTimeline
-                    propertyType={property.property_type}
-                    packages={dayPicnicPackages}
+                    itinerary={property.itinerary}
+                    // propertyType={property.property_type}
+                    // packages={dayPicnicPackages}
                   />
                 </TabsContent>
               )}
@@ -1021,14 +1132,14 @@ const PropertyDetails = () => {
                       </p>
                     </div>
 
-                    {dayPicnicPackages.length > 0 ? (
+                    {property.packages.length > 0 ? (
                       <div className="grid gap-6 md:grid-cols-2">
-                        {dayPicnicPackages.map((pkg) => (
+                        {property.packages.map((pkg) => (
                           <PackageCard
-                            key={pkg.id}
+                            key={pkg.name}
                             pkg={pkg}
                             onSelect={handlePackageSelect}
-                            isSelected={selectedPackage?.id === pkg.id}
+                            isSelected={selectedPackage?.name === pkg.name}
                           />
                         ))}
                       </div>
@@ -1088,14 +1199,14 @@ const PropertyDetails = () => {
             <div className="sticky top-24">
               <Card id="booking-box" className="shadow-lg">
                 <CardContent className="p-6 space-y-4">
-                  <div className="flex items-baseline gap-2 mb-4">
+                  {/* {!isDayPicnic && <div className="flex items-baseline gap-2 mb-4">
                     <span className="text-2xl font-bold">
                       ₹{property.price}
                     </span>
                     <span className="text-muted-foreground">
                       {isDayPicnic ? "starting price" : "per night"}
                     </span>
-                  </div>
+                  </div>} */}
 
                   {/* Date Selection */}
                   {!isDayPicnic && (
@@ -1302,14 +1413,16 @@ const PropertyDetails = () => {
                       <div className="text-sm font-medium mb-1">Package</div>
                       <div className="text-sm text-muted-foreground">
                         {selectedPackage
-                          ? `${
-                              selectedPackage.meal_plan?.join(", ") || "Package"
-                            } - ₹${selectedPackage.base_price} ${
-                              selectedPackage.pricing_type === "per_person"
-                                ? "per person"
-                                : "per package"
-                            }`
-                          : "Select a package from the packages tab"}
+                          ? `${selectedPackage.name || "Package"} - ₹${
+                              selectedPackage.adult_price
+                            } per adult 
+                            `
+                          : // ${
+                            //   selectedPackage.pricing_type === "per_person"
+                            //     ? "per person"
+                            //     : "per package"
+                            // }
+                            "Select a package from the packages tab"}
                       </div>
                     </div>
                   ) : (
@@ -1427,7 +1540,9 @@ const PropertyDetails = () => {
                     onClick={handleBooking}
                     disabled={
                       isBooking ||
-                      (isDayPicnic && !selectedPackage) ||
+                      (isDayPicnic &&
+                        !selectedPackage &&
+                        (!checkInDate || isNaN(checkInDate.getTime()))) ||
                       (!isDayPicnic &&
                         (!checkInDate ||
                           !checkOutDate ||
@@ -1436,7 +1551,8 @@ const PropertyDetails = () => {
                     className="w-full bg-purple-600 hover:bg-purple-700 disabled:bg-gray-300 disabled:cursor-not-allowed"
                     size="lg"
                   >
-                    {isBooking
+                    Book Now
+                    {/* {isBooking
                       ? "Processing..."
                       : isDayPicnic
                       ? selectedPackage
@@ -1446,7 +1562,7 @@ const PropertyDetails = () => {
                       ? "Select Dates First"
                       : selectedRoom.length === 0
                       ? "Select Room First"
-                      : "Reserve Now"}
+                      : "Reserve Now"} */}
                   </Button>
 
                   {/* Helper text for disabled state */}
@@ -1473,6 +1589,14 @@ const PropertyDetails = () => {
                       booking
                     </p>
                   )}
+
+                  {isDayPicnic &&
+                    selectedPackage &&
+                    (!checkInDate || isNaN(checkInDate.getTime())) && (
+                      <p className="text-sm text-orange-600 text-center">
+                        Please select date to continue booking
+                      </p>
+                    )}
 
                   {/* Quick Contact */}
                   <div className="flex gap-2 pt-4">

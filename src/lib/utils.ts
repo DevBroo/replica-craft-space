@@ -77,3 +77,75 @@ export function transformRoomData(inputData) {
     };
   });
 }
+
+const parseTime = (timeStr: string) => {
+  const [hours, minutes] = timeStr.split(":").map(Number);
+  return hours * 60 + minutes; // total minutes from midnight
+};
+
+export const calculateDuration = (start_time: string, end_time: string) => {
+  const startMins = parseTime(start_time);
+  const endMins = parseTime(end_time);
+
+  if (endMins < startMins) {
+    console.warn("End time is before start time");
+    return null;
+  }
+
+  return formatDuration(endMins - startMins); // duration in minutes
+};
+
+const formatDuration = (minutes: number) => {
+  const hrs = Math.floor(minutes / 60);
+  const mins = minutes % 60;
+  return `${hrs}h ${mins != 0 ? `${mins}m` : ''}`;
+};
+
+export const getStatusColor = (status: string) => {
+  switch (status) {
+    case 'upcoming':
+      return 'bg-blue-100 text-blue-800';
+    case 'ongoing':
+      return 'bg-green-100 text-green-800';
+    case 'completed':
+      return 'bg-gray-100 text-gray-800';
+    case 'cancelled':
+      return 'bg-red-100 text-red-800';
+    default:
+      return 'bg-gray-100 text-gray-800';
+  }
+};
+
+export const getPaymentStatusColor = (status: string) => {
+  switch (status) {
+    case 'paid':
+      return 'bg-green-100 text-green-800';
+    case 'pending':
+      return 'bg-yellow-100 text-yellow-800';
+    case 'refunded':
+      return 'bg-gray-100 text-gray-800';
+    default:
+      return 'bg-gray-100 text-gray-800';
+  }
+};
+
+export const formatTime = (dateString: string) => {
+  const date = new Date(dateString);
+  const now = new Date();
+  const diffInHours = (now.getTime() - date.getTime()) / (1000 * 60 * 60);
+
+  if (diffInHours < 24) {
+    return date.toLocaleTimeString('en-US', { 
+      hour: '2-digit', 
+      minute: '2-digit',
+      hour12: true 
+    });
+  } else if (diffInHours < 168) { // 7 days
+    return date.toLocaleDateString('en-US', { weekday: 'short' });
+  } else {
+    return date.toLocaleDateString('en-US', { 
+      month: 'short', 
+      day: 'numeric' 
+    });
+  }
+};

@@ -1847,6 +1847,8 @@ export type Database = {
           day_picnic_capacity: number | null
           day_picnic_duration_category: string | null
           description: string | null
+          itinerary: string | null
+          packages: any[]
           extra_services: Json | null
           facilities: Json | null
           ground_lawn_capacity: number | null
