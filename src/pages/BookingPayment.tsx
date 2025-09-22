@@ -90,6 +90,7 @@ const BookingPayment: React.FC = () => {
                 description: "Please login to complete your booking",
                 variant: "destructive"
             });
+            // TODO: save booking data to localstorage
             navigate('/login', {
                 state: {
                     returnTo: `/booking/${propertyId}/payment`,

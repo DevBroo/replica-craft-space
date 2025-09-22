@@ -20,6 +20,7 @@ import {
   Home,
   DollarSign
 } from 'lucide-react';
+import { getPaymentStatusColor, getStatusColor } from '@/lib/utils';
 
 interface BookingsProps {
   sidebarCollapsed: boolean;
@@ -36,7 +37,7 @@ const Bookings: React.FC<BookingsProps> = ({ sidebarCollapsed, toggleSidebar, ac
   const [searchQuery, setSearchQuery] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(10);
-  const [sortBy, setSortBy] = useState('checkin');
+  const [sortBy, setSortBy] = useState('default');
   const [dateRange, setDateRange] = useState('all');
   const [bookings, setBookings] = useState<OwnerBooking[]>([]);
   const [loading, setLoading] = useState(true);
@@ -389,6 +390,8 @@ Date: ${invoiceData.date}
         return a.property_title.localeCompare(b.property_title);
       case 'amount':
         return b.total_amount - a.total_amount;
+      case 'default': 
+        return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
       default:
         return 0;
     }
@@ -397,34 +400,6 @@ Date: ${invoiceData.date}
   const totalPages = Math.ceil(sortedBookings.length / itemsPerPage);
   const startIndex = (currentPage - 1) * itemsPerPage;
   const currentBookings = sortedBookings.slice(startIndex, startIndex + itemsPerPage);
-
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'upcoming':
-        return 'bg-blue-100 text-blue-800';
-      case 'ongoing':
-        return 'bg-green-100 text-green-800';
-      case 'completed':
-        return 'bg-gray-100 text-gray-800';
-      case 'cancelled':
-        return 'bg-red-100 text-red-800';
-      default:
-        return 'bg-gray-100 text-gray-800';
-    }
-  };
-
-  const getPaymentStatusColor = (status: string) => {
-    switch (status) {
-      case 'paid':
-        return 'bg-green-100 text-green-800';
-      case 'pending':
-        return 'bg-yellow-100 text-yellow-800';
-      case 'refunded':
-        return 'bg-gray-100 text-gray-800';
-      default:
-        return 'bg-gray-100 text-gray-800';
-    }
-  };
 
   return (
     <div className={embedded ? "" : "min-h-screen bg-gray-50"}>
@@ -700,12 +675,14 @@ Date: ${invoiceData.date}
                     <span>
                       {sortBy === 'checkin' ? 'Check-in Date' :
                       sortBy === 'guest' ? 'Guest Name' :
+                      sortBy === 'default' ? 'Default' :
                       sortBy === 'property' ? 'Property Name' : 'Amount'}
                     </span>
                     <i className="fas fa-chevron-down text-gray-400"></i>
                   </button>
                   <div id="sort-dropdown" className="hidden absolute top-full left-0 mt-1 bg-white border border-gray-200 rounded-lg shadow-lg z-10 min-w-full">
                     {[
+                      { value: 'default', label: 'Default' },
                       { value: 'checkin', label: 'Check-in Date' },
                       { value: 'guest', label: 'Guest Name' },
                       { value: 'property', label: 'Property Name' },
