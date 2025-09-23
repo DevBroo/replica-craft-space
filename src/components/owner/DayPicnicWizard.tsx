@@ -27,6 +27,8 @@ import {
   Camera,
   Star,
   PlusIcon,
+  Cross,
+  XIcon,
 } from "lucide-react";
 import { Input } from "@/components/owner/ui/input";
 import { Label } from "@/components/owner/ui/label";
@@ -159,6 +161,8 @@ const DayPicnicWizard: React.FC<DayPicnicWizardProps> = ({
   const [uploading, setUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
   const [isEditingPackage, setIsEditingPackage] = useState(null);
+  const [inclusionToAdd, setInclusionToAdd] = useState("");
+  const [exclusionToAdd, setExclusionToAdd] = useState("");
   const [packageIn, setPackageIn] = useState({
     name: "",
     start_time: "",
@@ -287,11 +291,11 @@ const DayPicnicWizard: React.FC<DayPicnicWizardProps> = ({
         meal_plans: Array.isArray(packageData?.meal_plan)
           ? packageData.meal_plan
           : [],
-        inclusions: Array.isArray(packageData?.inclusions)
-          ? packageData.inclusions.map(String)
+        inclusions: Array.isArray(property.inclusions)
+          ? property.inclusions.map(String)
           : [],
-        exclusions: Array.isArray(packageData?.exclusions)
-          ? packageData.exclusions.map(String)
+        exclusions: Array.isArray(property.exclusions)
+          ? property.exclusions.map(String)
           : [],
         start_time: packageData?.start_time
           ? String(packageData.start_time).substring(0, 5)
@@ -467,6 +471,8 @@ const DayPicnicWizard: React.FC<DayPicnicWizardProps> = ({
         country: "India",
         star_rating: 3,
         languages_spoken: ["English", "Hindi"],
+        inclusions: formData.inclusions,
+        exclusions: formData.exclusions,
         rooms_details: {
           types: [],
           configurations: {},
@@ -805,6 +811,38 @@ const DayPicnicWizard: React.FC<DayPicnicWizardProps> = ({
         half_day_price: Math.round(baseRate * 0.6), // 60% of full day
         extended_day_price: Math.round(baseRate * 1.5), // 150% of full day
       },
+    }));
+  };
+
+  const addToInclusion = () => {
+    if (inclusionToAdd) {
+      setFormData((prev) => ({
+        ...prev,
+        inclusions: [...prev.inclusions, inclusionToAdd.trim()],
+      }));
+    }
+  };
+
+  const addToExclusion = () => {
+    if (exclusionToAdd) {
+      setFormData((prev) => ({
+        ...prev,
+        exclusions: [...prev.exclusions, exclusionToAdd.trim()],
+      }));
+    }
+  };
+
+  const removeFromInclusion = (itemToRemove) => {
+    setFormData((prev) => ({
+      ...prev,
+      inclusions: prev.inclusions.filter((item) => item !== itemToRemove),
+    }));
+  };
+
+  const removeFromExclusion = (itemToRemove) => {
+    setFormData((prev) => ({
+      ...prev,
+      exclusions: prev.exclusions.filter((item) => item !== itemToRemove),
     }));
   };
 
@@ -1277,40 +1315,68 @@ const DayPicnicWizard: React.FC<DayPicnicWizardProps> = ({
 
             <div>
               <Label htmlFor="inclusions">What's Included</Label>
-              <Textarea
-                id="inclusions"
-                value={formData.inclusions.join("\n")}
-                onChange={(e) =>
-                  setFormData((prev) => ({
-                    ...prev,
-                    inclusions: e.target.value
-                      .split("\n")
-                      .filter((item) => item.trim()),
-                  }))
-                }
-                placeholder="Enter each inclusion on a new line&#10;e.g.,&#10;Welcome drink&#10;Photography area access&#10;Basic seating arrangement"
-                rows={4}
-                className="mt-1"
-              />
+              <div className="flex items-center gap-2">
+                <Input
+                  id="inclusions"
+                  value={inclusionToAdd}
+                  onChange={(e) => setInclusionToAdd(e.target.value)}
+                  placeholder="Add inclusions"
+                  className="text-sm mt-1"
+                />
+                <Button
+                  onClick={addToInclusion}
+                  disabled={inclusionToAdd === ""}
+                  size="sm"
+                >
+                  Add
+                </Button>
+              </div>
+              <div className="flex flex-wrap items-center gap-2 mt-2 p-4 bg-muted/50 rounded-lg">
+                {formData.inclusions.map((incl) => (
+                  <div className="cursor-default transition hover:bg-green-100 hover:text-green-600 bg-green-50 w-max px-4 py-2 text-xs border rounded-full flex gap-2 border-green-500 text-green-500">
+                    <span>{incl}</span>
+                    <span className="cursor-pointer">
+                      <XIcon
+                        onClick={() => removeFromInclusion(incl)}
+                        className="w-4 h-4"
+                      />
+                    </span>
+                  </div>
+                ))}
+              </div>
             </div>
 
             <div>
               <Label htmlFor="exclusions">What's Not Included</Label>
-              <Textarea
-                id="exclusions"
-                value={formData.exclusions.join("\n")}
-                onChange={(e) =>
-                  setFormData((prev) => ({
-                    ...prev,
-                    exclusions: e.target.value
-                      .split("\n")
-                      .filter((item) => item.trim()),
-                  }))
-                }
-                placeholder="Enter each exclusion on a new line&#10;e.g.,&#10;Food and beverages&#10;Transportation&#10;Personal expenses"
-                rows={4}
-                className="mt-1"
-              />
+              <div className="flex items-center gap-2">
+                <Input
+                  id="exclusions"
+                  value={exclusionToAdd}
+                  onChange={(e) => setExclusionToAdd(e.target.value)}
+                  placeholder="Add exclusions"
+                  className="text-sm mt-1"
+                />
+                <Button
+                  onClick={addToExclusion}
+                  disabled={exclusionToAdd === ""}
+                  size="sm"
+                >
+                  Add
+                </Button>
+              </div>
+              <div className="flex flex-wrap items-center gap-2 mt-2 p-4 bg-muted/50 rounded-lg">
+                {formData.exclusions.map((incl) => (
+                  <div className="cursor-default transition hover:bg-red-100 hover:text-red-600 bg-red-50 w-max px-4 py-2 text-xs border rounded-full flex gap-2 border-red-500 text-red-500">
+                    <span>{incl}</span>
+                    <span className="cursor-pointer">
+                      <XIcon
+                        onClick={() => removeFromExclusion(incl)}
+                        className="w-4 h-4"
+                      />
+                    </span>
+                  </div>
+                ))}
+              </div>
             </div>
           </div>
         );
@@ -1870,10 +1936,14 @@ const DayPicnicWizard: React.FC<DayPicnicWizardProps> = ({
   ) => {
     // Capture the current editing index to avoid closure issues
     const currentEditingIndex = isEditingPackage;
-    
+
     setFormData((prev) => {
       // Defensive check: if index is invalid, return prev state
-      if (currentEditingIndex === null || currentEditingIndex < 0 || currentEditingIndex >= prev.packages.length) {
+      if (
+        currentEditingIndex === null ||
+        currentEditingIndex < 0 ||
+        currentEditingIndex >= prev.packages.length
+      ) {
         console.warn("Invalid package index:", currentEditingIndex);
         toast({
           title: "Error",
