@@ -9,9 +9,11 @@ import {
   Users,
   Phone,
   MessageCircle,
+  CheckCircle,
+  XCircle,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Calendar as CalendarComponent } from "@/components/ui/calendar";
@@ -183,6 +185,8 @@ const PropertyDetails = () => {
                 icon: null,
                 name: a.charAt(0).toUpperCase() + a.slice(1),
               })) || [],
+            inclusions: propertyData.inclusions || [],
+            exclusions: propertyData.exclusions || [],
             roomTypes: [
               {
                 id: "default",
@@ -632,18 +636,18 @@ const PropertyDetails = () => {
   };
 
   useEffect(() => {
-    const incompleteBookingData = localStorage.getItem('incompleteBookingData')
-    if(incompleteBookingData) {
-      const data = JSON.parse(incompleteBookingData)
-      setCheckInDate(new Date(data.checkInDate))
-      setCheckOutDate(new Date(data.checkOutDate))
-      setGuests(data.guests)
-      setPriceBreakdown(data.priceBreakdown)
-      setSelectedRoom(data.selectedRoom)
-      setSelectedPackage(data.selectedPackage)
-      localStorage.removeItem('incompleteBookingData')
+    const incompleteBookingData = localStorage.getItem("incompleteBookingData");
+    if (incompleteBookingData) {
+      const data = JSON.parse(incompleteBookingData);
+      setCheckInDate(new Date(data.checkInDate));
+      setCheckOutDate(new Date(data.checkOutDate));
+      setGuests(data.guests);
+      setPriceBreakdown(data.priceBreakdown);
+      setSelectedRoom(data.selectedRoom);
+      setSelectedPackage(data.selectedPackage);
+      localStorage.removeItem("incompleteBookingData");
     }
-  }, [])
+  }, []);
 
   const handleBooking = async () => {
     if (!isAuthenticated || !user) {
@@ -661,8 +665,11 @@ const PropertyDetails = () => {
         selectedPackage,
         selectedRoom,
         priceBreakdown,
-      }
-      localStorage.setItem('incompleteBookingData', JSON.stringify(incompleteBookingData))
+      };
+      localStorage.setItem(
+        "incompleteBookingData",
+        JSON.stringify(incompleteBookingData)
+      );
       navigate("/login", {
         state: {
           returnTo: `/property/${property.id}`,
@@ -791,9 +798,8 @@ const PropertyDetails = () => {
       checkOutStr = checkInDate.toISOString().split("T")[0];
 
       // Validate booking dates first
-      const dateValidation = AvailabilityService.validateBookingDate(
-        checkInDate,
-      );
+      const dateValidation =
+        AvailabilityService.validateBookingDate(checkInDate);
       if (!dateValidation.valid) {
         toast({
           title: "Invalid Dates",
@@ -804,11 +810,10 @@ const PropertyDetails = () => {
       }
 
       // Check date availability
-      const availabilityCheck =
-        await AvailabilityService.checkDateAvailability(
-          property.id,
-          checkInStr,
-        );
+      const availabilityCheck = await AvailabilityService.checkDateAvailability(
+        property.id,
+        checkInStr
+      );
 
       if (!availabilityCheck.available) {
         toast({
@@ -1099,6 +1104,72 @@ const PropertyDetails = () => {
                       <li>• Advance booking recommended</li>
                     </ul>
                   </div>
+
+                  {/* Inclusions & Exclusions */}
+                  {isDayPicnic && (
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                      {property.inclusions.length > 0 && (
+                        <Card>
+                          <CardHeader>
+                            <CardTitle className="text-lg flex items-center text-green-600">
+                              <CheckCircle className="w-5 h-5 mr-2" />
+                              Inclusions
+                            </CardTitle>
+                          </CardHeader>
+                          <CardContent>
+                            <ul className="space-y-2">
+                              {/* Show custom inclusions */}
+                              {property.inclusions.map(
+                                (inclusion: string, index: number) => (
+                                  <li
+                                    key={`inclusion-${index}`}
+                                    className="text-sm flex items-center"
+                                  >
+                                    <span className="w-2 h-2 bg-green-500 rounded-full mr-2"></span>
+                                    {inclusion}
+                                  </li>
+                                )
+                              )}
+                            </ul>
+                          </CardContent>
+                        </Card>
+                      )}
+
+                      {property.exclusions.length > 0 && (
+                        <Card>
+                          <CardHeader>
+                            <CardTitle className="text-lg flex items-center text-red-600">
+                              <XCircle className="w-5 h-5 mr-2" />
+                              Exclusions
+                            </CardTitle>
+                          </CardHeader>
+                          <CardContent>
+                            <ul className="space-y-2">
+                              {property.exclusions.map(
+                                (exclusion: any, index: number) => (
+                                  <li
+                                    key={`custom-exclusion-${index}`}
+                                    className="text-sm flex items-center"
+                                  >
+                                    <span className="w-2 h-2 bg-red-500 rounded-full mr-2"></span>
+                                    {typeof exclusion === "string"
+                                      ? exclusion
+                                      : exclusion.item}
+                                    {typeof exclusion !== "string" &&
+                                      exclusion.reason && (
+                                        <span className="text-gray-500 ml-1">
+                                          ({exclusion.reason})
+                                        </span>
+                                      )}
+                                  </li>
+                                )
+                              )}
+                            </ul>
+                          </CardContent>
+                        </Card>
+                      )}
+                    </div>
+                  )}
                 </div>
               </TabsContent>
               {isDayPicnic && (
