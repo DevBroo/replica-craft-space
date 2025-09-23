@@ -1125,7 +1125,7 @@ const PropertyDetails = () => {
                                     key={`inclusion-${index}`}
                                     className="text-sm flex items-center"
                                   >
-                                    <span className="w-2 h-2 bg-green-500 rounded-full mr-2"></span>
+                                    <CheckCircle className="text-green-600 w-4 h-4 mr-2" />
                                     {inclusion}
                                   </li>
                                 )
@@ -1151,7 +1151,7 @@ const PropertyDetails = () => {
                                     key={`custom-exclusion-${index}`}
                                     className="text-sm flex items-center"
                                   >
-                                    <span className="w-2 h-2 bg-red-500 rounded-full mr-2"></span>
+                                    <XCircle className="w-4 h-4 mr-2 text-red-600" />
                                     {typeof exclusion === "string"
                                       ? exclusion
                                       : exclusion.item}
