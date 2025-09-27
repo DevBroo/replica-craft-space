@@ -11,9 +11,17 @@ import {
   MessageCircle,
   CheckCircle,
   XCircle,
+  Bath,
+  Bed,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Calendar as CalendarComponent } from "@/components/ui/calendar";
@@ -31,7 +39,7 @@ import {
 } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
-import { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { PropertyService } from "@/lib/propertyService";
 import { BookingService } from "@/lib/bookingService";
 import { CouponService, Coupon } from "@/lib/couponService";
@@ -73,6 +81,7 @@ import {
   DropdownMenuTrigger,
   DropdownMenuItem,
 } from "@/components/ui/dropdown-menu";
+import { getImageSizes, getOptimizedImageUrl } from "@/lib/imageOptimization";
 
 const PropertyDetails = () => {
   const { id } = useParams();
@@ -105,6 +114,7 @@ const PropertyDetails = () => {
   const [messageText, setMessageText] = useState("");
   const [sendingMessage, setSendingMessage] = useState(false);
   const [priceBreakdown, setPriceBreakdown] = useState(null);
+  const [similarProperties, setSimilarProperties] = useState(null);
 
   const { user, isAuthenticated } = useAuth();
   const { toast } = useToast();
@@ -245,6 +255,10 @@ const PropertyDetails = () => {
     fetchPropertyAvailability();
   }, [id]);
 
+  useEffect(() => {
+    loadSimilarProperty();
+  }, [property]);
+
   const fetchPropertyAvailability = async () => {
     if (!id) return;
 
@@ -260,6 +274,33 @@ const PropertyDetails = () => {
       // Continue without availability data
     } finally {
       setAvailabilityLoading(false);
+    }
+  };
+
+  const loadSimilarProperty = async () => {
+    if (!property?.location) return;
+
+    console.log("🔍 Loading similar properties for location:", property.city);
+    try {
+      const propertyData = await PropertyService.getSimilarProperties(
+        property.city.trim(),
+        property.id
+      );
+
+      if (propertyData.length > 0) {
+        setSimilarProperties(propertyData);
+        console.log(
+          "✅ Similar Property details loaded successfully",
+          propertyData
+        );
+      } else {
+        console.log("ℹ️ Properties not found or not in location");
+        setSimilarProperties(null);
+      }
+    } catch (error) {
+      console.error("❌ Error loading similar properties:", error);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -888,6 +929,13 @@ const PropertyDetails = () => {
     }
   };
 
+  const handleViewProperty = useCallback(
+    (propertyId: string) => {
+      navigate(`/property/${propertyId}`);
+    },
+    [navigate]
+  );
+
   const handlePackageSelect = (pkg: any) => {
     setSelectedPackage(pkg);
     // Scroll to booking box
@@ -961,6 +1009,124 @@ const PropertyDetails = () => {
       </div>
     );
   }
+
+  const PropertyCard = React.memo(({ property }: any) => {
+    const primaryImage = property.images?.[0];
+    const optimizedImage = primaryImage
+      ? getOptimizedImageUrl(primaryImage, { width: 400, height: 300 })
+      : null;
+
+    return (
+      <Card
+        className="group hover:shadow-lg transition-all duration-300 overflow-hidden cursor-pointer"
+        onClick={() => handleViewProperty(property.id)}
+      >
+        <div className="relative aspect-[4/3] overflow-hidden">
+          {optimizedImage ? (
+            <img
+              src={optimizedImage}
+              alt={property.title}
+              loading="lazy"
+              decoding="async"
+              sizes={getImageSizes("grid")}
+              className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+              onError={(e) => {
+                const target = e.target as HTMLImageElement;
+                target.src = "/placeholder-property.jpg";
+              }}
+            />
+          ) : (
+            <div className="w-full h-full bg-muted flex items-center justify-center">
+              <span className="text-muted-foreground">No Image</span>
+            </div>
+          )}
+
+          {property.property_type && (
+            <Badge className="capitalize absolute top-2 left-2 bg-red-500 text-white">
+              {property.property_type}
+            </Badge>
+          )}
+
+          {/* Share Button */}
+          <ShareDropdown
+            property={property}
+            variant="secondary"
+            size="sm"
+            className="absolute top-2 right-2 h-8 w-8 p-0 bg-white/90 hover:bg-white shadow-md"
+          />
+        </div>
+
+        <CardHeader className="pb-2">
+          <h3 className="font-semibold text-lg line-clamp-1 group-hover:text-primary transition-colors">
+            {property.title}
+          </h3>
+          <div className="flex items-center text-sm text-muted-foreground">
+            <MapPin className="h-4 w-4 mr-1" />
+            <span className="line-clamp-1">{property.location.city}, {property.location.state}</span>
+          </div>
+        </CardHeader>
+
+        <CardContent className="pt-0 pb-2">
+          <div className="flex items-center justify-between mb-2">
+            <div className="flex items-center gap-4">
+              <div className="flex items-center">
+                <Users className="h-4 w-4 mr-1 text-muted-foreground" />
+                <span className="text-sm">{property.max_guests}</span>
+              </div>
+              {property.bedrooms > 0 && (
+                <div className="flex items-center">
+                  <Bed className="h-4 w-4 mr-1 text-muted-foreground" />
+                  <span className="text-sm">{property.bedrooms}</span>
+                </div>
+              )}
+              {property.bathrooms > 0 && (
+                <div className="flex items-center">
+                  <Bath className="h-4 w-4 mr-1 text-muted-foreground" />
+                  <span className="text-sm">{property.bathrooms}</span>
+                </div>
+              )}
+            </div>
+
+            {property.rating > 0 && (
+              <div className="flex items-center">
+                <Star className="h-4 w-4 text-yellow-400 fill-current mr-1" />
+                <span className="text-sm font-medium">
+                  {property.rating.toFixed(1)}
+                </span>
+                {property.review_count > 0 && (
+                  <span className="text-xs text-muted-foreground ml-1">
+                    ({property.review_count})
+                  </span>
+                )}
+              </div>
+            )}
+          </div>
+        </CardContent>
+
+        <CardFooter className="pt-0">
+          <div className="flex flex-col gap-3 w-full">
+            <div className="flex items-center justify-between">
+              <div>
+                <span className="text-2xl font-bold text-red-600">
+                  ₹{property.pricing?.daily_rate?.toLocaleString() || "N/A"}
+                </span>
+                <span className="text-sm text-muted-foreground">/night</span>
+              </div>
+            </div>
+            <Button
+              className="w-full bg-red-600 hover:bg-red-700 text-white font-semibold"
+              onClick={(e) => {
+                e.stopPropagation();
+                handleViewProperty(property.id);
+              }}
+            >
+              Book Now
+            </Button>
+          </div>
+        </CardFooter>
+      </Card>
+    );
+  });
 
   return (
     <div className="min-h-screen bg-background">
@@ -1692,6 +1858,27 @@ const PropertyDetails = () => {
             </div>
           </div>
         </div>
+
+        {similarProperties && <div className="mt-12">
+          <h3 className="text-3xl font-bold mb-2">Related</h3>
+          <div className="mt-5 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 mb-8">
+            {similarProperties.map((property) => (
+                <PropertyCard
+                  key={property.id}
+                  property={{
+                    ...property,
+                    pricing:
+                      property.pricing && typeof property.pricing === "object"
+                        ? (property.pricing as {
+                            daily_rate: number;
+                            currency: string;
+                          })
+                        : { daily_rate: 0, currency: "INR" },
+                  }}
+                />
+              ))}
+          </div>
+        </div>}
       </div>
 
       {/* Mobile Sticky Bottom Bar */}

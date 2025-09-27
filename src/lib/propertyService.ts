@@ -345,6 +345,51 @@ export class PropertyService {
   }
 
   /**
+   * Get similar properties for a specific property (optimized)
+   */
+  static async getSimilarProperties(location: string, propertyId: string): Promise<Property[]> {
+    try {
+      console.log('🔍 Fetching properties for location:', location);
+      
+      // Build optimized query - only select essential fields for dashboard
+      const query = supabase
+        .from('properties')
+        .select(`
+          id,
+          title,
+          property_type,
+          status,
+          images,
+          pricing,
+          created_at,
+          max_guests,
+          bedrooms,
+          bathrooms,
+          rating,
+          review_count,
+          location
+        `)
+        .eq('location->>city', location)
+        .neq('id', propertyId)
+        .order('created_at', { ascending: false })
+        .limit(4);
+
+      const { data, error } = await query;
+
+      if (error) {
+        console.error('❌ Error fetching similar properties:', error);
+        throw error;
+      }
+
+      console.log('✅ Similar properties fetched successfully:', data?.length || 0);
+      return (data as any) || [];
+    } catch (error) {
+      console.error('❌ Failed to fetch similar properties:', error);
+      throw error;
+    }
+  }
+
+  /**
    * Get all properties (for admin/cache purposes)
    */
   static async getAllProperties(): Promise<Property[]> {
